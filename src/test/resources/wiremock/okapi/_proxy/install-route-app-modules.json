@@ -1,0 +1,52 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/_/proxy/tenants/test/install",
+    "queryParameters": {
+      "reinstall": {
+        "equalTo": "false"
+      },
+      "purge": {
+        "equalTo": "false"
+      }
+    },
+    "headers": {
+      "X-Okapi-Token": {
+        "equalTo": "X-Okapi-Token test value"
+      },
+      "Content-Type": {
+        "equalTo": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": [
+          {
+            "id": "routes-module1-1.0.0",
+            "action": "enable"
+          },
+          {
+            "id": "routes-module2-2.0.0",
+            "action": "enable"
+          }
+        ]
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": [
+      {
+        "id": "routes-module1-1.0.0",
+        "action": "enable"
+      },
+      {
+        "id": "routes-module2-2.0.0",
+        "action": "enable"
+      }
+    ]
+  }
+}

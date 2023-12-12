@@ -1,0 +1,43 @@
+{
+  "id": "test-app-1.0.0",
+  "name": "test-app",
+  "version": "1.0.0",
+  "moduleDescriptors": [
+    {
+      "id": "foo-module-1.0.0",
+      "name": "Foo Service",
+      "provides": [
+        {
+          "id": "_timer",
+          "version": "0.1",
+          "handlers": [
+            {
+              "methods": [ "GET" ],
+              "pathPattern": "/foo/{id}"
+            }
+          ]
+        }
+      ],
+      "permissionSets": [
+        {
+          "permissionName": "foo.item.unknown",
+          "displayName": "foo.item.unknown display name",
+          "description": "foo.item.unknown description"
+        }
+      ]
+    }
+  ],
+  "uiModuleDescriptors": [
+    {
+      "id": "ui-foo-module-1.0.0",
+      "name": "UI Foo Service",
+      "permissionSets": [
+        {
+          "permissionName": "ui-foo.item.create",
+          "displayName": "ui-foo.item.create display name",
+          "description": "ui-foo.item.create description"
+        }
+      ]
+    }
+  ]
+}

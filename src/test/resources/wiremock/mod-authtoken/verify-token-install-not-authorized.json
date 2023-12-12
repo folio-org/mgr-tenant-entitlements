@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/entitlements",
+    "headers": {
+      "X-Okapi-Permissions-Required": {
+        "equalTo": "mgr-tenant-entitlements.entitlements.item.post"
+      },
+      "X-Okapi-Token": {
+        "equalTo": "X-Okapi-Token test value"
+      },
+      "X-Okapi-Tenant": {
+        "equalTo": "supertenant"
+      },
+      "X-Okapi-Url": {
+        "matches": ".*"
+      }
+    }
+  },
+  "response": {
+    "status": 401
+  }
+}

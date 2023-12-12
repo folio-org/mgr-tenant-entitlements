@@ -1,0 +1,99 @@
+package org.folio.entitlement.integration.folio;
+
+import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_ID;
+import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
+import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+
+import java.util.Map;
+import java.util.UUID;
+import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
+import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
+import org.folio.flow.api.StageContext;
+import org.folio.test.types.UnitTest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@UnitTest
+@ExtendWith(MockitoExtension.class)
+class FolioModuleEventPublisherTest {
+
+  private static final String MODULE_ID = "mod-foo-1.0.0";
+  private static final String FLOW_ID = UUID.randomUUID().toString();
+
+  @InjectMocks private FolioModuleEventPublisher folioModuleEventPublisher;
+  @Mock private EntitlementEventPublisher entitlementEventPublisher;
+
+  @AfterEach
+  void tearDown() {
+    verifyNoMoreInteractions(entitlementEventPublisher);
+  }
+
+  @Test
+  void execute_positive() {
+    var tenantId = randomUUID();
+    var tenantName = "tenantName";
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(tenantId).build();
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID);
+    var stageContext = StageContext.of(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+
+    folioModuleEventPublisher.execute(stageContext);
+
+    var expectedEvent = new EntitlementEvent(ENTITLE.name(), MODULE_ID, tenantName, tenantId);
+    verify(entitlementEventPublisher).publish(expectedEvent);
+  }
+
+  @Test
+  void execute_negative() {
+    var message = "exception";
+    doThrow(new RuntimeException(message)).when(entitlementEventPublisher).publish(any(EntitlementEvent.class));
+
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(randomUUID()).build();
+    var flowParameters = Map.of(PARAM_MODULE_ID, MODULE_ID, PARAM_REQUEST, request);
+    var contextParameters = Map.of(PARAM_TENANT_NAME, PARAM_TENANT_NAME);
+    var context = StageContext.of(FLOW_ID, flowParameters, contextParameters);
+
+    assertThatThrownBy(() -> folioModuleEventPublisher.execute(context))
+      .isInstanceOf(RuntimeException.class)
+      .hasMessage(message);
+  }
+
+  @Test
+  void cancel_positive_entitleRequest() {
+    var tenantId = randomUUID();
+    var tenantName = "tenantName";
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(tenantId).build();
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID);
+    var stageContext = StageContext.of(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+
+    folioModuleEventPublisher.cancel(stageContext);
+    var expectedEvent = new EntitlementEvent(REVOKE.name(), MODULE_ID, tenantName, tenantId);
+    verify(entitlementEventPublisher).publish(expectedEvent);
+  }
+
+  @Test
+  void cancel_positive_revokeRequest() {
+    var tenantId = randomUUID();
+    var tenantName = "tenantName";
+    var request = EntitlementRequest.builder().type(REVOKE).tenantId(tenantId).build();
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID);
+    var stageContext = StageContext.of(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+
+    folioModuleEventPublisher.cancel(stageContext);
+    var expectedEvent = new EntitlementEvent(REVOKE.name(), MODULE_ID, tenantName, tenantId);
+    verify(entitlementEventPublisher, never()).publish(any());
+  }
+}

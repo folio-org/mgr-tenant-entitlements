@@ -1,0 +1,30 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/tenants/6ad28dae-7c02-4f89-9320-153c55bf1914",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      },
+      "x-okapi-token": {
+        "equalTo": "X-Okapi-Token test value"
+      }
+    }
+  },
+  "response": {
+    "status": 404,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "errors": [
+        {
+          "message": "Tenant is not found: id = 6ad28dae-7c02-4f89-9320-153c55bf1914",
+          "type": "EntityNotFoundException",
+          "code": "not_found_error"
+        }
+      ],
+      "total_records": 1
+    }
+  }
+}

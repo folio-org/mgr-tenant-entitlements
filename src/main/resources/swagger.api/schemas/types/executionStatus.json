@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "types/entitlementFlowStatus.json",
+  "title": "Application/Stage Execution Status Schema",
+  "description": "An application/stage execution status",
+  "type": "string",
+  "enum": [
+    "queued",
+    "in_progress",
+    "cancelled",
+    "cancellation_failed",
+    "failed",
+    "finished"
+  ]
+}

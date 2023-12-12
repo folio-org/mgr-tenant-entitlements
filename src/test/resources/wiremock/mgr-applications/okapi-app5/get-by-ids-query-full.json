@@ -1,0 +1,87 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"okapi-app5-5.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "okapi-app5-5.0.0",
+          "name": "okapi-app5",
+          "version": "5.0.0",
+          "dependencies": [
+            {
+              "id": "okapi-app-1.0.0",
+              "name": "okapi-app",
+              "version": "1.0.0"
+            }
+          ],
+          "modules": [
+            {
+              "id": "okapi-module5-5.0.0",
+              "name": "okapi-module5",
+              "version": "5.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "okapi-module5-5.0.0",
+              "name": "Test Okapi Module #5",
+              "provides": [
+                {
+                  "id": "okapi-module5-api",
+                  "version": "0.1.0",
+                  "handlers": [
+                    {
+                      "methods": [ "GET" ],
+                      "pathPattern": "/okapi-module5/entities",
+                      "permissionsRequired": [ "okapi-module5.entities.item.get" ]
+                    }
+                  ]
+                },
+                {
+                  "id": "_tenant",
+                  "version": "2.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/_/tenant"
+                    },
+                    {
+                      "methods": [ "GET", "DELETE" ],
+                      "pathPattern": "/_/tenant/{id}"
+                    }
+                  ]
+                }
+              ],
+              "permissionSets": [
+                {
+                  "description": "okapi-module5.entities.item.get",
+                  "displayName": "Test - get bar",
+                  "permissionName": "test.bar.item.get"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

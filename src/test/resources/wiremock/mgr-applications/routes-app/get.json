@@ -1,0 +1,152 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/applications/routes-app-1.0.0?full=true",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "routes-app-1.0.0",
+      "name": "routes-app",
+      "version": "1.0.0",
+      "modules": [
+        {
+          "id": "routes-module1-1.0.0",
+          "name": "routes-module1",
+          "version": "1.0.0"
+        },
+        {
+          "id": "routes-module2-2.0.0",
+          "name": "routes-module2",
+          "version": "2.0.0"
+        }
+      ],
+      "moduleDescriptors": [
+        {
+          "id": "routes-module1-1.0.0",
+          "name": "Routes Module #1",
+          "provides": [
+            {
+              "id": "foo",
+              "version": "0.1.0",
+              "handlers": [
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/foo/entities"
+                },
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/foo/entities/{id}"
+                },
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/foo/entities"
+                },
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/foo/{fooId}/sub-entities"
+                },
+                {
+                  "methods": [ "PUT", "PATCH" ],
+                  "pathPattern": "/foo/{id}/entities"
+                }
+              ]
+            },
+            {
+              "id": "foo2",
+              "version": "0.3.0",
+              "handlers": [
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/foo2*"
+                }
+              ]
+            },
+            {
+              "id": "_timer",
+              "version": "1.0",
+              "interfaceType": "system",
+              "handlers": [
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/foo/expire/timer",
+                  "unit": "minute",
+                  "delay": "1"
+                }
+              ]
+            },
+            {
+              "id": "test-multiple",
+              "version": "1.0",
+              "interfaceType": "multiple",
+              "handlers": [
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/mult-sample/entities"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "routes-module2-2.0.0",
+          "name": "Routes Module #2",
+          "provides": [
+            {
+              "id": "bar",
+              "version": "1.0.0",
+              "handlers": [
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/bar/{barId}/baz/{bazId}"
+                },
+                {
+                  "methods": [ "*" ],
+                  "pathPattern": "/bar/baz*"
+                },
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/foo/entities/bar"
+                }
+              ]
+            },
+            {
+              "id": "_tenant",
+              "version": "2.0",
+              "interfaceType": "system",
+              "handlers": [
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/_/tenant"
+                },
+                {
+                  "methods": [ "GET", "DELETE" ],
+                  "pathPattern": "/_/tenant/{id}"
+                }
+              ]
+            },
+            {
+              "id": "test-multiple",
+              "version": "1.0",
+              "interfaceType": "multiple",
+              "handlers": [
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/mult-sample/entities"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

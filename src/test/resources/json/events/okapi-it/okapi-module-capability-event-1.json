@@ -1,0 +1,38 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "okapi-module-1.0.0",
+    "moduleType": "module",
+    "applicationId": "okapi-app-1.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "okapi-module.foo.item.get",
+          "displayName": "Test Okapi Module #1 - Get entities by query",
+          "description": "Get okapi-module entities by query"
+        },
+        "endpoints": [
+          {
+            "path": "/okapi-module/entities",
+            "method": "GET"
+          }
+        ]
+      },
+      {
+        "permission": {
+          "permissionName": "okapi-module.foo.item.put",
+          "displayName": "Test Okapi Module #1 - Update entity by id",
+          "description": "Update okapi-module entity by id"
+        },
+        "endpoints": [
+          {
+            "path": "/okapi-module/entities/{id}",
+            "method": "PUT"
+          }
+        ]
+      }
+    ]
+  }
+}

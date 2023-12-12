@@ -1,0 +1,143 @@
+spring:
+  application:
+    name: mgr-tenant-entitlements
+  jackson:
+    default-property-inclusion: non_null
+    deserialization:
+      fail-on-unknown-properties: false
+  datasource:
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    url: jdbc:postgresql://${DB_HOST:postgres}:${DB_PORT:5432}/${DB_DATABASE:okapi_modules}
+  liquibase:
+    change-log: classpath:changelog/changelog-master.xml
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc.time_zone: UTC
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
+    security:
+      protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+    ssl:
+      key-store-password: ${KAFKA_SSL_KEYSTORE_PASSWORD:}
+      key-store-location: ${KAFKA_SSL_KEYSTORE_LOCATION:}
+      trust-store-password: ${KAFKA_SSL_TRUSTSTORE_PASSWORD:}
+      trust-store-location: ${KAFKA_SSL_TRUSTSTORE_LOCATION:}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        retries: 5
+        spring.json.add.type.headers: false
+  cloud:
+    openfeign:
+      okhttp:
+        enabled: true
+
+application:
+  security:
+    enabled: ${SECURITY_ENABLED:false}
+  kong:
+    enabled: ${KONG_INTEGRATION_ENABLED:true}
+    url: ${KONG_ADMIN_URL:${kong.url:}}
+  okapi:
+    enabled: ${OKAPI_INTEGRATION_ENABLED:false}
+    url: ${OKAPI_URL:${okapi.url:}}
+    mod-authtoken-url: ${MOD_AUTHTOKEN_URL}
+  am:
+    url: ${AM_CLIENT_URL:${am.url:}}
+  mt:
+    url: ${MT_URL:${tenant.url:}}
+  keycloak:
+    enabled: ${KC_INTEGRATION_ENABLED:false}
+    url: ${KC_URL:http://keycloak:8080}
+    login:
+      client-name-suffix: ${KC_LOGIN_CLIENT_SUFFIX:-login-application}
+    admin:
+      client_id: ${KC_ADMIN_CLIENT_ID:folio-backend-admin-client}
+      username: ${KC_ADMIN_USERNAME:}
+      password: ${KC_ADMIN_PASSWORD:}
+      grant_type: ${KC_ADMIN_GRANT_TYPE:client_credentials}
+    import:
+      enabled: ${KC_IMPORT_ENABLED:false}
+    client:
+      client_id: ${KC_CLIENT_ID:mgr-tenant-entitlements}
+  environment: ${ENV:folio}
+  kafka:
+    send-duration-timeout: ${KAFKA_SEND_DURATION_TIMEOUT:10s}
+    topics:
+      - name: entitlement
+        num-partitions: ${KAFKA_ENTITLEMENT_TOPIC_PARTITIONS:1}
+        replication-factor: ${KAFKA_ENTITLEMENT_TOPIC_REPLICATION_FACTOR:}
+    tenant-topics:
+      - name: mgr-tenant-entitlements.scheduled-job
+        num-partitions: ${KAFKA_SCHEDULED_JOB_TOPIC_PARTITIONS:1}
+        replication-factor: ${KAFKA_SCHEDULED_JOB_TOPIC_REPLICATION_FACTOR:}
+      - name: mgr-tenant-entitlements.capability
+        num-partitions: ${KAFKA_CAPABILITY_TOPIC_PARTITIONS:1}
+        replication-factor: ${KAFKA_CAPABILITY_TOPIC_REPLICATION_FACTOR:}
+      - name: mgr-tenant-entitlements.system-user
+        num-partitions: ${KAFKA_SYS_USER_TOPIC_PARTITIONS:1}
+        replication-factor: ${KAFKA_SYS_USER_TOPIC_REPLICATION_FACTOR:}
+  clients:
+    folio:
+      connect-timeout: ${FOLIO_CLIENT_CONNECT_TIMEOUT:10s}
+      read-timeout: ${FOLIO_CLIENT_READ_TIMEOUT:30s}
+  secret-store:
+    type: ${SECRET_STORE_TYPE:}
+    aws-ssm:
+      region: ${SECRET_STORE_AWS_SSM_REGION:}
+      use-iam: ${SECRET_STORE_AWS_SSM_USE_IAM:true}
+      ecs-credentials-endpoint: ${SECRET_STORE_AWS_SSM_ECS_CREDENTIALS_ENDPOINT:}
+      ecs-credentials-path: ${SECRET_STORE_AWS_SSM_ECS_CREDENTIALS_PATH:}
+    vault:
+      token: ${SECRET_STORE_VAULT_TOKEN:}
+      address: ${SECRET_STORE_VAULT_ADDRESS:}
+      enable-ssl: ${SECRET_STORE_VAULT_ENABLE_SSL:false}
+      pem-file-path: ${SECRET_STORE_VAULT_PEM_FILE_PATH:}
+      keystore-password: ${SECRET_STORE_VAULT_KEYSTORE_PASSWORD:}
+      keystore-file-path: ${SECRET_STORE_VAULT_KEYSTORE_FILE_PATH:}
+      truststore-file-path: ${SECRET_STORE_VAULT_TRUSTSTORE_FILE_PATH:}
+
+  flow-engine:
+    execution-timeout: ${FLOW_ENGINE_EXECUTION_TIMEOUT:30m}
+    last-executions-status-cache-size: ${FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE:25}
+    print-flow-result: ${FLOW_ENGINE_PRINT_FLOW_RESULTS:false}
+
+folio:
+  jpa:
+    repository:
+      base-packages: org.folio.entitlement.repository
+
+server:
+  port: 8081
+  max-http-request-header-size: ${MAX_HTTP_REQUEST_HEADER_SIZE:200KB}
+  compression:
+    enabled: true
+    mime-types: text/html,text/plain,text/css,application/javascript,application/json
+
+management:
+  endpoints.web:
+    base-path: /admin
+    exposure:
+      include: info,health,liquibase,threaddump,heapdump,httptrace,loggers
+
+feign:
+  compression:
+    request:
+      enabled: true
+    response:
+      enabled: true
+  client:
+    config:
+      okapi:
+        connectTimeout: 30000
+        readTimeout: 300000

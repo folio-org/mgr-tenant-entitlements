@@ -1,0 +1,162 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+  <changeSet id="create entitlement table" author="Pavel Filippov">
+    <createTable tableName="entitlement">
+      <column name="application_id" type="varchar(255)"/>
+      <column name="tenant_id" type="uuid"/>
+    </createTable>
+    <addPrimaryKey
+      tableName="entitlement"
+      columnNames="application_id,tenant_id"
+      constraintName="pk_entitlement"/>
+  </changeSet>
+
+  <changeSet id="create application_dependency table" author="Oleksii Kuzminov">
+    <createTable tableName="application_dependency">
+      <column name="dependent_application_id" type="varchar(255)"/>
+      <column name="application_id" type="varchar(255)"/>
+      <column name="tenant_id" type="uuid"/>
+    </createTable>
+    <addForeignKeyConstraint
+      baseTableName="application_dependency"
+      baseColumnNames="application_id,tenant_id"
+      constraintName="application_dependency_install_fk"
+      referencedTableName="entitlement"
+      referencedColumnNames="application_id,tenant_id"/>
+    <addPrimaryKey
+      tableName="application_dependency"
+      columnNames="application_id,tenant_id,dependent_application_id"
+      constraintName="application_install_dependency_pk"/>
+  </changeSet>
+
+  <changeSet id="create entitlement_flow table" author="Pavel Filippov">
+    <sql>
+      create type entitlement_flow_type as enum ('ENTITLE', 'REVOKE');
+    </sql>
+    <sql>
+      create type entitlement_flow_status_type
+      as enum ('QUEUED', 'IN_PROGRESS', 'FINISHED', 'FAILED', 'CANCELLED');
+    </sql>
+    <createTable tableName="entitlement_flow">
+      <column name="entitlement_flow_id" type="uuid"/>
+      <column name="application_id" type="varchar(255)"/>
+      <column name="tenant_id" type="uuid"/>
+      <column name="flow_id" type="uuid"/>
+      <column name="type" type="entitlement_flow_type"/>
+      <column name="status" type="entitlement_flow_status_type"/>
+      <column name="started_at" type="timestamp"/>
+      <column name="finished_at" type="timestamp"/>
+    </createTable>
+    <addPrimaryKey
+      tableName="entitlement_flow"
+      columnNames="entitlement_flow_id"
+      constraintName="pk_entitlement_flow"/>
+    <addForeignKeyConstraint
+      baseTableName="entitlement_flow"
+      baseColumnNames="application_id,tenant_id"
+      constraintName="fk_entitlement_flow_entitlement"
+      referencedTableName="entitlement"
+      referencedColumnNames="application_id,tenant_id"/>
+  </changeSet>
+
+  <changeSet id="create stage execution table" author="Pavel Filippov">
+    <sql>
+      create type entitlement_stage_status_type as enum ('IN_PROGRESS', 'FINISHED', 'CANCELLED', 'FAILED');
+    </sql>
+    <createTable tableName="entitlement_stage">
+      <column name="entitlement_flow_id" type="uuid"/>
+      <column name="stage" type="varchar(256)"/>
+      <column name="status" type="entitlement_stage_status_type"/>
+      <column name="error_message" type="text"/>
+      <column name="started_at" type="timestamp"/>
+      <column name="finished_at" type="timestamp"/>
+    </createTable>
+    <addPrimaryKey
+      tableName="entitlement_stage"
+      columnNames="entitlement_flow_id,stage"
+      constraintName="pk_entitlement_stage"/>
+    <addForeignKeyConstraint
+      baseTableName="entitlement_stage"
+      baseColumnNames="entitlement_flow_id"
+      constraintName="fk_entitlement_stage_entitlement_flow"
+      referencedTableName="entitlement_flow"
+      referencedColumnNames="entitlement_flow_id"/>
+  </changeSet>
+
+  <changeSet id="add revoked_at column" author="Pavel Filippov">
+    <addColumn tableName="entitlement">
+      <column name="revoked_at" type="timestamp"/>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="add error_type column to entitlement_stage" author="Pavel Filippov">
+    <addColumn tableName="entitlement_stage">
+      <column name="error_type" type="varchar(256)"/>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="remove foreign keys to entitlement table" author="Pavel Filippov">
+    <dropForeignKeyConstraint
+      baseTableName="entitlement_flow"
+      constraintName="fk_entitlement_flow_entitlement"/>
+    <dropForeignKeyConstraint
+      baseTableName="application_dependency"
+      constraintName="application_dependency_install_fk"/>
+  </changeSet>
+
+  <changeSet id="remove revoked_at timestamp from entitlement" author="Pavel Filippov">
+    <dropColumn tableName="entitlement" columnName="revoked_at"/>
+  </changeSet>
+
+  <changeSet id="add application name/version columns to the entitlement_flow" author="Oleksii Kuzminov">
+    <addColumn tableName="entitlement_flow">
+      <column name="application_name" type="varchar(256)"/>
+      <column name="application_version" type="varchar(256)"/>
+    </addColumn>
+
+    <createIndex indexName="entitlement_flow_application_name_idx" tableName="entitlement_flow">
+      <column name="application_name"/>
+    </createIndex>
+
+    <sql>
+      UPDATE entitlement_flow
+      SET application_name = regexp_replace(application_id, '-(\d.\d.\d).*', '')
+      WHERE 1 = 1;
+    </sql>
+
+    <sql>
+      UPDATE entitlement_flow
+      SET application_version = replace(application_id, concat(application_name, '-'), '')
+      WHERE 1 = 1;
+    </sql>
+  </changeSet>
+
+  <changeSet id="add application name/version columns to the entitlement" author="dmtkachenko">
+    <addColumn tableName="entitlement">
+      <column name="application_name" type="varchar(256)"/>
+      <column name="application_version" type="varchar(256)"/>
+    </addColumn>
+
+    <createIndex indexName="entitlement_tenant_id_application_name_idx" tableName="entitlement">
+      <column name="tenant_id"/>
+      <column name="application_name"/>
+    </createIndex>
+
+    <sql>
+      UPDATE entitlement
+      SET application_name = regexp_replace(application_id, '-(\d.\d.\d).*', '')
+      WHERE 1 = 1;
+    </sql>
+
+    <sql>
+      UPDATE entitlement
+      SET application_version = replace(application_id, concat(application_name, '-'), '')
+      WHERE 1 = 1;
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>

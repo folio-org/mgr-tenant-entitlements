@@ -1,0 +1,56 @@
+{
+  "realm": "test",
+  "enabled": true,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": true,
+  "resetPasswordAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "id": "36f2f4d6-23b9-424a-8e82-393f9f0795b9",
+        "name": "System",
+        "description": "System role for module-to-module communication",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "bc6c2684-cc3b-41a2-805c-d828f6d0c2ba",
+        "attributes": { }
+      }
+    ],
+    "client": {
+      "test-login-application": [
+        {
+          "id": "1082587c-366c-4fbd-8fe3-afd9e6cd40ec",
+          "name": "uma_protection",
+          "composite": false,
+          "clientRole": true,
+          "containerId": "c7c57558-4b11-4bb5-b920-af34bbcec3a5",
+          "attributes": { }
+        }
+      ]
+    }
+  },
+  "clients": [
+    {
+      "clientId": "test-login-application",
+      "name": "test-application",
+      "description": "Client for login operations",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "test-login-application-secret",
+      "redirectUris": [ "/*" ],
+      "webOrigins": [ "/*" ],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "authorizationSettings": {
+        "allowRemoteResourceManagement": true,
+        "policyEnforcementMode": "ENFORCING",
+        "decisionStrategy": "AFFIRMATIVE"
+      }
+    }
+  ]
+}

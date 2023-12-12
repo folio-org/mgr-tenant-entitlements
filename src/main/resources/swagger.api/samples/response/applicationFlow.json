@@ -1,0 +1,10 @@
+{
+  "id": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+  "applicationId": "application-foo-1.0.0",
+  "tenantId": "6ad28dae-7c02-4f89-9320-153c55bf1914",
+  "flowId": "06542b5a-7c37-46c9-a350-8d980f88e4ba",
+  "type": "entitle",
+  "status": "finished",
+  "startedAt": "2023-01-28T11:27:36.951+00:00",
+  "finishedAt": "2023-01-28T11:29:02.492+00:00"
+}

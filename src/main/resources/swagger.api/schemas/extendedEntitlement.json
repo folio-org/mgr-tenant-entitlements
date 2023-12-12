@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "installation.json",
+  "title": "Tenant Entitlement Schema",
+  "description": "Tenant entitlement descriptor",
+  "type": "object",
+  "properties": {
+    "applicationId": {
+      "description": "A Name-Version id of application",
+      "type": "string"
+    },
+    "tenantId": {
+      "description": "A tenant identifier",
+      "type": "string",
+      "format": "uuid"
+    },
+    "flowId": {
+      "description": "An application flow identifier",
+      "type": "string",
+      "format": "uuid"
+    }
+  }
+}

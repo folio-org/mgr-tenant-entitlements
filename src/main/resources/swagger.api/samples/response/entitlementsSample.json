@@ -1,0 +1,13 @@
+{
+  "totalRecords": 2,
+  "entitlements": [
+    {
+      "tenantId": "6ad28dae-7c02-4f89-9320-153c55bf1914",
+      "applicationId": "application-foo-1.0.0"
+    },
+    {
+      "tenantId": "6ad28dae-7c02-4f89-9320-153c55bf1914",
+      "applicationId": "application-bar-0.2.1"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "foo-module-1.0.0",
+    "moduleType": "module",
+    "applicationId": "test-app-1.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "foo.item.unknown",
+          "displayName": "foo.item.unknown display name",
+          "description": "foo.item.unknown description"
+        }
+      }
+    ]
+  }
+}

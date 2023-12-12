@@ -1,0 +1,44 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/_/proxy/tenants/another/install",
+    "queryParameters": {
+      "reinstall": {
+        "equalTo": "false"
+      },
+      "purge": {
+        "equalTo": "true"
+      }
+    },
+    "headers": {
+      "X-Okapi-Token": {
+        "equalTo": "X-Okapi-Token test value"
+      },
+      "Content-Type": {
+        "equalTo": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": [
+          {
+            "id": "okapi-module4-4.0.0",
+            "action": "disable"
+          }
+        ]
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": [
+      {
+        "id": "okapi-module4-4.0.0",
+        "action": "disable"
+      }
+    ]
+  }
+}

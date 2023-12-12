@@ -1,0 +1,19 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "okapi-module5-5.0.0",
+    "moduleType": "module",
+    "applicationId": "okapi-app5-5.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "test.bar.item.get",
+          "displayName": "Test - get bar",
+          "description": "okapi-module5.entities.item.get"
+        }
+      }
+    ]
+  }
+}

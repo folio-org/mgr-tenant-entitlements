@@ -1,0 +1,39 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/applications?query=id%3D%3D%28%22routes-app-1.0.0%22%29&full=false",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "routes-app-1.0.0",
+          "name": "routes-app",
+          "version": "1.0.0",
+          "modules": [
+            {
+              "id": "routes-module1-1.0.0",
+              "name": "routes-module1",
+              "version": "1.0.0"
+            },
+            {
+              "id": "routes-module2-2.0.0",
+              "name": "routes-module2",
+              "version": "2.0.0"
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

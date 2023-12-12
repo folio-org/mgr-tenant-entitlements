@@ -1,0 +1,22 @@
+{
+  "request": {
+    "method": "ANY",
+    "urlPattern": "/.+",
+    "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "{{request.headers.content-type}}"
+    },
+    "jsonBody": {
+      "method": "{{request.method}}",
+      "url": "{{request.url}}"
+    },
+    "transformers": [ "response-template" ]
+  }
+}

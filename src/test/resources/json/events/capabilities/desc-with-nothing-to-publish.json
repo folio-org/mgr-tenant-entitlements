@@ -1,0 +1,31 @@
+{
+  "id": "test-app-1.0.0",
+  "name": "test-app",
+  "version": "1.0.0",
+  "moduleDescriptors": [
+    {
+      "id": "foo-module",
+      "name": "Foo Service",
+      "provides": [
+        {
+          "id": "_timer",
+          "version": "0.1",
+          "handlers": [
+            {
+              "methods": [ "GET" ],
+              "pathPattern": "/foo/{id}"
+            }
+          ]
+        }
+      ],
+      "permissionSets": [ ]
+    }
+  ],
+  "uiModuleDescriptors": [
+    {
+      "id": "ui-foo-module-1.0",
+      "name": "UI Foo Service",
+      "permissionSets": [ ]
+    }
+  ]
+}

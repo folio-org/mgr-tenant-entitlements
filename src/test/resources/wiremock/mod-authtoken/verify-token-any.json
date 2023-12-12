@@ -1,0 +1,20 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPathPattern": ".*",
+    "headers": {
+      "X-Okapi-Token": {
+        "equalTo": "X-Okapi-Token test value"
+      },
+      "X-Okapi-Tenant": {
+        "equalTo": "supertenant"
+      },
+      "X-Okapi-Url": {
+        "matches": ".*"
+      }
+    }
+  },
+  "response": {
+    "status": 202
+  }
+}

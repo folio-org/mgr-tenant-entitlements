@@ -1,0 +1,23 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "test-module-foo-1.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "test.foo.item.get",
+          "displayName": "Test - get foo",
+          "description": "get foo"
+        },
+        "endpoints": [
+          {
+            "path": "/foo/entities",
+            "method": "GET"
+          }
+        ]
+      }
+    ]
+  }
+}

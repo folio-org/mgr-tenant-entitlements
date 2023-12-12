@@ -1,0 +1,25 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/tenants/6ad28dae-7c02-4f89-9320-153c55bf1914",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      },
+      "x-okapi-token": {
+        "equalTo": "X-Okapi-Token test value"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "6ad28dae-7c02-4f89-9320-153c55bf1914",
+      "name": "test",
+      "description": "Test Library Technology Institute"
+    }
+  }
+}

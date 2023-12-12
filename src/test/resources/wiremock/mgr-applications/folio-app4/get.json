@@ -1,0 +1,55 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/applications/folio-app4-4.0.0?full=true",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "folio-app4-4.0.0",
+      "name": "folio-app4",
+      "version": "4.0.0",
+      "modules": [
+        {
+          "id": "folio-module4-4.0.0",
+          "name": "folio-module4",
+          "version": "4.0.0"
+        }
+      ],
+      "moduleDescriptors": [
+        {
+          "id": "folio-module4-4.0.0",
+          "name": "Test Folio Module #4",
+          "provides": [
+            {
+              "id": "folio-module4-api",
+              "version": "1.0.0",
+              "handlers": [
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/folio-module4/events",
+                  "permissionsRequired": [ "folio-module4.events.collection.get" ]
+                }
+              ]
+            }
+          ],
+          "permissionSets": [
+            {
+              "permissionName": "folio-module4.events.item.get",
+              "displayName": "Folio Module #4 - Get event by id",
+              "description": "Get folio-module4 event by id"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

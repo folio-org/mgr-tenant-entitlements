@@ -1,0 +1,13 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "System user",
+  "new": {
+    "name": "okapi-module",
+    "type": "module",
+    "permissions": [
+      "okapi-module.foo.item.get",
+      "okapi-module.foo.item.put"
+    ]
+  }
+}

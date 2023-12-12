@@ -1,0 +1,98 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/applications/okapi-app-1.0.0?full=true",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "okapi-app-1.0.0",
+      "name": "okapi-app",
+      "version": "1.0.0",
+      "modules": [
+        {
+          "id": "okapi-module-1.0.0",
+          "name": "okapi-module",
+          "version": "1.0.0"
+        }
+      ],
+      "moduleDescriptors": [
+        {
+          "id": "okapi-module-1.0.0",
+          "name": "Test Okapi Module #1",
+          "provides": [
+            {
+              "id": "okapi-module-api",
+              "version": "0.1.0",
+              "handlers": [
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/okapi-module/entities",
+                  "permissionsRequired": [ "okapi-module.foo.item.get" ]
+                },
+                {
+                  "methods": [ "PUT" ],
+                  "pathPattern": "/okapi-module/entities/{id}",
+                  "permissionsRequired": [ "okapi-module.foo.item.put" ]
+                }
+              ]
+            },
+            {
+              "id": "_tenant",
+              "version": "2.0",
+              "interfaceType": "system",
+              "handlers": [
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/_/tenant"
+                },
+                {
+                  "methods": [ "GET", "DELETE" ],
+                  "pathPattern": "/_/tenant/{id}"
+                }
+              ]
+            },
+            {
+              "id": "_timer",
+              "version": "1.0",
+              "interfaceType": "system",
+              "handlers": [
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/okapi_module/timer-api"
+                }
+              ]
+            }
+          ],
+          "permissionSets": [
+            {
+              "permissionName": "okapi-module.foo.item.get",
+              "displayName": "Test Okapi Module #1 - Get entities by query",
+              "description": "Get okapi-module entities by query"
+            },
+            {
+              "permissionName": "okapi-module.foo.item.put",
+              "displayName": "Test Okapi Module #1 - Update entity by id",
+              "description": "Update okapi-module entity by id"
+            }
+          ],
+          "user": {
+            "type": "module",
+            "permissions": [
+              "okapi-module.foo.item.get",
+              "okapi-module.foo.item.put"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

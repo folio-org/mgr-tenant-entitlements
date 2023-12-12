@@ -1,0 +1,30 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/mod-folio-baz/_/tenant",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      },
+      "x-okapi-tenant": {
+        "equalTo": "test"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": {
+          "module_to": "mod-folio-baz-1.0.0",
+          "parameters": [
+            {
+              "key": "loadReference",
+              "value": "true"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "response": {
+    "fault": "EMPTY_RESPONSE"
+  }
+}

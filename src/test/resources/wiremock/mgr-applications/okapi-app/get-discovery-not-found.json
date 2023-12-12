@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications/okapi-app-1.0.0/discovery",
+    "queryParameters": {
+      "limit": {
+        "equalTo": "100"
+      }
+    },
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 404
+  }
+}

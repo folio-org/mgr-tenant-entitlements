@@ -1,0 +1,47 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+  <changeSet id="replace-dependency-id-with-parent-name-version" author="dmtkachenko">
+    <addColumn tableName="application_dependency">
+      <column name="parent_name" type="varchar(256)"/>
+      <column name="parent_version" type="varchar(256)"/>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="drop-primary-key-application_dependency" author="dmtkachenko">
+    <dropPrimaryKey tableName="application_dependency" constraintName="application_install_dependency_pk"/>
+  </changeSet>
+
+  <changeSet id="create-index-application-dependency-tenant-parent-name" author="dmtkachenko">
+    <createIndex indexName="idx_app_dependency_tenantid_parentname" tableName="application_dependency">
+      <column name="tenant_id"/>
+      <column name="parent_name"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="populate-parent-name-version-from-dependency-id" author="dmtkachenko">
+    <sql>
+      UPDATE application_dependency
+      SET parent_name = regexp_replace(dependent_application_id, '-(\d.\d.\d).*', '');
+    </sql>
+
+    <sql>
+      UPDATE application_dependency
+      SET parent_version = replace(dependent_application_id, concat(parent_name, '-'), '');
+    </sql>
+  </changeSet>
+
+  <changeSet id="drop-dependent-application-id-column" author="dmtkachenko">
+    <dropColumn tableName="application_dependency" columnName="dependent_application_id"/>
+  </changeSet>
+
+  <changeSet id="add-primary-key-application_dependency" author="dmtkachenko">
+    <addPrimaryKey tableName="application_dependency"
+      columnNames="application_id,tenant_id,parent_name,parent_version"
+      constraintName="pk_application_dependency"/>
+  </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,46 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"okapi-app2-2.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "okapi-app2-2.0.0",
+          "name": "okapi-app2",
+          "version": "2.0.0",
+          "modules": [
+            {
+              "id": "okapi-module2-1.0.0",
+              "name": "okapi-module2",
+              "version": "1.0.0"
+            }
+          ],
+          "dependencies": [
+            {
+              "id": "okapi-app3-3.0.0",
+              "name": "okapi-app3",
+              "version": "3.0.0"
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

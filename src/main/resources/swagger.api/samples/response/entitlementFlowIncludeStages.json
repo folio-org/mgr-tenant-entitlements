@@ -1,0 +1,84 @@
+{
+  "id": "06542b5a-7c37-46c9-a350-8d980f88e4ba",
+  "status": "finished",
+  "entitlementType": "entitle",
+  "startedAt": "2023-01-28T11:27:36.951+00:00",
+  "finishedAt": "2023-01-28T11:38:04.954+00:00",
+  "applicationFlows": [
+    {
+      "id": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+      "applicationId": "application-foo-1.0.0",
+      "tenantId": "6ad28dae-7c02-4f89-9320-153c55bf1914",
+      "flowId": "06542b5a-7c37-46c9-a350-8d980f88e4ba",
+      "type": "entitle",
+      "status": "finished",
+      "startedAt": "2023-01-28T11:27:36.951+00:00",
+      "finishedAt": "2023-01-28T11:29:02.492+00:00",
+      "stages": [
+        {
+          "applicationFlowId": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+          "name": "EntitlementFlowInitializer",
+          "status": "finished",
+          "startedAt": "2023-01-28T11:27:36.947+00:00",
+          "finishedAt": "2023-01-28T11:27:36.955+00:00"
+        },
+        {
+          "applicationFlowId": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+          "name": "TenantLoader",
+          "status": "finished",
+          "startedAt": "2023-01-28T11:27:36.958+00:00",
+          "finishedAt": "2023-01-28T11:27:36.985+00:00"
+        },
+        {
+          "applicationFlowId": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+          "name": "ApplicationDescriptorLoader",
+          "status": "finished",
+          "startedAt": "2023-01-28T11:27:36.988+00:00",
+          "finishedAt": "2023-01-28T11:27:37.101+00:00"
+        },
+        {
+          "applicationFlowId": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+          "name": "ApplicationDependencyValidator",
+          "status": "finished",
+          "startedAt": "2023-01-28T11:27:37.104+00:00",
+          "finishedAt": "2023-01-28T11:27:37.109+00:00"
+        },
+        {
+          "applicationFlowId": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+          "name": "ApplicationDiscoveryLoader",
+          "status": "finished",
+          "startedAt": "2023-01-28T11:27:37.112+00:00",
+          "finishedAt": "2023-01-28T11:27:37.206+00:00"
+        },
+        {
+          "applicationFlowId": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+          "name": "KongGatewayRouteRegistrar",
+          "status": "finished",
+          "startedAt": "2023-01-28T11:27:37.210+00:00",
+          "finishedAt": "2023-01-28T11:27:42.735+00:00"
+        },
+        {
+          "applicationFlowId": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+          "name": "OkapiModuleInstaller",
+          "status": "finished",
+          "startedAt": "2023-01-28T11:27:37.210+00:00",
+          "finishedAt": "2023-01-28T11:28:59.146+00:00"
+        },
+        {
+          "applicationFlowId": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+          "name": "EntitlementEventPublisher",
+          "status": "finished",
+          "startedAt": "2023-01-28T11:28:59.152+00:00",
+          "finishedAt": "2023-01-28T11:29:02.477+00:00"
+        },
+        {
+          "applicationFlowId": "2c4ffa97-7d3c-4a7c-9ab0-96d1ad99b2f9",
+          "name": "EntitlementFlowFinalizer",
+          "status": "finished",
+          "startedAt": "2023-01-28T11:29:02.482+00:00",
+          "finishedAt": "2023-01-28T11:29:02.496+00:00"
+        }
+      ]
+    }
+  ]
+}

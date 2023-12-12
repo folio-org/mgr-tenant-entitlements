@@ -1,0 +1,36 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/applications/validate-dependencies",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": {
+          "applicationIds": [
+            "folio-app1-1.0.0"
+          ]
+        }
+      }
+    ]
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "errors": [
+        {
+          "message": "Missing dependencies found for the following applications: [application = folio-app3-3.0.0, missing interface(s) = folio-module1-api 1.0]",
+          "type": "RequestValidationException",
+          "code": "validation_error"
+        }
+      ],
+      "total_records": 1
+    }
+  }
+}

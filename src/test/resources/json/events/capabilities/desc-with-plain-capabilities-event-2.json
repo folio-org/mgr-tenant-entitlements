@@ -1,0 +1,19 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "ui-foo-module-1.0.0",
+    "moduleType": "ui-module",
+    "applicationId": "test-app-1.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "ui-foo.item.create",
+          "displayName": "ui-foo.item.create display name",
+          "description": "ui-foo.item.create description"
+        }
+      }
+    ]
+  }
+}

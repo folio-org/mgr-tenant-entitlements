@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications/okapi-app3-3.0.0/discovery",
+    "queryParameters": {
+      "limit": {
+        "equalTo": "100"
+      }
+    },
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "discovery": [
+        {
+          "id": "okapi-module3-1.0.0",
+          "name": "okapi-module3",
+          "version": "1.0.0",
+          "location": "http://okapi-module3:8080"
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

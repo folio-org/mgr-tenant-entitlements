@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    username: te_admin
+    password: folio123
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/te_it
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+      group-id: testing
+
+application:
+  kong:
+    enabled: true
+  okapi:
+    enabled: true
+  environment: it
+  keycloak:
+    enabled: false
+    admin:
+      client-id: ${KC_ADMIN_CLIENT_ID}
+  secret-store:
+    type: EPHEMERAL
+    ephemeral:
+      content:
+        folio_master_mgr-component-app: secret
+        folio_master_folio-backend-admin-client: ${KC_ADMIN_CLIENT_SECRET}
+        folio_master_mgr-tenant-entitlements: supersecret
+
+logging:
+  level:
+    org.springframework.web: debug
+    org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener: debug

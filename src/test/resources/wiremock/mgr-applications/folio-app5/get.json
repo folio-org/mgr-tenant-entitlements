@@ -1,0 +1,160 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/applications/folio-app5-5.0.0?full=true",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "folio-app5-5.0.0",
+      "name": "folio-app5",
+      "version": "5.0.0",
+      "modules": [
+        {
+          "id": "folio-module1-1.0.0",
+          "name": "folio-module1",
+          "version": "1.0.0"
+        },
+        {
+          "id": "folio-module2-2.0.0",
+          "name": "folio-module2",
+          "version": "2.0.0"
+        }
+      ],
+      "moduleDescriptors": [
+        {
+          "id": "folio-module1-1.0.0",
+          "name": "Test Folio Module #1",
+          "provides": [
+            {
+              "id": "folio-module1-api",
+              "version": "1.0.0",
+              "handlers": [
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/folio-module1/events",
+                  "permissionsRequired": [ "folio-module1.events.item.post" ]
+                },
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/folio-module1/events",
+                  "permissionsRequired": [ "folio-module1.events.collection.get" ]
+                },
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/folio-module1/events/{id}",
+                  "permissionsRequired": [ "folio-module1.events.item.get" ]
+                }
+              ]
+            },
+            {
+              "id": "_tenant",
+              "version": "2.0",
+              "interfaceType": "system",
+              "handlers": [
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/_/tenant"
+                },
+                {
+                  "methods": [ "GET", "DELETE" ],
+                  "pathPattern": "/_/tenant/{id}"
+                }
+              ]
+            }
+          ],
+          "permissionSets": [
+            {
+              "permissionName": "folio-module1.events.item.post",
+              "displayName": "Folio Module #1 - Save an event",
+              "description": "Save folio-module1 event"
+            },
+            {
+              "permissionName": "folio-module1.events.collection.get",
+              "displayName": "Folio Module #1 - Get list of events by query",
+              "description": "Get list of folio-module1 events by query"
+            },
+            {
+              "permissionName": "folio-module1.events.item.get",
+              "displayName": "Folio Module #1 - Get event by id",
+              "description": "Get folio-module1 event by id"
+            }
+          ]
+        },
+        {
+          "id": "folio-module2-2.0.0",
+          "name": "Test Folio Module #2",
+          "requires": [
+            {
+              "id": "folio-module1-api",
+              "version": "1.0.0"
+            }
+          ],
+          "provides": [
+            {
+              "id": "folio-module2-api",
+              "version": "1.0.0",
+              "handlers": [
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/folio-module2/events",
+                  "permissionsRequired": [ "folio-module2.events.item.post" ]
+                },
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/folio-module2/events",
+                  "permissionsRequired": [ "folio-module2.events.collection.get" ]
+                },
+                {
+                  "methods": [ "GET" ],
+                  "pathPattern": "/folio-module2/events/{id}",
+                  "permissionsRequired": [ "folio-module2.events.item.get" ]
+                }
+              ]
+            },
+            {
+              "id": "_tenant",
+              "version": "2.0",
+              "interfaceType": "system",
+              "handlers": [
+                {
+                  "methods": [ "POST" ],
+                  "pathPattern": "/_/tenant"
+                },
+                {
+                  "methods": [ "GET", "DELETE" ],
+                  "pathPattern": "/_/tenant/{id}"
+                }
+              ]
+            }
+          ],
+          "permissionSets": [
+            {
+              "permissionName": "okapi-module2.events.item.post",
+              "displayName": "Test Okapi Module #2 - Save an event",
+              "description": "Save an okapi-module2 event"
+            },
+            {
+              "permissionName": "okapi-module2.events.collection.get",
+              "displayName": "Test Okapi Module #2 - Get list of events by query",
+              "description": "Get list of okapi-module2 events by query"
+            },
+            {
+              "permissionName": "okapi-module2.events.item.get",
+              "displayName": "Test Okapi Module #2 - Get event by id",
+              "description": "Get an okapi-module2 event by id"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

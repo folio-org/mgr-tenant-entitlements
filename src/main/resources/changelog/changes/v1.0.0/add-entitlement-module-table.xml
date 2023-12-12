@@ -1,0 +1,18 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+  <changeSet id="create entitlement_module table" author="ooliinyk">
+    <createTable tableName="entitlement_module">
+      <column name="module_id" type="varchar(255)"/>
+      <column name="tenant_id" type="uuid"/>
+      <column name="application_id" type="varchar(255)"/>
+    </createTable>
+    <addPrimaryKey
+      tableName="entitlement_module"
+      columnNames="module_id,tenant_id,application_id"
+      constraintName="pk_entitlement_module"/>
+  </changeSet>
+</databaseChangeLog>

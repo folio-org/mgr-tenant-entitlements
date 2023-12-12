@@ -1,0 +1,573 @@
+openapi: 3.0.0
+
+info:
+  title: mgr-tenant-entitlements API
+  version: v1
+  description: Tenant Entitlement Manager API
+
+servers:
+  - url: http://localhost:8081
+    description: Locally deployed server
+
+paths:
+  /entitlements:
+    post:
+      operationId: create
+      description: |
+        Installs/enables application for tenant.
+        Basic authorization is required to perform request (e.g. Authorization=Basic dXNlcjp1c2Vy).
+      tags:
+        - entitlement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/entitlementRequestBody'
+            example:
+              $ref: '#/components/examples/entitlementRequest'
+      parameters:
+        - $ref: '#/components/parameters/x-okapi-token'
+        - $ref: '#/components/parameters/tenantParameters'
+        - $ref: '#/components/parameters/ignoreErrors'
+        - $ref: '#/components/parameters/async'
+      responses:
+        '201':
+          description: 'A list with successfully created tenant entitlements'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/extendedEntitlements'
+              example:
+                $ref: '#/components/examples/extendedEntitlementsResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+    get:
+      operationId: findByQuery
+      description: |
+        Retrieves all the entitlement using query tools (CQL query, limit and offset parameters).
+        Basic authorization is required to perform request (e.g. Authorization=Basic dXNlcjp1c2Vy).
+      tags:
+        - entitlement
+      parameters:
+        - $ref: '#/components/parameters/cql-query'
+        - $ref: '#/components/parameters/query-includeModules'
+        - $ref: '#/components/parameters/query-limit'
+        - $ref: '#/components/parameters/query-offset'
+      responses:
+        '200':
+          description: "A list with created tenant entitlements"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/entitlements'
+              example:
+                $ref: '#/components/examples/entitlementsResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+    delete:
+      operationId: delete
+      description: |
+        Delete application installation by id, when making request add basic authorization
+        for an admin user (e.g. Basic YWRtaW46YWRtaW4=).
+      tags:
+        - entitlement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/entitlementRequestBody'
+            example:
+              $ref: '#/components/examples/entitlementRequest'
+      parameters:
+        - $ref: '#/components/parameters/x-okapi-token'
+        - $ref: '#/components/parameters/tenantParameters'
+        - $ref: '#/components/parameters/ignoreErrors'
+        - $ref: '#/components/parameters/purge'
+      responses:
+        '200':
+          description: 'List with removed tenant entitlements'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/extendedEntitlements'
+              example:
+                $ref: '#/components/examples/extendedEntitlementsResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
+  /entitlements/{tenantId}:
+    get:
+      operationId: findEntitlementsByTenantId
+      description: List of tenant entitlements
+      tags:
+        - entitlement
+      parameters:
+        - $ref: '#/components/parameters/path-tenant-id'
+        - $ref: '#/components/parameters/query-includeModules'
+        - $ref: '#/components/parameters/query-limit'
+        - $ref: '#/components/parameters/query-offset'
+      responses:
+        '200':
+          description: "A list with created tenant entitlements"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/entitlements'
+              example:
+                $ref: '#/components/examples/entitlementsResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
+  /entitlements/{tenantName}/applications:
+    get:
+      operationId: findEntitledApplicationsByTenantName
+      description: List of application descriptors entitled for the tenant
+      tags:
+        - entitlement-application
+      parameters:
+        - $ref: '#/components/parameters/x-okapi-token'
+        - $ref: '#/components/parameters/x-okapi-tenant'
+        - $ref: '#/components/parameters/path-tenant-name'
+        - $ref: '#/components/parameters/query-limit'
+        - $ref: '#/components/parameters/query-offset'
+      responses:
+        '200':
+          description: "A list of application descriptors entitled for the tenant"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/applicationDescriptors'
+              example:
+                $ref: '#/components/examples/applicationDescriptorsResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+  /entitlements/modules/{moduleId}:
+    get:
+      operationId: getModuleEntitlements
+      description: Retrieve a list of module entitlements
+      tags:
+        - entitlement-module
+      parameters:
+        - $ref: '#/components/parameters/path-module-id'
+        - $ref: '#/components/parameters/query-limit'
+        - $ref: '#/components/parameters/query-offset'
+      responses:
+        '200':
+          description: "A list with created tenant entitlements"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/entitlements'
+              example:
+                $ref: '#/components/examples/entitlementsResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+  /entitlements/validate:
+    post:
+      operationId: validate
+      description: |
+        Validates an entitlement request against a set of pre-configured validators
+        that are also applied during the entitlement process or a single validator specified as a parameter.
+      tags:
+        - entitlement-validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/entitlementRequestBody'
+            example:
+              $ref: '#/components/examples/entitlementRequest'
+      parameters:
+        - $ref: '#/components/parameters/entitlementType'
+        - $ref: '#/components/parameters/entitlementValidator'
+        - $ref: '#/components/parameters/x-okapi-token'
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
+  /entitlement-flows/{flowId}:
+    get:
+      operationId: getEntitlementFlowById
+      description: Retrieves a flow by id
+      tags:
+        - entitlement-flow
+      parameters:
+        - $ref: '#/components/parameters/path-flow-id'
+        - $ref: '#/components/parameters/include-stages'
+      responses:
+        '200':
+          description: "A list with created tenant entitlements"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/entitlementFlow'
+              examples:
+                "Entitlement Flow":
+                  value:
+                    $ref: '#/components/examples/entitlementFlowResponse'
+                "Entitlement Flow (includeStages=true)":
+                  value:
+                    $ref: '#/components/examples/entitlementFlowIncludeStagesResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
+  /application-flows:
+    get:
+      operationId: findApplicationFlows
+      description: Retrieves an application entitlement flows by CQL query
+      tags:
+        - entitlement-flow
+      parameters:
+        - $ref: '#/components/parameters/cql-query'
+        - $ref: '#/components/parameters/query-limit'
+        - $ref: '#/components/parameters/query-offset'
+      responses:
+        '200':
+          description: "A list with found application entitlement flows"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/applicationFlows'
+              example:
+                $ref: '#/components/examples/applicationFlowsResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
+  /application-flows/{applicationFlowId}:
+    get:
+      operationId: getApplicationFlowById
+      description: Retrieves an entitlement flow per applicationId
+      tags:
+        - entitlement-flow
+      parameters:
+        - $ref: '#/components/parameters/path-application-flow-id'
+        - $ref: '#/components/parameters/include-stages'
+      responses:
+        '200':
+          description: "An application entitlement flow by id"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/applicationFlow'
+              examples:
+                "Application Flow":
+                  value:
+                    $ref: '#/components/examples/applicationFlowResponse'
+                "Application Flow (includeStages=true)":
+                  value:
+                    $ref: '#/components/examples/applicationFlowIncludeStagesResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
+  /application-flows/{applicationFlowId}/stages:
+    get:
+      operationId: findEntitlementStages
+      description: Retrieves entitlement stages by application id
+      tags:
+        - entitlement-flow
+      parameters:
+        - $ref: '#/components/parameters/path-application-flow-id'
+      responses:
+        '200':
+          description: "A list of entitlement stages for application flow"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/entitlementStages'
+              example:
+                $ref: '#/components/examples/entitlementStagesResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
+  /application-flows/{applicationFlowId}/stages/{stageName}:
+    get:
+      operationId: getEntitlementStageByName
+      description: Retrieves entitlement stages by application id
+      tags:
+        - entitlement-flow
+      parameters:
+        - $ref: '#/components/parameters/path-application-flow-id'
+        - $ref: '#/components/parameters/path-stage-name'
+      responses:
+        '200':
+          description: "A specific result of stage for application flow by name"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/entitlementStage'
+              example:
+                $ref: '#/components/examples/entitlementStageResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
+components:
+  schemas:
+    entitlementRequestBody:
+      $ref: schemas/entitlementRequestBody.json
+    entitlements:
+      $ref: schemas/entitlements.json
+    applicationDescriptors:
+      $ref: schemas/applicationDescriptors.json
+    applicationDescriptor:
+      $ref: schemas/applicationDescriptor.json
+    extendedEntitlements:
+      $ref: schemas/extendedEntitlements.json
+    entitlementStage:
+      $ref: schemas/entitlementStage.json
+    entitlementStages:
+      $ref: schemas/entitlementStages.json
+    entitlementFlow:
+      $ref: schemas/entitlementFlow.json
+    applicationFlow:
+      $ref: schemas/applicationFlow.json
+    applicationFlows:
+      $ref: schemas/applicationFlows.json
+    errorResponse:
+      $ref: schemas/common/errors.json
+    entitlementType:
+      $ref: schemas/types/entitlementType.json
+
+  responses:
+    badRequestResponse:
+      description: Error response if request body contains validation error (in json format)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            $ref: '#/components/examples/badRequestResponse'
+    internalServerErrorResponse:
+      description: Error response for unhandled or critical server exceptions, e.g. NullPointerException.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+          example:
+            $ref: '#/components/examples/internalServerErrorResponse'
+
+  parameters:
+    path-entity-id:
+      in: path
+      required: true
+      name: id
+      description: Entity/document id
+      schema:
+        type: string
+    path-tenant-id:
+      in: path
+      required: true
+      name: tenantId
+      description: Tenant id
+      schema:
+        type: string
+    path-module-id:
+      in: path
+      required: true
+      name: moduleId
+      description: Module id
+      schema:
+        type: string
+    path-tenant-name:
+      in: path
+      required: true
+      name: tenantName
+      description: Tenant name
+      schema:
+        type: string
+    path-application-flow-id:
+      in: path
+      required: true
+      name: applicationFlowId
+      description: An application flow identifier
+      schema:
+        type: string
+        format: uuid
+    path-flow-id:
+      in: path
+      required: true
+      name: flowId
+      description: A flow identifier
+      schema:
+        type: string
+        format: uuid
+    path-stage-name:
+      in: path
+      required: true
+      name: stageName
+      description: An application stage name
+      schema:
+        type: string
+    query-limit:
+      in: query
+      required: false
+      name: limit
+      description: Limit the number of elements returned in the response.
+      schema:
+        type: integer
+        minimum: 0
+        maximum: 500
+        default: 10
+    query-offset:
+      in: query
+      required: false
+      name: offset
+      description: Skip over a number of elements by specifying an offset value for the query.
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    query-includeModules:
+      in: query
+      required: false
+      name: includeModules
+      description: Indicates if list of modules should be loaded for each entitlement.
+      schema:
+        type: boolean
+        default: false
+    cql-query:
+      name: query
+      in: query
+      description: A CQL query string with search conditions.
+      schema:
+        type: string
+        default: cql.allRecords=1
+    x-okapi-token:
+      name: x-okapi-token
+      in: header
+      required: false
+      description: An OKAPI authentication token
+      schema:
+        type: string
+    x-okapi-tenant:
+      name: x-okapi-tenant
+      in: header
+      required: true
+      description: An OKAPI tenant
+      schema:
+        type: string
+    tenantParameters:
+      name: tenantParameters
+      in: query
+      description: Parameters for tenant init
+      required: false
+      schema:
+        type: string
+    purge:
+      name: purge
+      in: query
+      description: Disabled modules will also be purged.
+      required: false
+      schema:
+        type: boolean
+        default: false
+    ignoreErrors:
+      name: ignoreErrors
+      in: query
+      description: |
+        Okapi 4.2.0 and later, it is possible to ignore errors during the
+        install operation. This is done by supplying parameter `ignoreErrors=true`.
+        In this case, Okapi will try to upgrade all modules in the modules list,
+        regardless if one of them fails. However, for individual modules, if they
+        fail, their upgrade will not be committed. This is an experimental parameter
+        which was added to be able to inspect all problem(s) with module upgrade(s).
+      required: false
+      schema:
+        type: boolean
+        default: false
+    full:
+      name: full
+      in: query
+      required: false
+      description: Show full information in the response including ModuleDescriptors
+      schema:
+        type: boolean
+        default: false
+    async:
+      name: async
+      in: query
+      required: false
+      description: Enables asynchronous install operation
+      schema:
+        type: boolean
+        default: false
+    include-stages:
+      name: includeStages
+      in: query
+      required: false
+      description: Defines if stages must be included in the response for entitlement/application flows
+      schema:
+        type: boolean
+        default: false
+    entitlementType:
+      name: entitlementType
+      in: query
+      required: true
+      description: Entitlement type
+      schema:
+        $ref: '#/components/schemas/entitlementType'
+    entitlementValidator:
+      name: validator
+      in: query
+      required: false
+      description: |
+        Name of entitlement validator to be applied.
+        All existing validators will be applied if none specified
+      schema:
+        type: string
+
+  examples:
+    entitlementRequest:
+      $ref: samples/request/entitlementSample.json
+    entitlementsResponse:
+      $ref: samples/response/entitlementsSample.json
+    extendedEntitlementsResponse:
+      $ref: samples/response/extendedEntitlementsSample.json
+    badRequestResponse:
+      $ref: samples/response/badRequestSample.json
+    entitlementFlowResponse:
+      $ref: samples/response/entitlementFlow.json
+    applicationDescriptorsResponse:
+      $ref: samples/response/applicationDescriptors.json
+    entitlementFlowIncludeStagesResponse:
+      $ref: samples/response/entitlementFlowIncludeStages.json
+    applicationFlowResponse:
+      $ref: samples/response/applicationFlow.json
+    applicationFlowsResponse:
+      $ref: samples/response/applicationFlows.json
+    applicationFlowIncludeStagesResponse:
+      $ref: samples/response/applicationFlowIncludeStages.json
+    entitlementStagesResponse:
+      $ref: samples/response/entitlementStages.json
+    entitlementStageResponse:
+      $ref: samples/response/entitlementStage.json
+    internalServerErrorResponse:
+      $ref: samples/response/internalServerErrorSample.json

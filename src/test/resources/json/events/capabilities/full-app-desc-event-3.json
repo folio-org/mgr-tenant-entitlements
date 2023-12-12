@@ -1,0 +1,20 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "ui-bar-module-1.0.0",
+    "moduleType": "ui-module",
+    "applicationId": "test-app-1.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "ui-bar.item.create",
+          "displayName": "ui-bar.item.create display name",
+          "description": "ui-bar.item.create description",
+          "replaces": [ "foo.item.post" ]
+        }
+      }
+    ]
+  }
+}

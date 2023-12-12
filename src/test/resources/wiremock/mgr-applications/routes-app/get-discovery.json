@@ -1,0 +1,39 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications/routes-app-1.0.0/discovery",
+    "queryParameters": {
+      "limit": {
+        "equalTo": "100"
+      }
+    },
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "discovery": [
+        {
+          "id": "routes-module1-1.0.0",
+          "name": "routes-module1",
+          "version": "1.0.0",
+          "location": "http://routes-module1:8080"
+        },
+        {
+          "id": "routes-module2-2.0.0",
+          "name": "routes-module2",
+          "version": "2.0.0",
+          "location": "http://routes-module2:8080"
+        }
+      ],
+      "totalRecords": 2
+    }
+  }
+}
