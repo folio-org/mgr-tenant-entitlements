@@ -10,6 +10,7 @@ import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.entitlement;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,5 +70,16 @@ class EntitlementFlowFinalizerTest {
     var capturedValue = entitlementFlowEntityCaptor.getValue();
     assertThat(capturedValue.getStatus()).isEqualTo(FINISHED);
     verify(entitlementCrudService).save(entitlement(TENANT_ID, APPLICATION_ID));
+  }
+
+  @Test
+  void execute_cancel_positive() {
+    doNothing().when(entitlementCrudService).delete(entitlement(TENANT_ID, APPLICATION_ID));
+
+    var entitlementRequest = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest, PARAM_APP_ID, APPLICATION_ID);
+    var stageContext = StageContext.of(FLOW_STAGE_ID, flowParameters, Map.of());
+
+    entitlementFlowFinalizer.cancel(stageContext);
   }
 }
