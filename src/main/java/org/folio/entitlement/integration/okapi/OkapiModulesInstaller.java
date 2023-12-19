@@ -4,13 +4,12 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.DISABLE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.ENABLE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor;
@@ -29,9 +28,9 @@ public class OkapiModulesInstaller extends DatabaseLoggingStage {
 
   @Override
   public void execute(StageContext context) {
-    var request = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
+    var request = getEntitlementRequest(context);
     var action = request.getType() == ENTITLE ? ENABLE : DISABLE;
-    var applicationDescriptor = context.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR);
+    var applicationDescriptor = getApplicationDescriptor(context);
     var descriptors = mapItems(applicationDescriptor.getModules(), module -> buildOkapiDescriptors(action, module));
 
     updateModuleEntitlements(request.getTenantId(), applicationDescriptor, action);

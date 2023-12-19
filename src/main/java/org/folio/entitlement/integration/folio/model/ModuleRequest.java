@@ -6,8 +6,8 @@ import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DISCOVERY;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,7 +16,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.folio.common.domain.model.error.Parameter;
-import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.flow.api.StageContext;
 import org.folio.security.domain.model.descriptor.InterfaceDescriptor;
 import org.folio.security.domain.model.descriptor.ModuleDescriptor;
@@ -44,7 +43,7 @@ public class ModuleRequest {
    * @return created unmodifiable {@link ModuleRequest} object
    */
   public static ModuleRequest fromStageContext(StageContext context) {
-    var request = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
+    var request = getEntitlementRequest(context);
     return fromStageContext(context, request.isPurge());
   }
 
@@ -55,7 +54,7 @@ public class ModuleRequest {
    * @return created unmodifiable {@link ModuleRequest} object
    */
   public static ModuleRequest fromStageContext(StageContext context, boolean purge) {
-    var request = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
+    var request = getEntitlementRequest(context);
 
     return ModuleRequest.builder()
       .moduleId(context.getFlowParameter(PARAM_MODULE_ID))

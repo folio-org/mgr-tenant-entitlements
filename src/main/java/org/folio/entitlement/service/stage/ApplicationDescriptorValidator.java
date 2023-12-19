@@ -1,11 +1,9 @@
 package org.folio.entitlement.service.stage;
 
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.flow.api.StageContext;
 import org.springframework.stereotype.Component;
@@ -18,8 +16,7 @@ public class ApplicationDescriptorValidator extends DatabaseLoggingStage {
 
   @Override
   public void execute(StageContext context) {
-    var entitlementRequest = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
-    var applicationDescriptor = context.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR);
-    applicationManagerService.validate(applicationDescriptor, entitlementRequest.getOkapiToken());
+    applicationManagerService.validate(getApplicationDescriptor(context),
+      getEntitlementRequest(context).getOkapiToken());
   }
 }

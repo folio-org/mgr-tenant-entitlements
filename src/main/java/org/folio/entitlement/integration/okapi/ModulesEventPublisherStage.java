@@ -1,12 +1,10 @@
 package org.folio.entitlement.integration.okapi;
 
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -19,9 +17,9 @@ public class ModulesEventPublisherStage extends DatabaseLoggingStage {
 
   @Override
   public void execute(StageContext context) {
-    var applicationDescriptor = context.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR);
+    var applicationDescriptor = getApplicationDescriptor(context);
     for (var module : applicationDescriptor.getModules()) {
-      var request = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
+      var request = getEntitlementRequest(context);
       var tenantName = context.<String>get(PARAM_TENANT_NAME);
       var event = new EntitlementEvent(request.getType().name(), module.getId(), tenantName, request.getTenantId());
       entitlementEventPublisher.publish(event);

@@ -9,9 +9,9 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationId;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 import static org.folio.entitlement.utils.SemverUtils.applicationSatisfies;
 
 import java.util.HashMap;
@@ -25,8 +25,6 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
-import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Dependency;
 import org.folio.entitlement.service.flow.EntitlementFlowService;
 import org.folio.entitlement.utils.SemverUtils;
@@ -44,9 +42,9 @@ public class EntitlementDependencyValidator extends DatabaseLoggingStage {
   @Override
   @Transactional
   public void execute(StageContext context) {
-    var applicationId = context.<String>getFlowParameter(PARAM_APP_ID);
-    var entitlementRequest = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
-    var applicationDescriptor = context.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR);
+    var applicationId = getApplicationId(context);
+    var entitlementRequest = getEntitlementRequest(context);
+    var applicationDescriptor = getApplicationDescriptor(context);
     var tenantId = entitlementRequest.getTenantId();
 
     if (entitlementRequest.getType() == REVOKE) {

@@ -1,13 +1,12 @@
 package org.folio.entitlement.service.stage;
 
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationId;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
-import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.flow.api.Cancellable;
 import org.folio.flow.api.StageContext;
@@ -41,8 +40,8 @@ public class EntitlementFlowFinalizer extends AbstractFlowFinalizer implements C
   }
 
   private static Entitlement buildEntitlementFromContext(StageContext context) {
-    var request = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
-    var applicationId = context.<String>getFlowParameter(PARAM_APP_ID);
+    var request = getEntitlementRequest(context);
+    var applicationId = getApplicationId(context);
     return new Entitlement().applicationId(applicationId).tenantId(request.getTenantId());
   }
 }

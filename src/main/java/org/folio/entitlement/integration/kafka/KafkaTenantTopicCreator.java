@@ -4,15 +4,14 @@ import static java.lang.Boolean.TRUE;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 import static org.folio.integration.kafka.KafkaUtils.createTopic;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
-import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -35,7 +34,7 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage implements Can
   @Override
   public void execute(StageContext context) {
     var tenantName = context.<String>get(PARAM_TENANT_NAME);
-    var request = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
+    var request = getEntitlementRequest(context);
     var tenantId = request.getTenantId();
 
     var existingEntitlements = entitlementCrudService.findByTenantId(tenantId);

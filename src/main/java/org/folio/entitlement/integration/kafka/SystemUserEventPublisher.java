@@ -3,8 +3,8 @@ package org.folio.entitlement.integration.kafka;
 import static java.util.stream.Collectors.toMap;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
 import java.util.Map;
@@ -31,7 +31,7 @@ public class SystemUserEventPublisher extends DatabaseLoggingStage {
 
   @Override
   public void execute(StageContext context) {
-    var descriptor = context.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR);
+    var descriptor = getApplicationDescriptor(context);
     var tenantName = context.<String>get(PARAM_TENANT_NAME);
 
     var moduleIdNameMap = getModuleIdNames(descriptor);
