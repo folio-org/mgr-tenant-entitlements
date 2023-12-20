@@ -93,7 +93,9 @@ class ModuleInstallationGraphTest {
         appDescriptor(
           module("m1", List.of("m1-int")),
           module("m2", List.of("m2-int"), List.of("m2-int"))),
-        List.of(Set.of("m1", "m2")))
+        List.of(Set.of("m1", "m2"))),
+
+      arguments("Dependent modules[null provides]", appDescriptor(module("m1", null)), List.of(Set.of("m1")))
     );
   }
 
