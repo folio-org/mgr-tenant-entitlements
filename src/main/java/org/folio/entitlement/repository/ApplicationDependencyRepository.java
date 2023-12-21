@@ -17,11 +17,11 @@ public interface ApplicationDependencyRepository
 
   @Query(nativeQuery = true, value = """
     WITH RECURSIVE dependencies AS (
-    	SELECT base.*
+      SELECT base.*
         FROM {h-schema}application_dependency base
         WHERE base.parent_name in :parent_names
           AND base.tenant_id = :tenant_id
-    	UNION
+      UNION
       SELECT
         FROM {h-schema}application_dependency ad
         INNER JOIN dependencies d ON d.application_name = ad.parent_name

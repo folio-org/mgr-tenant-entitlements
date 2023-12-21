@@ -192,7 +192,7 @@ class EntitlementFlowServiceTest {
       var dependency = applicationDependency("test-app", "0.0.1");
       var dependencyEntity = applicationDependencyEntity(dependency);
 
-      when(dependencyService.findByParentApplicationId(TENANT_ID, "test-app-0.0.1"))
+      when(dependencyService.findAllByParentApplicationName(TENANT_ID, "test-app-0.0.1"))
         .thenReturn(List.of(dependencyEntity));
       when(entitlementFlowRepository.findLastEntitlementFlows(List.of(APPLICATION_ID), TENANT_ID))
         .thenReturn(List.of(entity));

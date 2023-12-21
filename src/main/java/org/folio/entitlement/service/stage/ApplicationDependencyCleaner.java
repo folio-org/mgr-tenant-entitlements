@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ApplicationDependencyRemover extends DatabaseLoggingStage implements Cancellable {
+public class ApplicationDependencyCleaner extends DatabaseLoggingStage implements Cancellable {
 
   private final ApplicationDependencyService applicationDependencyService;
 
