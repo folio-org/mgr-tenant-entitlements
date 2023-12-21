@@ -5,6 +5,7 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ public class ModuleInstallationGraph {
   private Map<InterfaceReference, List<String>> getInterfacesByModule() {
     var result = new HashMap<InterfaceReference, List<String>>();
     for (var moduleDescriptor : modules) {
-      for (var desc : moduleDescriptor.getProvides()) {
+      for (var desc : emptyIfNull(moduleDescriptor.getProvides())) {
         var interfaceReference = InterfaceReference.of(desc.getId(), desc.getVersion());
         result.computeIfAbsent(interfaceReference, v -> new ArrayList<>()).add(moduleDescriptor.getId());
       }
