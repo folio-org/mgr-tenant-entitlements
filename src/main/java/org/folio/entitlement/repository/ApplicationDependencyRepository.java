@@ -22,7 +22,7 @@ public interface ApplicationDependencyRepository
         WHERE base.parent_name in :parent_names
           AND base.tenant_id = :tenant_id
       UNION
-      SELECT
+      SELECT ad.*
         FROM {h-schema}application_dependency ad
         INNER JOIN dependencies d ON d.application_name = ad.parent_name
           AND d.tenant_id = ad.tenant_id

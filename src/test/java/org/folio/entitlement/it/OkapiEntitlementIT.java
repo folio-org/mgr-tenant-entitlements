@@ -520,10 +520,10 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         matchesPattern("Application flow '.+' executed with status: CANCELLED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[7].key", is("KongRouteCreator")))
-      .andExpect(jsonPath("$.errors[0].parameters[7].value", is("CANCELLED")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("OkapiModulesInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].value", startsWith(
+      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("KongRouteCreator")))
+      .andExpect(jsonPath("$.errors[0].parameters[8].value", is("CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].parameters[9].key", is("OkapiModulesInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[9].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
     assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).isEmpty();
@@ -555,8 +555,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         matchesPattern("Application flow '.+' executed with status: CANCELLATION_FAILED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancellationException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[7].key", is("KongRouteCreator")))
-      .andExpect(jsonPath("$.errors[0].parameters[7].value", startsWith(
+      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("KongRouteCreator")))
+      .andExpect(jsonPath("$.errors[0].parameters[8].value", startsWith(
         "CANCELLATION_FAILED: [IntegrationException] Failed to remove routes, parameters:")));
 
     assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(1);
@@ -585,8 +585,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Application flow '.+' executed with status: FAILED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("OkapiModulesInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].value", startsWith(
+      .andExpect(jsonPath("$.errors[0].parameters[9].key", is("OkapiModulesInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[9].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
     assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(2);
@@ -703,11 +703,11 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         matchesPattern("Application flow '.+' executed with status: CANCELLED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[5].key", is("ApplicationDiscoveryLoader")))
-      .andExpect(jsonPath("$.errors[0].parameters[5].value", startsWith(
+      .andExpect(jsonPath("$.errors[0].parameters[6].key", is("ApplicationDiscoveryLoader")))
+      .andExpect(jsonPath("$.errors[0].parameters[6].value", startsWith(
         "FAILED: [IntegrationException] Failed to retrieve module discovery descriptors: " + OKAPI_APP_ID)))
-      .andExpect(jsonPath("$.errors[0].parameters[6].key", is("CancelledFlowFinalizer")))
-      .andExpect(jsonPath("$.errors[0].parameters[6].value", is("FINISHED")));
+      .andExpect(jsonPath("$.errors[0].parameters[7].key", is("CancelledFlowFinalizer")))
+      .andExpect(jsonPath("$.errors[0].parameters[7].value", is("FINISHED")));
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     getEntitlementsWithModules(entitlementQuery, emptyEntitlements());

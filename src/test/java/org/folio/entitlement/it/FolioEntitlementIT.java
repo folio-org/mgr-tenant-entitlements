@@ -257,12 +257,12 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern(
         "Application flow '.+' executed with status: CANCELLED")))
-      .andExpect(jsonPath("$.errors[0].parameters[7].key", is("KeycloakAuthResourceCreator")))
-      .andExpect(jsonPath("$.errors[0].parameters[7].value", is("CANCELLED")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("folio-module1-1.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("KeycloakAuthResourceCreator")))
       .andExpect(jsonPath("$.errors[0].parameters[8].value", is("CANCELLED")))
-      .andExpect(jsonPath("$.errors[0].parameters[10].key", is("folio-module2-2.0.0-moduleInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[10].value", matchesPattern(
+      .andExpect(jsonPath("$.errors[0].parameters[9].key", is("folio-module1-1.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[9].value", is("CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].parameters[11].key", is("folio-module2-2.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[11].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
           + "\\[method: POST, uri: http://localhost:\\d+/folio-module2/_/tenant], cause: request timed out")));
 
@@ -298,10 +298,10 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Application flow '.+' executed with status: FAILED")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("folio-module1-1.0.0-moduleInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].value", is("FINISHED")))
-      .andExpect(jsonPath("$.errors[0].parameters[10].key", is("folio-module2-2.0.0-moduleInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[10].value", matchesPattern(
+      .andExpect(jsonPath("$.errors[0].parameters[9].key", is("folio-module1-1.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[9].value", is("FINISHED")))
+      .andExpect(jsonPath("$.errors[0].parameters[11].key", is("folio-module2-2.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[11].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
           + "\\[method: POST, uri: http://localhost:\\d+/folio-module2/_/tenant], cause: request timed out")));
 
@@ -333,10 +333,10 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Application flow '.+' executed with status: FAILED")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("folio-module1-1.0.0-moduleInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].value", is("FINISHED")))
-      .andExpect(jsonPath("$.errors[0].parameters[10].key", is("folio-module2-2.0.0-moduleInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[10].value", matchesPattern(
+      .andExpect(jsonPath("$.errors[0].parameters[9].key", is("folio-module1-1.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[9].value", is("FINISHED")))
+      .andExpect(jsonPath("$.errors[0].parameters[11].key", is("folio-module2-2.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[11].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[IOException] Failed to perform request "
           + "\\[method: POST, uri: http://localhost:\\d+/folio-module2/_/tenant], "
           + "cause: HTTP/1.1 header parser received no bytes")));
