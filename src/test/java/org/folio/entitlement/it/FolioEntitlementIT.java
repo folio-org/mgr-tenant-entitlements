@@ -25,6 +25,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.BEFORE_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -65,8 +66,10 @@ class FolioEntitlementIT extends BaseIntegrationTest {
 
   private static final String FOLIO_APP1_ID = "folio-app1-1.0.0";
   private static final String FOLIO_APP2_ID = "folio-app2-2.0.0";
+  private static final String FOLIO_APP3_ID = "folio-app3-3.0.0";
   private static final String FOLIO_APP5_ID = "folio-app5-5.0.0";
   private static final String FOLIO_MODULE1_ID = "folio-module1-1.0.0";
+  private static final String FOLIO_MODULE3_ID = "folio-module3-3.0.0";
 
   @Autowired private KeycloakTestClient keycloakTestClient;
 
@@ -354,7 +357,6 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app2/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app2/get.json",
     "/wiremock/mgr-applications/folio-app2/get-discovery.json",
-    "/wiremock/folio-module1/install.json",
     "/wiremock/folio-module2/uninstall.json"
   })
   @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "classpath:/sql/folio-entitlement.sql")
@@ -369,5 +371,66 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP2_ID), emptyEntitlements());
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app-mixed/get-by-ids-13-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+    "/wiremock/mgr-applications/folio-app3/get.json",
+    "/wiremock/mgr-applications/folio-app3/get-discovery.json",
+    "/wiremock/folio-module1/uninstall.json",
+    "/wiremock/folio-module3/uninstall.json"
+  })
+  @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "classpath:/sql/folio-entitlement-dependent.sql")
+  void uninstall_positive_dependentApps() throws Exception {
+    var entitlementRequest = entitlementRequest(TENANT_ID, FOLIO_APP1_ID, FOLIO_APP3_ID);
+    var queryParams = Map.of("purge", "true", "ignoreErrors", "true");
+
+    var expectedEntitlements = extendedEntitlements(extendedEntitlement(FOLIO_APP1_ID),
+      extendedEntitlement(FOLIO_APP3_ID));
+
+    revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
+
+    assertEntitlementEvents(List.of(
+      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID),
+      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE3_ID, TENANT_NAME, TENANT_ID)
+    ));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP1_ID), emptyEntitlements());
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP3_ID), emptyEntitlements());
+
+    assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).isEmpty();
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json"
+  })
+  @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "classpath:/sql/folio-entitlement-dependent.sql")
+  void uninstall_negative_dependentApps() throws Exception {
+    mockMvc.perform(delete("/entitlements")
+        .queryParam("purge", "true")
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .content(asJsonString(entitlementRequest(FOLIO_APP1_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Application flow '.+' executed with status: FAILED")))
+      .andExpect(jsonPath("$.errors[0].parameters[3].key", is("EntitlementDependencyValidator")))
+      .andExpect(jsonPath("$.errors[0].parameters[3].value", containsString(
+        "The following applications must be uninstalled first: [" + FOLIO_APP3_ID + "]")));
+
+    var entitlementQuery = String.format("applicationId==(%s or %s)", FOLIO_APP1_ID, FOLIO_APP3_ID);
+    getEntitlementsByQuery(entitlementQuery, entitlements(entitlement(FOLIO_APP1_ID), entitlement(FOLIO_APP3_ID)));
   }
 }
