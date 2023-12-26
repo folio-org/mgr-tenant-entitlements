@@ -2,7 +2,6 @@ package org.folio.entitlement.integration.folio.model;
 
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.folio.FolioIntegrationUtils.parseTenantParameters;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_ID;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DISCOVERY;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_ID;
@@ -16,6 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.folio.common.domain.model.error.Parameter;
+import org.folio.entitlement.service.stage.StageContextUtils;
 import org.folio.flow.api.StageContext;
 import org.folio.security.domain.model.descriptor.InterfaceDescriptor;
 import org.folio.security.domain.model.descriptor.ModuleDescriptor;
@@ -59,7 +59,7 @@ public class ModuleRequest {
     return ModuleRequest.builder()
       .moduleId(context.getFlowParameter(PARAM_MODULE_ID))
       .purge(purge)
-      .applicationId(context.getFlowParameter(PARAM_APP_ID))
+      .applicationId(StageContextUtils.getApplicationId(context))
       .location(context.getFlowParameter(PARAM_MODULE_DISCOVERY))
       .tenantId(request.getTenantId())
       .tenantName(context.get(PARAM_TENANT_NAME))
