@@ -12,8 +12,8 @@ import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
 import static org.folio.entitlement.utils.RoutingEntryUtils.getMethods;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
@@ -31,7 +31,6 @@ import java.util.stream.Collector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.utils.CollectionUtils;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventBody;
 import org.folio.entitlement.integration.kafka.model.Endpoint;
 import org.folio.entitlement.integration.kafka.model.FolioResource;
@@ -57,7 +56,7 @@ public class CapabilitiesEventPublisher extends DatabaseLoggingStage {
 
   @Override
   public void execute(StageContext context) {
-    var appDesc = context.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR);
+    var appDesc = getApplicationDescriptor(context);
     var tenant = context.<String>get(PARAM_TENANT_NAME);
     var appId = appDesc.getId();
     emptyIfNull(appDesc.getModuleDescriptors()).forEach(desc -> sendCapabilityEvent(desc, appId, tenant, MODULE));

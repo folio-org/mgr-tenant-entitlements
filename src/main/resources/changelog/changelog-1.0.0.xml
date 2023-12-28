@@ -8,4 +8,5 @@
   <include file="changes/v1.0.0/add-entitlement-module-table.xml" relativeToChangelogFile="true"/>
   <include file="changes/v1.0.0/alter-entitlement-stage-status-type.xml" relativeToChangelogFile="true"/>
   <include file="changes/v1.0.0/modify-application-dependency-table.xml" relativeToChangelogFile="true"/>
+  <include file="changes/v1.0.0/add-application-name-version-to-dependency-table.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
