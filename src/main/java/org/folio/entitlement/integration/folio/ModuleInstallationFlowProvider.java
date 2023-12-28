@@ -6,17 +6,16 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.reverseList;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DISCOVERY;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DISCOVERY_DATA;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.ParallelStage;
@@ -32,9 +31,9 @@ public class ModuleInstallationFlowProvider {
   private final FolioModuleEventPublisher folioModuleEventPublisher;
 
   public Flow prepareFlow(StageContext context) {
-    var applicationDescriptor = context.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR);
+    var applicationDescriptor = getApplicationDescriptor(context);
 
-    var request = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
+    var request = getEntitlementRequest(context);
     var moduleInstallationGraph = new ModuleInstallationGraph(applicationDescriptor);
     var installationSequence = moduleInstallationGraph.getModuleInstallationSequence();
     var moduleDescriptorsMap = getModuleDescriptorsMap(applicationDescriptor);
@@ -63,7 +62,7 @@ public class ModuleInstallationFlowProvider {
   private Stage getFolioModuleInstaller(String flowId, String moduleId, ModuleDescriptor moduleDescriptor,
     StageContext context) {
     var moduleDiscovery = context.<Map<String, String>>get(PARAM_MODULE_DISCOVERY_DATA).get(moduleId);
-    var requestType = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST).getType();
+    var requestType = getEntitlementRequest(context).getType();
     return Flow.builder()
       .id(flowId + "/" + moduleId)
       .flowParameter(PARAM_MODULE_ID, moduleId)

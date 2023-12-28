@@ -12,15 +12,12 @@ import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.applicationDescriptor;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.service.ApplicationDependencyService;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
@@ -36,7 +33,6 @@ class ApplicationDescriptorLoaderTest {
 
   @InjectMocks private ApplicationDescriptorLoader applicationDescriptorLoader;
   @Mock private ApplicationManagerService applicationManagerService;
-  @Mock private ApplicationDependencyService applicationDependencyService;
 
   @Test
   void execute_positive_entitleRequest() {
@@ -48,7 +44,6 @@ class ApplicationDescriptorLoaderTest {
 
     applicationDescriptorLoader.execute(stageContext);
 
-    verify(applicationDependencyService).saveEntitlementDependencies(TENANT_ID, APPLICATION_ID, null);
     assertThat(stageContext.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR)).isEqualTo(applicationDescriptor);
   }
 
@@ -62,7 +57,6 @@ class ApplicationDescriptorLoaderTest {
 
     applicationDescriptorLoader.execute(stageContext);
 
-    verifyNoInteractions(applicationDependencyService);
     assertThat(stageContext.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR)).isEqualTo(applicationDescriptor);
   }
 

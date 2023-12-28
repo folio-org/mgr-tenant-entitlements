@@ -2,8 +2,10 @@ insert into entitlement(application_id, application_name, application_version, t
   ('okapi-app3-3.0.0', 'okapi-app3', '3.0.0', '82dec29a-927f-4a14-a9ea-dc616fd17a1c'),
   ('okapi-app4-4.0.0', 'okapi-app4', '4.0.0', '82dec29a-927f-4a14-a9ea-dc616fd17a1c');
 
-insert into application_dependency(application_id, parent_name, parent_version, tenant_id) values
-  ('okapi-app3-3.0.0', 'okapi-app4', '4.0.0', '82dec29a-927f-4a14-a9ea-dc616fd17a1c');
+insert into application_dependency(application_id, application_name, application_version,
+    parent_name, parent_version, tenant_id) values
+  ('okapi-app3-3.0.0', 'okapi-app3', '3.0.0',
+   'okapi-app4', '4.0.0', '82dec29a-927f-4a14-a9ea-dc616fd17a1c');
 
 insert into entitlement_flow(entitlement_flow_id, application_id, application_name, application_version,
     tenant_id, flow_id, type, status, started_at, finished_at) values

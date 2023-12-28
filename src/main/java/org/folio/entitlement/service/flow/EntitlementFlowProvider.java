@@ -15,6 +15,7 @@ import org.folio.entitlement.integration.kafka.SystemUserEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
 import org.folio.entitlement.integration.kong.KongRouteCreator;
 import org.folio.entitlement.integration.okapi.OkapiModuleInstallerFlowProvider;
+import org.folio.entitlement.service.stage.ApplicationDependencySaver;
 import org.folio.entitlement.service.stage.ApplicationDescriptorLoader;
 import org.folio.entitlement.service.stage.ApplicationDescriptorValidator;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
@@ -40,6 +41,7 @@ public class EntitlementFlowProvider {
   private final TenantLoader tenantLoader;
   private final ApplicationDescriptorLoader applicationDescriptorLoader;
   private final ApplicationDescriptorValidator applicationDescriptorValidator;
+  private final ApplicationDependencySaver applicationDependencySaver;
   private final ApplicationDiscoveryLoader applicationDiscoveryLoader;
   private final EntitlementDependencyValidator entitlementDependencyValidator;
   private final ScheduledJobEventPublisher scheduledJobEventPublisher;
@@ -79,6 +81,7 @@ public class EntitlementFlowProvider {
       .stage(tenantLoader)
       .stage(applicationDescriptorLoader)
       .stage(applicationDescriptorValidator)
+      .stage(applicationDependencySaver)
       .stage(entitlementDependencyValidator)
       .stage(applicationDiscoveryLoader)
       .stage(kafkaTenantTopicCreator)

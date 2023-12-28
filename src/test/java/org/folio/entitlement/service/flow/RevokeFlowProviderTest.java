@@ -15,6 +15,7 @@ import org.folio.entitlement.integration.folio.ModuleInstallationFlowProvider;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
 import org.folio.entitlement.integration.kong.KongRouteCleaner;
 import org.folio.entitlement.integration.okapi.OkapiModuleInstallerFlowProvider;
+import org.folio.entitlement.service.stage.ApplicationDependencyCleaner;
 import org.folio.entitlement.service.stage.ApplicationDescriptorLoader;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -47,6 +48,7 @@ class RevokeFlowProviderTest {
   @Mock private TenantLoader tenantLoader;
   @Mock private ApplicationDiscoveryLoader applicationDiscoveryLoader;
   @Mock private ApplicationDescriptorLoader applicationDescriptorLoader;
+  @Mock private ApplicationDependencyCleaner applicationDependencyCleaner;
   @Mock private EntitlementDependencyValidator entitlementDependencyValidator;
 
   @Mock private RevokeFlowFinalizer revokeFlowFinalizer;
@@ -66,8 +68,8 @@ class RevokeFlowProviderTest {
   @Test
   void prepareFlow_positive_folioInstallation() {
     mockStageNames(entitlementFlowInitializer, tenantLoader, applicationDescriptorLoader,
-      entitlementDependencyValidator, applicationDiscoveryLoader, revokeFlowFinalizer, failedFlowFinalizer,
-      kongRouteCleaner, kcAuthResourceCleaner);
+      applicationDependencyCleaner, entitlementDependencyValidator, applicationDiscoveryLoader,
+      revokeFlowFinalizer, failedFlowFinalizer, kongRouteCleaner, kcAuthResourceCleaner);
 
     revokeFlowProvider.setKongRouteCleaner(kongRouteCleaner);
     revokeFlowProvider.setKeycloakAuthResourceCleaner(kcAuthResourceCleaner);
@@ -80,8 +82,8 @@ class RevokeFlowProviderTest {
     var context = StageContext.of(actual.getId(), flowParameters, emptyMap());
 
     var inOrder = Mockito.inOrder(entitlementFlowInitializer, tenantLoader, applicationDescriptorLoader,
-      entitlementDependencyValidator, applicationDiscoveryLoader, revokeFlowFinalizer, kongRouteCleaner,
-      kcAuthResourceCleaner, folioModuleInstallerFlowProvider);
+      applicationDependencyCleaner, entitlementDependencyValidator, applicationDiscoveryLoader,
+      revokeFlowFinalizer, kongRouteCleaner, kcAuthResourceCleaner, folioModuleInstallerFlowProvider);
 
     verifyStageExecution(inOrder, entitlementFlowInitializer, context);
     verifyStageExecution(inOrder, tenantLoader, context);
@@ -94,6 +96,7 @@ class RevokeFlowProviderTest {
     verifyStageExecution(inOrder, kongRouteCleaner, moduleInstallerContext);
     verifyStageExecution(inOrder, kcAuthResourceCleaner, moduleInstallerContext);
 
+    verifyStageExecution(inOrder, applicationDependencyCleaner, context);
     verifyStageExecution(inOrder, revokeFlowFinalizer, context);
 
     verify(failedFlowFinalizer, never()).execute(any(StageContext.class));
@@ -102,7 +105,8 @@ class RevokeFlowProviderTest {
   @Test
   void prepareFlow_positive_okapiInstallation() {
     mockStageNames(entitlementFlowInitializer, tenantLoader, applicationDescriptorLoader,
-      entitlementDependencyValidator, applicationDiscoveryLoader, revokeFlowFinalizer, failedFlowFinalizer);
+      applicationDependencyCleaner, entitlementDependencyValidator, applicationDiscoveryLoader,
+      revokeFlowFinalizer, failedFlowFinalizer);
 
     revokeFlowProvider.setOkapiModuleInstallerFlowProvider(okapiModuleInstallerFlowProvider);
     var actual = revokeFlowProvider.prepareFlow(FLOW_STAGE_ID, APPLICATION_ID);
@@ -112,8 +116,8 @@ class RevokeFlowProviderTest {
     var context = StageContext.of(actual.getId(), flowParameters, emptyMap());
 
     var inOrder = Mockito.inOrder(entitlementFlowInitializer, tenantLoader, applicationDescriptorLoader,
-      entitlementDependencyValidator, applicationDiscoveryLoader, revokeFlowFinalizer,
-      okapiModuleInstallerFlowProvider);
+      applicationDependencyCleaner, entitlementDependencyValidator, applicationDiscoveryLoader,
+      revokeFlowFinalizer, okapiModuleInstallerFlowProvider);
 
     verifyStageExecution(inOrder, entitlementFlowInitializer, context);
     verifyStageExecution(inOrder, tenantLoader, context);
@@ -123,6 +127,8 @@ class RevokeFlowProviderTest {
 
     var moduleInstallerContext = StageContext.of(FLOW_STAGE_ID + "/module-uninstaller", flowParameters, emptyMap());
     inOrder.verify(okapiModuleInstallerFlowProvider).prepareFlow(moduleInstallerContext);
+
+    verifyStageExecution(inOrder, applicationDependencyCleaner, context);
     verifyStageExecution(inOrder, revokeFlowFinalizer, context);
 
     verify(failedFlowFinalizer, never()).execute(any(StageContext.class));
@@ -131,7 +137,8 @@ class RevokeFlowProviderTest {
   @Test
   void prepareFlow_positive_noConditionalStages() {
     mockStageNames(entitlementFlowInitializer, tenantLoader, applicationDescriptorLoader,
-      entitlementDependencyValidator, applicationDiscoveryLoader, revokeFlowFinalizer, failedFlowFinalizer);
+      applicationDependencyCleaner, entitlementDependencyValidator, applicationDiscoveryLoader,
+      revokeFlowFinalizer, failedFlowFinalizer);
 
     var actual = revokeFlowProvider.prepareFlow(FLOW_STAGE_ID, APPLICATION_ID);
     flowEngine.execute(actual);
@@ -140,13 +147,14 @@ class RevokeFlowProviderTest {
     var context = StageContext.of(actual.getId(), flowParameters, emptyMap());
 
     var inOrder = Mockito.inOrder(entitlementFlowInitializer, tenantLoader, applicationDescriptorLoader,
-      entitlementDependencyValidator, applicationDiscoveryLoader, revokeFlowFinalizer);
+      applicationDependencyCleaner, entitlementDependencyValidator, applicationDiscoveryLoader, revokeFlowFinalizer);
 
     verifyStageExecution(inOrder, entitlementFlowInitializer, context);
     verifyStageExecution(inOrder, tenantLoader, context);
     verifyStageExecution(inOrder, applicationDescriptorLoader, context);
     verifyStageExecution(inOrder, entitlementDependencyValidator, context);
     verifyStageExecution(inOrder, applicationDiscoveryLoader, context);
+    verifyStageExecution(inOrder, applicationDependencyCleaner, context);
     verifyStageExecution(inOrder, revokeFlowFinalizer, context);
 
     verify(failedFlowFinalizer, never()).execute(any(StageContext.class));

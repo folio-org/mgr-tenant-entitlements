@@ -20,6 +20,7 @@ import org.folio.entitlement.integration.kafka.SystemUserEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
 import org.folio.entitlement.integration.kong.KongRouteCreator;
 import org.folio.entitlement.integration.okapi.OkapiModuleInstallerFlowProvider;
+import org.folio.entitlement.service.stage.ApplicationDependencySaver;
 import org.folio.entitlement.service.stage.ApplicationDescriptorLoader;
 import org.folio.entitlement.service.stage.ApplicationDescriptorValidator;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
@@ -55,6 +56,7 @@ class EntitlementFlowProviderTest {
   @Mock private TenantLoader tenantLoader;
   @Mock private ApplicationDescriptorLoader applicationDescriptorLoader;
   @Mock private ApplicationDescriptorValidator applicationDescriptorValidator;
+  @Mock private ApplicationDependencySaver applicationDependencySaver;
   @Mock private ApplicationDiscoveryLoader applicationDiscoveryLoader;
   @Mock private EntitlementDependencyValidator entitlementDependencyValidator;
   @Mock private KafkaTenantTopicCreator kafkaTenantTopicCreator;
@@ -84,8 +86,8 @@ class EntitlementFlowProviderTest {
     entitlementFlowProvider.setKeycloakAuthResourceCreator(kcAuthResourceCreator);
     entitlementFlowProvider.setFolioModuleInstallerFlowProvider(folioModuleInstallerFlowProvider);
 
-    mockStageNames(tenantLoader, applicationDescriptorValidator, entitlementDependencyValidator,
-      applicationDiscoveryLoader, kafkaTenantTopicCreator, applicationDescriptorLoader,
+    mockStageNames(tenantLoader, applicationDescriptorValidator, applicationDependencySaver,
+      entitlementDependencyValidator, applicationDiscoveryLoader, kafkaTenantTopicCreator, applicationDescriptorLoader,
       capabilitiesEventPublisher, scheduledJobEventPublisher, systemUserEventPublisher, entitlementFlowFinalizer,
       flowInitializer, failedFlowFinalizer, kongRouteCreator, kcAuthResourceCreator,
       cancelledFlowFinalizer, cancellationFailedFlowFinalizer);
@@ -97,7 +99,7 @@ class EntitlementFlowProviderTest {
     var context = StageContext.of(actual.getId(), flowParameters, emptyMap());
 
     var inOrder = Mockito.inOrder(flowInitializer, tenantLoader, applicationDescriptorLoader,
-      entitlementDependencyValidator, applicationDiscoveryLoader,
+      applicationDependencySaver, entitlementDependencyValidator, applicationDiscoveryLoader,
       entitlementFlowFinalizer, applicationDescriptorValidator, kafkaTenantTopicCreator,
       scheduledJobEventPublisher, capabilitiesEventPublisher, systemUserEventPublisher, kongRouteCreator,
       kcAuthResourceCreator, folioModuleInstallerFlowProvider);
@@ -106,6 +108,7 @@ class EntitlementFlowProviderTest {
     verifyStageExecution(inOrder, tenantLoader, context);
     verifyStageExecution(inOrder, applicationDescriptorLoader, context);
     verifyStageExecution(inOrder, applicationDescriptorValidator, context);
+    verifyStageExecution(inOrder, applicationDependencySaver, context);
     verifyStageExecution(inOrder, entitlementDependencyValidator, context);
     verifyStageExecution(inOrder, applicationDiscoveryLoader, context);
     verifyStageExecution(inOrder, kafkaTenantTopicCreator, context);
@@ -127,8 +130,8 @@ class EntitlementFlowProviderTest {
   void prepareFlow_positive_okapiInstallation() {
     entitlementFlowProvider.setOkapiModuleInstallerFlowProvider(okapiModuleInstallerFlowProvider);
 
-    mockStageNames(tenantLoader, applicationDescriptorValidator, entitlementDependencyValidator,
-      applicationDiscoveryLoader, kafkaTenantTopicCreator, applicationDescriptorLoader,
+    mockStageNames(tenantLoader, applicationDescriptorValidator, applicationDependencySaver,
+      entitlementDependencyValidator, applicationDiscoveryLoader, kafkaTenantTopicCreator, applicationDescriptorLoader,
       capabilitiesEventPublisher, scheduledJobEventPublisher, systemUserEventPublisher, entitlementFlowFinalizer,
       flowInitializer, failedFlowFinalizer, cancelledFlowFinalizer, cancellationFailedFlowFinalizer);
 
@@ -139,7 +142,7 @@ class EntitlementFlowProviderTest {
     var context = StageContext.of(FLOW_STAGE_ID, flowParameters, emptyMap());
 
     var inOrder = Mockito.inOrder(flowInitializer, tenantLoader, applicationDescriptorLoader,
-      entitlementDependencyValidator, applicationDiscoveryLoader,
+      applicationDependencySaver, entitlementDependencyValidator, applicationDiscoveryLoader,
       entitlementFlowFinalizer, applicationDescriptorValidator, kafkaTenantTopicCreator,
       scheduledJobEventPublisher, capabilitiesEventPublisher, systemUserEventPublisher,
       okapiModuleInstallerFlowProvider);
@@ -148,6 +151,7 @@ class EntitlementFlowProviderTest {
     verifyStageExecution(inOrder, tenantLoader, context);
     verifyStageExecution(inOrder, applicationDescriptorLoader, context);
     verifyStageExecution(inOrder, applicationDescriptorValidator, context);
+    verifyStageExecution(inOrder, applicationDependencySaver, context);
     verifyStageExecution(inOrder, entitlementDependencyValidator, context);
     verifyStageExecution(inOrder, applicationDiscoveryLoader, context);
     verifyStageExecution(inOrder, kafkaTenantTopicCreator, context);
@@ -165,8 +169,8 @@ class EntitlementFlowProviderTest {
 
   @Test
   void prepareFlow_positive_noConditionalStages() {
-    mockStageNames(tenantLoader, applicationDescriptorValidator, entitlementDependencyValidator,
-      applicationDiscoveryLoader, kafkaTenantTopicCreator, applicationDescriptorLoader,
+    mockStageNames(tenantLoader, applicationDescriptorValidator, applicationDependencySaver,
+      entitlementDependencyValidator, applicationDiscoveryLoader, kafkaTenantTopicCreator, applicationDescriptorLoader,
       capabilitiesEventPublisher, scheduledJobEventPublisher, systemUserEventPublisher, entitlementFlowFinalizer,
       flowInitializer, failedFlowFinalizer, cancelledFlowFinalizer, cancellationFailedFlowFinalizer);
 
@@ -174,7 +178,7 @@ class EntitlementFlowProviderTest {
     flowEngine.execute(actual);
 
     var inOrder = Mockito.inOrder(flowInitializer, tenantLoader, applicationDescriptorLoader,
-      entitlementDependencyValidator, applicationDiscoveryLoader,
+      applicationDependencySaver, entitlementDependencyValidator, applicationDiscoveryLoader,
       entitlementFlowFinalizer, applicationDescriptorValidator, kafkaTenantTopicCreator,
       scheduledJobEventPublisher, capabilitiesEventPublisher, systemUserEventPublisher);
 
@@ -185,6 +189,7 @@ class EntitlementFlowProviderTest {
     verifyStageExecution(inOrder, tenantLoader, context);
     verifyStageExecution(inOrder, applicationDescriptorLoader, context);
     verifyStageExecution(inOrder, applicationDescriptorValidator, context);
+    verifyStageExecution(inOrder, applicationDependencySaver, context);
     verifyStageExecution(inOrder, entitlementDependencyValidator, context);
     verifyStageExecution(inOrder, applicationDiscoveryLoader, context);
     verifyStageExecution(inOrder, kafkaTenantTopicCreator, context);

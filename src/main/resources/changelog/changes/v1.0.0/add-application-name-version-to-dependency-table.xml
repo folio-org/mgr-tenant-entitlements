@@ -1,0 +1,37 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+  <changeSet id="add-application-name-version" author="dmtkachenko">
+    <addColumn tableName="application_dependency">
+      <column name="application_name" type="varchar(256)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="application_version" type="varchar(256)">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="populate-application-name-version-from-application-id" author="dmtkachenko">
+    <sql>
+      UPDATE application_dependency
+      SET application_name = regexp_replace(application_id, '-(\d.\d.\d).*', '');
+    </sql>
+
+    <sql>
+      UPDATE application_dependency
+      SET application_version = replace(application_id, concat(application_name, '-'), '');
+    </sql>
+  </changeSet>
+
+  <changeSet id="create-index-application-dependency-tenant-application-name" author="dmtkachenko">
+    <createIndex indexName="idx_app_dependency_tenantid_appname" tableName="application_dependency">
+      <column name="tenant_id"/>
+      <column name="application_name"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

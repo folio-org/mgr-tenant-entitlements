@@ -2,10 +2,11 @@ insert into entitlement(application_id, application_name, application_version, t
 values ('test-app1-1.0.0', 'test-app1', '1.0.0', '176317cb-c3aa-45be-a60b-47e73737eb55'),
        ('test-app2-1.0.0', 'test-app2', '1.0.0', '176317cb-c3aa-45be-a60b-47e73737eb55');
 
-insert into application_dependency(application_id, parent_name, parent_version, tenant_id)
+insert into application_dependency(application_id, application_name, application_version,
+  parent_name, parent_version, tenant_id)
 values
-  ('test-app2-1.0.0', 'test-app1', '1.0.0', '176317cb-c3aa-45be-a60b-47e73737eb55'),
-  ('test-app4-1.0.0', 'test-app3', '1.0.0', 'ae1aabc8-c329-476b-901e-991c0dda8426');
+  ('test-app2-1.0.0', 'test-app2', '1.0.0', 'test-app1', '1.0.0', '176317cb-c3aa-45be-a60b-47e73737eb55'),
+  ('test-app4-1.0.0', 'test-app4', '1.0.0', 'test-app3', '1.0.0', 'ae1aabc8-c329-476b-901e-991c0dda8426');
 
 insert into entitlement_flow(entitlement_flow_id, application_id, application_name, application_version,
     tenant_id, flow_id, type, status, started_at, finished_at)

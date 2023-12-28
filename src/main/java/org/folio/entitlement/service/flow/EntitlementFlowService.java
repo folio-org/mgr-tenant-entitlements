@@ -132,7 +132,7 @@ public class EntitlementFlowService {
    */
   @Transactional(readOnly = true)
   public List<ApplicationFlow> findLastDependentFlows(String parentApplicationId, UUID tenantId) {
-    var dependencies = dependencyService.findByParentApplicationId(tenantId, parentApplicationId);
+    var dependencies = dependencyService.findAllByParentApplicationName(tenantId, parentApplicationId);
     var dependentAppIds = mapItems(dependencies, ApplicationDependencyEntity::getApplicationId);
 
     var entitlements = entitlementFlowRepository.findLastEntitlementFlows(dependentAppIds, tenantId);

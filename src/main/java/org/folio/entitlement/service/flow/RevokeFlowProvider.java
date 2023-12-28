@@ -12,6 +12,7 @@ import org.folio.entitlement.integration.folio.ModuleInstallationFlowProvider;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
 import org.folio.entitlement.integration.kong.KongRouteCleaner;
 import org.folio.entitlement.integration.okapi.OkapiModuleInstallerFlowProvider;
+import org.folio.entitlement.service.stage.ApplicationDependencyCleaner;
 import org.folio.entitlement.service.stage.ApplicationDescriptorLoader;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.EntitlementDependencyValidator;
@@ -32,6 +33,7 @@ public class RevokeFlowProvider {
   private final TenantLoader tenantLoader;
   private final ApplicationDescriptorLoader applicationDescriptorLoader;
   private final ApplicationDiscoveryLoader applicationDiscoveryLoader;
+  private final ApplicationDependencyCleaner applicationDependencyCleaner;
   private final EntitlementDependencyValidator entitlementDependencyValidator;
   private final RevokeFlowFinalizer revokeFlowFinalizer;
   private final EntitlementFlowInitializer entitlementFlowInitializer;
@@ -72,6 +74,7 @@ public class RevokeFlowProvider {
         .stage(getModuleInstallerStage())
         .stage(combineStages(kongRouteCleaner, keycloakAuthResourceCleaner))
         .build())
+      .stage(applicationDependencyCleaner)
       .stage(revokeFlowFinalizer)
       .onFlowError(failedFlowFinalizer)
       .build();

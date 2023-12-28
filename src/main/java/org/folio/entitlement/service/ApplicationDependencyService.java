@@ -3,6 +3,7 @@ package org.folio.entitlement.service;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,13 @@ public class ApplicationDependencyService {
       .toList();
   }
 
+  @Transactional(readOnly = true)
+  public List<ApplicationDependencyEntity> findAllByParentApplicationName(UUID tenantId, String parentApplicationId) {
+    var parentName = SemverUtils.getName(parentApplicationId);
+
+    return repository.findAllByTenantIdAndParentNameIn(tenantId, List.of(parentName));
+  }
+
   /**
    * Saves application dependencies for entitlement.
    *
@@ -46,11 +54,24 @@ public class ApplicationDependencyService {
       return;
     }
 
-    var applicationDependencyEntities = dependencies.stream()
+    var entities = toEntities(tenantId, applicationId, dependencies);
+    repository.saveAll(entities);
+  }
+
+  public void deleteEntitlementDependencies(UUID tenantId, String applicationId, List<Dependency> dependencies) {
+    if (CollectionUtils.isEmpty(dependencies)) {
+      return;
+    }
+
+    var entities = toEntities(tenantId, applicationId, dependencies);
+    repository.deleteAllInBatch(entities);
+  }
+
+  private Set<ApplicationDependencyEntity> toEntities(UUID tenantId, String applicationId,
+    List<Dependency> dependencies) {
+    return dependencies.stream()
       .map(dependency -> mapper.map(tenantId, applicationId, dependency))
       .collect(toSet());
-
-    repository.saveAll(applicationDependencyEntities);
   }
 
   private static Predicate<ApplicationDependencyEntity> satisfiesVersion(String parentVersion) {

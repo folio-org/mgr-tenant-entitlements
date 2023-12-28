@@ -1,12 +1,10 @@
 package org.folio.entitlement.integration.kong;
 
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.flow.api.StageContext;
 
@@ -17,13 +15,13 @@ public class KongRouteCleaner extends DatabaseLoggingStage {
 
   @Override
   public void execute(StageContext context) {
-    var request = context.<EntitlementRequest>getFlowParameter(PARAM_REQUEST);
+    var request = getEntitlementRequest(context);
     if (!request.isPurge()) {
       return;
     }
 
     var tenantName = context.<String>get(PARAM_TENANT_NAME);
-    var applicationDescriptor = context.<ApplicationDescriptor>get(PARAM_APP_DESCRIPTOR);
+    var applicationDescriptor = getApplicationDescriptor(context);
     kongGatewayService.removeRoutes(tenantName, applicationDescriptor);
   }
 }
