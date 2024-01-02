@@ -5,11 +5,11 @@
   "description": "An application/stage execution status",
   "type": "string",
   "enum": [
-    "queued",
-    "in_progress",
-    "cancelled",
-    "cancellation_failed",
-    "failed",
-    "finished"
+    "QUEUED",
+    "IN_PROGRESS",
+    "CANCELLED",
+    "CANCELLATION_FAILED",
+    "FAILED",
+    "FINISHED"
   ]
 }

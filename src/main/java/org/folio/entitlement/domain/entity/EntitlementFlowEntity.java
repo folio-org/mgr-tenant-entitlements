@@ -1,6 +1,5 @@
 package org.folio.entitlement.domain.entity;
 
-import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,8 +16,9 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.utils.SemverUtils;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 @Data
 @Entity
@@ -65,16 +65,16 @@ public class EntitlementFlowEntity {
   /**
    * An entitlement request type for tenant.
    */
-  @Type(PostgreSQLEnumType.class)
   @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "type", columnDefinition = "entitlement_flow_type")
   private EntitlementType type;
 
   /**
    * An entitlement execution status (can change through granting entitlement for tenant).
    */
-  @Type(PostgreSQLEnumType.class)
   @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "status", columnDefinition = "entitlement_flow_status_type")
   private ExecutionStatus status;
 
