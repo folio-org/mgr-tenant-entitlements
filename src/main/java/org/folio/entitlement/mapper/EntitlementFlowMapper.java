@@ -6,15 +6,15 @@ import java.util.List;
 import java.util.UUID;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.EntitlementType;
-import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.entity.EntitlementFlowEntity;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 @Mapper(
   componentModel = "spring",
   injectionStrategy = CONSTRUCTOR,
-  imports = {ExecutionStatus.class}
+  imports = {EntityExecutionStatus.class}
 )
 public interface EntitlementFlowMapper {
 
@@ -29,7 +29,7 @@ public interface EntitlementFlowMapper {
   @Mapping(target = "applicationName", ignore = true)
   @Mapping(target = "applicationVersion", ignore = true)
   @Mapping(target = "flowId", source = "flowId")
-  @Mapping(target = "status", expression = "java(ExecutionStatus.QUEUED)")
+  @Mapping(target = "status", expression = "java(EntityExecutionStatus.QUEUED)")
   @Mapping(target = "entitlementFlowId", expression = "java(UUID.randomUUID())")
   EntitlementFlowEntity mapWithStatusQueued(UUID tenantId, String applicationId, UUID flowId, EntitlementType type);
 }

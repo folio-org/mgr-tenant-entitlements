@@ -6,7 +6,6 @@ import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -52,7 +51,7 @@ class EntitlementFlowControllerTest {
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.totalRecords", is(1)))
       .andExpect(jsonPath("$.applicationFlows[0].id", is(APPLICATION_FLOW_ID.toString())))
-      .andExpect(jsonPath("$.applicationFlows[0].status", equalToIgnoringCase("finished")))
+      .andExpect(jsonPath("$.applicationFlows[0].status", is("finished")))
       .andExpect(jsonPath("$.applicationFlows[0].tenantId", is(TENANT_ID.toString())))
       .andExpect(jsonPath("$.applicationFlows[0].applicationId", is(APPLICATION_ID)));
   }
@@ -65,9 +64,9 @@ class EntitlementFlowControllerTest {
         .contentType(APPLICATION_JSON))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.id", is(FLOW_ID.toString())))
-      .andExpect(jsonPath("$.status", equalToIgnoringCase("finished")))
+      .andExpect(jsonPath("$.status", is("finished")))
       .andExpect(jsonPath("$.applicationFlows[0].id", is(APPLICATION_FLOW_ID.toString())))
-      .andExpect(jsonPath("$.applicationFlows[0].status", equalToIgnoringCase("finished")))
+      .andExpect(jsonPath("$.applicationFlows[0].status", is("finished")))
       .andExpect(jsonPath("$.applicationFlows[0].tenantId", is(TENANT_ID.toString())))
       .andExpect(jsonPath("$.applicationFlows[0].applicationId", is(APPLICATION_ID)));
   }
@@ -80,7 +79,7 @@ class EntitlementFlowControllerTest {
         .contentType(APPLICATION_JSON))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.id", is(APPLICATION_FLOW_ID.toString())))
-      .andExpect(jsonPath("$.status", equalToIgnoringCase("finished")))
+      .andExpect(jsonPath("$.status", is("finished")))
       .andExpect(jsonPath("$.tenantId", is(TENANT_ID.toString())))
       .andExpect(jsonPath("$.applicationId", is(APPLICATION_ID)));
   }
@@ -95,7 +94,7 @@ class EntitlementFlowControllerTest {
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.totalRecords", is(1)))
       .andExpect(jsonPath("$.entitlementStages[0].applicationFlowId", is(APPLICATION_FLOW_ID.toString())))
-      .andExpect(jsonPath("$.entitlementStages[0].status", equalToIgnoringCase("finished")))
+      .andExpect(jsonPath("$.entitlementStages[0].status", is("finished")))
       .andExpect(jsonPath("$.entitlementStages[0].name", is("OkapiModuleInstaller")));
   }
 
@@ -108,7 +107,7 @@ class EntitlementFlowControllerTest {
         .contentType(APPLICATION_JSON))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.applicationFlowId", is(APPLICATION_FLOW_ID.toString())))
-      .andExpect(jsonPath("$.status", equalToIgnoringCase("finished")))
+      .andExpect(jsonPath("$.status", is("finished")))
       .andExpect(jsonPath("$.name", is(stageName)));
   }
 

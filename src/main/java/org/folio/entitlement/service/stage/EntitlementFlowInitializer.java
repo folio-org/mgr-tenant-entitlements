@@ -1,8 +1,7 @@
 package org.folio.entitlement.service.stage;
 
-import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
-
 import lombok.RequiredArgsConstructor;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.repository.EntitlementFlowRepository;
 import org.folio.flow.api.StageContext;
 import org.springframework.stereotype.Component;
@@ -19,7 +18,7 @@ public class EntitlementFlowInitializer extends DatabaseLoggingStage {
   public void execute(StageContext context) {
     var entitlementFlowId = getEntitlementFlowId(context);
     var entitlementFlowEntity = entitlementFlowRepository.getReferenceById(entitlementFlowId);
-    entitlementFlowEntity.setStatus(IN_PROGRESS);
+    entitlementFlowEntity.setStatus(EntityExecutionStatus.IN_PROGRESS);
     entitlementFlowRepository.save(entitlementFlowEntity);
   }
 }

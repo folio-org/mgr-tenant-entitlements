@@ -2,7 +2,7 @@ package org.folio.entitlement.service.stage;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.mockito.Mockito.verifyNoMoreInteractions;

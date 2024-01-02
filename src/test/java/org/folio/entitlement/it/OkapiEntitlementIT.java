@@ -36,7 +36,6 @@ import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalToIgnoringCase;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.startsWith;
@@ -248,7 +247,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
           .contentType(APPLICATION_JSON)
           .header(TOKEN, OKAPI_AUTH_TOKEN))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.status", equalToIgnoringCase("FINISHED"))));
+        .andExpect(jsonPath("$.status", is("finished"))));
 
     var entitlement = entitlementWithModules(TENANT_ID, OKAPI_APP_ID, List.of(OKAPI_MODULE_ID));
     getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement));

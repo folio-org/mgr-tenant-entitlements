@@ -12,8 +12,8 @@ import jakarta.persistence.TemporalType;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.Data;
-import org.folio.entitlement.domain.dto.EntitlementType;
-import org.folio.entitlement.domain.dto.ExecutionStatus;
+import org.folio.entitlement.domain.entity.type.EntityEntitlementType;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.utils.SemverUtils;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -68,7 +68,7 @@ public class EntitlementFlowEntity {
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "type", columnDefinition = "entitlement_flow_type")
-  private EntitlementType type;
+  private EntityEntitlementType type;
 
   /**
    * An entitlement execution status (can change through granting entitlement for tenant).
@@ -76,7 +76,7 @@ public class EntitlementFlowEntity {
   @Enumerated(EnumType.STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "status", columnDefinition = "entitlement_flow_status_type")
-  private ExecutionStatus status;
+  private EntityExecutionStatus status;
 
   /**
    * An entitlement startup timestamp.

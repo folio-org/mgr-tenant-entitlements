@@ -13,8 +13,8 @@ import jakarta.persistence.TemporalType;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.Data;
-import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.entity.key.EntitlementStageKey;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -46,7 +46,7 @@ public class EntitlementStageEntity {
   @Enumerated(STRING)
   @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "status", columnDefinition = "entitlement_stage_status_type")
-  private ExecutionStatus status;
+  private EntityExecutionStatus status;
 
   /**
    * An error type, nullable.

@@ -2,7 +2,7 @@ package org.folio.entitlement.service.stage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FINISHED;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_ID;
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;

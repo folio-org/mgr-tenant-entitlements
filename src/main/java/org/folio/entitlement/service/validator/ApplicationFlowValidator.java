@@ -5,7 +5,6 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.capitalize;
-import static org.apache.commons.lang3.StringUtils.lowerCase;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 
 import java.util.Optional;
@@ -69,7 +68,7 @@ public class ApplicationFlowValidator implements EntitlementRequestValidator {
   private static Optional<Parameter> validateApplicationFlow(ApplicationFlow flow, EntitlementType type) {
     var param = new Parameter().key(flow.getApplicationId());
     if (flow.getType() != type) {
-      var value = lowerCase(flow.getType().getValue());
+      var value = flow.getType().getValue();
       return switch (flow.getStatus()) {
         case QUEUED -> of(param.value(format("Another %s flow is in queue", value)));
         case IN_PROGRESS -> of(param.value(format("Another %s flow is in progress", value)));
@@ -79,7 +78,7 @@ public class ApplicationFlowValidator implements EntitlementRequestValidator {
       };
     }
 
-    var typeValue = capitalize(lowerCase(type.getValue()));
+    var typeValue = capitalize(type.getValue());
     return switch (flow.getStatus()) {
       case QUEUED -> of(param.value(typeValue + " flow is in queue"));
       case IN_PROGRESS -> of(param.value(typeValue + " flow is in progress"));
