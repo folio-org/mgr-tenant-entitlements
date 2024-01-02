@@ -50,6 +50,8 @@
     <awaitility.version>4.2.0</awaitility.version>
 
     <!-- Plugins versions -->
+    <maven-checkstyle.version>10.12.3</maven-checkstyle.version>
+    <maven-checkstyle-plugin.version>3.3.0</maven-checkstyle-plugin.version>
     <openapi-generator.version>6.4.0</openapi-generator.version>
 
     <sonar.exclusions>
@@ -389,6 +391,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${maven-checkstyle-plugin.version}</version>
         <dependencies>
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
