@@ -8,6 +8,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.domain.entity.ApplicationDependencyEntity;
 import org.folio.entitlement.domain.entity.key.EntitlementKey;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ResultList;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class EntitlementCrudService {
 
   private final EntitlementMapper entitlementMapper;
+  private final ApplicationDependencyService dependencyService;
   private final EntitlementRepository entitlementRepository;
 
   /**
@@ -49,6 +51,15 @@ public class EntitlementCrudService {
   public List<Entitlement> findByTenantId(UUID tenantId) {
     var entitlementsByTenants = entitlementRepository.findByTenantId(tenantId);
     return mapItems(entitlementsByTenants, entitlementMapper::map);
+  }
+
+  @Transactional(readOnly = true)
+  public List<Entitlement> findInstalledDependentEntitlements(String applicationId, UUID tenantId) {
+    var dependencies = dependencyService.findAllByParentApplicationName(tenantId, applicationId);
+    var dependentAppIds = mapItems(dependencies, ApplicationDependencyEntity::getApplicationId);
+
+    var entitlements = entitlementRepository.findByTenantIdAndApplicationIdIn(tenantId, dependentAppIds);
+    return mapItems(entitlements, entitlementMapper::map);
   }
 
   /**
