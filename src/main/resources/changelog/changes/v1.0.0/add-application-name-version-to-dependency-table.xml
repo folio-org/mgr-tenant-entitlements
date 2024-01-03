@@ -6,12 +6,8 @@
 
   <changeSet id="add-application-name-version" author="dmtkachenko">
     <addColumn tableName="application_dependency">
-      <column name="application_name" type="varchar(256)">
-        <constraints nullable="false"/>
-      </column>
-      <column name="application_version" type="varchar(256)">
-        <constraints nullable="false"/>
-      </column>
+      <column name="application_name" type="varchar(256)"/>
+      <column name="application_version" type="varchar(256)"/>
     </addColumn>
   </changeSet>
 
@@ -25,6 +21,11 @@
       UPDATE application_dependency
       SET application_version = replace(application_id, concat(application_name, '-'), '');
     </sql>
+  </changeSet>
+
+  <changeSet id="add-not-null-to-application-name-version" author="dmtkachenko">
+    <addNotNullConstraint tableName="application_dependency" columnName="application_name"/>
+    <addNotNullConstraint tableName="application_dependency" columnName="application_version"/>
   </changeSet>
 
   <changeSet id="create-index-application-dependency-tenant-application-name" author="dmtkachenko">

@@ -23,11 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
+import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.service.ApplicationManagerService;
+import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.service.flow.EntitlementFlowService;
 import org.folio.entitlement.support.TestValues;
 import org.folio.flow.api.StageContext;
@@ -46,6 +48,7 @@ class EntitlementDependencyValidatorTest {
   @InjectMocks private EntitlementDependencyValidator entitlementDependencyValidator;
   @Mock private ApplicationManagerService applicationManagerService;
   @Mock private EntitlementFlowService entitlementFlowService;
+  @Mock private EntitlementCrudService entitlementCrudService;
 
   @AfterEach
   void tearDown() {
@@ -102,11 +105,11 @@ class EntitlementDependencyValidatorTest {
     var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_APP_ID, APPLICATION_ID);
     var applicationDescriptor = applicationDescriptor();
     var stageContext = StageContext.of(FLOW_ID, flowParameters, Map.of(PARAM_APP_DESCRIPTOR, applicationDescriptor));
-    when(entitlementFlowService.findLastDependentFlows(APPLICATION_ID, TENANT_ID)).thenReturn(emptyList());
+    when(entitlementCrudService.findInstalledDependentEntitlements(APPLICATION_ID, TENANT_ID)).thenReturn(emptyList());
 
     entitlementDependencyValidator.execute(stageContext);
 
-    verify(entitlementFlowService).findLastDependentFlows(APPLICATION_ID, TENANT_ID);
+    verify(entitlementCrudService).findInstalledDependentEntitlements(APPLICATION_ID, TENANT_ID);
   }
 
   @Test
@@ -115,11 +118,11 @@ class EntitlementDependencyValidatorTest {
     var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_APP_ID, APPLICATION_ID);
     var applicationDescriptor = TestValues.applicationDescriptor();
     var stageContext = StageContext.of(FLOW_ID, flowParameters, Map.of(PARAM_APP_DESCRIPTOR, applicationDescriptor));
-    when(entitlementFlowService.findLastDependentFlows(APPLICATION_ID, TENANT_ID)).thenReturn(emptyList());
+    when(entitlementCrudService.findInstalledDependentEntitlements(APPLICATION_ID, TENANT_ID)).thenReturn(emptyList());
 
     entitlementDependencyValidator.execute(stageContext);
 
-    verify(entitlementFlowService).findLastDependentFlows(APPLICATION_ID, TENANT_ID);
+    verify(entitlementCrudService).findInstalledDependentEntitlements(APPLICATION_ID, TENANT_ID);
   }
 
   @Test
@@ -128,14 +131,14 @@ class EntitlementDependencyValidatorTest {
     var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_APP_ID, APPLICATION_ID);
     var applicationDescriptor = applicationDescriptor();
     var stageContext = StageContext.of(FLOW_ID, flowParameters, Map.of(PARAM_APP_DESCRIPTOR, applicationDescriptor));
-    when(entitlementFlowService.findLastDependentFlows(APPLICATION_ID, TENANT_ID)).thenReturn(
-      List.of(flow("app-foo-1.2.0", ENTITLE, FINISHED), flow("app-baz-4.2.1", ENTITLE, FINISHED)));
+    when(entitlementCrudService.findInstalledDependentEntitlements(APPLICATION_ID, TENANT_ID)).thenReturn(
+      List.of(entitlement("app-foo-1.2.0"), entitlement("app-baz-4.2.1")));
 
     assertThatThrownBy(() -> entitlementDependencyValidator.execute(stageContext))
       .isInstanceOf(IllegalStateException.class)
       .hasMessage("The following applications must be uninstalled first: [app-foo-1.2.0, app-baz-4.2.1]");
 
-    verify(entitlementFlowService).findLastDependentFlows(APPLICATION_ID, TENANT_ID);
+    verify(entitlementCrudService).findInstalledDependentEntitlements(APPLICATION_ID, TENANT_ID);
   }
 
   private static ApplicationDescriptor applicationDescriptor() {
@@ -149,5 +152,9 @@ class EntitlementDependencyValidatorTest {
 
   private static ApplicationFlow flow(String appId, EntitlementType type, ExecutionStatus status) {
     return new ApplicationFlow().applicationId(appId).tenantId(TENANT_ID).type(type).status(status);
+  }
+
+  private static Entitlement entitlement(String appId) {
+    return new Entitlement().applicationId(appId).tenantId(TENANT_ID).modules(emptyList());
   }
 }
