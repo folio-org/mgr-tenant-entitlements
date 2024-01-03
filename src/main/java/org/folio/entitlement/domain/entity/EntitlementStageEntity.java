@@ -2,7 +2,6 @@ package org.folio.entitlement.domain.entity;
 
 import static jakarta.persistence.EnumType.STRING;
 
-import io.hypersistence.utils.hibernate.type.basic.PostgreSQLEnumType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
@@ -14,11 +13,12 @@ import jakarta.persistence.TemporalType;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.Data;
-import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.entity.key.EntitlementStageKey;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 @Data
 @Entity
@@ -44,9 +44,9 @@ public class EntitlementStageEntity {
    * A stage execution status as {@link String} value.
    */
   @Enumerated(STRING)
-  @Type(PostgreSQLEnumType.class)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   @Column(name = "status", columnDefinition = "entitlement_stage_status_type")
-  private ExecutionStatus status;
+  private EntityExecutionStatus status;
 
   /**
    * An error type, nullable.
@@ -65,6 +65,7 @@ public class EntitlementStageEntity {
    * Timestamp when a stage is started.
    */
   @CreationTimestamp
+
   @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "started_at", updatable = false)
   private ZonedDateTime startedAt;

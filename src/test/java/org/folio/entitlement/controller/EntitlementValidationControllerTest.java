@@ -90,7 +90,7 @@ class EntitlementValidationControllerTest {
       .andExpect(status().isBadRequest())
       .andExpect(jsonPath("$.total_records", is(1)))
       .andExpect(jsonPath("$.errors[0].message", containsString("Failed to convert value")))
-      .andExpect(jsonPath("$.errors[0].message", containsString("for value '" + invalidType + "'")))
+      .andExpect(jsonPath("$.errors[0].message", containsString("for value [" + invalidType + "]")))
       .andExpect(jsonPath("$.errors[0].type", is("MethodArgumentTypeMismatchException")))
       .andExpect(jsonPath("$.errors[0].code", is("validation_error")));
   }

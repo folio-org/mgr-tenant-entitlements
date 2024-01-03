@@ -12,6 +12,7 @@ import org.folio.common.domain.model.SearchResult;
 import org.folio.entitlement.domain.dto.EntitlementStage;
 import org.folio.entitlement.domain.entity.EntitlementStageEntity;
 import org.folio.entitlement.domain.entity.key.EntitlementStageKey;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.mapper.EntitlementStageMapper;
 import org.folio.entitlement.repository.EntitlementStageRepository;
 import org.folio.test.types.UnitTest;
@@ -82,7 +83,7 @@ class EntitlementStageServiceTest {
     var entity = new EntitlementStageEntity();
     entity.setName(STAGE_NAME);
     entity.setApplicationFlowId(APPLICATION_FLOW_ID);
-    entity.setStatus(FINISHED);
+    entity.setStatus(EntityExecutionStatus.FINISHED);
     return entity;
   }
 }
