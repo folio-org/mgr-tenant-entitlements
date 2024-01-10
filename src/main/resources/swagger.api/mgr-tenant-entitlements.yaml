@@ -31,6 +31,7 @@ paths:
         - $ref: '#/components/parameters/tenantParameters'
         - $ref: '#/components/parameters/ignoreErrors'
         - $ref: '#/components/parameters/async'
+        - $ref: '#/components/parameters/purgeOnRollback'
       responses:
         '201':
           description: 'A list with successfully created tenant entitlements'
@@ -485,6 +486,14 @@ components:
       name: purge
       in: query
       description: Disabled modules will also be purged.
+      required: false
+      schema:
+        type: boolean
+        default: false
+    purgeOnRollback:
+      name: purgeOnRollback
+      in: query
+      description: Defines if module data must be purged on rollback.
       required: false
       schema:
         type: boolean

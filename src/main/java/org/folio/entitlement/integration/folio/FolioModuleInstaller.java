@@ -1,6 +1,7 @@
 package org.folio.entitlement.integration.folio;
 
 import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_ID;
+import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -23,7 +24,8 @@ public class FolioModuleInstaller extends DatabaseLoggingStage implements Cancel
 
   @Override
   public void cancel(StageContext context) {
-    var moduleRequest = ModuleRequest.fromStageContext(context, true);
+    var request = getEntitlementRequest(context);
+    var moduleRequest = ModuleRequest.fromStageContext(context, request.isPurgeOnRollback());
     folioModuleService.disable(moduleRequest);
   }
 
