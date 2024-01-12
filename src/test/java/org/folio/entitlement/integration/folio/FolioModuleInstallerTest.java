@@ -80,7 +80,12 @@ class FolioModuleInstallerTest {
   @Test
   void cancel_positive_entitleRequest() {
     var request = EntitlementRequest.builder()
-      .type(ENTITLE).tenantParameters("loadSamples=true").tenantId(TENANT_ID).build();
+      .type(ENTITLE)
+      .tenantParameters("loadSamples=true")
+      .purgeOnRollback(true)
+      .tenantId(TENANT_ID)
+      .build();
+
     var tenantApi = tenantInterface();
     var flowParameters = flowParameters(moduleDescriptor(tenantApi), request);
     var context = StageContext.of(FLOW_ID, flowParameters, contextData());

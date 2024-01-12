@@ -251,6 +251,50 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     mockMvc.perform(post("/entitlements")
         .queryParam("tenantParameters", "loadReference=true")
         .queryParam("ignoreErrors", "false")
+        .queryParam("purgeOnRollback", "true")
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .content(asJsonString(entitlementRequest(FOLIO_APP5_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern(
+        "Application flow '.+' executed with status: CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("KeycloakAuthResourceCreator")))
+      .andExpect(jsonPath("$.errors[0].parameters[8].value", is("CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].parameters[9].key", is("folio-module1-1.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[9].value", is("CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].parameters[11].key", is("folio-module2-2.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[11].value", matchesPattern(
+        "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
+          + "\\[method: POST, uri: http://localhost:\\d+/folio-module2/_/tenant], cause: request timed out")));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
+
+    assertEntitlementEvents(List.of(
+      new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID),
+      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
+
+    assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app5/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app5/get.json",
+    "/wiremock/mgr-applications/folio-app5/get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json",
+    "/wiremock/folio-module1/install.json",
+    "/wiremock/folio-module2/install-timeout.json"
+  })
+  void install_negative_readTimeoutOnModuleInstallationNoPurgeOnRollback() throws Exception {
+    mockMvc.perform(post("/entitlements")
+        .queryParam("tenantParameters", "loadReference=true")
+        .queryParam("ignoreErrors", "false")
         .contentType(APPLICATION_JSON)
         .header(TOKEN, OKAPI_AUTH_TOKEN)
         .content(asJsonString(entitlementRequest(FOLIO_APP5_ID))))

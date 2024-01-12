@@ -45,9 +45,14 @@ public class EntitlementRequest {
   private final String okapiToken;
 
   /**
-   * Defines if Disabled modules will also be purged.
+   * Defines if disabled modules will also be purged.
    */
   private final boolean purge;
+
+  /**
+   * Defines if module data must be purged on rollback.
+   */
+  private final boolean purgeOnRollback;
 
   /**
    * Defines if errors must be ignored during installation process.

@@ -1,5 +1,6 @@
 package org.folio.entitlement.controller;
 
+import static java.lang.Boolean.TRUE;
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
@@ -31,7 +32,7 @@ public class EntitlementController implements EntitlementApi {
 
   @Override
   public ResponseEntity<ExtendedEntitlements> create(EntitlementRequestBody request, String token,
-    String tenantParameters, Boolean ignoreErrors, Boolean async) {
+    String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purgeOnRollback) {
     var entitlementRequest = EntitlementRequest.builder()
       .type(ENTITLE)
       .okapiToken(token)
@@ -40,6 +41,7 @@ public class EntitlementController implements EntitlementApi {
       .applications(request.getApplications())
       .ignoreErrors(isTrue(ignoreErrors))
       .async(isTrue(async))
+      .purgeOnRollback(TRUE.equals(purgeOnRollback))
       .build();
 
     var entitlements = entitlementService.execute(entitlementRequest);
