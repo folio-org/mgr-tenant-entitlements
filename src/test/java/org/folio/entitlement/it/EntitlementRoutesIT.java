@@ -112,13 +112,9 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterized(HttpMethod method, URI uri, WiremockResponse resp)
     throws IOException, InterruptedException {
-    /*await().atMost(FIVE_SECONDS)
-      .pollInterval(TWO_HUNDRED_MILLISECONDS)
-      .untilAsserted(() -> {*/
-        var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME), ofString());
-        assertThat(result.statusCode()).isEqualTo(OK.value());
-        assertThat(parse(result.body(), WiremockResponse.class)).isEqualTo(resp);
-      /*});*/
+    var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME), ofString());
+    assertThat(result.statusCode()).isEqualTo(OK.value());
+    assertThat(parse(result.body(), WiremockResponse.class)).isEqualTo(resp);
   }
 
   @MethodSource("multipleRoutesDataProvider")
@@ -127,13 +123,9 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterizedForTypeMultiple(
     HttpMethod method, URI uri, String moduleId, WiremockResponse resp) throws IOException, InterruptedException {
-    /*await().atMost(FIVE_SECONDS)
-      .pollInterval(TWO_HUNDRED_MILLISECONDS)
-      .untilAsserted(() -> {*/
-        var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME, moduleId), ofString());
-        assertThat(result.statusCode()).isEqualTo(OK.value());
-        assertThat(parse(result.body(), WiremockResponse.class)).isEqualTo(resp);
-      /*});*/
+    var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME, moduleId), ofString());
+    assertThat(result.statusCode()).isEqualTo(OK.value());
+    assertThat(parse(result.body(), WiremockResponse.class)).isEqualTo(resp);
   }
 
   @MethodSource("invalidRoutesDataProvider")
