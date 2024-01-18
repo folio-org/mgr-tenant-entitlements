@@ -3,9 +3,6 @@ package org.folio.entitlement.it;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-import static org.awaitility.Durations.FIVE_SECONDS;
-import static org.awaitility.Durations.TWO_HUNDRED_MILLISECONDS;
 import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
 import static org.folio.common.utils.OkapiHeaders.TENANT;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
@@ -37,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.web.util.UriComponentsBuilder.fromUriString;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -112,14 +110,15 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @DisplayName("[1] checkInstalledRoutes_positive_parameterized")
   @WireMockStub("/wiremock/application-routes-it.json")
   @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
-  void checkInstalledRoutes_positive_parameterized(HttpMethod method, URI uri, WiremockResponse resp) {
-    await().atMost(FIVE_SECONDS)
+  void checkInstalledRoutes_positive_parameterized(HttpMethod method, URI uri, WiremockResponse resp)
+    throws IOException, InterruptedException {
+    /*await().atMost(FIVE_SECONDS)
       .pollInterval(TWO_HUNDRED_MILLISECONDS)
-      .untilAsserted(() -> {
+      .untilAsserted(() -> {*/
         var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME), ofString());
         assertThat(result.statusCode()).isEqualTo(OK.value());
         assertThat(parse(result.body(), WiremockResponse.class)).isEqualTo(resp);
-      });
+      /*});*/
   }
 
   @MethodSource("multipleRoutesDataProvider")
@@ -127,14 +126,14 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @WireMockStub("/wiremock/application-routes-it.json")
   @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterizedForTypeMultiple(
-    HttpMethod method, URI uri, String moduleId, WiremockResponse resp) {
-    await().atMost(FIVE_SECONDS)
+    HttpMethod method, URI uri, String moduleId, WiremockResponse resp) throws IOException, InterruptedException {
+    /*await().atMost(FIVE_SECONDS)
       .pollInterval(TWO_HUNDRED_MILLISECONDS)
-      .untilAsserted(() -> {
+      .untilAsserted(() -> {*/
         var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME, moduleId), ofString());
         assertThat(result.statusCode()).isEqualTo(OK.value());
         assertThat(parse(result.body(), WiremockResponse.class)).isEqualTo(resp);
-      });
+      /*});*/
   }
 
   @MethodSource("invalidRoutesDataProvider")
