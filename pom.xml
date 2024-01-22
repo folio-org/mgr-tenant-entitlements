@@ -37,12 +37,12 @@
     <spring-cloud-bom.version>2023.0.0</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
     <semver4j.version>5.2.2</semver4j.version>
-    <folio-spring-cql.version>7.2.2</folio-spring-cql.version>
-    <applications-poc-versions.version>1.0.0-SNAPSHOT</applications-poc-versions.version>
-    <folio-security.version>1.1.0-SNAPSHOT</folio-security.version>
-    <folio-backend-testing.version>1.1.0-SNAPSHOT</folio-backend-testing.version>
-    <folio-java-checkstyle.version>1.0.0-SNAPSHOT</folio-java-checkstyle.version>
-    <folio-flow-engine.version>1.0.0-SNAPSHOT</folio-flow-engine.version>
+    <folio-spring-cql.version>8.0.0</folio-spring-cql.version>
+    <applications-poc-versions.version>1.0.0</applications-poc-versions.version>
+    <folio-security.version>1.0.0</folio-security.version>
+    <folio-backend-testing.version>1.0.0</folio-backend-testing.version>
+    <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
+    <folio-flow-engine.version>1.0.0</folio-flow-engine.version>
 
     <mgr-tenant-entitlements.yaml-file>${project.basedir}/src/main/resources/swagger.api/mgr-tenant-entitlements.yaml
     </mgr-tenant-entitlements.yaml-file>
@@ -569,6 +569,21 @@
       <layout>default</layout>
     </snapshotRepository>
   </distributionManagement>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>folio-nexus</id>
+      <name>FOLIO Maven repository</name>
+      <url>https://repository.folio.org/repository/maven-folio</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <scm>
+    <url>https://https://github.com/folio-org/mgr-tenant-entitlements</url>
+    <connection>scm:git:git://github.com:folio-org/mgr-tenant-entitlements.git</connection>
+    <developerConnection>scm:git:git@github.com:folio-org/mgr-tenant-entitlements.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
 
   <profiles>
     <profile>
