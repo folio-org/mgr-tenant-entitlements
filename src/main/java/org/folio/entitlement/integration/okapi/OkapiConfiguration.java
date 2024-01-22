@@ -5,7 +5,6 @@ import feign.Feign;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
-import org.folio.entitlement.integration.kong.KongAdminClient;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
@@ -22,7 +21,7 @@ public class OkapiConfiguration {
    * @param contract - feign contract
    * @param encoder - feign http body encoder
    * @param decoder - feign http body decoder
-   * @return created {@link KongAdminClient} component
+   * @return created {@link OkapiClient} component
    */
   @Bean
   public OkapiClient okapiClient(OkapiConfigurationProperties okapiConfigurationProperties,

@@ -19,11 +19,11 @@ import lombok.NoArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
+import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventBody;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
-import org.folio.security.domain.model.descriptor.RoutingEntry;
 import org.hamcrest.Matchers;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

@@ -16,12 +16,12 @@ import static org.folio.entitlement.service.stage.StageContextUtils.getEntitleme
 import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.ParallelStage;
 import org.folio.flow.api.Stage;
 import org.folio.flow.api.StageContext;
-import org.folio.security.domain.model.descriptor.ModuleDescriptor;
 
 @RequiredArgsConstructor
 public class ModuleInstallationFlowProvider {

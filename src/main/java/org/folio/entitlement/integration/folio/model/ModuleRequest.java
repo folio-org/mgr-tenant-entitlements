@@ -14,11 +14,11 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import org.folio.common.domain.model.InterfaceDescriptor;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.service.stage.StageContextUtils;
 import org.folio.flow.api.StageContext;
-import org.folio.security.domain.model.descriptor.InterfaceDescriptor;
-import org.folio.security.domain.model.descriptor.ModuleDescriptor;
 
 @Data
 @Builder

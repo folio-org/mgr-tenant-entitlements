@@ -12,13 +12,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import org.folio.common.domain.model.InterfaceDescriptor;
+import org.folio.common.domain.model.RoutingEntry;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.support.TestUtils;
-import org.folio.security.domain.model.descriptor.InterfaceDescriptor;
-import org.folio.security.domain.model.descriptor.RoutingEntry;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;

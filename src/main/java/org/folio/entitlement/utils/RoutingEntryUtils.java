@@ -9,7 +9,7 @@ import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
-import org.folio.security.domain.model.descriptor.RoutingEntry;
+import org.folio.common.domain.model.RoutingEntry;
 import org.springframework.http.HttpMethod;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

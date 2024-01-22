@@ -25,12 +25,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.folio.common.domain.model.InterfaceDescriptor;
+import org.folio.common.domain.model.InterfaceReference;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.security.domain.model.descriptor.InterfaceDescriptor;
-import org.folio.security.domain.model.descriptor.InterfaceReference;
-import org.folio.security.domain.model.descriptor.ModuleDescriptor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -125,11 +125,11 @@ public class ApplicationDependencyValidatorService {
     for (ApplicationDescriptor descriptor : descriptors) {
       String appId = descriptor.getId();
 
-      for (ModuleDescriptor md : emptyIfNull(descriptor.getModuleDescriptors())) {
+      for (var md : emptyIfNull(descriptor.getModuleDescriptors())) {
         populateRequiredAndProvidedFromModule(appId, md, required, provided);
       }
 
-      for (ModuleDescriptor md : emptyIfNull(descriptor.getUiModuleDescriptors())) {
+      for (var md : emptyIfNull(descriptor.getUiModuleDescriptors())) {
         populateRequiredAndProvidedFromModule(appId, md, required, provided);
       }
     }

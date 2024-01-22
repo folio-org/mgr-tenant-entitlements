@@ -30,6 +30,10 @@ import java.util.Set;
 import java.util.stream.Collector;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.folio.common.domain.model.InterfaceDescriptor;
+import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.common.domain.model.Permission;
+import org.folio.common.domain.model.RoutingEntry;
 import org.folio.common.utils.CollectionUtils;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventBody;
 import org.folio.entitlement.integration.kafka.model.Endpoint;
@@ -38,10 +42,6 @@ import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.flow.api.StageContext;
-import org.folio.security.domain.model.descriptor.InterfaceDescriptor;
-import org.folio.security.domain.model.descriptor.ModuleDescriptor;
-import org.folio.security.domain.model.descriptor.Permission;
-import org.folio.security.domain.model.descriptor.RoutingEntry;
 import org.springframework.stereotype.Component;
 
 @Log4j2

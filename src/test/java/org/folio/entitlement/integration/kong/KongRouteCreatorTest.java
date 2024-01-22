@@ -9,10 +9,13 @@ import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.mockito.Mockito.verify;
 
+import java.util.List;
 import java.util.Map;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
+import org.folio.tools.kong.service.KongGatewayService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,12 +32,13 @@ class KongRouteCreatorTest {
   @Test
   void execute_positive_entitleRequest() {
     var request = EntitlementRequest.builder().type(ENTITLE).build();
-    var applicationDescriptor = applicationDescriptor();
+    var moduleDescriptors = List.of(new ModuleDescriptor());
+    var applicationDescriptor = applicationDescriptor().moduleDescriptors(moduleDescriptors);
     var stageParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME, PARAM_APP_DESCRIPTOR, applicationDescriptor);
     var stageContext = StageContext.of(FLOW_STAGE_ID, Map.of(PARAM_REQUEST, request), stageParameters);
 
     kongRouteCreator.execute(stageContext);
 
-    verify(kongGatewayService).addRoutes(TENANT_NAME, applicationDescriptor);
+    verify(kongGatewayService).addRoutes(TENANT_NAME, moduleDescriptors);
   }
 }

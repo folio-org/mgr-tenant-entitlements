@@ -18,14 +18,14 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.Map;
+import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.common.domain.model.UserDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.flow.api.StageContext;
-import org.folio.security.domain.model.descriptor.ModuleDescriptor;
-import org.folio.security.domain.model.descriptor.UserDescriptor;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

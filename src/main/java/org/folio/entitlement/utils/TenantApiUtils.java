@@ -2,8 +2,8 @@ package org.folio.entitlement.utils;
 
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang3.StringUtils;
-import org.folio.security.domain.model.descriptor.InterfaceDescriptor;
-import org.folio.security.domain.model.descriptor.RoutingEntry;
+import org.folio.common.domain.model.InterfaceDescriptor;
+import org.folio.common.domain.model.RoutingEntry;
 
 @UtilityClass
 public class TenantApiUtils {

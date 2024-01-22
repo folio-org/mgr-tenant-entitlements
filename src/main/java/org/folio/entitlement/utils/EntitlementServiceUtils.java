@@ -1,8 +1,10 @@
 package org.folio.entitlement.utils;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.joining;
+import static org.folio.common.utils.CollectionUtils.toStream;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,11 +19,13 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
+import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.EntitlementFlow;
 import org.folio.entitlement.domain.dto.EntitlementStage;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.integration.IntegrationException;
+import org.folio.tools.kong.exception.KongIntegrationException;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class EntitlementServiceUtils {
@@ -88,18 +92,7 @@ public class EntitlementServiceUtils {
   }
 
   public static String getErrorMessage(Exception exception) {
-    if (exception instanceof IntegrationException integrationException) {
-      if (CollectionUtils.isEmpty(integrationException.getErrors())) {
-        return exception.getMessage() + ", cause: " + integrationException.getCause().getMessage();
-      }
-
-      var errorParameters = integrationException.getErrors().stream()
-        .map(parameter -> format("{key: %s, value: %s}", parameter.getKey(), parameter.getValue()))
-        .collect(joining(", ", "[", "]"));
-      return exception.getMessage() + ", parameters: " + errorParameters;
-    }
-
-    return exception.getMessage();
+    return buildErrorMessageForParameters(exception, getErrors(exception), exception.getCause());
   }
 
   /**
@@ -124,5 +117,28 @@ public class EntitlementServiceUtils {
     }
 
     return resultMap;
+  }
+
+  private static List<Parameter> getErrors(Throwable throwable) {
+    if (throwable instanceof IntegrationException integrationException) {
+      return integrationException.getErrors();
+    }
+
+    if (throwable instanceof KongIntegrationException kongIntegrationException) {
+      return kongIntegrationException.getErrors();
+    }
+
+    return emptyList();
+  }
+
+  private static String buildErrorMessageForParameters(Exception exception, List<Parameter> errors, Throwable cause) {
+    if (CollectionUtils.isEmpty(errors)) {
+      return cause == null ? exception.getMessage() : exception.getMessage() + ", cause: " + cause.getMessage();
+    }
+
+    var errorParameters = toStream(errors)
+      .map(parameter -> format("{key: %s, value: %s}", parameter.getKey(), parameter.getValue()))
+      .collect(joining(", ", "[", "]"));
+    return exception.getMessage() + ", parameters: " + errorParameters;
   }
 }
