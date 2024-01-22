@@ -37,7 +37,7 @@
     <spring-cloud-bom.version>2023.0.0</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
     <semver4j.version>5.2.2</semver4j.version>
-    <folio-spring-cql.version>7.2.2</folio-spring-cql.version>
+    <folio-spring-cql.version>8.0.0</folio-spring-cql.version>
     <applications-poc-versions.version>1.0.0-SNAPSHOT</applications-poc-versions.version>
     <folio-security.version>1.1.0-SNAPSHOT</folio-security.version>
     <folio-backend-testing.version>1.1.0-SNAPSHOT</folio-backend-testing.version>
