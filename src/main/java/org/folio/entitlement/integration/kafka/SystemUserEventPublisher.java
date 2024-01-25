@@ -10,13 +10,13 @@ import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.flow.api.StageContext;
-import org.folio.security.domain.model.descriptor.ModuleDescriptor;
 import org.springframework.stereotype.Component;
 
 @Log4j2

@@ -83,6 +83,9 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     assertThat(appContext.containsBean("okapiModuleInstaller")).isFalse();
     assertThat(appContext.containsBean("kongRouteCreator")).isFalse();
     assertThat(appContext.containsBean("kongRouteCleaner")).isFalse();
+    assertThat(appContext.containsBean("folioKongAdminClient")).isFalse();
+    assertThat(appContext.containsBean("folioKongGatewayService")).isFalse();
+    assertThat(appContext.containsBean("folioKongModuleRegistrar")).isFalse();
   }
 
   @Test

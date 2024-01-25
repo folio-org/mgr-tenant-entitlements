@@ -11,6 +11,7 @@ spring:
 application:
   kong:
     enabled: true
+    register-module: false
   okapi:
     enabled: true
   environment: it

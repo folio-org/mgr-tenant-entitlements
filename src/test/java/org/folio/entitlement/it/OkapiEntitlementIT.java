@@ -66,16 +66,17 @@ import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
-import org.folio.entitlement.integration.kong.KongAdminClient;
-import org.folio.entitlement.integration.kong.model.KongService;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.EnableOkapiSecurity;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
+import org.folio.tools.kong.client.KongAdminClient;
+import org.folio.tools.kong.model.Service;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -100,38 +101,42 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   private static final String OKAPI_MODULE_5_ID = "okapi-module5-5.0.0";
   private static final String INVALID_ROUTE_HASH = "4737040f862ad8b9cad357726503dae4952836e7";
 
-  @Autowired private KongTestAdminClient kongAdminTestClient;
   @SpyBean private KongAdminClient kongAdminClient;
 
   @BeforeAll
-  static void beforeAll(@Autowired KongTestAdminClient kongAdminClient, @Autowired ApplicationContext appContext) {
-    var wiremockUrl = "http://host.testcontainers.internal:" + wmAdminClient.getWireMockPort();
-    kongAdminClient.upsertService(OKAPI_MODULE_ID, new KongService().url(wiremockUrl));
-    kongAdminClient.upsertService(OKAPI_MODULE_4_ID, new KongService().url(wiremockUrl));
-    kongAdminClient.upsertService(OKAPI_MODULE_5_ID, new KongService().url(wiremockUrl));
-
-    fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
-    fakeKafkaConsumer.registerTopic(capabilitiesTenantTopic(), ResourceEvent.class);
-    fakeKafkaConsumer.registerTopic(scheduledJobsTenantTopic(), ResourceEvent.class);
-    fakeKafkaConsumer.registerTopic(systemUserTenantTopic(), ResourceEvent.class);
-
+  static void beforeAll(@Autowired KongAdminClient kongAdminClient, @Autowired ApplicationContext appContext) {
     assertThat(appContext.containsBean("folioModuleInstallerFlowProvider")).isFalse();
     assertThat(appContext.containsBean("keycloakAuthResourceCreator")).isFalse();
     assertThat(appContext.containsBean("keycloakAuthResourceCleaner")).isFalse();
     assertThat(appContext.containsBean("okapiModuleInstaller")).isTrue();
     assertThat(appContext.containsBean("kongRouteCreator")).isTrue();
     assertThat(appContext.containsBean("kongRouteCleaner")).isTrue();
+    assertThat(appContext.containsBean("folioKongAdminClient")).isTrue();
+    assertThat(appContext.containsBean("folioKongGatewayService")).isTrue();
+    assertThat(appContext.containsBean("folioKongModuleRegistrar")).isFalse();
+
+    var wiremockUrl = "http://host.testcontainers.internal:" + wmAdminClient.getWireMockPort();
+    kongAdminClient.upsertService(OKAPI_MODULE_ID, new Service().name(OKAPI_MODULE_ID).url(wiremockUrl));
+    kongAdminClient.upsertService(OKAPI_MODULE_3_ID, new Service().name(OKAPI_MODULE_3_ID).url(wiremockUrl));
+    kongAdminClient.upsertService(OKAPI_MODULE_4_ID, new Service().name(OKAPI_MODULE_4_ID).url(wiremockUrl));
+    kongAdminClient.upsertService(OKAPI_MODULE_5_ID, new Service().name(OKAPI_MODULE_5_ID).url(wiremockUrl));
+
+    fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
+    fakeKafkaConsumer.registerTopic(capabilitiesTenantTopic(), ResourceEvent.class);
+    fakeKafkaConsumer.registerTopic(scheduledJobsTenantTopic(), ResourceEvent.class);
+    fakeKafkaConsumer.registerTopic(systemUserTenantTopic(), ResourceEvent.class);
   }
 
   @AfterEach
   void tearDown() {
-    for (var kr : kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)) {
-      kongAdminTestClient.deleteRoute(kr.getService().getId(), kr.getId());
+    Mockito.reset(kongAdminClient);
+    for (var kr : kongAdminClient.getRoutesByTag(TENANT_NAME, null)) {
+      kongAdminClient.deleteRoute(kr.getService().getId(), kr.getId());
     }
   }
 
   @AfterAll
-  static void tearDown(@Autowired KongTestAdminClient kongAdminClient) {
+  static void tearDown(@Autowired KongAdminClient kongAdminClient) {
     kongAdminClient.deleteService(OKAPI_MODULE_ID);
     kongAdminClient.deleteService(OKAPI_MODULE_5_ID);
   }
@@ -173,14 +178,14 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     entitleApplications(entitlementRequest(OKAPI_APP_ID), emptyMap(),
       extendedEntitlements(extendedEntitlement(OKAPI_APP_ID)));
     getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement1));
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(2);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(2);
 
     // entitle dependent application
     entitleApplications(entitlementRequest(OKAPI_APP_5_ID), emptyMap(),
       extendedEntitlements(extendedEntitlement(OKAPI_APP_5_ID)));
     var entitlement2 = entitlementWithModules(TENANT_ID, OKAPI_APP_5_ID, List.of(OKAPI_MODULE_5_ID));
     getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_5_ID), entitlements(entitlement2));
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(3);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
 
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     getEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
@@ -216,7 +221,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     getEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
 
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(3);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
 
     assertEntitlementEvents(List.of(
       new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
@@ -252,7 +257,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var entitlement = entitlementWithModules(TENANT_ID, OKAPI_APP_ID, List.of(OKAPI_MODULE_ID));
     getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement));
     assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), "okapi-module-1.0.0", "test", TENANT_ID)));
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(2);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(2);
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
     assertScheduledJobEvents(readScheduledJobEvent("json/events/okapi-it/scheduled-job-event.json"));
     assertSystemUserEvents(readSystemUserEvent("json/events/okapi-it/system-user-event.json"));
@@ -276,7 +281,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
     assertEntitlementEvents(List.of(
       new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID)));
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).isEmpty();
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
@@ -307,7 +312,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_3_ID, tenantName, tenantId),
       new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_4_ID, tenantName, tenantId)
     ));
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(tenantName), null)).isEmpty();
+    assertThat(kongAdminClient.getRoutesByTag(tenantName, null)).isEmpty();
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_3_ID, OKAPI_APP_4_ID);
     getEntitlementsWithModules(entitlementQuery, emptyEntitlements());
@@ -360,18 +365,18 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var expectedExtendedEntitlements = extendedEntitlements(extendedEntitlement(OKAPI_APP_ID));
     entitleApplications(entitlementRequest(OKAPI_APP_ID), queryParams, expectedExtendedEntitlements);
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(2);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(2);
 
     // entitle application
     var entitlementRequest = entitlementRequest(OKAPI_APP_5_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(extendedEntitlement(OKAPI_APP_5_ID)));
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(3);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
 
     // revoke entitlement for test application
     var revokeParams = Map.of("purge", "true");
     revokeEntitlements(entitlementRequest, revokeParams, extendedEntitlements(extendedEntitlement(OKAPI_APP_5_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_5_ID), emptyEntitlements());
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(2);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(2);
 
     // entitle test application again
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(extendedEntitlement(OKAPI_APP_5_ID)));
@@ -382,7 +387,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID),
       new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(3);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
   }
 
   @Test
@@ -526,7 +531,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[9].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).isEmpty();
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
@@ -557,9 +562,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
       .andExpect(jsonPath("$.errors[0].parameters[8].key", is("KongRouteCreator")))
       .andExpect(jsonPath("$.errors[0].parameters[8].value", startsWith(
-        "CANCELLATION_FAILED: [IntegrationException] Failed to remove routes, parameters:")));
+        "CANCELLATION_FAILED: [KongIntegrationException] Failed to remove routes, parameters:")));
 
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(1);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(1);
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
@@ -589,7 +594,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[9].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).hasSize(2);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(2);
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
@@ -618,7 +623,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[5].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
-    assertThat(kongAdminTestClient.getRoutesByTag(List.of(TENANT_NAME), null)).isEmpty();
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
   }
 

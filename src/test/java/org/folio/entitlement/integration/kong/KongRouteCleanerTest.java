@@ -10,10 +10,13 @@ import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.util.List;
 import java.util.Map;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
+import org.folio.tools.kong.service.KongGatewayService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,24 +33,26 @@ class KongRouteCleanerTest {
   @Test
   void execute_positive_purgeTrue() {
     var request = EntitlementRequest.builder().type(REVOKE).purge(true).build();
-    var applicationDescriptor = applicationDescriptor();
+    var moduleDescriptors = List.of(new ModuleDescriptor());
+    var applicationDescriptor = applicationDescriptor().moduleDescriptors(moduleDescriptors);
     var stageParameters = Map.of(PARAM_APP_DESCRIPTOR, applicationDescriptor, PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = StageContext.of(FLOW_STAGE_ID, Map.of(PARAM_REQUEST, request), stageParameters);
 
     kongRouteCleaner.execute(stageContext);
 
-    verify(kongGatewayService).removeRoutes(TENANT_NAME, applicationDescriptor);
+    verify(kongGatewayService).removeRoutes(TENANT_NAME, moduleDescriptors);
   }
 
   @Test
   void execute_positive_purgeFalse() {
     var request = EntitlementRequest.builder().type(REVOKE).purge(false).build();
-    var applicationDescriptor = applicationDescriptor();
+    var moduleDescriptors = List.of(new ModuleDescriptor());
+    var applicationDescriptor = applicationDescriptor().moduleDescriptors(moduleDescriptors);
     var stageParameters = Map.of(PARAM_APP_DESCRIPTOR, applicationDescriptor, PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = StageContext.of(FLOW_STAGE_ID, Map.of(PARAM_REQUEST, request), stageParameters);
 
     kongRouteCleaner.execute(stageContext);
 
-    verify(kongGatewayService, never()).removeRoutes(TENANT_NAME, applicationDescriptor);
+    verify(kongGatewayService, never()).removeRoutes(TENANT_NAME, moduleDescriptors);
   }
 }

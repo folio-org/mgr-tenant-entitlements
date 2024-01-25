@@ -9,11 +9,11 @@ import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.folio.common.domain.model.InterfaceDescriptor;
+import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.flow.api.StageContext;
-import org.folio.security.domain.model.descriptor.InterfaceDescriptor;
-import org.folio.security.domain.model.descriptor.RoutingEntry;
 import org.springframework.stereotype.Component;
 
 @Component

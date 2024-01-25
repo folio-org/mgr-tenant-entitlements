@@ -51,11 +51,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
-import org.folio.entitlement.integration.kong.KongAdminClient;
-import org.folio.entitlement.integration.kong.model.KongService;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
+import org.folio.tools.kong.client.KongAdminClient;
+import org.folio.tools.kong.model.Service;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -85,18 +85,18 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
   @BeforeAll
-  static void beforeAll(@Autowired KongTestAdminClient kongTestAdminClient,
+  static void beforeAll(@Autowired KongAdminClient kongTestAdminClient,
     @Autowired KongAdminClient kongAdminClient, @Autowired MockMvc mockMvc) {
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
     var wiremockUrl = "http://host.testcontainers.internal:" + wmAdminClient.getWireMockPort();
-    kongTestAdminClient.upsertService(ROUTES_MODULE1_ID, new KongService().url(wiremockUrl + "/m1"));
-    kongTestAdminClient.upsertService(ROUTES_MODULE2_ID, new KongService().url(wiremockUrl + "/m2"));
+    kongTestAdminClient.upsertService(ROUTES_MODULE1_ID, new Service().url(wiremockUrl + "/m1"));
+    kongTestAdminClient.upsertService(ROUTES_MODULE2_ID, new Service().url(wiremockUrl + "/m2"));
 
     installApplication(mockMvc, kongAdminClient);
   }
 
   @AfterAll
-  static void tearDown(@Autowired KongTestAdminClient kongTestAdminClient,
+  static void tearDown(@Autowired KongAdminClient kongTestAdminClient,
     @Autowired KongAdminClient kongAdminClient, @Autowired DataSource ds) {
     kongAdminClient.getRoutesByTag(TENANT_NAME, null).forEach(route ->
       kongAdminClient.deleteRoute(route.getService().getId(), route.getId()));

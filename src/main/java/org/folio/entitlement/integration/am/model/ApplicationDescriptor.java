@@ -2,8 +2,8 @@ package org.folio.entitlement.integration.am.model;
 
 import java.util.List;
 import lombok.Data;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.Artifact;
-import org.folio.security.domain.model.descriptor.ModuleDescriptor;
 import org.hibernate.boot.Metadata;
 
 @Data

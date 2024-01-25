@@ -20,9 +20,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.collections4.CollectionUtils;
+import org.folio.common.domain.model.InterfaceReference;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.security.domain.model.descriptor.InterfaceReference;
-import org.folio.security.domain.model.descriptor.ModuleDescriptor;
 
 public class ModuleInstallationGraph {
 

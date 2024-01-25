@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.Entitlements;
@@ -34,7 +35,6 @@ import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
 import org.folio.entitlement.integration.tm.model.Tenant;
 import org.folio.flow.api.FlowEngine;
-import org.folio.security.domain.model.descriptor.ModuleDescriptor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TestValues {

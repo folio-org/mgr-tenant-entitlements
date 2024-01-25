@@ -7,7 +7,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.List;
 import java.util.stream.Stream;
-import org.folio.security.domain.model.descriptor.RoutingEntry;
+import org.folio.common.domain.model.RoutingEntry;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
