@@ -33,6 +33,6 @@ public class KongRegistrationIT extends BaseIntegrationTest {
     });
 
     var routes = kongAdminClient.getRoutesByTag(moduleName, null);
-    assertThat(routes.getData()).hasSize(15);
+    assertThat(routes.getData()).hasSize(16);
   }
 }

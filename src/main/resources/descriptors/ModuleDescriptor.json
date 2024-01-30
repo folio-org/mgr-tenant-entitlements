@@ -72,6 +72,16 @@
           "permissionsRequired": [
             "mgr-tenant-entitlements.entitlements.validate.post"
           ]
+        },
+        {
+          "type": "internal",
+          "methods": [
+            "GET"
+          ],
+          "pathPattern": "/entitlements/modules/{moduleId}",
+          "permissionsRequired": [
+            "mgr-tenant-entitlements.entitlements.modules.item.get"
+          ]
         }
       ]
     },
@@ -231,6 +241,11 @@
       "permissionName": "mgr-tenant-entitlements.entitlements.validate.post"
     },
     {
+      "description": "Retrieve applications installed for tenant by module",
+      "displayName": "Manager Tenant Entitlements - get tenant entitlements by module",
+      "permissionName": "mgr-tenant-entitlements.entitlements.modules.item.get"
+    },
+    {
       "description": "Manage tenant entitlements",
       "displayName": "Manager Tenant Entitlements - Manage tenant entitlements",
       "permissionName": "mgr-tenant-entitlements.entitlements.all",
@@ -262,6 +277,7 @@
       "subPermissions": [
         "mgr-tenant-entitlements.entitlements.item.get",
         "mgr-tenant-entitlements.entitlements.collection.get",
+        "mgr-tenant-entitlements.entitlements.modules.item.get",
         "mgr-tenant-entitlements.flows.item.get",
         "mgr-tenant-entitlements.flows.collection.get",
         "mgr-tenant-entitlements.flows.stages.item.get",
@@ -277,6 +293,7 @@
         "mgr-tenant-entitlements.entitlements.all",
         "mgr-tenant-entitlements.flows.all",
         "mgr-tenant-entitlements.entitlements.applications.collection.get",
+        "mgr-tenant-entitlements.entitlements.modules.item.get",
         "mgr-tenant-entitlements.entitlements.validate.post"
       ]
     }
