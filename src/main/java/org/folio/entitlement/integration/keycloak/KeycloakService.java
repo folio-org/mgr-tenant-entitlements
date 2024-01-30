@@ -1,10 +1,8 @@
 package org.folio.entitlement.integration.keycloak;
 
+import static java.lang.String.format;
 import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
-import static org.apache.commons.lang3.StringUtils.getIfEmpty;
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 
@@ -13,11 +11,13 @@ import jakarta.ws.rs.ClientErrorException;
 import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Collection;
+import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.security.integration.keycloak.model.KeycloakMappings;
@@ -37,34 +37,19 @@ public class KeycloakService {
   private final KeycloakConfigurationProperties properties;
 
   public void registerModuleResources(ModuleDescriptor moduleDescriptor, String realmName) {
-    var mappings = moduleDescriptorMapper.map(moduleDescriptor);
+    var mappings = moduleDescriptorMapper.map(moduleDescriptor, true);
     var clientId = getClientId(realmName);
-    var resources = prepareListResourcesToCreate(mappings, moduleDescriptor);
+    var resources = mappings.getResourceServer().getResources();
 
     createScopes(clientId, realmName);
     createResources(clientId, realmName, resources);
   }
 
   public void unregisterModuleResources(ModuleDescriptor moduleDescriptor, String realmName) {
-    var mappings = moduleDescriptorMapper.map(moduleDescriptor);
+    var mappings = moduleDescriptorMapper.map(moduleDescriptor, true);
     var clientId = getClientId(realmName);
 
     removeResources(clientId, realmName, mappings);
-  }
-
-  private Collection<ResourceRepresentation> prepareListResourcesToCreate(KeycloakMappings mappings,
-    ModuleDescriptor moduleDescriptor) {
-    var resources = emptyIfNull(mappings.getResourceServer().getResources());
-    var systemResources = emptyIfNull(moduleDescriptor.getProvides()).stream()
-      .filter(handler -> isNotEmpty(handler.getInterfaceType()) && handler.getInterfaceType().equals("system"))
-      .map(InterfaceDescriptor::getHandlers)
-      .flatMap(routingEntries -> emptyIfNull(routingEntries)
-        .stream()
-        .map(routingEntry -> getIfEmpty(routingEntry.getPath(), routingEntry::getPathPattern)))
-      .collect(Collectors.toSet());
-
-    resources.removeIf(res -> systemResources.contains(res.getName()));
-    return resources;
   }
 
   private String getClientId(String realmName) {
@@ -85,7 +70,7 @@ public class KeycloakService {
     var existingScopes = authzClient.scopes().scopes()
       .stream()
       .map(ScopeRepresentation::getName)
-      .collect(toList());
+      .toList();
 
     stream(HttpMethod.values())
       .map(HttpMethod::name)
@@ -99,12 +84,10 @@ public class KeycloakService {
   }
 
   private void createScopeIgnoreConflict(AuthorizationResource client, ScopeRepresentation scope) {
-    try (var ignored = client.scopes().create(scope)) {
-      log.debug("Scope was created with name: #{}", scope.getName());
-    } catch (ClientErrorException exception) {
-      if (exception.getResponse().getStatus() != SC_CONFLICT) {
-        throw new IntegrationException("Error during creating scopes in Keycloak", exception);
-      }
+    var scopeName = scope.getName();
+    try (var response = client.scopes().create(scope)) {
+      validateResponseIgnoringConflict(response, () -> "Error during creating scope in Keycloak: " + scopeName);
+      log.debug("Scope was created with name: #{}", scopeName);
     }
   }
 
@@ -120,12 +103,10 @@ public class KeycloakService {
   }
 
   private void createResourceIgnoreConflict(AuthorizationResource client, ResourceRepresentation resource) {
-    try (Response ignored = client.resources().create(resource)) {
-      log.debug("Resource was created with name: #{}", resource.getName());
-    } catch (ClientErrorException exception) {
-      if (exception.getResponse().getStatus() != SC_CONFLICT) {
-        throw new IntegrationException("Error during creating resources in Keycloak", exception);
-      }
+    var resourceName = resource.getName();
+    try (var response = client.resources().create(resource)) {
+      validateResponseIgnoringConflict(response, () -> "Error during creating resource in Keycloak: " + resourceName);
+      log.debug("Resource was created with name: #{}", resourceName);
     }
   }
 
@@ -161,6 +142,17 @@ public class KeycloakService {
   private URI authorizationResourceUri(String clientId, String realmName) {
     return URI.create(
       properties.getUrl() + "/admin/realms/" + realmName + "/clients/" + clientId + "/authz/resource-server");
+  }
+
+  private static void validateResponseIgnoringConflict(Response response, Supplier<String> errorMsgSupplier) {
+    var status = response.getStatus();
+    if (status >= SC_BAD_REQUEST && status != SC_CONFLICT) {
+      var msg = errorMsgSupplier.get();
+      var cause = new Parameter()
+        .key("cause")
+        .value(format("%s: %s", status, response.getStatusInfo()));
+      throw new IntegrationException(msg, List.of(cause));
+    }
   }
 }
 
