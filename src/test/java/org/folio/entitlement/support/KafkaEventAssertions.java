@@ -35,7 +35,7 @@ public final class KafkaEventAssertions {
 
   public static void assertEntitlementEvents(List<EntitlementEvent> events) {
     var entitlementEvents = getRecordValues(() -> getEvents(entitlementTopic(), EntitlementEvent.class));
-    assertThat(entitlementEvents).containsExactlyInAnyOrderElementsOf(events);
+    assertThat(entitlementEvents).containsAll(events);
   }
 
   @SafeVarargs

@@ -43,7 +43,12 @@
                     {
                       "methods": [ "POST" ],
                       "pathPattern": "/folio-module1/events",
-                      "permissionsRequired": [ "folio-module1.events.item.post" ]
+                      "permissionsRequired": [
+                        "folio-module1.events.item.post",
+                        "folio-module1.events.test-long-permissions-5bdfc09228a0c9425840edb25494fcd0.post",
+                        "folio-module1.events.test-long-permissions-1326380acd0a427bfbaa477638e05b38.post",
+                        "folio-module1.events.test-long-permissions-23fe4070ba90c9860cb0779462311a70.post"
+                      ]
                     },
                     {
                       "methods": [ "GET" ],
@@ -69,6 +74,21 @@
                     {
                       "methods": [ "GET", "DELETE" ],
                       "pathPattern": "/_/tenant/{id}"
+                    }
+                  ]
+                },
+                {
+                  "id": "_timer",
+                  "version": "1.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [
+                        "POST"
+                      ],
+                      "pathPattern": "/folio-module1/events",
+                      "unit": "day",
+                      "delay": "5"
                     }
                   ]
                 }
