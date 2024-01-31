@@ -162,6 +162,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME))
       .containsExactly("/folio-module1/events", "/folio-module1/events/{id}");
+    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
   }
 
   @Test
@@ -359,6 +360,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       "/folio-module1/events", "/folio-module1/events/{id}", "/folio-module2/events", "/folio-module2/events/{id}");
+    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
   }
 
   @Test
@@ -395,6 +397,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       "/folio-module1/events", "/folio-module1/events/{id}", "/folio-module2/events", "/folio-module2/events/{id}");
+    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
   }
 
   @Test
