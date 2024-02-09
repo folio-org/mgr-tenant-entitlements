@@ -10,9 +10,9 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -66,44 +66,43 @@ public class ModuleInstallationGraph {
       remainingIndices.add(i);
     }
 
-    var moduleInstallationSequence = new ArrayList<Set<String>>();
-    var prevIterationIndices = new HashSet<Integer>();
+    var moduleInstallationSequence = new HashMap<Integer, Set<String>>();
+    var visitedModuleIndices = new HashSet<Integer>();
     var cycleCounter = 0;
     for (var j = 0; j < adjacencyMatrix.length; j++) {
       if (isIndependentModule(j) == 0) {
         remainingIndices.remove(j);
-        prevIterationIndices.add(j);
-        addElementAtPosition(moduleInstallationSequence, 0, modules.get(j).getId());
+        visitedModuleIndices.add(j);
+        var moduleId = modules.get(j).getId();
+        moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(moduleId);
       }
     }
 
     cycleCounter++;
 
     while (isNotEmpty(remainingIndices)) {
-      var newPrevRowIndices = new HashSet<Integer>();
+      var currInterationVisitedModuleIndices = new HashSet<Integer>();
       for (var remainingIdx : new ArrayList<>(remainingIndices)) {
-        for (var prevIterationIndex : prevIterationIndices) {
-          if (adjacencyMatrix[remainingIdx][prevIterationIndex] == 1) {
-            addElementAtPosition(moduleInstallationSequence, cycleCounter, modules.get(remainingIdx).getId());
-            remainingIndices.remove(remainingIdx);
-          }
+        var remainingIndexMatrixRow = adjacencyMatrix[remainingIdx];
+        var dependentModuleIndices = getDependentModuleIndices(remainingIndexMatrixRow);
+        if (visitedModuleIndices.containsAll(dependentModuleIndices)) {
+          currInterationVisitedModuleIndices.add(remainingIdx);
+          var moduleId = modules.get(remainingIdx).getId();
+          moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(moduleId);
+          remainingIndices.remove(remainingIdx);
         }
-        newPrevRowIndices.add(remainingIdx);
       }
 
-      prevIterationIndices = newPrevRowIndices;
+      visitedModuleIndices.addAll(currInterationVisitedModuleIndices);
       cycleCounter++;
     }
 
-    return moduleInstallationSequence;
-  }
-
-  private static <T> void addElementAtPosition(List<Set<T>> list, int position, T element) {
-    if (list.size() <= position) {
-      list.add(new LinkedHashSet<>());
-    }
-
-    list.get(position).add(element);
+    return moduleInstallationSequence.entrySet()
+      .stream()
+      .sorted(Comparator.comparingInt(Entry::getKey))
+      .map(Entry::getValue)
+      .filter(CollectionUtils::isNotEmpty)
+      .toList();
   }
 
   private int isIndependentModule(int row) {
@@ -143,5 +142,16 @@ public class ModuleInstallationGraph {
       .flatMap(Collection::stream)
       .filter(moduleId -> !Objects.equals(moduleId, sourceModuleId))
       .collect(toList());
+  }
+
+  private Set<Integer> getDependentModuleIndices(int[] row) {
+    var result = new HashSet<Integer>();
+    for (int i = 0; i < row.length; i++) {
+      if (row[i] != 0) {
+        result.add(i);
+      }
+    }
+
+    return result;
   }
 }
