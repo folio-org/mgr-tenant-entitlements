@@ -74,6 +74,14 @@ class ModuleInstallationGraphTest {
           module("m4", List.of("m4-int"), List.of("m3-int"))),
         List.of(Set.of("m2"), Set.of("m1", "m3"), Set.of("m4"))),
 
+      arguments("Dependent modules (m2 <- (m1, m3) <- m4(depends on m3 and m2))",
+        appDescriptor(
+          module("m1", List.of("m1-i1"), List.of("m2-int")),
+          module("m2", List.of("m2-int")),
+          module("m3", List.of("m3-int"), List.of("m2-int")),
+          module("m4", List.of("m4-int"), List.of("m2-int", "m3-int"))),
+        List.of(Set.of("m2"), Set.of("m1", "m3"), Set.of("m4"))),
+
       arguments("Dependent modules (m1 <- m4, m2 <- m3)",
         appDescriptor(
           module("m1", List.of("m1-int")),
