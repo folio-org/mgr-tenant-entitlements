@@ -553,30 +553,31 @@ components:
       schema:
         type: string
 
-  examples:
-    entitlementRequest:
-      $ref: samples/request/entitlementSample.json
-    entitlementsResponse:
-      $ref: samples/response/entitlementsSample.json
-    extendedEntitlementsResponse:
-      $ref: samples/response/extendedEntitlementsSample.json
-    badRequestResponse:
-      $ref: samples/response/badRequestSample.json
-    entitlementFlowResponse:
-      $ref: samples/response/entitlementFlow.json
-    applicationDescriptorsResponse:
-      $ref: samples/response/applicationDescriptors.json
-    entitlementFlowIncludeStagesResponse:
-      $ref: samples/response/entitlementFlowIncludeStages.json
-    applicationFlowResponse:
-      $ref: samples/response/applicationFlow.json
-    applicationFlowsResponse:
-      $ref: samples/response/applicationFlows.json
-    applicationFlowIncludeStagesResponse:
-      $ref: samples/response/applicationFlowIncludeStages.json
-    entitlementStagesResponse:
-      $ref: samples/response/entitlementStages.json
-    entitlementStageResponse:
-      $ref: samples/response/entitlementStage.json
-    internalServerErrorResponse:
-      $ref: samples/response/internalServerErrorSample.json
+#  examples:
+#    entitlementRequest:
+#      $ref: samples/request/entitlementSample.json
+#    entitlementsResponse:
+#      $ref: samples/response/entitlementsSample.json
+#    extendedEntitlementsResponse:
+#      $ref: samples/response/extendedEntitlementsSample.json
+#    badRequestResponse:
+#      $ref: samples/response/badRequestSample.json
+#    entitlementFlowResponse:
+#      $ref: samples/response/entitlementFlow.json
+#    applicationDescriptorsResponse:
+#      $ref: samples/response/applicationDescriptors.json
+#    entitlementFlowIncludeStagesResponse:
+#      $ref: samples/response/entitlementFlowIncludeStages.json
+#    applicationFlowResponse:
+#      $ref: samples/response/applicationFlow.json
+#    applicationFlowsResponse:
+#      $ref: samples/response/applicationFlows.json
+#    applicationFlowIncludeStagesResponse:
+#      $ref: samples/response/applicationFlowIncludeStages.json
+#    entitlementStagesResponse:
+#      $ref: samples/response/entitlementStages.json
+#    entitlementStageResponse:
+#      $ref: samples/response/entitlementStage.json
+#    internalServerErrorResponse:
+#      $ref: samples/response/internalServerErrorSample.json
+
