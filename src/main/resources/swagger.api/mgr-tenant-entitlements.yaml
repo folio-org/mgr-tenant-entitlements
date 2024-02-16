@@ -580,3 +580,4 @@ components:
       $ref: samples/response/entitlementStage.json
     internalServerErrorResponse:
       $ref: samples/response/internalServerErrorSample.json
+
