@@ -82,13 +82,14 @@ public class CapabilitiesEventPublisher extends DatabaseLoggingStage {
   }
 
   private static List<FolioResource> getFolioResourcesList(ModuleDescriptor moduleDescriptor) {
-    var permissionsByName = groupPermissionsByName(moduleDescriptor);
-    var endpointsByPermission = groupEndpointsByPermission(moduleDescriptor);
-    var folioResourcesWithEndpointPairs = getFolioResourcesWithEndpoints(permissionsByName, endpointsByPermission);
+    var moduleId = moduleDescriptor.getId();
+    var permsByName = groupPermissionsByName(moduleDescriptor);
+    var endpointsByPerm = groupEndpointsByPermission(moduleDescriptor);
+    var folioResourcesWithEndpointPairs = getFolioResourcesWithEndpoints(moduleId, permsByName, endpointsByPerm);
     var folioResources = new ArrayList<>(folioResourcesWithEndpointPairs.folioResources());
     var visitedPermissionNames = folioResourcesWithEndpointPairs.visitedPermissions();
 
-    for (var permissionEntry : permissionsByName.entrySet()) {
+    for (var permissionEntry : permsByName.entrySet()) {
       if (!visitedPermissionNames.contains(permissionEntry.getKey())) {
         folioResources.add(FolioResource.of(permissionEntry.getValue(), null));
       }
@@ -114,7 +115,7 @@ public class CapabilitiesEventPublisher extends DatabaseLoggingStage {
     return mapItems(handler.getPermissionsRequired(), permission -> new SimpleImmutableEntry<>(permission, endpoints));
   }
 
-  private static ResourceHolder getFolioResourcesWithEndpoints(
+  private static ResourceHolder getFolioResourcesWithEndpoints(String moduleId,
     Map<String, Permission> permissionsByName, Map<String, Set<Endpoint>> endpointsByPermission) {
     var folioResources = new ArrayList<FolioResource>();
     var visitedPermissions = new HashSet<String>();
@@ -124,7 +125,7 @@ public class CapabilitiesEventPublisher extends DatabaseLoggingStage {
 
       var permission = permissionsByName.get(permissionName);
       if (permission == null) {
-        log.warn("Permission value is not found: permissionName = {}", permissionName);
+        log.warn("Permission value is not found: moduleId = {}, permissionName = {}", moduleId, permissionName);
         continue;
       }
 
@@ -137,11 +138,12 @@ public class CapabilitiesEventPublisher extends DatabaseLoggingStage {
 
   private static Map<String, Permission> groupPermissionsByName(ModuleDescriptor moduleDescriptor) {
     var permissionsByNameMap = new LinkedHashMap<String, Permission>();
+    var moduleId = moduleDescriptor.getId();
     for (var permission : emptyIfNull(moduleDescriptor.getPermissionSets())) {
       var permissionName = permission.getPermissionName();
       var existingPermission = permissionsByNameMap.get(permissionName);
       if (existingPermission != null) {
-        log.warn("Duplicated permission found: permissionName = {}", permissionName);
+        log.warn("Duplicated permission found: moduleId = {}, permissionName = {}", moduleId, permissionName);
         continue;
       }
 
