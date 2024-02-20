@@ -46,7 +46,7 @@
     </mgr-tenant-entitlements.yaml-file>
 
     <!-- Test dependencies versions -->
-    <testcontainer.version>1.19.4</testcontainer.version>
+    <testcontainer.version>1.19.5</testcontainer.version>
     <awaitility.version>4.2.0</awaitility.version>
 
     <!-- Plugins versions -->
