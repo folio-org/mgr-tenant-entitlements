@@ -97,6 +97,7 @@ docker run \
 | FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE | 25                                  |  false   | Max cache size for the latest flow executions                                                                                                                                                              |
 | FLOW_ENGINE_PRINT_FLOW_RESULTS         | false                               |  false   | Defines if flow engine should print execution results in logs or not                                                                                                                                       |
 | REGISTER_MODULE_IN_KONG                | true                                |  false   | Defines if module must be registered in Kong (it will create for itself service and list of routes from module descriptor)                                                                                 |
+| ROUTER_PATH_PREFIX                     |                                     |  false   | Defines routes prefix to be added to the generated endpoints by OpenAPI generator (`/foo/entites` -> `{{prefix}}/foo/entities`). Required if load balancing group has format like `{{host}}/{{moduleId}}`  |
 
 ### Kafka environment variables
 

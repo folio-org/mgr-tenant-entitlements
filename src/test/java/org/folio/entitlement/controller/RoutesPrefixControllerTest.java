@@ -1,6 +1,6 @@
 package org.folio.entitlement.controller;
 
-import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
+import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
@@ -13,8 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.domain.dto.Entitlement;
-import org.folio.entitlement.domain.dto.Entitlements;
-import org.folio.entitlement.service.EntitlementModuleService;
+import org.folio.entitlement.service.EntitlementService;
 import org.folio.entitlement.service.flow.EntitlementFlowService;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.types.UnitTest;
@@ -28,20 +27,22 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @UnitTest
 @EnableKeycloakSecurity
+@Import({ControllerTestConfiguration.class, EntitlementController.class})
 @MockBean(EntitlementFlowService.class)
-@WebMvcTest(EntitlementModuleController.class)
-@Import({ControllerTestConfiguration.class, EntitlementModuleController.class})
-@TestPropertySource(properties = "application.router.path-prefix=/")
-class EntitlementModuleControllerTest {
+@WebMvcTest(EntitlementController.class)
+@TestPropertySource(properties = "application.router.path-prefix=mgr-tenant-entitlements")
+class RoutesPrefixControllerTest {
 
   @Autowired private MockMvc mockMvc;
-  @MockBean private EntitlementModuleService entitlementService;
+  @MockBean private EntitlementService entitlementService;
 
   @Test
   void get_positive() throws Exception {
-    when(entitlementService.getModuleEntitlements(MODULE_ID, 10, 0)).thenReturn(entitlements());
+    var cqlQuery = String.format("tenantId=%s", TENANT_ID);
+    when(entitlementService.findByQuery(cqlQuery, false, 10, 0)).thenReturn(asSinglePage(entitlement()));
 
-    mockMvc.perform(get("/entitlements/modules/{moduleId}", MODULE_ID)
+    mockMvc.perform(get("/mgr-tenant-entitlements/entitlements")
+        .param("query", cqlQuery)
         .param("limit", "10")
         .param("offset", "0")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
@@ -54,9 +55,5 @@ class EntitlementModuleControllerTest {
 
   private static Entitlement entitlement() {
     return new Entitlement().applicationId(APPLICATION_ID).tenantId(TENANT_ID);
-  }
-
-  private static Entitlements entitlements() {
-    return new Entitlements().totalRecords(1).addEntitlementsItem(entitlement());
   }
 }

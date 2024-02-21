@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class EntitlementFlowController implements EntitlementFlowApi {
+public class EntitlementFlowController extends BaseController implements EntitlementFlowApi {
 
   private final EntitlementFlowService entitlementFlowService;
   private final EntitlementStageService entitlementStageService;
