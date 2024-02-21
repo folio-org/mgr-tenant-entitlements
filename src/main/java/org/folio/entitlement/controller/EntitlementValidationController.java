@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class EntitlementValidationController implements EntitlementValidationApi {
+public class EntitlementValidationController extends BaseController implements EntitlementValidationApi {
 
   private final EntitlementValidationService validationService;
 

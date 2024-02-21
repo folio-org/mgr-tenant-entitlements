@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-public class EntitlementModuleController implements EntitlementModuleApi {
+public class EntitlementModuleController extends BaseController implements EntitlementModuleApi {
 
   private final EntitlementModuleService service;
 

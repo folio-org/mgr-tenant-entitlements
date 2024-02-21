@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 @UnitTest
@@ -41,6 +42,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @MockBean(KeycloakAuthClient.class)
 @WebMvcTest(EntitlementValidationController.class)
 @EnableKeycloakSecurity
+@TestPropertySource(properties = "application.router.path-prefix=/")
 class EntitlementValidationControllerTest {
 
   @Autowired private MockMvc mockMvc;
