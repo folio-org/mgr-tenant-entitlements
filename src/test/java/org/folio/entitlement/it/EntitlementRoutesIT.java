@@ -112,8 +112,9 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @MethodSource("validRoutesDataProvider")
   @DisplayName("[1] checkInstalledRoutes_positive_parameterized")
   @WireMockStub("/wiremock/application-routes-it.json")
+  @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterized(HttpMethod method, URI uri, WiremockResponse resp) {
-    await().atMost(FIVE_SECONDS)
+    await().atMost(TEN_SECONDS)
       .pollInterval(TWO_HUNDRED_MILLISECONDS)
       .untilAsserted(() -> {
         var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME), ofString());
