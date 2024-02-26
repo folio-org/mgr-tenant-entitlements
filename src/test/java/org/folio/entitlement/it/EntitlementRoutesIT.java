@@ -61,6 +61,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -143,6 +144,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
     assertThat(readToMap(result.body())).isEqualTo(Map.of("message", "no Route matched with those values"));
   }
 
+  @Test
   @DisplayName("[4] checkInstalledRoutes_positive_routeIsNotFoundForInvalidModuleId")
   void checkInstalledRoutes_positive_routeIsNotFoundForInvalidModuleId() throws Exception {
     var uri = prepareUri("/mult-sample/entities");
