@@ -63,6 +63,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -137,6 +138,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @MethodSource("invalidRoutesDataProvider")
   @DisplayName("[3] checkInstalledRoutes_negative_parameterized")
   @WireMockStub("/wiremock/application-routes-it.json")
+  @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_negative_parameterized(HttpMethod method, URI uri, String tenantId) throws Exception {
     var result = HTTP_CLIENT.send(httpRequest(method, uri, tenantId), ofString());
 
