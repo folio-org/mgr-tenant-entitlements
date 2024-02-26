@@ -272,7 +272,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[11].key", is("folio-module2-2.0.0-moduleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[11].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
-          + "\\[method: POST, uri: http://localhost:\\d+/folio-module2/_/tenant], cause: request timed out")));
+          + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
 
@@ -315,7 +315,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[11].key", is("folio-module2-2.0.0-moduleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[11].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
-          + "\\[method: POST, uri: http://localhost:\\d+/folio-module2/_/tenant], cause: request timed out")));
+          + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
 
@@ -354,7 +354,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[11].key", is("folio-module2-2.0.0-moduleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[11].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
-          + "\\[method: POST, uri: http://localhost:\\d+/folio-module2/_/tenant], cause: request timed out")));
+          + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
@@ -390,7 +390,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[11].key", is("folio-module2-2.0.0-moduleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[11].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[IOException] Failed to perform request "
-          + "\\[method: POST, uri: http://localhost:\\d+/folio-module2/_/tenant], "
+          + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], "
           + "cause: HTTP/1.1 header parser received no bytes")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
