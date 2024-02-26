@@ -4,9 +4,7 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.awaitility.Durations.FIVE_HUNDRED_MILLISECONDS;
 import static org.awaitility.Durations.FIVE_SECONDS;
-import static org.awaitility.Durations.TEN_SECONDS;
 import static org.awaitility.Durations.TWO_HUNDRED_MILLISECONDS;
 import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
 import static org.folio.common.utils.OkapiHeaders.TENANT;
@@ -126,11 +124,10 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @MethodSource("multipleRoutesDataProvider")
   @DisplayName("[2] checkInstalledRoutes_positive_parameterizedForTypeMultiple")
   @WireMockStub("/wiremock/application-routes-it.json")
-  @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterizedForTypeMultiple(
     HttpMethod method, URI uri, String moduleId, WiremockResponse resp) {
-    await().atMost(TEN_SECONDS)
-      .pollInterval(FIVE_HUNDRED_MILLISECONDS)
+    await().atMost(FIVE_SECONDS)
+      .pollInterval(TWO_HUNDRED_MILLISECONDS)
       .untilAsserted(() -> {
         var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME, moduleId), ofString());
         assertThat(result.statusCode()).isEqualTo(OK.value());
