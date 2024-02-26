@@ -4,6 +4,7 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.awaitility.Durations.ONE_SECOND;
 import static org.awaitility.Durations.TEN_SECONDS;
 import static org.awaitility.Durations.TWO_HUNDRED_MILLISECONDS;
 import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
@@ -114,7 +115,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterized(HttpMethod method, URI uri, WiremockResponse resp) {
     await().atMost(TEN_SECONDS)
-      .pollInterval(TWO_HUNDRED_MILLISECONDS)
+      .pollInterval(ONE_SECOND)
       .untilAsserted(() -> {
         var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME), ofString());
         assertThat(result.statusCode()).isEqualTo(OK.value());
