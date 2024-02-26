@@ -61,9 +61,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,7 +109,6 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @MethodSource("validRoutesDataProvider")
   @DisplayName("[1] checkInstalledRoutes_positive_parameterized")
   @WireMockStub("/wiremock/application-routes-it.json")
-  @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterized(HttpMethod method, URI uri, WiremockResponse resp) {
     await().atMost(FIVE_SECONDS)
       .pollInterval(TWO_HUNDRED_MILLISECONDS)
@@ -125,7 +122,6 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @MethodSource("multipleRoutesDataProvider")
   @DisplayName("[2] checkInstalledRoutes_positive_parameterizedForTypeMultiple")
   @WireMockStub("/wiremock/application-routes-it.json")
-  @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterizedForTypeMultiple(
     HttpMethod method, URI uri, String moduleId, WiremockResponse resp) {
     await().atMost(FIVE_SECONDS)
@@ -140,7 +136,6 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @MethodSource("invalidRoutesDataProvider")
   @DisplayName("[3] checkInstalledRoutes_negative_parameterized")
   @WireMockStub("/wiremock/application-routes-it.json")
-  @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_negative_parameterized(HttpMethod method, URI uri, String tenantId) throws Exception {
     var result = HTTP_CLIENT.send(httpRequest(method, uri, tenantId), ofString());
 
@@ -148,7 +143,6 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
     assertThat(readToMap(result.body())).isEqualTo(Map.of("message", "no Route matched with those values"));
   }
 
-  @Test
   @DisplayName("[4] checkInstalledRoutes_positive_routeIsNotFoundForInvalidModuleId")
   void checkInstalledRoutes_positive_routeIsNotFoundForInvalidModuleId() throws Exception {
     var uri = prepareUri("/mult-sample/entities");
