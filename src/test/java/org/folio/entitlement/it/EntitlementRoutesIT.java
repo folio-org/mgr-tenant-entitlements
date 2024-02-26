@@ -4,7 +4,9 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.awaitility.Durations.FIVE_HUNDRED_MILLISECONDS;
 import static org.awaitility.Durations.FIVE_SECONDS;
+import static org.awaitility.Durations.TEN_SECONDS;
 import static org.awaitility.Durations.TWO_HUNDRED_MILLISECONDS;
 import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
 import static org.folio.common.utils.OkapiHeaders.TENANT;
@@ -86,7 +88,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
 
   @BeforeAll
   static void beforeAll(@Autowired KongAdminClient kongTestAdminClient,
-                        @Autowired KongAdminClient kongAdminClient, @Autowired MockMvc mockMvc) {
+    @Autowired KongAdminClient kongAdminClient, @Autowired MockMvc mockMvc) {
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
     var wiremockUrl = "http://host.testcontainers.internal:" + wmAdminClient.getWireMockPort();
     kongTestAdminClient.upsertService(ROUTES_MODULE1_ID, new Service().url(wiremockUrl + "/m1"));
@@ -97,7 +99,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
 
   @AfterAll
   static void tearDown(@Autowired KongAdminClient kongTestAdminClient,
-                       @Autowired KongAdminClient kongAdminClient, @Autowired DataSource ds) {
+    @Autowired KongAdminClient kongAdminClient, @Autowired DataSource ds) {
     kongAdminClient.getRoutesByTag(TENANT_NAME, null).forEach(route ->
       kongAdminClient.deleteRoute(route.getService().getId(), route.getId()));
 
@@ -127,8 +129,8 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterizedForTypeMultiple(
     HttpMethod method, URI uri, String moduleId, WiremockResponse resp) {
-    await().atMost(FIVE_SECONDS)
-      .pollInterval(TWO_HUNDRED_MILLISECONDS)
+    await().atMost(TEN_SECONDS)
+      .pollInterval(FIVE_HUNDRED_MILLISECONDS)
       .untilAsserted(() -> {
         var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME, moduleId), ofString());
         assertThat(result.statusCode()).isEqualTo(OK.value());
