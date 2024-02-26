@@ -20,6 +20,8 @@ import static org.folio.entitlement.support.TestUtils.readString;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.support.extensions.impl.KongGatewayExtension.KONG_GATEWAY_URL_PROPERTY;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
+import static org.folio.test.extensions.impl.WireMockExtension.WM_DOCKER_PORT;
+import static org.folio.test.extensions.impl.WireMockExtension.WM_NETWORK_ALIAS;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -88,7 +90,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   static void beforeAll(@Autowired KongAdminClient kongTestAdminClient,
     @Autowired KongAdminClient kongAdminClient, @Autowired MockMvc mockMvc) {
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
-    var wiremockUrl = "http://host.testcontainers.internal:" + wmAdminClient.getWireMockPort();
+    var wiremockUrl = String.format("http://%s:%s", WM_NETWORK_ALIAS, WM_DOCKER_PORT);
     kongTestAdminClient.upsertService(ROUTES_MODULE1_ID, new Service().url(wiremockUrl + "/m1"));
     kongTestAdminClient.upsertService(ROUTES_MODULE2_ID, new Service().url(wiremockUrl + "/m2"));
 

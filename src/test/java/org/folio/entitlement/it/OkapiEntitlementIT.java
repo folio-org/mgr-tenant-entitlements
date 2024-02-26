@@ -35,6 +35,8 @@ import static org.folio.entitlement.support.TestValues.extendedEntitlement;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
+import static org.folio.test.extensions.impl.WireMockExtension.WM_DOCKER_PORT;
+import static org.folio.test.extensions.impl.WireMockExtension.WM_NETWORK_ALIAS;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -115,7 +117,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertThat(appContext.containsBean("folioKongGatewayService")).isTrue();
     assertThat(appContext.containsBean("folioKongModuleRegistrar")).isFalse();
 
-    var wiremockUrl = "http://host.testcontainers.internal:" + wmAdminClient.getWireMockPort();
+    var wiremockUrl = String.format("http://%s:%s", WM_NETWORK_ALIAS, WM_DOCKER_PORT);
     kongAdminClient.upsertService(OKAPI_MODULE_ID, new Service().name(OKAPI_MODULE_ID).url(wiremockUrl));
     kongAdminClient.upsertService(OKAPI_MODULE_3_ID, new Service().name(OKAPI_MODULE_3_ID).url(wiremockUrl));
     kongAdminClient.upsertService(OKAPI_MODULE_4_ID, new Service().name(OKAPI_MODULE_4_ID).url(wiremockUrl));
