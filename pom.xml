@@ -37,7 +37,7 @@
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
     <semver4j.version>5.2.2</semver4j.version>
     <folio-spring-cql.version>8.0.0</folio-spring-cql.version>
-    <applications-poc-versions.version>1.3.0-SNAPSHOT</applications-poc-versions.version>
+    <applications-poc-tools.version>1.4.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
     <folio-flow-engine.version>1.0.0</folio-flow-engine.version>
 
@@ -221,13 +221,13 @@
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>folio-security</artifactId>
-      <version>1.4.0-SNAPSHOT</version>
+      <version>${applications-poc-tools.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>folio-backend-common</artifactId>
-      <version>1.4.0-SNAPSHOT</version>
+      <version>${applications-poc-tools.version}</version>
     </dependency>
 
     <dependency>
@@ -239,13 +239,13 @@
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>folio-integration-kafka</artifactId>
-      <version>1.4.0-SNAPSHOT</version>
+      <version>${applications-poc-tools.version}</version>
     </dependency>
 
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>folio-integration-kong</artifactId>
-      <version>1.4.0-SNAPSHOT</version>
+      <version>${applications-poc-tools.version}</version>
     </dependency>
 
     <!-- OAS generation -->
@@ -289,7 +289,7 @@
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>folio-backend-testing</artifactId>
-      <version>1.4.0-SNAPSHOT</version>
+      <version>${applications-poc-tools.version}</version>
       <scope>test</scope>
     </dependency>
 
