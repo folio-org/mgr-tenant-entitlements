@@ -33,7 +33,7 @@
     <swagger-annotations.version>2.2.20</swagger-annotations.version>
     <apache-commons-lang3.version>3.14.0</apache-commons-lang3.version>
     <apache-commons-collections4.version>4.4</apache-commons-collections4.version>
-    <cql2pgjson.version>35.1.1</cql2pgjson.version>
+    <cql2pgjson.version>35.1.2</cql2pgjson.version>
     <spring-cloud-bom.version>2023.0.0</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
     <semver4j.version>5.2.2</semver4j.version>
