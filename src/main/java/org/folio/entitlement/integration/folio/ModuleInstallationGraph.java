@@ -1,12 +1,15 @@
 package org.folio.entitlement.integration.folio;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.collections4.SetUtils.difference;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +22,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.ModuleDescriptor;
@@ -73,8 +77,7 @@ public class ModuleInstallationGraph {
       if (isIndependentModule(j) == 0) {
         remainingIndices.remove(j);
         visitedModuleIndices.add(j);
-        var moduleId = modules.get(j).getId();
-        moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(moduleId);
+        moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(getModuleId(j));
       }
     }
 
@@ -82,14 +85,25 @@ public class ModuleInstallationGraph {
 
     while (isNotEmpty(remainingIndices) && cycleCounter < adjacencyMatrix.length) {
       var currInterationVisitedModuleIndices = new HashSet<Integer>();
+      var visitedIndicesMap = new HashMap<Integer, Set<Integer>>();
       for (var remainingIdx : new ArrayList<>(remainingIndices)) {
         var remainingIndexMatrixRow = adjacencyMatrix[remainingIdx];
         var dependentModuleIndices = getDependentModuleIndices(remainingIndexMatrixRow);
+        visitedIndicesMap.put(remainingIdx, difference(dependentModuleIndices, visitedModuleIndices));
         if (visitedModuleIndices.containsAll(dependentModuleIndices)) {
           currInterationVisitedModuleIndices.add(remainingIdx);
-          var moduleId = modules.get(remainingIdx).getId();
-          moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(moduleId);
+          moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(getModuleId(remainingIdx));
           remainingIndices.remove(remainingIdx);
+        }
+      }
+
+      var unresolvedDependenciesGraph = new UnresolvedDependenciesGraph(visitedIndicesMap);
+      var moduleIdsInCyclicDependency = unresolvedDependenciesGraph.getCyclicDependencies();
+      if (isNotEmpty(moduleIdsInCyclicDependency)) {
+        for (var moduleIdx : moduleIdsInCyclicDependency) {
+          currInterationVisitedModuleIndices.add(moduleIdx);
+          moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(getModuleId(moduleIdx));
+          remainingIndices.remove(moduleIdx);
         }
       }
 
@@ -97,10 +111,9 @@ public class ModuleInstallationGraph {
       cycleCounter++;
     }
 
-    if (CollectionUtils.isNotEmpty(remainingIndices)) {
-      for (var remainingIdx : remainingIndices) {
-        var moduleId = modules.get(remainingIdx).getId();
-        moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(moduleId);
+    if (isNotEmpty(remainingIndices)) {
+      for (var idx : remainingIndices) {
+        moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(getModuleId(idx));
       }
     }
 
@@ -110,6 +123,10 @@ public class ModuleInstallationGraph {
       .map(Entry::getValue)
       .filter(CollectionUtils::isNotEmpty)
       .toList();
+  }
+
+  private String getModuleId(Integer remainingIdx) {
+    return modules.get(remainingIdx).getId();
   }
 
   private int isIndependentModule(int row) {
@@ -126,7 +143,7 @@ public class ModuleInstallationGraph {
     for (var i = 0; i < size; i++) {
       var moduleDescriptor = modules.get(i);
       var requires = moduleDescriptor.getRequires();
-      if (CollectionUtils.isEmpty(requires)) {
+      if (isEmpty(requires)) {
         continue;
       }
 
@@ -160,5 +177,96 @@ public class ModuleInstallationGraph {
     }
 
     return result;
+  }
+
+  @RequiredArgsConstructor
+  private final class UnresolvedDependenciesGraph {
+
+    private final Map<Integer, Set<Integer>> graph;
+    private final Set<Set<Integer>> cyclicDependencySets = new HashSet<>();
+
+    private Set<Integer> getCyclicDependencies() {
+      boolean[] visited = new boolean[adjacencyMatrix.length];
+      var path = new ArrayList<Integer>();
+
+      for (int i = 1; i < visited.length; i++) {
+        findCircularDependencies(i, visited, path);
+      }
+
+      var foundCircularDependencies = mergeInterceptingSets();
+      var result = new HashSet<Integer>();
+      for (var circularDependency : foundCircularDependencies) {
+        if (!hasOtherDependencies(circularDependency)) {
+          result.addAll(circularDependency);
+        }
+      }
+
+      return result;
+    }
+
+    private boolean hasOtherDependencies(Set<Integer> circularDependencySet) {
+      var currentDependencies = new HashSet<Integer>();
+      for (var idx : circularDependencySet) {
+        currentDependencies.addAll(graph.getOrDefault(idx, emptySet()));
+      }
+
+      return !currentDependencies.equals(circularDependencySet);
+    }
+
+    private void findCircularDependencies(int node, boolean[] visited, List<Integer> path) {
+      if (visited[node]) {
+        visited[node] = false;
+        return;
+      }
+
+      visited[node] = true;
+      path.add(node);
+
+      for (var n : graph.getOrDefault(node, emptySet())) {
+        if (!visited[n]) {
+          findCircularDependencies(n, visited, path);
+          continue;
+        }
+
+        if (path.contains(n)) {
+          collectCircularDependencies(n, path);
+        }
+      }
+
+      path.remove(path.size() - 1);
+      visited[node] = false;
+    }
+
+    private void collectCircularDependencies(Integer n, List<Integer> path) {
+      int index = path.indexOf(n);
+      var cycle = new HashSet<Integer>();
+      for (int i = index; i < path.size(); i++) {
+        cycle.add(path.get(i));
+      }
+
+      cyclicDependencySets.add(cycle);
+    }
+
+    private List<Set<Integer>> mergeInterceptingSets() {
+      var cyclicDependenciesList = new ArrayList<>(cyclicDependencySets);
+
+      for (int i = 0; i < cyclicDependenciesList.size(); i++) {
+        for (int j = i + 1; j < cyclicDependenciesList.size(); j++) {
+          var firstSet = cyclicDependenciesList.get(i);
+          var secondSet = cyclicDependenciesList.get(j);
+
+          var intersection = new HashSet<>(firstSet);
+          intersection.retainAll(secondSet);
+
+          if (!intersection.isEmpty()) {
+            firstSet.addAll(secondSet);
+            cyclicDependenciesList.remove(j);
+            j--;
+          }
+        }
+      }
+
+      return cyclicDependenciesList;
+    }
   }
 }
