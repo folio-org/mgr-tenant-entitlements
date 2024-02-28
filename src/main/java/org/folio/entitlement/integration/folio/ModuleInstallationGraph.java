@@ -80,7 +80,7 @@ public class ModuleInstallationGraph {
 
     cycleCounter++;
 
-    while (isNotEmpty(remainingIndices)) {
+    while (isNotEmpty(remainingIndices) && cycleCounter < adjacencyMatrix.length) {
       var currInterationVisitedModuleIndices = new HashSet<Integer>();
       for (var remainingIdx : new ArrayList<>(remainingIndices)) {
         var remainingIndexMatrixRow = adjacencyMatrix[remainingIdx];
@@ -95,6 +95,13 @@ public class ModuleInstallationGraph {
 
       visitedModuleIndices.addAll(currInterationVisitedModuleIndices);
       cycleCounter++;
+    }
+
+    if (CollectionUtils.isNotEmpty(remainingIndices)) {
+      for (var remainingIdx : remainingIndices) {
+        var moduleId = modules.get(remainingIdx).getId();
+        moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(moduleId);
+      }
     }
 
     return moduleInstallationSequence.entrySet()

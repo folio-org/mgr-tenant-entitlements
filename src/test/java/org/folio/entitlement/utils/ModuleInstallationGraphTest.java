@@ -103,6 +103,26 @@ class ModuleInstallationGraphTest {
           module("m2", List.of("m2-int"), List.of("m2-int"))),
         List.of(Set.of("m1", "m2"))),
 
+      arguments("Circular dependency [m1 <-> m2]",
+        appDescriptor(
+          module("m1", List.of("m1-int"), List.of("m2-int")),
+          module("m2", List.of("m2-int"), List.of("m1-int"))),
+        List.of(Set.of("m1", "m2"))),
+
+      arguments("Circular dependency [3 modules]",
+        appDescriptor(
+          module("m1", List.of("m1-int"), List.of("m2-int")),
+          module("m2", List.of("m2-int"), List.of("m3-int")),
+          module("m3", List.of("m3-int"), List.of("m1-int"))),
+        List.of(Set.of("m1", "m2", "m3"))),
+
+      arguments("Circular dependency [m1 <- m2 <-> m3]",
+        appDescriptor(
+          module("m1", List.of("m1-int")),
+          module("m2", List.of("m2-int"), List.of("m1-int", "m3-int")),
+          module("m3", List.of("m3-int"), List.of("m2-int"))),
+        List.of(Set.of("m1"), Set.of("m2", "m3"))),
+
       arguments("Dependent modules[null provides]", appDescriptor(module("m1", null)), List.of(Set.of("m1")))
     );
   }
