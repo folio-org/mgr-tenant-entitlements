@@ -16,7 +16,7 @@ public class EntitlementApplicationController extends BaseController implements 
   @Override
   public ResponseEntity<ApplicationDescriptors> findEntitledApplicationsByTenantName(String tenantHeader, String tenant,
     String authToken, Integer limit, Integer offset) {
-    var descriptors = service.getApplicationDescriptorsByTenantName(tenant, tenantHeader, authToken, offset, limit);
+    var descriptors = service.getApplicationDescriptorsByTenantName(tenant, authToken, offset, limit);
     return ResponseEntity.ok(descriptors);
   }
 }

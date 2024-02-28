@@ -81,7 +81,7 @@ class EntitlementApplicationServiceTest {
     when(applicationManagerService.getApplicationDescriptors(anyList(), anyString())).thenReturn(appDescriptors);
 
     var actualAppDescriptors =
-      service.getApplicationDescriptorsByTenantName(TEST_TENANT_NAME, TEST_TENANT_NAME, OKAPI_TOKEN, 0, limit);
+      service.getApplicationDescriptorsByTenantName(TEST_TENANT_NAME, OKAPI_TOKEN, 0, limit);
 
     assertEquals(totalRecords, actualAppDescriptors.getTotalRecords());
     assertThat(actualAppDescriptors.getApplicationDescriptors())
