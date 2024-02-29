@@ -208,23 +208,16 @@ public class ModuleInstallationGraph {
     }
 
     private void findCircularDependencies(int node, boolean[] visited, List<Integer> path) {
-      if (visited[node]) {
-        visited[node] = false;
-        return;
-      }
-
       visited[node] = true;
       path.add(node);
 
       for (var n : graph.getOrDefault(node, emptySet())) {
-        if (!visited[n]) {
-          findCircularDependencies(n, visited, path);
+        if (visited[n]) {
+          collectCircularDependencies(n, path);
           continue;
         }
 
-        if (path.contains(n)) {
-          collectCircularDependencies(n, path);
-        }
+        findCircularDependencies(n, visited, path);
       }
 
       path.remove(path.size() - 1);
