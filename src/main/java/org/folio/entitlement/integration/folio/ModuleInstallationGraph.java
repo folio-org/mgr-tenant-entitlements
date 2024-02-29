@@ -83,7 +83,7 @@ public class ModuleInstallationGraph {
 
     cycleCounter++;
 
-    while (isNotEmpty(remainingIndices) && cycleCounter < adjacencyMatrix.length) {
+    while (isNotEmpty(remainingIndices)) {
       var currInterationVisitedModuleIndices = new HashSet<Integer>();
       var visitedIndicesMap = new HashMap<Integer, Set<Integer>>();
       for (var remainingIdx : new ArrayList<>(remainingIndices)) {
@@ -109,12 +109,6 @@ public class ModuleInstallationGraph {
 
       visitedModuleIndices.addAll(currInterationVisitedModuleIndices);
       cycleCounter++;
-    }
-
-    if (isNotEmpty(remainingIndices)) {
-      for (var idx : remainingIndices) {
-        moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(getModuleId(idx));
-      }
     }
 
     return moduleInstallationSequence.entrySet()
@@ -251,17 +245,17 @@ public class ModuleInstallationGraph {
       var cyclicDependenciesList = new ArrayList<>(cyclicDependencySets);
 
       for (int i = 0; i < cyclicDependenciesList.size(); i++) {
-        for (int j = i + 1; j < cyclicDependenciesList.size(); j++) {
-          var firstSet = cyclicDependenciesList.get(i);
-          var secondSet = cyclicDependenciesList.get(j);
+        var firstSet = cyclicDependenciesList.get(i);
+        var iter = cyclicDependenciesList.listIterator(i + 1);
+        while (iter.hasNext()) {
+          var secondSet = iter.next();
 
           var intersection = new HashSet<>(firstSet);
           intersection.retainAll(secondSet);
 
           if (!intersection.isEmpty()) {
             firstSet.addAll(secondSet);
-            cyclicDependenciesList.remove(j);
-            j--;
+            iter.remove();
           }
         }
       }
