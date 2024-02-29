@@ -99,12 +99,10 @@ public class ModuleInstallationGraph {
 
       var unresolvedDependenciesGraph = new UnresolvedDependenciesGraph(visitedIndicesMap);
       var moduleIdsInCyclicDependency = unresolvedDependenciesGraph.getCyclicDependencies();
-      if (isNotEmpty(moduleIdsInCyclicDependency)) {
-        for (var moduleIdx : moduleIdsInCyclicDependency) {
-          currInterationVisitedModuleIndices.add(moduleIdx);
-          moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(getModuleId(moduleIdx));
-          remainingIndices.remove(moduleIdx);
-        }
+      for (var moduleIdx : moduleIdsInCyclicDependency) {
+        currInterationVisitedModuleIndices.add(moduleIdx);
+        moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(getModuleId(moduleIdx));
+        remainingIndices.remove(moduleIdx);
       }
 
       visitedModuleIndices.addAll(currInterationVisitedModuleIndices);
@@ -164,7 +162,7 @@ public class ModuleInstallationGraph {
 
   private Set<Integer> getDependentModuleIndices(int[] row) {
     var result = new HashSet<Integer>();
-    for (int i = 0; i < row.length; i++) {
+    for (var i = 0; i < row.length; i++) {
       if (row[i] != 0) {
         result.add(i);
       }
@@ -180,10 +178,10 @@ public class ModuleInstallationGraph {
     private final Set<Set<Integer>> cyclicDependencySets = new HashSet<>();
 
     private Set<Integer> getCyclicDependencies() {
-      boolean[] visited = new boolean[adjacencyMatrix.length];
+      var visited = new boolean[adjacencyMatrix.length];
       var path = new ArrayList<Integer>();
 
-      for (int i = 1; i < visited.length; i++) {
+      for (var i = 1; i < visited.length; i++) {
         findCircularDependencies(i, visited, path);
       }
 
@@ -225,9 +223,9 @@ public class ModuleInstallationGraph {
     }
 
     private void collectCircularDependencies(Integer n, List<Integer> path) {
-      int index = path.indexOf(n);
+      var index = path.indexOf(n);
       var cycle = new HashSet<Integer>();
-      for (int i = index; i < path.size(); i++) {
+      for (var i = index; i < path.size(); i++) {
         cycle.add(path.get(i));
       }
 
@@ -237,7 +235,7 @@ public class ModuleInstallationGraph {
     private List<Set<Integer>> mergeInterceptingSets() {
       var cyclicDependenciesList = new ArrayList<>(cyclicDependencySets);
 
-      for (int i = 0; i < cyclicDependenciesList.size(); i++) {
+      for (var i = 0; i < cyclicDependenciesList.size(); i++) {
         var firstSet = cyclicDependenciesList.get(i);
         var iter = cyclicDependenciesList.listIterator(i + 1);
         while (iter.hasNext()) {
