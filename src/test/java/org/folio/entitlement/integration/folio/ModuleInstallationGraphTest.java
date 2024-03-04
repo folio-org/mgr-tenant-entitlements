@@ -1,4 +1,4 @@
-package org.folio.entitlement.utils;
+package org.folio.entitlement.integration.folio;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,7 +12,6 @@ import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.integration.folio.ModuleInstallationGraph;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -102,6 +101,86 @@ class ModuleInstallationGraphTest {
           module("m1", List.of("m1-int")),
           module("m2", List.of("m2-int"), List.of("m2-int"))),
         List.of(Set.of("m1", "m2"))),
+
+      arguments("Circular dependency [m1 <-> m2]",
+        appDescriptor(
+          module("m1", List.of("m1-int"), List.of("m2-int")),
+          module("m2", List.of("m2-int"), List.of("m1-int"))),
+        List.of(Set.of("m1", "m2"))),
+
+      arguments("Circular dependency [3 modules]",
+        appDescriptor(
+          module("m1", List.of("m1-int"), List.of("m2-int")),
+          module("m2", List.of("m2-int"), List.of("m3-int")),
+          module("m3", List.of("m3-int"), List.of("m1-int"))),
+        List.of(Set.of("m1", "m2", "m3"))),
+
+      arguments("Circular dependency [m1 <- m2 <-> m3]",
+        appDescriptor(
+          module("m1", List.of("m1-int")),
+          module("m2", List.of("m2-int"), List.of("m1-int", "m3-int")),
+          module("m3", List.of("m3-int"), List.of("m2-int"))),
+        List.of(Set.of("m1"), Set.of("m2", "m3"))),
+
+      arguments("Circular dependency [m1 <- m2 <-> m3 <- m4]",
+        appDescriptor(
+          module("m1", List.of("m1-api")),
+          module("m2", List.of("m2-api"), List.of("m1-api", "m3-api")),
+          module("m3", List.of("m3-api"), List.of("m2-api")),
+          module("m4", List.of("m4-api"), List.of("m3-api"))),
+        List.of(Set.of("m1"), Set.of("m2", "m3"), Set.of("m4"))),
+
+      arguments("Circular dependency [m1 <- (m2, m3), m4 <- m5]",
+        appDescriptor(
+          module("m1", List.of("m1-api")),
+          module("m2", List.of("m2-api"), List.of("m1-api", "m3-api")),
+          module("m3", List.of("m3-api"), List.of("m2-api")),
+          module("m4", List.of("m4-api"), List.of("m1-api")),
+          module("m5", List.of("m5-api"), List.of("m3-api"))),
+        List.of(Set.of("m1"), Set.of("m2", "m3", "m4"), Set.of("m5"))),
+
+      arguments("Two circular dependencies [m1 <- (m2 <-> m3, m4 <-> m5) <- m6]",
+        appDescriptor(
+          module("m1", List.of("m1-api")),
+          module("m2", List.of("m2-api"), List.of("m1-api", "m3-api")),
+          module("m3", List.of("m3-api"), List.of("m2-api")),
+          module("m4", List.of("m4-api"), List.of("m1-api", "m5-api")),
+          module("m5", List.of("m5-api"), List.of("m4-api")),
+          module("m6", List.of("m6-api"), List.of("m5-api"))),
+        List.of(Set.of("m1"), Set.of("m2", "m3", "m4", "m5"), Set.of("m6"))),
+
+      arguments("Two circular dependencies [m1 <- m2 <-> m3 <- m4 <-> m5 <- m6]",
+        appDescriptor(
+          module("m1", List.of("m1-api")),
+          module("m2", List.of("m2-api"), List.of("m1-api", "m3-api")),
+          module("m3", List.of("m3-api"), List.of("m2-api")),
+          module("m4", List.of("m4-api"), List.of("m3-api", "m5-api")),
+          module("m5", List.of("m5-api"), List.of("m4-api")),
+          module("m6", List.of("m6-api"), List.of("m5-api"))),
+        List.of(Set.of("m1"), Set.of("m2", "m3"), Set.of("m4", "m5"), Set.of("m6"))),
+
+      arguments("Two circular dependencies [m1 <- (m2, m3, m4) <-> (m2, m5, m6) <- m7]",
+        appDescriptor(
+          module("m1", List.of("m1-api")),
+          module("m2", List.of("m2-api"), List.of("m1-api", "m3-api", "m5-api")),
+          module("m3", List.of("m3-api"), List.of("m4-api")),
+          module("m4", List.of("m4-api"), List.of("m2-api")),
+          module("m5", List.of("m5-api"), List.of("m6-api")),
+          module("m6", List.of("m6-api"), List.of("m2-api")),
+          module("m7", List.of("m7-api"), List.of("m2-api"))),
+        List.of(Set.of("m1"), Set.of("m2", "m3", "m4", "m5", "m6"), Set.of("m7"))),
+
+      arguments("Two circular dependencies [m1 <- (m2, m3, m4) <- (m2, m5) -> (m5, m6, m7) <- m8]",
+        appDescriptor(
+          module("m1", List.of("m1-api")),
+          module("m2", List.of("m2-api"), List.of("m1-api", "m3-api", "m5-api")),
+          module("m3", List.of("m3-api"), List.of("m4-api", "m6-api")),
+          module("m4", List.of("m4-api"), List.of("m2-api")),
+          module("m5", List.of("m5-api"), List.of("m6-api", "m2-api")),
+          module("m6", List.of("m6-api"), List.of("m7-api")),
+          module("m7", List.of("m7-api"), List.of("m5-api")),
+          module("m8", List.of("m8-api"), List.of("m5-api"))),
+        List.of(Set.of("m1"), Set.of("m2", "m3", "m4", "m5", "m6", "m7"), Set.of("m8"))),
 
       arguments("Dependent modules[null provides]", appDescriptor(module("m1", null)), List.of(Set.of("m1")))
     );
