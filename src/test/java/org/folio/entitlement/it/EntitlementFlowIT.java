@@ -31,7 +31,7 @@ import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.jdbc.Sql;
 
-@EnableKeycloak
+@EnableKeycloak(tlsEnabled = true)
 @IntegrationTest
 @EnableKeycloakSecurity
 @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "classpath:/sql/entitlement-flow-data.sql")

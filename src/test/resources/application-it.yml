@@ -19,6 +19,10 @@ application:
     enabled: false
     admin:
       client-id: ${KC_ADMIN_CLIENT_ID}
+    tls:
+      enabled: true
+      trustStorePath: classpath:certificates/test.truststore.jks
+      trustStorePassword: secretpassword
   secret-store:
     type: EPHEMERAL
     ephemeral:
