@@ -1,6 +1,6 @@
 package org.folio.entitlement.integration.keycloak.configuration;
 
-import static org.apache.commons.lang3.StringUtils.stripToNull;
+import static org.folio.security.integration.keycloak.utils.ClientBuildUtils.buildKeycloakAdminClient;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -14,7 +14,6 @@ import org.folio.security.integration.keycloak.utils.KeycloakSecretUtils;
 import org.folio.tools.store.SecureStore;
 import org.folio.tools.store.exception.NotFoundException;
 import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -34,19 +33,9 @@ public class KeycloakConfiguration {
   @Bean
   @ConditionalOnProperty(name = "application.keycloak.import.enabled", havingValue = "false", matchIfMissing = true)
   public Keycloak keycloak() {
-    var admin = properties.getAdmin();
-    var clientId = admin.getClientId();
+    var clientId = properties.getAdmin().getClientId();
     var clientSecret = getKeycloakClientSecret(clientId);
-
-    return KeycloakBuilder.builder()
-      .realm("master")
-      .serverUrl(properties.getUrl())
-      .clientId(admin.getClientId())
-      .clientSecret(stripToNull(clientSecret))
-      .username(stripToNull(admin.getUsername()))
-      .password(stripToNull(admin.getPassword()))
-      .grantType(admin.getGrantType())
-      .build();
+    return buildKeycloakAdminClient(clientSecret, properties);
   }
 
   @Bean
