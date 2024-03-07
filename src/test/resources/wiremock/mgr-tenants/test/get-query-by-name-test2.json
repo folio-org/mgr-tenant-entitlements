@@ -1,0 +1,32 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/tenants",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "name==test2"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "tenants": [
+        {
+          "id": "6ad28dae-7c02-4f89-9320-153c55bf1941",
+          "name": "test2",
+          "description": "Test2 Library Technology Institute"
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

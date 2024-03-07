@@ -32,6 +32,7 @@ class EntitlementApplicationServiceOkapiIT extends BaseIntegrationTest {
   private static final String APPLICATION_NAME = "folio-app2";
   private static final String APPLICATION_VERSION = "2.0.0";
   private static final String TEST_TENANT = "test";
+  private static final String TEST_TENANT2 = "test2";
 
   @BeforeAll
   static void beforeAll(@Autowired ApplicationContext appContext) {
@@ -56,16 +57,12 @@ class EntitlementApplicationServiceOkapiIT extends BaseIntegrationTest {
   }
 
   @Test
-  void getApplicationDescriptorsByTenantName_negative_pathTenantMissMatch() throws Exception {
-    mockMvc.perform(get("/entitlements/{tenantName}/applications", "another-tenant")
+  @WireMockStub("/wiremock/mgr-tenants/test/get-query-by-name-test2.json")
+  void getApplicationDescriptorsByTenantNamePathTenantMissMatch_positive() throws Exception {
+    mockMvc.perform(get("/entitlements/{tenantName}/applications", TEST_TENANT2)
         .contentType(APPLICATION_JSON)
         .header(OkapiHeaders.TENANT, TEST_TENANT)
         .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
-      .andExpect(status().isForbidden())
-      .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(
-        jsonPath("$.errors[0].message", is("X-Okapi-Tenant header is not the same as specified in request path")))
-      .andExpect(jsonPath("$.errors[0].type", is("ForbiddenException")))
-      .andExpect(jsonPath("$.errors[0].code", is("auth_error")));
+      .andExpect(status().isOk());
   }
 }

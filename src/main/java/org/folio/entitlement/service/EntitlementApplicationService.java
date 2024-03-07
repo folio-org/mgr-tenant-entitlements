@@ -10,7 +10,6 @@ import org.folio.entitlement.domain.dto.ApplicationDescriptors;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.repository.EntitlementRepository;
-import org.folio.security.exception.ForbiddenException;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.AccessTokenResponse;
 import org.springframework.stereotype.Service;
@@ -24,10 +23,8 @@ public class EntitlementApplicationService {
   private final EntitlementRepository entitlementRepository;
   private final Optional<Keycloak> keycloak;
 
-  public ApplicationDescriptors getApplicationDescriptorsByTenantName(String tenant, String tenantHeader,
-    String userToken, Integer offset, Integer limit) {
-    validateTenant(tenant, tenantHeader);
-
+  public ApplicationDescriptors getApplicationDescriptorsByTenantName(String tenant, String userToken,
+                                                                      Integer offset, Integer limit) {
     var token = obtainAuthTokenOrElse(userToken);
 
     var applicationIds = getApplicationIds(tenant, token);
@@ -46,12 +43,6 @@ public class EntitlementApplicationService {
     return keycloak.map(kc -> kc.tokenManager().grantToken())
       .map(AccessTokenResponse::getToken)
       .orElse(userToken);
-  }
-
-  private void validateTenant(String tenantName, String tenantHeader) {
-    if (!tenantHeader.equals(tenantName)) {
-      throw new ForbiddenException("X-Okapi-Tenant header is not the same as specified in request path");
-    }
   }
 
   private List<String> getApplicationIds(String tenantName, String authToken) {
