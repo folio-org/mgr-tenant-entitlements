@@ -83,6 +83,16 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
   }
 
   @Test
+  @WireMockStub("/wiremock/mgr-tenants/test/get-query-by-name-test2.json")
+  void getApplicationDescriptorsByTenantNamePathTenantMissMatch_positive() throws Exception {
+    mockMvc.perform(get("/entitlements/{tenantName}/applications", TEST_TENANT2)
+        .contentType(APPLICATION_JSON)
+        .header(OkapiHeaders.TENANT, TEST_TENANT)
+        .header(OkapiHeaders.TOKEN, generateAccessToken(TEST_TENANT)))
+      .andExpect(status().isOk());
+  }
+
+  @Test
   @KeycloakRealms("/keycloak/test2-realm.json")
   void getApplicationDescriptorsByTenantName_negative_tokenTenantMissMatch() throws Exception {
     mockMvc.perform(get("/entitlements/{tenantName}/applications", TEST_TENANT)
@@ -105,20 +115,6 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
       .andExpect(status().isForbidden())
       .andExpect(jsonPath("$.total_records", is(1)))
       .andExpect(jsonPath("$.errors[0].message", is("X-Okapi-Tenant header is not the same as resolved tenant")))
-      .andExpect(jsonPath("$.errors[0].type", is("ForbiddenException")))
-      .andExpect(jsonPath("$.errors[0].code", is("auth_error")));
-  }
-
-  @Test
-  void getApplicationDescriptorsByTenantName_negative_pathTenantMissMatch() throws Exception {
-    mockMvc.perform(get("/entitlements/{tenantName}/applications", "another-tenant")
-        .contentType(APPLICATION_JSON)
-        .header(OkapiHeaders.TENANT, TEST_TENANT)
-        .header(OkapiHeaders.TOKEN, generateAccessToken(TEST_TENANT)))
-      .andExpect(status().isForbidden())
-      .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(
-        jsonPath("$.errors[0].message", is("X-Okapi-Tenant header is not the same as specified in request path")))
       .andExpect(jsonPath("$.errors[0].type", is("ForbiddenException")))
       .andExpect(jsonPath("$.errors[0].code", is("auth_error")));
   }
