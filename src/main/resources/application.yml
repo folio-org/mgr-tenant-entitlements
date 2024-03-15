@@ -52,6 +52,10 @@ application:
     url: ${KONG_ADMIN_URL:${kong.url:}}
     module-self-url: ${MODULE_URL:http://mgr-tenant-entitlements:8081}
     register-module: ${REGISTER_MODULE_IN_KONG:true}
+    connect-timeout: ${KONG_CONNECT_TIMEOUT:}
+    read-timeout: ${KONG_READ_TIMEOUT:360000}
+    write-timeout: ${KONG_WRITE_TIMEOUT:}
+    retries: ${KONG_RETRIES:}
   okapi:
     enabled: ${OKAPI_INTEGRATION_ENABLED:false}
     url: ${OKAPI_URL:${okapi.url:}}
