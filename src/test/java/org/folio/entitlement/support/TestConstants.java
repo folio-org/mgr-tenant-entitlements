@@ -1,8 +1,10 @@
 package org.folio.entitlement.support;
 
+import static org.folio.entitlement.support.TestUtils.httpClientWithDummySslContext;
 import static org.folio.integration.kafka.KafkaUtils.getEnvTopicName;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
+import java.net.http.HttpClient;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -26,6 +28,8 @@ public class TestConstants {
   public static final UUID FLOW_ID = UUID.randomUUID();
   public static final UUID APPLICATION_FLOW_ID = UUID.randomUUID();
   public static final String FLOW_STAGE_ID = FLOW_ID + "/appi-l0/" + APPLICATION_FLOW_ID;
+
+  public static final HttpClient HTTP_CLIENT_DUMMY_SSL = httpClientWithDummySslContext();
 
   public static String entitlementTopic() {
     return getEnvTopicName("entitlement");

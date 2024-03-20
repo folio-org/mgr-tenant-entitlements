@@ -4,6 +4,7 @@ import static java.net.URLEncoder.encode;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static org.folio.entitlement.support.TestConstants.HTTP_CLIENT_DUMMY_SSL;
 import static org.folio.entitlement.support.TestUtils.OBJECT_MAPPER;
 import static org.folio.test.security.TestJwtGenerator.generateJwtToken;
 import static org.hamcrest.Matchers.is;
@@ -17,7 +18,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -29,17 +29,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
-import org.folio.test.extensions.EnableKeycloak;
 import org.folio.test.extensions.EnableKeycloakSecurity;
+import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 
-@EnableKeycloak
+@EnableKeycloakTlsMode
 @IntegrationTest
 @EnableKeycloakSecurity
 @KeycloakRealms("/keycloak/test-realm.json")
@@ -56,14 +55,7 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
     TEST_TENANT, new SimpleImmutableEntry<>("test-login-application", "test-login-application-secret"),
     TEST_TENANT2, new SimpleImmutableEntry<>("test2-login-application", "test2-login-application-secret"));
 
-  private static HttpClient httpClient;
-
   @Autowired private KeycloakProperties keycloakProperties;
-
-  @BeforeEach
-  void setUp() {
-    httpClient = HttpClient.newHttpClient();
-  }
 
   @Test
   @WireMockStub(scripts = {
@@ -148,7 +140,7 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
       .header("Content-Type", APPLICATION_FORM_URLENCODED_VALUE)
       .build();
 
-    var response = httpClient.send(request, BodyHandlers.ofString(UTF_8));
+    var response = HTTP_CLIENT_DUMMY_SSL.send(request, BodyHandlers.ofString(UTF_8));
     var keycloakTokenJson = OBJECT_MAPPER.readTree(response.body());
     return keycloakTokenJson.path("access_token").asText();
   }
@@ -160,4 +152,3 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
       .collect(Collectors.joining("&"));
   }
 }
-
