@@ -1,5 +1,6 @@
 package org.folio.entitlement.support;
 
+import static javax.net.ssl.SSLContext.getInstance;
 import static org.folio.common.utils.ExceptionHandlerUtils.buildValidationError;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.util.ReflectionTestUtils.getField;
@@ -16,11 +17,19 @@ import feign.RequestTemplate;
 import feign.Response;
 import java.io.File;
 import java.io.InputStream;
+import java.net.Socket;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
@@ -159,7 +168,50 @@ public class TestUtils {
     return (BadRequest) FeignException.errorStatus("someMethod", response);
   }
 
+  public static HttpClient httpClientWithDummySslContext() {
+    return HttpClient.newBuilder().sslContext(dummySslContext()).build();
+  }
+
   private static Request getRequest(String url) {
     return Request.create(Request.HttpMethod.GET, url, Collections.emptyMap(), null, (RequestTemplate) null);
+  }
+
+  @SneakyThrows
+  private static SSLContext dummySslContext() {
+    var dummyTrustManager = new X509ExtendedTrustManager() {
+
+      @Override
+      public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) {
+      }
+
+      @Override
+      public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine) {
+      }
+
+      @Override
+      public void checkClientTrusted(X509Certificate[] chain, String authType) {
+      }
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) {
+      }
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine) {
+      }
+
+      @Override
+      public void checkServerTrusted(X509Certificate[] chain, String authType) {
+      }
+
+      @Override
+      public X509Certificate[] getAcceptedIssuers() {
+        return new X509Certificate[0];
+      }
+    };
+
+    var sslContext = getInstance("TLS");
+    sslContext.init(null, new TrustManager[] {dummyTrustManager}, new SecureRandom());
+    return sslContext;
   }
 }

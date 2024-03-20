@@ -2,7 +2,7 @@ package org.folio.entitlement.support;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.support.TestConstants.DUMMY_SSL_CONTEXT;
+import static org.folio.entitlement.support.TestConstants.HTTP_CLIENT_DUMMY_SSL;
 import static org.folio.test.TestConstants.TENANT_ID;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -20,7 +20,6 @@ import static org.springframework.web.util.UriComponentsBuilder.fromUriString;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.List;
@@ -56,13 +55,6 @@ public class KeycloakTestClientConfiguration {
     private final Keycloak keycloak;
     private final ObjectMapper objectMapper;
     private final KeycloakConfigurationProperties keycloakConfiguration;
-
-    private final HttpClient httpClient = buildClient();
-
-    @SneakyThrows
-    public static HttpClient buildClient() {
-      return HttpClient.newBuilder().sslContext(DUMMY_SSL_CONTEXT).build();
-    }
 
     @SneakyThrows
     public List<String> getAuthorizationResources(String realm) {
@@ -104,7 +96,7 @@ public class KeycloakTestClientConfiguration {
 
     private String sendAndParseGetResponseAsString(URI uri) throws IOException, InterruptedException {
       var request = prepareRequest(uri);
-      var response = httpClient.send(request, BodyHandlers.ofString());
+      var response = HTTP_CLIENT_DUMMY_SSL.send(request, BodyHandlers.ofString());
       assertThat(response.statusCode()).isEqualTo(200);
       return response.body();
     }
