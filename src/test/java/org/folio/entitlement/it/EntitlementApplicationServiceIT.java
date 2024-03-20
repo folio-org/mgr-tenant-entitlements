@@ -4,6 +4,7 @@ import static java.net.URLEncoder.encode;
 import static java.net.http.HttpRequest.BodyPublishers.ofString;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static org.folio.entitlement.support.TestConstants.DUMMY_SSL_CONTEXT;
 import static org.folio.entitlement.support.TestUtils.OBJECT_MAPPER;
 import static org.folio.test.security.TestJwtGenerator.generateJwtToken;
 import static org.hamcrest.Matchers.is;
@@ -29,8 +30,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
-import org.folio.test.extensions.EnableKeycloak;
 import org.folio.test.extensions.EnableKeycloakSecurity;
+import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
@@ -39,7 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 
-@EnableKeycloak
+@EnableKeycloakTlsMode
 @IntegrationTest
 @EnableKeycloakSecurity
 @KeycloakRealms("/keycloak/test-realm.json")
@@ -61,8 +62,9 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
   @Autowired private KeycloakProperties keycloakProperties;
 
   @BeforeEach
+  @SneakyThrows
   void setUp() {
-    httpClient = HttpClient.newHttpClient();
+    httpClient = HttpClient.newBuilder().sslContext(DUMMY_SSL_CONTEXT).build();
   }
 
   @Test
