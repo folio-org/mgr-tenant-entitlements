@@ -37,7 +37,7 @@ import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.test.extensions.EnableKeycloak;
+import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
@@ -50,7 +50,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
 
-@EnableKeycloak
+@EnableKeycloakTlsMode
 @IntegrationTest
 @SqlMergeMode(MERGE)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
