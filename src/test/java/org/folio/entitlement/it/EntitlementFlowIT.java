@@ -25,13 +25,13 @@ import org.folio.entitlement.domain.dto.EntitlementFlow;
 import org.folio.entitlement.domain.dto.EntitlementStage;
 import org.folio.entitlement.domain.dto.EntitlementStages;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.test.extensions.EnableKeycloak;
 import org.folio.test.extensions.EnableKeycloakSecurity;
+import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.jdbc.Sql;
 
-@EnableKeycloak(tlsEnabled = true)
+@EnableKeycloakTlsMode
 @IntegrationTest
 @EnableKeycloakSecurity
 @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "classpath:/sql/entitlement-flow-data.sql")
