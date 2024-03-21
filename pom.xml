@@ -46,7 +46,7 @@
 
     <!-- Test dependencies versions -->
     <testcontainer.version>1.19.7</testcontainer.version>
-    <awaitility.version>4.2.0</awaitility.version>
+    <awaitility.version>4.2.1</awaitility.version>
 
     <!-- Plugins versions -->
     <maven-checkstyle.version>10.14.2</maven-checkstyle.version>
