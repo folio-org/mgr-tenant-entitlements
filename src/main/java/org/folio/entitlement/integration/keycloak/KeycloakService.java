@@ -157,11 +157,14 @@ public class KeycloakService {
     try (var response = client.scopes().create(scope)) {
       var status = response.getStatus();
       if (status >= SC_BAD_REQUEST && status != SC_CONFLICT) {
-        return Optional.of(new Parameter().key("scope").value(format(
+        return Optional.of(getScopeError(format(
           "Failed to create scope %s (status: %s, info: %s)", scope.getName(), status, response.getStatusInfo())));
       }
 
       log.debug("Scope was created with name: #{}", scopeName);
+    } catch (Exception exception) {
+      return Optional.of(getScopeError(format("Failed to create scope %s (cause: %s, causeMessage: %s)",
+        scopeName, exception.getClass().getSimpleName(), exception.getMessage())));
     }
 
     return Optional.empty();
@@ -192,11 +195,15 @@ public class KeycloakService {
       }
 
       if (status >= SC_BAD_REQUEST) {
-        return Optional.of(new Parameter().key("resource").value(format(
-          "Failed to create resource: %s (status: %s, info: %s)", name, status, response.getStatusInfo())));
+        var statusInfo = response.getStatusInfo();
+        var errorMessage = format("Failed to create resource: %s (status: %s, info: %s)", name, status, statusInfo);
+        return Optional.of(getResourceError(errorMessage));
       }
 
       log.debug("Resource was created with name: #{}", name);
+    } catch (Exception exception) {
+      return Optional.of(getResourceError(format("Failed to create resource: %s (cause: %s, causeMessage: %s)",
+        name, exception.getClass().getSimpleName(), exception.getMessage())));
     }
 
     return Optional.empty();
@@ -206,7 +213,7 @@ public class KeycloakService {
     var name = resource.getName();
     var resourceByName = findResourceByName(client, name);
     if (resourceByName.isEmpty()) {
-      return Optional.of(new Parameter().key("resource").value("Failed to find created resource by name: " + name));
+      return Optional.of(getResourceError("Failed to find created resource by name: " + name));
     }
 
     var resourceRepresentation = resourceByName.get();
@@ -218,8 +225,7 @@ public class KeycloakService {
       log.debug("Authorization scopes are updated for resource: name = {}", name);
       return Optional.empty();
     } catch (WebApplicationException exception) {
-      var param = new Parameter().key("resource").value(String.format(
-        "Failed to update resource: %s (status: %s, causeMessage: %s)",
+      var param = getResourceError(format("Failed to update resource: %s (status: %s, causeMessage: %s)",
         name, exception.getResponse().getStatus(), exception.getMessage()));
       return Optional.of(param);
     }
@@ -251,9 +257,9 @@ public class KeycloakService {
     } catch (WebApplicationException exception) {
       var response = exception.getResponse();
       if (response.getStatus() != SC_NOT_FOUND) {
-        var value = String.format("Failed to delete resource: %s (status: %s, causeMessage: %s)",
+        var value = format("Failed to delete resource: %s (status: %s, causeMessage: %s)",
           resourceName, response.getStatusInfo(), exception.getMessage());
-        return Optional.of(new Parameter().key("resource").value(value));
+        return Optional.of(getResourceError(value));
       }
     }
 
@@ -274,6 +280,14 @@ public class KeycloakService {
   private URI authorizationResourceUri(String clientId, String realmName) {
     return URI.create(
       properties.getUrl() + "/admin/realms/" + realmName + "/clients/" + clientId + "/authz/resource-server");
+  }
+
+  private static Parameter getResourceError(String message) {
+    return new Parameter().key("resource").value(message);
+  }
+
+  private static Parameter getScopeError(String message) {
+    return new Parameter().key("scope").value(message);
   }
 }
 

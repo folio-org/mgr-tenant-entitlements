@@ -220,6 +220,29 @@ class KeycloakServiceTest {
     }
 
     @Test
+    void positive_prevDescriptorIsNullAndScopeConflict() {
+      var currModuleDescriptor = moduleDescriptor("mod-foo-1.2.0");
+      var currMappings = keycloakMappings(resource("/r1", "POST"), resource("/r2", "GET"));
+
+      when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
+      when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
+      when(authorizationResource.scopes().scopes()).thenReturn(emptyList()).thenReturn(ALL_SCOPES);
+      when(keycloakModuleDescriptorMapper.map(currModuleDescriptor, true)).thenReturn(currMappings);
+      mockScopeCreation(scope("GET"), 409, response -> {});
+      mockScopesCreation("HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE");
+      mockResourceCreation(resource(null, "/r1", scopeWithId("POST")));
+      mockResourceCreation(resource(null, "/r2", scopeWithId("GET")));
+
+      keycloakService.updateAuthResources(null, currModuleDescriptor, TENANT_NAME);
+
+      verify(kcConfiguration, atLeastOnce()).getUrl();
+      verify(kcConfiguration, atLeastOnce()).getLogin();
+      verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
+      verify(authorizationResource, atLeastOnce()).scopes();
+      verify(authorizationResource, atLeastOnce()).resources();
+    }
+
+    @Test
     void positive_currentDescriptorIsNull() {
       var prevModuleDescriptor = moduleDescriptor("mod-foo-1.1.0");
       var prevMappings = keycloakMappings(resource("/r1", "POST"), resource("/r2", "GET"));
@@ -277,7 +300,28 @@ class KeycloakServiceTest {
     }
 
     @Test
-    void negative_failedToCreateScope() {
+    void negative_failedToCreateScopeOnTryCatchClause() {
+      when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
+      when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
+      when(authorizationResource.scopes().scopes()).thenReturn(emptyList());
+      when(authorizationResource.scopes().create(scope("GET"))).thenThrow(new RuntimeException("Error"));
+      mockScopesCreation("HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE");
+
+      var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
+      assertThatThrownBy(() -> keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME))
+        .isInstanceOf(IntegrationException.class)
+        .hasMessage("Failed to update authorization scopes in Keycloak")
+        .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
+          parameter("scope", "Failed to create scope GET (cause: RuntimeException, causeMessage: Error)")));
+
+      verify(kcConfiguration, atLeastOnce()).getLogin();
+      verify(kcConfiguration, atLeastOnce()).getUrl();
+      verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
+      verify(authorizationResource, atLeastOnce()).scopes();
+    }
+
+    @Test
+    void negative_failedToCreateScopeWithWebApplicationError() {
       when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
       when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
       when(authorizationResource.scopes().scopes()).thenReturn(emptyList());
@@ -323,6 +367,94 @@ class KeycloakServiceTest {
       verify(authorizationResource, atLeastOnce()).scopes();
       verify(authorizationResource, atLeastOnce()).resources();
     }
+
+    @Test
+    void negative_failedToCreateResourceOnTryCatchClause() {
+      var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
+      var currentMappings = keycloakMappings(resource("/r1", "GET"));
+
+      when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
+      when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
+      when(authorizationResource.scopes().scopes()).thenReturn(ALL_SCOPES);
+      when(keycloakModuleDescriptorMapper.map(currentDescriptor, true)).thenReturn(currentMappings);
+
+      var resource = resource(null, "/r1", scopeWithId("GET"));
+      when(authorizationResource.resources().create(resource)).thenThrow(new RuntimeException("Error"));
+
+      assertThatThrownBy(() -> keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME))
+        .isInstanceOf(IntegrationException.class)
+        .hasMessage("Failed to update authorization resources in Keycloak")
+        .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
+          parameter("resource", "Failed to create resource: /r1 (cause: RuntimeException, causeMessage: Error)")));
+
+      verify(kcConfiguration, atLeastOnce()).getLogin();
+      verify(kcConfiguration, atLeastOnce()).getUrl();
+      verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
+      verify(authorizationResource, atLeastOnce()).scopes();
+      verify(authorizationResource, atLeastOnce()).resources();
+    }
+
+    @Test
+    void negative_failedToUpdateResource() {
+      var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
+      var currentMappings = keycloakMappings(resource("/r1", "GET"));
+
+      when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
+      when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
+      when(authorizationResource.scopes().scopes()).thenReturn(ALL_SCOPES);
+      when(keycloakModuleDescriptorMapper.map(currentDescriptor, true)).thenReturn(currentMappings);
+
+      var resource = resource(null, "/r1", scopeWithId("GET"));
+      mockResourceCreation(resource, 409, resp -> {});
+
+      var foundResourceId = randomUUID();
+      var foundResource = resource(foundResourceId, "/r1", scopeWithId("POST"));
+      when(authorizationResource.resources().findByName("/r1")).thenReturn(List.of(foundResource));
+
+      var resourceResource = mock(ResourceResource.class);
+      var error = new WebApplicationException("Bad Gateway", Status.BAD_GATEWAY);
+      when(authorizationResource.resources().resource(foundResourceId.toString())).thenReturn(resourceResource);
+      doThrow(error).when(resourceResource).update(resource(foundResourceId, "/r1", scopeWithId("GET")));
+
+      assertThatThrownBy(() -> keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME))
+        .isInstanceOf(IntegrationException.class)
+        .hasMessage("Failed to update authorization resources in Keycloak")
+        .satisfies(err -> assertThat(((IntegrationException) err).getErrors()).containsExactly(
+          parameter("resource", "Failed to update resource: /r1 (status: 502, causeMessage: Bad Gateway)")));
+
+      verify(kcConfiguration, atLeastOnce()).getLogin();
+      verify(kcConfiguration, atLeastOnce()).getUrl();
+      verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
+      verify(authorizationResource, atLeastOnce()).scopes();
+      verify(authorizationResource, atLeastOnce()).resources();
+    }
+
+    @Test
+    void negative_failedToUpdateResourceWhenNotFound() {
+      var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
+      var currentMappings = keycloakMappings(resource("/r1", "GET"));
+
+      when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
+      when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
+      when(authorizationResource.scopes().scopes()).thenReturn(ALL_SCOPES);
+      when(keycloakModuleDescriptorMapper.map(currentDescriptor, true)).thenReturn(currentMappings);
+
+      var resource = resource(null, "/r1", scopeWithId("GET"));
+      mockResourceCreation(resource, 409, resp -> {});
+      when(authorizationResource.resources().findByName("/r1")).thenReturn(emptyList());
+
+      assertThatThrownBy(() -> keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME))
+        .isInstanceOf(IntegrationException.class)
+        .hasMessage("Failed to update authorization resources in Keycloak")
+        .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
+          parameter("resource", "Failed to find created resource by name: /r1")));
+
+      verify(kcConfiguration, atLeastOnce()).getLogin();
+      verify(kcConfiguration, atLeastOnce()).getUrl();
+      verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
+      verify(authorizationResource, atLeastOnce()).scopes();
+      verify(authorizationResource, atLeastOnce()).resources();
+    }
   }
 
   @Nested
@@ -340,6 +472,33 @@ class KeycloakServiceTest {
       when(authorizationResource.scopes().scopes()).thenReturn(ALL_SCOPES);
       when(authorizationResource.resources().findByName("/r1")).thenReturn(List.of(r1Resource));
       when(keycloakModuleDescriptorMapper.map(moduleDescriptor, true)).thenReturn(mappings);
+
+      keycloakService.removeAuthResources(moduleDescriptor, TENANT_NAME);
+
+      verify(kcConfiguration, atLeastOnce()).getUrl();
+      verify(kcConfiguration, atLeastOnce()).getLogin();
+      verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
+      verify(authorizationResource, atLeastOnce()).scopes();
+      verify(authorizationResource, atLeastOnce()).resources();
+      verify(authorizationResource.resources().resource(r1Resource.getId())).remove();
+    }
+
+    @Test
+    void positive_resourceNotFond() {
+      var moduleDescriptor = moduleDescriptor("mod-foo-1.1.0");
+      var mappings = keycloakMappings(resource("/r1", "POST"));
+      var r1Resource = resource(randomUUID(), "/r1", scopeWithId("POST"));
+
+      when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
+      when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
+      when(authorizationResource.scopes().scopes()).thenReturn(ALL_SCOPES);
+      when(authorizationResource.resources().findByName("/r1")).thenReturn(List.of(r1Resource));
+      when(keycloakModuleDescriptorMapper.map(moduleDescriptor, true)).thenReturn(mappings);
+
+      var resourceResource = mock(ResourceResource.class);
+      var error = new WebApplicationException("Not Found", Status.NOT_FOUND);
+      when(authorizationResource.resources().resource(r1Resource.getId())).thenReturn(resourceResource);
+      doThrow(error).when(resourceResource).remove();
 
       keycloakService.removeAuthResources(moduleDescriptor, TENANT_NAME);
 
