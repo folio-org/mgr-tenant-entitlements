@@ -35,7 +35,7 @@
     <cql2pgjson.version>35.2.0</cql2pgjson.version>
     <spring-cloud-bom.version>2023.0.1</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
-    <semver4j.version>5.2.2</semver4j.version>
+    <semver4j.version>5.2.3</semver4j.version>
     <folio-spring-cql.version>8.1.0</folio-spring-cql.version>
     <applications-poc-tools.version>1.4.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
@@ -49,7 +49,7 @@
     <awaitility.version>4.2.1</awaitility.version>
 
     <!-- Plugins versions -->
-    <maven-checkstyle.version>10.14.2</maven-checkstyle.version>
+    <maven-checkstyle.version>10.15.0</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
     <openapi-generator.version>7.4.0</openapi-generator.version>
 
@@ -624,7 +624,7 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.11</version>
+            <version>0.8.12</version>
             <configuration>
               <excludes>
                 <exclude>**/cql/**/*</exclude>
