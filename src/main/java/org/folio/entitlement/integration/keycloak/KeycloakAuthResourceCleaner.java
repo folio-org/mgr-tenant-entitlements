@@ -27,6 +27,6 @@ public class KeycloakAuthResourceCleaner extends DatabaseLoggingStage {
     keycloakClient.tokenManager().grantToken();
     var applicationDescriptor = getApplicationDescriptor(context);
     var moduleDescriptors = applicationDescriptor.getModuleDescriptors();
-    emptyIfNull(moduleDescriptors).forEach(descriptor -> keycloakService.unregisterModuleResources(descriptor, realm));
+    emptyIfNull(moduleDescriptors).forEach(descriptor -> keycloakService.removeAuthResources(descriptor, realm));
   }
 }

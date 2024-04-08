@@ -48,7 +48,7 @@ class KeycloakAuthResourceCleanerTest {
     keycloakAuthResourceCleaner.execute(stageContext);
 
     verify(keycloakClient).tokenManager();
-    verify(keycloakService).unregisterModuleResources(applicationDescriptor.getModuleDescriptors().get(0), TENANT_NAME);
+    verify(keycloakService).removeAuthResources(applicationDescriptor.getModuleDescriptors().get(0), TENANT_NAME);
   }
 
   @Test
@@ -61,6 +61,6 @@ class KeycloakAuthResourceCleanerTest {
     keycloakAuthResourceCleaner.execute(stageContext);
 
     verify(keycloakClient, never()).tokenManager();
-    verify(keycloakService, never()).unregisterModuleResources(any(), any());
+    verify(keycloakService, never()).removeAuthResources(any(), any());
   }
 }

@@ -22,7 +22,7 @@ public class KeycloakAuthResourceCreator extends DatabaseLoggingStage implements
     var applicationDescriptor = getApplicationDescriptor(context);
     var moduleDescriptors = applicationDescriptor.getModuleDescriptors();
     keycloakClient.tokenManager().grantToken();
-    emptyIfNull(moduleDescriptors).forEach(descriptor -> keycloakService.registerModuleResources(descriptor, realm));
+    emptyIfNull(moduleDescriptors).forEach(descriptor -> keycloakService.updateAuthResources(null, descriptor, realm));
   }
 
   @Override
@@ -31,7 +31,7 @@ public class KeycloakAuthResourceCreator extends DatabaseLoggingStage implements
     var applicationDescriptor = getApplicationDescriptor(context);
     var moduleDescriptors = applicationDescriptor.getModuleDescriptors();
     keycloakClient.tokenManager().grantToken();
-    emptyIfNull(moduleDescriptors).forEach(descriptor -> keycloakService.unregisterModuleResources(descriptor, realm));
+    emptyIfNull(moduleDescriptors).forEach(descriptor -> keycloakService.removeAuthResources(descriptor, realm));
   }
 
   @Override
