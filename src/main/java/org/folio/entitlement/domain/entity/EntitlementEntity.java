@@ -1,5 +1,6 @@
 package org.folio.entitlement.domain.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -57,7 +58,7 @@ public class EntitlementEntity implements Serializable {
   /**
    * A set of entitled modules.
    */
-  @OneToMany(fetch = FetchType.LAZY)
+  @OneToMany(cascade = {CascadeType.REMOVE}, fetch = FetchType.EAGER)
   @ToString.Exclude
   @EqualsAndHashCode.Exclude
   @JoinColumn(name = "application_id")
