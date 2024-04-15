@@ -262,7 +262,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
         .andExpect(status().isCreated());
 
       var routesByTag = kongAdminClient.getRoutesByTag(TENANT_NAME, null);
-      assertThat(routesByTag.getData()).hasSize(11);
+      assertThat(routesByTag.getData()).hasSize(12);
       assertThat(routesByTag.getOffset()).isNull();
 
       assertEntitlementEvents(
