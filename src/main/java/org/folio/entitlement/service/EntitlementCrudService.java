@@ -9,10 +9,13 @@ import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.entity.ApplicationDependencyEntity;
+import org.folio.entitlement.domain.entity.EntitlementEntity;
 import org.folio.entitlement.domain.entity.key.EntitlementKey;
+import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.mapper.EntitlementMapper;
+import org.folio.entitlement.repository.EntitlementModuleRepository;
 import org.folio.entitlement.repository.EntitlementRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +27,7 @@ public class EntitlementCrudService {
   private final EntitlementMapper entitlementMapper;
   private final ApplicationDependencyService dependencyService;
   private final EntitlementRepository entitlementRepository;
+  private final EntitlementModuleRepository entitlementModuleRepository;
 
   /**
    * Retrieves all applications installed for the specified tenant.
@@ -37,7 +41,9 @@ public class EntitlementCrudService {
     var pageable = OffsetRequest.of(offset, limit);
     var appInstallEntities = entitlementRepository.findByCql(cqlQuery, pageable);
     var tenantEntitlements = mapItems(appInstallEntities.toList(),
-      isTrue(includeModules) ? entitlementMapper::mapWithModules : entitlementMapper::map);
+      isTrue(includeModules)
+        ? entity -> entitlementMapper.mapWithModules(entity, fetchEntitlementModules(entity))
+        : entitlementMapper::map);
     return ResultList.of((int) appInstallEntities.getTotalElements(), tenantEntitlements);
   }
 
@@ -98,5 +104,10 @@ public class EntitlementCrudService {
     var applicationIds = request.getApplications();
     var foundEntitlementEntities = entitlementRepository.findByTenantIdAndApplicationIdIn(tenantId, applicationIds);
     return mapItems(foundEntitlementEntities, entitlementMapper::map);
+  }
+
+  private List<EntitlementModuleEntity> fetchEntitlementModules(EntitlementEntity entitlementEntity) {
+    return entitlementModuleRepository.findAllByApplicationIdAndTenantId(entitlementEntity.getApplicationId(),
+      entitlementEntity.getTenantId());
   }
 }
