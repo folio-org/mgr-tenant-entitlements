@@ -6,6 +6,11 @@ import org.folio.flow.api.StageContext;
 
 public class IdentifiableStageContext extends AbstractStageContextWrapper {
 
+  /**
+   * Creates {@link IdentifiableStageContext} wrapper from {@link StageContext}.
+   *
+   * @param stageContext - stage context
+   */
   protected IdentifiableStageContext(StageContext stageContext) {
     super(stageContext);
   }
