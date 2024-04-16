@@ -42,7 +42,7 @@ public class EntitlementRequest {
    * X-Okapi-Token value to proxy request to okapi (optional).
    */
   @ToString.Exclude
-  private final String okapiToken;
+  private final String authToken;
 
   /**
    * Defines if disabled modules will also be purged.

@@ -4,40 +4,37 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.DISABLE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.ENABLE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
-import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
-import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Module;
+import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
-import org.folio.flow.api.StageContext;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
 @RequiredArgsConstructor
-public class OkapiModulesInstaller extends DatabaseLoggingStage {
+public class OkapiModulesInstaller extends DatabaseLoggingStage<ApplicationStageContext> {
 
   private final OkapiClient okapiClient;
   private final EntitlementModuleService moduleService;
 
   @Override
-  public void execute(StageContext context) {
-    var request = getEntitlementRequest(context);
+  public void execute(ApplicationStageContext context) {
+    var request = context.getEntitlementRequest();
     var action = request.getType() == ENTITLE ? ENABLE : DISABLE;
-    var applicationDescriptor = getApplicationDescriptor(context);
+    var applicationDescriptor = context.getApplicationDescriptor();
     var descriptors = mapItems(applicationDescriptor.getModules(), module -> buildOkapiDescriptors(action, module));
 
     updateModuleEntitlements(request.getTenantId(), applicationDescriptor, action);
 
-    var tenantName = context.<String>get(PARAM_TENANT_NAME);
+    var tenantName = context.getTenantName();
     okapiClient.installTenantModules(tenantName, false, request.isPurge(), request.getTenantParameters(),
-      request.isIgnoreErrors(), false, descriptors, request.getOkapiToken());
+      request.isIgnoreErrors(), false, descriptors, request.getAuthToken());
   }
 
   private void updateModuleEntitlements(UUID tenantId, ApplicationDescriptor appDescriptor, ActionType action) {

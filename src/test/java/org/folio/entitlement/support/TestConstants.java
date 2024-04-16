@@ -27,7 +27,7 @@ public class TestConstants {
 
   public static final UUID FLOW_ID = UUID.randomUUID();
   public static final UUID APPLICATION_FLOW_ID = UUID.randomUUID();
-  public static final String FLOW_STAGE_ID = FLOW_ID + "/appi-l0/" + APPLICATION_FLOW_ID;
+  public static final String FLOW_STAGE_ID = FLOW_ID + "/ApplicationsFlow/Level-0/" + APPLICATION_FLOW_ID;
 
   public static final HttpClient HTTP_CLIENT_DUMMY_SSL = httpClientWithDummySslContext();
 

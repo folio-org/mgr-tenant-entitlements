@@ -1,20 +1,21 @@
 package org.folio.entitlement.service.validator;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_APP_DESCRIPTORS;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
+import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anySet;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
+import static org.folio.entitlement.support.TestValues.applicationDescriptor;
+import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -34,28 +35,51 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class InterfaceIntegrityValidatorTest {
 
-  @InjectMocks private InterfaceIntegrityValidator validator;
+  @InjectMocks private InterfaceIntegrityValidator interfaceIntegrityValidator;
   @Mock private ApplicationDependencyValidatorService validatorService;
+
+  @Test
+  void execute_positive() {
+    var applicationDescriptors = List.of(applicationDescriptor());
+    var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
+    var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
+
+    interfaceIntegrityValidator.execute(stageContext);
+
+    verify(validatorService).validateDescriptors(applicationDescriptors);
+  }
+
+  @Test
+  void execute_negative() {
+    var applicationDescriptors = List.of(applicationDescriptor());
+    var exception = new RequestValidationException("Invalid interface dependency", "application", APPLICATION_ID);
+
+    doThrow(exception).when(validatorService).validateDescriptors(applicationDescriptors);
+
+    var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
+    var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
+    assertThatThrownBy(() -> interfaceIntegrityValidator.execute(stageContext))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Invalid interface dependency")
+      .satisfies(error ->
+        assertThat(((RequestValidationException) error).getErrorParameters())
+          .containsExactly(new Parameter().key("application").value(APPLICATION_ID)));
+  }
 
   @Test
   void validate_positive() {
     var request = entitlementRequest();
-    var applicationIds = Set.of(APPLICATION_ID);
-    doNothing().when(validatorService).validateApplications(any(), anySet(), anyString());
-
-    validator.validate(request);
-
-    verify(validatorService).validateApplications(TENANT_ID, applicationIds, OKAPI_TOKEN);
+    interfaceIntegrityValidator.validate(request);
+    verify(validatorService).validateApplications(request);
   }
 
   @Test
   void validate_negative() {
     var request = entitlementRequest();
-    var applicationIds = Set.of(APPLICATION_ID);
     var exception = new RequestValidationException("Invalid interface dependency", "application", APPLICATION_ID);
-    doThrow(exception).when(validatorService).validateApplications(TENANT_ID, applicationIds, OKAPI_TOKEN);
+    doThrow(exception).when(validatorService).validateApplications(request);
 
-    assertThatThrownBy(() -> validator.validate(request))
+    assertThatThrownBy(() -> interfaceIntegrityValidator.validate(request))
       .isInstanceOf(RequestValidationException.class)
       .hasMessage("Invalid interface dependency")
       .satisfies(error ->
@@ -65,10 +89,10 @@ class InterfaceIntegrityValidatorTest {
 
   @ParameterizedTest
   @DisplayName("shouldValidate_parameterized")
-  @CsvSource({"ENTITLE, true", "REVOKE, false"})
+  @CsvSource({"ENTITLE,true", "REVOKE,false", "UPGRADE,false", ",false"})
   void shouldValidate_parameterized(EntitlementType type, boolean expected) {
     var request = EntitlementRequest.builder().type(type).build();
-    var result = validator.shouldValidate(request);
+    var result = interfaceIntegrityValidator.shouldValidate(request);
     assertThat(result).isEqualTo(expected);
   }
 
@@ -76,7 +100,7 @@ class InterfaceIntegrityValidatorTest {
     return EntitlementRequest.builder()
       .applications(List.of(APPLICATION_ID))
       .tenantId(TENANT_ID)
-      .okapiToken(OKAPI_TOKEN)
+      .authToken(OKAPI_TOKEN)
       .type(ENTITLE)
       .build();
   }

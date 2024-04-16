@@ -21,9 +21,10 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
-import org.folio.entitlement.domain.dto.EntitlementFlow;
-import org.folio.entitlement.domain.dto.EntitlementStage;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
+import org.folio.entitlement.domain.dto.Flow;
+import org.folio.entitlement.domain.dto.FlowStage;
+import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.tools.kong.exception.KongIntegrationException;
 
@@ -35,10 +36,10 @@ public class EntitlementServiceUtils {
    *
    * @param applicationFlows - list of related application flows
    * @param entitlementStages - set of stages belonging to each application as map
-   * @return prepared {@link EntitlementFlow} response object
+   * @return prepared {@link ApplicationFlow} response object
    */
-  public static EntitlementFlow prepareEntitlementFlowResponse(List<ApplicationFlow> applicationFlows,
-    Map<UUID, List<EntitlementStage>> entitlementStages) {
+  public static Flow prepareFlowResponse(List<ApplicationFlow> applicationFlows,
+    Map<UUID, List<FlowStage>> entitlementStages) {
     var firstApplicationFlow = applicationFlows.get(0);
 
     var startedAt = firstApplicationFlow.getStartedAt();
@@ -60,9 +61,9 @@ public class EntitlementServiceUtils {
       applicationFlowStatuses.add(applicationFlow.getStatus());
     }
 
-    return new EntitlementFlow()
+    return new Flow()
       .id(firstApplicationFlow.getFlowId())
-      .entitlementType(firstApplicationFlow.getType())
+      .type(firstApplicationFlow.getType())
       .status(getFinalFlowStatus(applicationFlowStatuses).orElse(null))
       .startedAt(startedAt)
       .finishedAt(finishedAt)
@@ -126,6 +127,10 @@ public class EntitlementServiceUtils {
 
     if (throwable instanceof KongIntegrationException kongIntegrationException) {
       return kongIntegrationException.getErrors();
+    }
+
+    if (throwable instanceof RequestValidationException requestValidationException) {
+      return requestValidationException.getErrorParameters();
     }
 
     return emptyList();

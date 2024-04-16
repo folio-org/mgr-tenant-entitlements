@@ -2,30 +2,29 @@ package org.folio.entitlement.service.stage;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
+import org.folio.entitlement.domain.entity.AbstractFlowEntity;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
-import org.folio.entitlement.repository.EntitlementFlowRepository;
-import org.folio.flow.api.StageContext;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.folio.entitlement.integration.folio.IdentifiableStageContext;
+import org.folio.entitlement.repository.AbstractFlowRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
-public abstract class AbstractFlowFinalizer extends DatabaseLoggingStage {
+public abstract class AbstractFlowFinalizer<T extends AbstractFlowEntity, C extends IdentifiableStageContext>
+  extends DatabaseLoggingStage<C> {
 
-  private EntitlementFlowRepository entitlementFlowRepository;
+  private final AbstractFlowRepository<T> abstractFlowRepository;
 
   @Override
   @Transactional
-  public void execute(StageContext context) {
-    var entitlementFlowId = getEntitlementFlowId(context);
-    var entitlementFlowEntity = entitlementFlowRepository.getReferenceById(entitlementFlowId);
-    entitlementFlowEntity.setStatus(EntityExecutionStatus.from(getStatus()));
-    entitlementFlowRepository.save(entitlementFlowEntity);
+  public void execute(C context) {
+    var entitlementFlowId = context.getCurrentFlowId();
+    var entitlementFlowEntity = abstractFlowRepository.getReferenceById(entitlementFlowId);
+    entitlementFlowEntity.setStatus(EntityExecutionStatus.from(getFinalStatus()));
+    abstractFlowRepository.save(entitlementFlowEntity);
+    afterFlowStatusUpdate(context);
   }
 
-  @Autowired
-  public void setEntitlementFlowRepository(EntitlementFlowRepository entitlementFlowRepository) {
-    this.entitlementFlowRepository = entitlementFlowRepository;
-  }
+  protected abstract ExecutionStatus getFinalStatus();
 
-  protected abstract ExecutionStatus getStatus();
+  protected void afterFlowStatusUpdate(C context) {}
 }

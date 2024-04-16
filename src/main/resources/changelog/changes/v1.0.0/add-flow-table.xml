@@ -1,0 +1,62 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+  <changeSet id="Add upgrade type for entitlement_flow_type" author="Pavel Filippov">
+    <sql>ALTER TYPE entitlement_flow_type ADD VALUE 'UPGRADE' AFTER 'REVOKE';</sql>
+  </changeSet>
+
+  <changeSet id="update entitlement_stage table" author="Pavel Filippov">
+
+    <renameTable
+      oldTableName="entitlement_stage"
+      newTableName="flow_stage"/>
+
+    <renameColumn
+      tableName="flow_stage"
+      oldColumnName="entitlement_flow_id"
+      newColumnName="flow_id"/>
+
+    <dropForeignKeyConstraint
+      baseTableName="flow_stage"
+      constraintName="fk_entitlement_stage_entitlement_flow"/>
+
+    <createIndex tableName="flow_stage" indexName="idx_stage_flow_id">
+      <column name="flow_id"/>
+    </createIndex>
+
+    <createIndex tableName="flow_stage" indexName="idx_stage_name">
+      <column name="stage"/>
+    </createIndex>
+  </changeSet>
+
+  <changeSet id="rename entitlement_flow table" author="Pavel Filippov">
+    <renameTable oldTableName="entitlement_flow" newTableName="application_flow"/>
+    <renameColumn
+      tableName="application_flow"
+      oldColumnName="entitlement_flow_id"
+      newColumnName="application_flow_id"/>
+    <sql>
+      ALTER INDEX entitlement_flow_application_name_idx RENAME TO application_flow_application_name_idx;
+      ALTER TABLE application_flow rename CONSTRAINT pk_entitlement_flow TO pk_application_flow;
+    </sql>
+  </changeSet>
+
+  <changeSet id="add flow table" author="Pavel Filippov">
+    <createTable tableName="flow">
+      <column name="flow_id" type="uuid"/>
+      <column name="tenant_id" type="uuid"/>
+      <column name="type" type="entitlement_flow_type"/>
+      <column name="status" type="entitlement_flow_status_type"/>
+      <column name="started_at" type="timestamp"/>
+      <column name="finished_at" type="timestamp"/>
+    </createTable>
+    <addPrimaryKey
+      tableName="flow"
+      columnNames="flow_id"
+      constraintName="pk_flow"/>
+  </changeSet>
+
+</databaseChangeLog>

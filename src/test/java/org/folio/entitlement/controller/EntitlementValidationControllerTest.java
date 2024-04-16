@@ -20,7 +20,7 @@ import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementValidationService;
-import org.folio.entitlement.service.flow.EntitlementFlowService;
+import org.folio.entitlement.service.FlowStageService;
 import org.folio.security.integration.keycloak.client.KeycloakAuthClient;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.types.UnitTest;
@@ -38,7 +38,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @Import({ControllerTestConfiguration.class,
   EntitlementValidationController.class,
   EntitlementTypeConverters.FromString.class})
-@MockBean(EntitlementFlowService.class)
+@MockBean(FlowStageService.class)
 @MockBean(KeycloakAuthClient.class)
 @WebMvcTest(EntitlementValidationController.class)
 @EnableKeycloakSecurity
@@ -106,7 +106,7 @@ class EntitlementValidationControllerTest {
       .type(type)
       .tenantId(TENANT_ID)
       .applications(List.of(APPLICATION_ID))
-      .okapiToken(OKAPI_TOKEN)
+      .authToken(OKAPI_TOKEN)
       .build();
   }
 }

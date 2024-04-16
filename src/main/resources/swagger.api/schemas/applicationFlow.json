@@ -41,10 +41,10 @@
       "format": "date-time"
     },
     "stages": {
-      "description": "List of stages per application flow",
+      "description": "A list with executed stage results",
       "type": "array",
       "items": {
-        "$ref": "entitlementStage.json"
+        "$ref": "flowStage.json"
       }
     }
   }

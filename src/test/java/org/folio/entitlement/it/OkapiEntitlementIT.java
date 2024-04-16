@@ -31,7 +31,6 @@ import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
-import static org.folio.entitlement.support.TestValues.extendedEntitlement;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
@@ -148,7 +147,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   void get_positive() throws Exception {
     var expectedEntitlements =
       entitlements(entitlementWithModules(TENANT_ID, OKAPI_APP_ID, List.of(OKAPI_MODULE_ID)));
-    getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), expectedEntitlements);
+    assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), expectedEntitlements);
 
     var expectedModuleEntitlements = entitlements(entitlement(TENANT_ID, OKAPI_APP_ID));
     mockMvc.perform(get("/entitlements/modules/{moduleId}", OKAPI_MODULE_ID)
@@ -165,10 +164,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
-    "/wiremock/mgr-applications/okapi-app/get-discovery.json",
     "/wiremock/mgr-applications/okapi-app5/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app5/get.json",
+    "/wiremock/mgr-applications/okapi-app/get-discovery.json",
     "/wiremock/mgr-applications/okapi-app5/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
     "/wiremock/okapi/_proxy/install-okapi-module.json",
@@ -177,20 +174,19 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   void install_positive_freshInstallation() throws Exception {
     // install independent application
     var entitlement1 = entitlementWithModules(TENANT_ID, OKAPI_APP_ID, List.of(OKAPI_MODULE_ID));
-    entitleApplications(entitlementRequest(OKAPI_APP_ID), emptyMap(),
-      extendedEntitlements(extendedEntitlement(OKAPI_APP_ID)));
-    getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement1));
+    entitleApplications(entitlementRequest(OKAPI_APP_ID), emptyMap(), extendedEntitlements(entitlement(OKAPI_APP_ID)));
+    assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement1));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
 
     // entitle dependent application
-    entitleApplications(entitlementRequest(OKAPI_APP_5_ID), emptyMap(),
-      extendedEntitlements(extendedEntitlement(OKAPI_APP_5_ID)));
+    var request = entitlementRequest(OKAPI_APP_5_ID);
+    entitleApplications(request, emptyMap(), extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     var entitlement2 = entitlementWithModules(TENANT_ID, OKAPI_APP_5_ID, List.of(OKAPI_MODULE_5_ID));
-    getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_5_ID), entitlements(entitlement2));
+    assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_5_ID), entitlements(entitlement2));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
 
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
-    getEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
+    assertEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
 
     assertEntitlementEvents(List.of(
       new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
@@ -205,9 +201,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app15/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
-    "/wiremock/mgr-applications/okapi-app5/get.json",
     "/wiremock/mgr-applications/okapi-app5/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
     "/wiremock/okapi/_proxy/install-okapi-module.json",
@@ -218,10 +212,10 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var entitlement2 = entitlementWithModules(TENANT_ID, OKAPI_APP_5_ID, List.of(OKAPI_MODULE_5_ID));
 
     entitleApplications(entitlementRequest(TENANT_ID, OKAPI_APP_ID, OKAPI_APP_5_ID), emptyMap(),
-      extendedEntitlements(extendedEntitlement(OKAPI_APP_ID), extendedEntitlement(OKAPI_APP_5_ID)));
+      extendedEntitlements(entitlement(OKAPI_APP_ID), entitlement(OKAPI_APP_5_ID)));
 
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
-    getEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
+    assertEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
 
@@ -238,14 +232,13 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
     "/wiremock/okapi/_proxy/install-okapi-module.json"
   })
   void install_positive_freshInstallationInAsyncMode() throws Exception {
     var request = entitlementRequest(OKAPI_APP_ID);
-    var expectedEntitlements = extendedEntitlements(extendedEntitlement(OKAPI_APP_ID));
+    var expectedEntitlements = extendedEntitlements(entitlement(OKAPI_APP_ID));
     var mvcResult = entitleApplications(request, Map.of("async", "true"), expectedEntitlements);
     var resultFlowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
 
@@ -257,7 +250,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         .andExpect(jsonPath("$.status", is("finished"))));
 
     var entitlement = entitlementWithModules(TENANT_ID, OKAPI_APP_ID, List.of(OKAPI_MODULE_ID));
-    getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement));
+    assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement));
     assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), "okapi-module-1.0.0", "test", TENANT_ID)));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
@@ -272,19 +265,18 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/okapi/_proxy/uninstall-okapi-module.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json"
   })
   void uninstall_positive() throws Exception {
     var queryParams = Map.of("tenantParameters", TENANT_PARAMETERS, "purge", "true");
 
     var entitlementRequest = entitlementRequest(OKAPI_APP_ID);
-    var expectedEntitlements = extendedEntitlements(extendedEntitlement(OKAPI_APP_ID));
+    var expectedEntitlements = extendedEntitlements(entitlement(OKAPI_APP_ID));
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
     assertEntitlementEvents(List.of(
       new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID)));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
-    getEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
+    assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
   @Test
@@ -295,9 +287,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/okapi/_proxy/uninstall-okapi-module4.json",
     "/wiremock/okapi/_proxy/uninstall-okapi-module3.json",
     "/wiremock/mgr-applications/okapi-app34/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app3/get.json",
     "/wiremock/mgr-applications/okapi-app3/get-discovery.json",
-    "/wiremock/mgr-applications/okapi-app4/get.json",
     "/wiremock/mgr-applications/okapi-app4/get-discovery.json"
   })
   void uninstall_positive_dependentApplicationsInSingleCall() throws Exception {
@@ -305,8 +295,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var tenantId = UUID.fromString("82dec29a-927f-4a14-a9ea-dc616fd17a1c");
     var tenantName = "another";
     var entitlementRequest = entitlementRequest(tenantId, OKAPI_APP_3_ID, OKAPI_APP_4_ID);
-    var expectedEntitlements = extendedEntitlements(extendedEntitlement(tenantId, OKAPI_APP_3_ID),
-      extendedEntitlement(tenantId, OKAPI_APP_4_ID));
+    var expectedEntitlements = extendedEntitlements(
+      entitlement(tenantId, OKAPI_APP_3_ID), entitlement(tenantId, OKAPI_APP_4_ID));
 
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
 
@@ -317,7 +307,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertThat(kongAdminClient.getRoutesByTag(tenantName, null)).isEmpty();
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_3_ID, OKAPI_APP_4_ID);
-    getEntitlementsWithModules(entitlementQuery, emptyEntitlements());
+    assertEntitlementsWithModules(entitlementQuery, emptyEntitlements());
   }
 
   @Test
@@ -334,11 +324,12 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message", is("Found validation errors in entitlement request")))
-      .andExpect(jsonPath("$.errors[0].type", is("RequestValidationException")))
-      .andExpect(jsonPath("$.errors[0].code", is("validation_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("test-app-1.0.0")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].value", is("Revoke flow finished")));
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
+      .andExpect(jsonPath("$.errors[0].code", is("service_error")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("ExistingEntitlementValidator")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", is(
+        "FAILED: [EntityNotFoundException] Entitlements are not found for applications: [test-app-1.0.0]")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
@@ -353,10 +344,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/okapi/_proxy/uninstall-okapi-module.json",
     "/wiremock/okapi/_proxy/uninstall-okapi-module5.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
     "/wiremock/mgr-applications/okapi-app5/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app5/get.json",
     "/wiremock/mgr-applications/okapi-app5/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
   })
@@ -364,24 +353,24 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var queryParams = Map.of("tenantParameters", TENANT_PARAMETERS, "ignoreErrors", "true");
 
     // entitle and verify dependent application
-    var expectedExtendedEntitlements = extendedEntitlements(extendedEntitlement(OKAPI_APP_ID));
+    var expectedExtendedEntitlements = extendedEntitlements(entitlement(OKAPI_APP_ID));
     entitleApplications(entitlementRequest(OKAPI_APP_ID), queryParams, expectedExtendedEntitlements);
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
 
     // entitle application
     var entitlementRequest = entitlementRequest(OKAPI_APP_5_ID);
-    entitleApplications(entitlementRequest, queryParams, extendedEntitlements(extendedEntitlement(OKAPI_APP_5_ID)));
+    entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
 
     // revoke entitlement for test application
     var revokeParams = Map.of("purge", "true");
-    revokeEntitlements(entitlementRequest, revokeParams, extendedEntitlements(extendedEntitlement(OKAPI_APP_5_ID)));
+    revokeEntitlements(entitlementRequest, revokeParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_5_ID), emptyEntitlements());
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
 
     // entitle test application again
-    entitleApplications(entitlementRequest, queryParams, extendedEntitlements(extendedEntitlement(OKAPI_APP_5_ID)));
+    entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_5_ID), entitlements(entitlement(OKAPI_APP_5_ID)));
     assertEntitlementEvents(List.of(
       new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
@@ -473,8 +462,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {
     "/wiremock/mod-authtoken/verify-token-uninstall.json",
     "/wiremock/mgr-tenants/another/get.json",
-    "/wiremock/mgr-applications/okapi-app4/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app4/get.json"
+    "/wiremock/mgr-applications/okapi-app4/get-by-ids-query-full.json"
   })
   void uninstall_negative_applicationDependenciesCheck() throws Exception {
     var applicationId = "okapi-app4-4.0.0";
@@ -493,11 +481,11 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Application flow '.+' executed with status: FAILED")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[3].key", is("EntitlementDependencyValidator")))
-      .andExpect(jsonPath("$.errors[0].parameters[3].value", is(
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("RevokeRequestDependencyValidator")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", is(
         "FAILED: [IllegalStateException] The following applications must be uninstalled first: [okapi-app3-3.0.0]")));
 
     getEntitlementsByQuery(
@@ -509,7 +497,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
     "/wiremock/okapi/_proxy/install-okapi-module-not-found.json"
@@ -523,14 +510,11 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message",
-        matchesPattern("Application flow '.+' executed with status: CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("KongRouteCreator")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].value", is("CANCELLED")))
-      .andExpect(jsonPath("$.errors[0].parameters[9].key", is("OkapiModulesInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[9].value", startsWith(
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("OkapiModulesInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
@@ -542,7 +526,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
   })
@@ -558,12 +541,11 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message",
-        matchesPattern("Application flow '.+' executed with status: CANCELLATION_FAILED")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLATION_FAILED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancellationException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].key", is("KongRouteCreator")))
-      .andExpect(jsonPath("$.errors[0].parameters[8].value", startsWith(
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("KongRouteCreator")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
         "CANCELLATION_FAILED: [KongIntegrationException] Failed to remove routes, parameters:")));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(2);
@@ -575,7 +557,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
     "/wiremock/okapi/_proxy/install-okapi-module-not-found.json"
@@ -589,11 +570,11 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Application flow '.+' executed with status: FAILED")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[9].key", is("OkapiModulesInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[9].value", startsWith(
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("OkapiModulesInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
@@ -607,7 +588,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
     "/wiremock/okapi/_proxy/uninstall-okapi-module-not-found.json"
   })
   void uninstall_negative() throws Exception {
@@ -619,10 +599,10 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Application flow '.+' executed with status: FAILED")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
-      .andExpect(jsonPath("$.errors[0].parameters[5].key", is("OkapiModulesInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[5].value", startsWith(
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("OkapiModulesInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
@@ -693,7 +673,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app15/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery-not-found.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json"
   })
@@ -706,18 +685,15 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message",
-        matchesPattern("Application flow '.+' executed with status: CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[6].key", is("ApplicationDiscoveryLoader")))
-      .andExpect(jsonPath("$.errors[0].parameters[6].value", startsWith(
-        "FAILED: [IntegrationException] Failed to retrieve module discovery descriptors: " + OKAPI_APP_ID)))
-      .andExpect(jsonPath("$.errors[0].parameters[7].key", is("CancelledFlowFinalizer")))
-      .andExpect(jsonPath("$.errors[0].parameters[7].value", is("FINISHED")));
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("ApplicationDiscoveryLoader")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
+        "FAILED: [IntegrationException] Failed to retrieve module discovery descriptors: " + OKAPI_APP_ID)));
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
-    getEntitlementsWithModules(entitlementQuery, emptyEntitlements());
+    assertEntitlementsWithModules(entitlementQuery, emptyEntitlements());
 
     var mvcResult = mockMvc.perform(get("/application-flows")
         .contentType(APPLICATION_JSON)

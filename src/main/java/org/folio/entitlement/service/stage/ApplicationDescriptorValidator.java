@@ -1,22 +1,18 @@
 package org.folio.entitlement.service.stage;
 
-import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
-import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
-
 import lombok.RequiredArgsConstructor;
+import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.service.ApplicationManagerService;
-import org.folio.flow.api.StageContext;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ApplicationDescriptorValidator extends DatabaseLoggingStage {
+public class ApplicationDescriptorValidator extends DatabaseLoggingStage<ApplicationStageContext> {
 
   private final ApplicationManagerService applicationManagerService;
 
   @Override
-  public void execute(StageContext context) {
-    applicationManagerService.validate(getApplicationDescriptor(context),
-      getEntitlementRequest(context).getOkapiToken());
+  public void execute(ApplicationStageContext ctx) {
+    applicationManagerService.validate(ctx.getApplicationDescriptor(), ctx.getEntitlementRequest().getAuthToken());
   }
 }

@@ -22,7 +22,7 @@ public class EntitlementValidationController extends BaseController implements E
     String validator, String token) {
     var entitlementRequest = EntitlementRequest.builder()
       .type(entitlementType)
-      .okapiToken(token)
+      .authToken(token)
       .tenantId(request.getTenantId())
       .applications(request.getApplications())
       .build();

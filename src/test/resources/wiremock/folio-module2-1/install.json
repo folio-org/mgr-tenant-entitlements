@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/folio-module1/_/tenant",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      },
+      "x-okapi-tenant": {
+        "equalTo": "test"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": {
+          "module_to": "folio-module2-2.1.0",
+          "parameters": [
+            {
+              "key": "loadReference",
+              "value": "true"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "response": {
+    "status": 204,
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

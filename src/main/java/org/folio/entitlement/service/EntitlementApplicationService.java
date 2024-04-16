@@ -1,10 +1,10 @@
 package org.folio.entitlement.service;
 
+import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.PaginationUtils.subListAtOffset;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.ApplicationDescriptors;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
@@ -52,6 +52,6 @@ public class EntitlementApplicationService {
   }
 
   private static List<String> mapToApplicationIds(List<EntitlementEntity> entitlements) {
-    return entitlements.stream().map(EntitlementEntity::getApplicationId).collect(Collectors.toList());
+    return mapItems(entitlements, EntitlementEntity::getApplicationId);
   }
 }

@@ -60,7 +60,7 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
   @Test
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get-query-by-name.json",
-    "/wiremock/mgr-applications/folio-app2/get-by-ids-query.json"
+    "/wiremock/mgr-applications/folio-app2/get-by-ids-query-full.json"
   })
   void getApplicationDescriptorsByTenantName_positive() throws Exception {
     mockMvc.perform(get("/entitlements/{tenantName}/applications", TEST_TENANT)

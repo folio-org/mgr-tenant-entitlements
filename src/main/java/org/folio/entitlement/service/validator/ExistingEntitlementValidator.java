@@ -8,16 +8,24 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.integration.folio.CommonStageContext;
 import org.folio.entitlement.service.EntitlementCrudService;
+import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Order(2)
 @Component
 @RequiredArgsConstructor
-public class ExistingEntitlementValidator implements EntitlementRequestValidator {
+public class ExistingEntitlementValidator extends DatabaseLoggingStage<CommonStageContext>
+  implements EntitlementRequestValidator {
 
   private final EntitlementCrudService entitlementCrudService;
+
+  @Override
+  public void execute(CommonStageContext context) {
+    validate(context.getEntitlementRequest());
+  }
 
   @Override
   public void validate(EntitlementRequest entitlementRequest) {

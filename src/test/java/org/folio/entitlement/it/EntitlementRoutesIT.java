@@ -249,7 +249,6 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
     wmAdminClient.addStubMapping(readString("wiremock/mgr-tenants/test/get.json"));
     wmAdminClient.addStubMapping(readString("wiremock/okapi/_proxy/install-route-app-modules.json"));
     wmAdminClient.addStubMapping(readString("wiremock/mgr-applications/routes-app/get-by-ids-query-full.json"));
-    wmAdminClient.addStubMapping(readString("wiremock/mgr-applications/routes-app/get.json"));
     wmAdminClient.addStubMapping(readString("wiremock/mgr-applications/routes-app/get-discovery.json"));
     wmAdminClient.addStubMapping(readString("wiremock/mgr-applications/validate-any-descriptor.json"));
 

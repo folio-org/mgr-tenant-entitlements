@@ -5,6 +5,12 @@ import static java.util.Collections.emptyList;
 import static org.awaitility.Durations.ONE_SECOND;
 import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
 import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_ID;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_VERSION;
@@ -15,6 +21,7 @@ import static org.folio.entitlement.utils.SemverUtils.getName;
 import static org.folio.entitlement.utils.SemverUtils.getVersion;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import lombok.AccessLevel;
@@ -23,18 +30,21 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.Entitlements;
-import org.folio.entitlement.domain.dto.ExtendedEntitlement;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.entity.ApplicationDependencyEntity;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
 import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
+import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Dependency;
 import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
+import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.integration.folio.CommonStageContext;
 import org.folio.entitlement.integration.tm.model.Tenant;
 import org.folio.flow.api.FlowEngine;
+import org.folio.flow.api.StageContext;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TestValues {
@@ -48,9 +58,7 @@ public class TestValues {
   }
 
   public static ApplicationDescriptor applicationDescriptor(String id, String name, String version) {
-    return new ApplicationDescriptor().id(id)
-      .name(name)
-      .version(version);
+    return new ApplicationDescriptor().id(id).name(name).version(version);
   }
 
   public static ApplicationDescriptor applicationDescriptor(String appId, Dependency... dependencies) {
@@ -113,22 +121,6 @@ public class TestValues {
     return new Entitlement().applicationId(applicationId).tenantId(tenantId).modules(modules);
   }
 
-  public static ExtendedEntitlement extendedEntitlement() {
-    return extendedEntitlement(null, TENANT_ID, APPLICATION_ID);
-  }
-
-  public static ExtendedEntitlement extendedEntitlement(String applicationId) {
-    return extendedEntitlement(null, TENANT_ID, applicationId);
-  }
-
-  public static ExtendedEntitlement extendedEntitlement(UUID tenantId, String applicationId) {
-    return extendedEntitlement(null, tenantId, applicationId);
-  }
-
-  public static ExtendedEntitlement extendedEntitlement(UUID flowId, UUID tenantId, String applicationId) {
-    return new ExtendedEntitlement().flowId(flowId).applicationId(applicationId).tenantId(tenantId);
-  }
-
   public static Entitlements emptyEntitlements() {
     return new Entitlements().totalRecords(0).entitlements(emptyList());
   }
@@ -141,14 +133,14 @@ public class TestValues {
     return new Entitlements().totalRecords(entitlements.size()).entitlements(entitlements);
   }
 
-  public static ExtendedEntitlements extendedEntitlements(UUID flowId, ExtendedEntitlement... entitlements) {
+  public static ExtendedEntitlements extendedEntitlements(UUID flowId, Entitlement... entitlements) {
     return new ExtendedEntitlements()
       .flowId(flowId)
       .totalRecords(entitlements.length)
       .entitlements(asList(entitlements));
   }
 
-  public static ExtendedEntitlements extendedEntitlements(ExtendedEntitlement... entitlements) {
+  public static ExtendedEntitlements extendedEntitlements(Entitlement... entitlements) {
     return new ExtendedEntitlements().totalRecords(entitlements.length).entitlements(asList(entitlements));
   }
 
@@ -233,5 +225,33 @@ public class TestValues {
       .printFlowResult(showReport)
       .executionTimeout(ONE_SECOND)
       .build();
+  }
+
+  public static ApplicationStageContext appStageContext(Object flowId, Map<?, ?> flowParams, Map<?, ?> ctxParams) {
+    return ApplicationStageContext.decorate(StageContext.of(flowId, flowParams, ctxParams));
+  }
+
+  public static CommonStageContext commonStageContext(Object flowId, Map<?, ?> flowParams, Map<?, ?> ctxParams) {
+    return CommonStageContext.decorate(StageContext.of(flowId, flowParams, ctxParams));
+  }
+
+  public static Map<?, ?> flowParameters(EntitlementRequest request, ApplicationDescriptor descriptor) {
+    return Map.of(
+      PARAM_REQUEST, request,
+      PARAM_APPLICATION_DESCRIPTOR, descriptor,
+      PARAM_APPLICATION_ID, descriptor.getId(),
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
+    );
+  }
+
+  public static Map<?, ?> flowParameters(EntitlementRequest request,
+    ApplicationDescriptor descriptor, ApplicationDescriptor entitledDescriptor) {
+    return Map.of(
+      PARAM_REQUEST, request,
+      PARAM_APPLICATION_DESCRIPTOR, descriptor,
+      PARAM_ENTITLED_APPLICATION_DESCRIPTOR, entitledDescriptor,
+      PARAM_APPLICATION_ID, descriptor.getId(),
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
+    );
   }
 }

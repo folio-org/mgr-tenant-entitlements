@@ -22,6 +22,19 @@
         {
           "type": "internal",
           "methods": [
+            "PUT"
+          ],
+          "pathPattern": "/entitlements",
+          "permissionsRequired": [
+            "mgr-tenant-entitlements.entitlements.item.put"
+          ],
+          "modulePermissions": [
+            "mgr-tenants.tenants.item.get"
+          ]
+        },
+        {
+          "type": "internal",
+          "methods": [
             "GET"
           ],
           "pathPattern": "/entitlements",

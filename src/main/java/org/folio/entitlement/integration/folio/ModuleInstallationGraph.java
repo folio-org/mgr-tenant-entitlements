@@ -1,14 +1,11 @@
 package org.folio.entitlement.integration.folio;
 
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableMap;
-import static java.util.Objects.requireNonNullElse;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.collections4.SetUtils.difference;
 
 import java.util.ArrayList;
@@ -36,7 +33,7 @@ public class ModuleInstallationGraph {
   private final int[][] adjacencyMatrix;
 
   public ModuleInstallationGraph(ApplicationDescriptor applicationDescriptor) {
-    this.modules = requireNonNullElse(applicationDescriptor.getModuleDescriptors(), emptyList());
+    this.modules = emptyIfNull(applicationDescriptor.getModuleDescriptors());
     var counter = new AtomicInteger();
     this.moduleIndices = modules.stream().collect(toMap(ModuleDescriptor::getId, v -> counter.getAndIncrement()));
     this.interfacesByModule = getInterfacesByModule();
@@ -157,7 +154,7 @@ public class ModuleInstallationGraph {
       .map(Entry::getValue)
       .flatMap(Collection::stream)
       .filter(moduleId -> !Objects.equals(moduleId, sourceModuleId))
-      .collect(toList());
+      .toList();
   }
 
   private Set<Integer> getDependentModuleIndices(int[] row) {

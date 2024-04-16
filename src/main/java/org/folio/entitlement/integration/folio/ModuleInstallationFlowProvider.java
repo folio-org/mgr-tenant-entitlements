@@ -2,16 +2,14 @@ package org.folio.entitlement.integration.folio;
 
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.capitalize;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.reverseList;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DISCOVERY;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DISCOVERY_DATA;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_ID;
-import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
-import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_DISCOVERY;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_ID;
 
 import java.util.Map;
 import java.util.Set;
@@ -31,14 +29,15 @@ public class ModuleInstallationFlowProvider {
   private final FolioModuleEventPublisher folioModuleEventPublisher;
 
   public Flow prepareFlow(StageContext context) {
-    var applicationDescriptor = getApplicationDescriptor(context);
+    var wrapper = new ApplicationStageContext(context);
+    var applicationDescriptor = wrapper.getApplicationDescriptor();
 
-    var request = getEntitlementRequest(context);
     var moduleInstallationGraph = new ModuleInstallationGraph(applicationDescriptor);
     var installationSequence = moduleInstallationGraph.getModuleInstallationSequence();
     var moduleDescriptorsMap = getModuleDescriptorsMap(applicationDescriptor);
 
-    var flowId = context.flowId() + "/folio-module-installer";
+    var request = wrapper.getEntitlementRequest();
+    var flowId = context.flowId() + "/FolioModule" + capitalize(request.getType().getValue()) + "Flow";
     var flowBuilder = Flow.builder()
       .id(flowId)
       .executionStrategy(request.getExecutionStrategy());
@@ -46,23 +45,23 @@ public class ModuleInstallationFlowProvider {
     var resultSequence = request.getType() == REVOKE ? reverseList(installationSequence) : installationSequence;
     for (var i = 0; i < resultSequence.size(); i++) {
       var moduleIds = resultSequence.get(i);
-      flowBuilder.stage(prepareStage(flowId, i, moduleIds, moduleDescriptorsMap, context));
+      flowBuilder.stage(prepareStage(flowId, i, moduleIds, moduleDescriptorsMap, wrapper));
     }
 
     return flowBuilder.build();
   }
 
-  private Stage prepareStage(String flowId, int level, Set<String> moduleIds,
-    Map<String, ModuleDescriptor> moduleDescriptors, StageContext context) {
-    var stageId = flowId + "/level-" + level;
+  private Stage<StageContext> prepareStage(String flowId, int level, Set<String> moduleIds,
+    Map<String, ModuleDescriptor> moduleDescriptors, ApplicationStageContext context) {
+    var stageId = flowId + "/Level-" + level;
     var stages = mapItems(moduleIds, id -> getFolioModuleInstaller(stageId, id, moduleDescriptors.get(id), context));
     return stages.size() == 1 ? stages.get(0) : ParallelStage.of(stageId, stages);
   }
 
-  private Stage getFolioModuleInstaller(String flowId, String moduleId, ModuleDescriptor moduleDescriptor,
-    StageContext context) {
-    var moduleDiscovery = context.<Map<String, String>>get(PARAM_MODULE_DISCOVERY_DATA).get(moduleId);
-    var requestType = getEntitlementRequest(context).getType();
+  private Flow getFolioModuleInstaller(String flowId, String moduleId, ModuleDescriptor moduleDescriptor,
+    ApplicationStageContext context) {
+    var moduleDiscovery = context.getModuleDiscoveries().get(moduleId);
+    var requestType = context.getEntitlementRequest().getType();
     return Flow.builder()
       .id(flowId + "/" + moduleId)
       .flowParameter(PARAM_MODULE_ID, moduleId)

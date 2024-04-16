@@ -1,14 +1,23 @@
 package org.folio.entitlement.controller;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static org.folio.entitlement.controller.ApiExceptionHandler.FLOW_ID_HEADER;
+import static org.folio.entitlement.domain.dto.ExecutionStatus.CANCELLATION_FAILED;
+import static org.folio.entitlement.domain.dto.ExecutionStatus.CANCELLED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
-import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_ID;
-import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
+import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
+import static org.folio.entitlement.support.TestConstants.FLOW_ID;
+import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
+import static org.folio.flow.model.FlowExecutionStrategy.CANCEL_ON_ERROR;
 import static org.folio.flow.model.FlowExecutionStrategy.IGNORE_ON_ERROR;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CACHE_CONTROL;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -16,6 +25,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -30,17 +40,17 @@ import java.util.UUID;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.error.Parameter;
-import org.folio.entitlement.domain.dto.ApplicationFlow;
-import org.folio.entitlement.domain.dto.EntitlementFlow;
-import org.folio.entitlement.domain.dto.EntitlementStage;
+import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
-import org.folio.entitlement.service.flow.EntitlementFlowService;
+import org.folio.entitlement.service.FlowStageService;
+import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.FlowEngine;
 import org.folio.flow.api.ParallelStage;
 import org.folio.flow.api.Stage;
 import org.folio.flow.api.StageContext;
+import org.folio.flow.model.FlowExecutionStrategy;
 import org.folio.security.exception.ForbiddenException;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
@@ -68,7 +78,7 @@ class ApiExceptionHandlerTest {
 
   @Autowired private MockMvc mockMvc;
   @MockBean private TestService testService;
-  @MockBean private EntitlementFlowService entitlementFlowService;
+  @MockBean private FlowStageService flowStageService;
 
   @Test
   void handleUnsupportedOperationException_positive() throws Exception {
@@ -270,70 +280,187 @@ class ApiExceptionHandlerTest {
   }
 
   @Test
-  void handleStageExecutionException_positive() throws Exception {
-    var positiveFlow = positiveFlow();
-    var failedFlow = failedFlow();
-    var flowId = UUID.randomUUID();
+  void handleStageExecutionException_positive_failedFlow() throws Exception {
+    var failedFlow = failedInstallationFlow(IGNORE_ON_ERROR, new NegativeStage1());
+    var failedStage = new FlowStage()
+      .name("NegativeStage1")
+      .flowId(APPLICATION_FLOW_ID)
+      .status(FAILED)
+      .errorType("RuntimeException")
+      .errorMessage("Stage error");
 
-    when(testService.execute()).then(inv -> executeFlow(flowId, List.of(positiveFlow, failedFlow)));
-
-    var failedFlowId = UUID.fromString(failedFlow.getId());
-    var positiveFlowId = UUID.fromString(positiveFlow.getId());
-    when(entitlementFlowService.findById(flowId, true)).thenReturn(
-      new EntitlementFlow().id(flowId).status(FAILED).applicationFlows(List.of(
-        new ApplicationFlow().id(failedFlowId).status(FAILED).stages(List.of(
-          new EntitlementStage().name("PositiveStage1").applicationFlowId(failedFlowId).status(FINISHED),
-          new EntitlementStage().name("PositiveStage2").applicationFlowId(failedFlowId).status(FINISHED),
-          new EntitlementStage().name("NegativeStage").applicationFlowId(failedFlowId).status(FAILED)
-            .errorMessage("Invalid operation state").errorType("IllegalStateException"))),
-        new ApplicationFlow().id(positiveFlowId).status(FINISHED).stages(List.of(
-          new EntitlementStage().name("PositiveStage1").applicationFlowId(positiveFlowId).status(FINISHED),
-          new EntitlementStage().name("PositiveStage2").applicationFlowId(positiveFlowId).status(FINISHED)))
-      )));
+    when(testService.execute()).then(inv -> executeFlow(failedFlow));
+    when(flowStageService.findFailedStages(FLOW_ID)).thenReturn(List.of(failedStage));
 
     mockMvc.perform(get("/tests")
         .queryParam("query", "cql.allRecords=1")
         .contentType(APPLICATION_JSON))
       .andExpect(status().isBadRequest())
+      .andExpect(header().string(FLOW_ID_HEADER, is(FLOW_ID.toString())))
       .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message", is(format(
-        "Application flow '%s' executed with status: FAILED", failedFlowId))))
-      .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
+      .andExpect(jsonPath("$.errors[0].message", is(format("Flow '%s' finished with status: FAILED", FLOW_ID))))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("PositiveStage1")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].value", is("FINISHED")))
-      .andExpect(jsonPath("$.errors[0].parameters[1].key", startsWith("PositiveStage2")))
-      .andExpect(jsonPath("$.errors[0].parameters[1].value", is("FINISHED")))
-      .andExpect(jsonPath("$.errors[0].parameters[2].key", is("NegativeStage")))
-      .andExpect(jsonPath("$.errors[0].parameters[2].value", is(
-        "FAILED: [IllegalStateException] Invalid operation state")));
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("NegativeStage1")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", is("FAILED: [RuntimeException] Stage error")));
   }
 
-  private Object executeFlow(UUID flowId, List<Flow> applicationFlows) {
-    var flow = Flow.builder()
-      .stage(ParallelStage.of(applicationFlows))
-      .id(flowId.toString())
-      .flowParameter(PARAM_APP_ID, APPLICATION_ID)
-      .build();
+  @Test
+  void handleStageExecutionException_positive_failedFlowWithEmptyDatabaseResult() throws Exception {
+    var failedFlow = failedInstallationFlow(IGNORE_ON_ERROR, new NegativeStage1());
+
+    when(testService.execute()).then(inv -> executeFlow(failedFlow));
+    when(flowStageService.findFailedStages(FLOW_ID)).thenReturn(emptyList());
+
+    mockMvc.perform(get("/tests")
+        .queryParam("query", "cql.allRecords=1")
+        .contentType(APPLICATION_JSON))
+      .andExpect(status().isBadRequest())
+      .andExpect(header().string(FLOW_ID_HEADER, is(FLOW_ID.toString())))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].message", is(format("Flow '%s' finished with status: FAILED", FLOW_ID))))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
+      .andExpect(jsonPath("$.errors[0].code", is("service_error")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("NegativeStage1")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", is("FAILED: [RuntimeException] Stage error")));
+  }
+
+  @Test
+  void handleStageExecutionException_positive_cancelledFlow() throws Exception {
+    var failedFlow = failedInstallationFlow(CANCEL_ON_ERROR, new NegativeStage1());
+    var failedStage = new FlowStage()
+      .name("NegativeStage1")
+      .flowId(APPLICATION_FLOW_ID)
+      .status(FAILED)
+      .errorType("RuntimeException")
+      .errorMessage("Stage error");
+
+    when(testService.execute()).then(inv -> executeFlow(failedFlow));
+    when(flowStageService.findFailedStages(FLOW_ID)).thenReturn(List.of(failedStage));
+
+    mockMvc.perform(get("/tests")
+        .queryParam("query", "cql.allRecords=1")
+        .contentType(APPLICATION_JSON))
+      .andExpect(status().isBadRequest())
+      .andExpect(header().string(FLOW_ID_HEADER, is(FLOW_ID.toString())))
+      .andExpect(header().string(FLOW_ID_HEADER, is(FLOW_ID.toString())))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].message", is(format("Flow '%s' finished with status: CANCELLED", FLOW_ID))))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
+      .andExpect(jsonPath("$.errors[0].code", is("service_error")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("NegativeStage1")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", is("FAILED: [RuntimeException] Stage error")));
+  }
+
+  @Test
+  void handleStageExecutionException_positive_cancelledFlowAndCancelledStage() throws Exception {
+    var failedFlow = failedInstallationFlow(CANCEL_ON_ERROR, new NegativeStage2());
+    var failedStage = new FlowStage()
+      .name("NegativeStage2")
+      .flowId(APPLICATION_FLOW_ID)
+      .status(CANCELLED)
+      .errorType("RuntimeException")
+      .errorMessage("Stage error");
+
+    when(testService.execute()).then(inv -> executeFlow(failedFlow));
+    when(flowStageService.findFailedStages(FLOW_ID)).thenReturn(List.of(failedStage));
+
+    mockMvc.perform(get("/tests")
+        .queryParam("query", "cql.allRecords=1")
+        .contentType(APPLICATION_JSON))
+      .andExpect(status().isBadRequest())
+      .andExpect(header().string(FLOW_ID_HEADER, is(FLOW_ID.toString())))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].message", is(format("Flow '%s' finished with status: CANCELLED", FLOW_ID))))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
+      .andExpect(jsonPath("$.errors[0].code", is("service_error")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("NegativeStage2")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", is("CANCELLED: [RuntimeException] Stage error")));
+  }
+
+  @Test
+  void handleStageExecutionException_positive_cancelledFlowAndFailedToCancelStage() throws Exception {
+    var negativeStageSpy = spy(new NegativeStage2());
+    doThrow(new RuntimeException((String) null)).when(negativeStageSpy).cancel(any());
+    var failedFlow = failedInstallationFlow(CANCEL_ON_ERROR, negativeStageSpy);
+    var flowId = UUID.fromString(failedFlow.getId());
+    var failedStage = new FlowStage()
+      .name("NegativeStage2")
+      .flowId(UUID.randomUUID())
+      .status(CANCELLATION_FAILED)
+      .errorType("RuntimeException")
+      .errorMessage("null");
+
+    when(testService.execute()).then(inv -> executeFlow(failedFlow));
+    when(flowStageService.findFailedStages(flowId)).thenReturn(List.of(failedStage));
+
+    mockMvc.perform(get("/tests")
+        .queryParam("query", "cql.allRecords=1")
+        .contentType(APPLICATION_JSON))
+      .andExpect(status().isBadRequest())
+      .andExpect(header().string(FLOW_ID_HEADER, is(flowId.toString())))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].message", is(format(
+        "Flow '%s' finished with status: CANCELLATION_FAILED", flowId))))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowCancellationException")))
+      .andExpect(jsonPath("$.errors[0].code", is("service_error")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("NegativeStage2")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", is("CANCELLATION_FAILED: [RuntimeException] null")));
+  }
+
+  private Object executeFlow(Flow flow) {
     flowEngine.execute(flow);
     return null;
   }
 
-  private static Flow positiveFlow() {
+  private static Flow failedInstallationFlow(FlowExecutionStrategy strategy, Stage<StageContext> negativeStage) {
+    var subflow1 = positiveApplicationFlow(strategy);
+    var subflow2 = negativeApplicationFlow(strategy, negativeStage);
+
     return Flow.builder()
+      .id(FLOW_ID)
       .stage(new PositiveStage())
-      .stage(ParallelStage.of(new ParallelStage1(), new ParallelStage2()))
-      .id(UUID.randomUUID())
+      .stage(DynamicStage.of("ApplicationsFlowProvider", ctx -> Flow.builder()
+        .id(ctx.flowId() + "/ApplicationsFlow")
+        .stage(ParallelStage.of("Level-0", asList(subflow1, subflow2)))
+        .onFlowError(new PositiveStage())
+        .onFlowCancellation(new PositiveStage())
+        .build()))
+      .onFlowError(new PositiveStage())
+      .onFlowCancellation(new PositiveStage())
+      .executionStrategy(strategy)
       .build();
   }
 
-  private static Flow failedFlow() {
+  private static Flow positiveApplicationFlow(FlowExecutionStrategy strategy) {
     return Flow.builder()
-      .id(UUID.randomUUID())
+      .id(FLOW_ID + "/ApplicationsFlow/Level-0/" + UUID.randomUUID())
       .stage(new PositiveStage())
-      .stage(ParallelStage.of(new ParallelStage1(), new ParallelStage2()))
-      .stage(new NegativeStage())
-      .executionStrategy(IGNORE_ON_ERROR)
+      .stage(DynamicStage.of("FolioModuleInstallerProvider", ctx -> Flow.builder()
+        .id(ctx.flowId() + "/FolioModuleInstaller")
+        .stage(new PositiveStage())
+        .stage(new PositiveStage())
+        .build()))
+      .stage(new PositiveStage())
+      .onFlowError(new PositiveStage())
+      .onFlowCancellation(new PositiveStage())
+      .executionStrategy(strategy)
+      .build();
+  }
+
+  private static Flow negativeApplicationFlow(FlowExecutionStrategy strategy, Stage<StageContext> negativeStage) {
+    return Flow.builder()
+      .id(FLOW_STAGE_ID)
+      .stage(new PositiveStage())
+      .stage(DynamicStage.of("FolioModuleInstallerProvider ", ctx -> Flow.builder()
+        .id(ctx.flowId() + "/FolioModuleInstaller ")
+        .stage(new PositiveStage())
+        .stage(negativeStage)
+        .build()))
+      .stage(new PositiveStage())
+      .onFlowError(new PositiveStage())
+      .onFlowCancellation(new PositiveStage())
+      .executionStrategy(strategy)
       .build();
   }
 
@@ -371,16 +498,19 @@ class ApiExceptionHandlerTest {
   }
 
   @Data
-  private static final class TestRequest {
+  static final class TestRequest {
 
     @NotNull
     private UUID id;
   }
 
-  private static final class PositiveStage implements Stage {
+  private static final class PositiveStage implements Stage<StageContext> {
 
     @Override
     public void execute(StageContext context) {}
+
+    @Override
+    public void cancel(StageContext context) {}
 
     @Override
     public String toString() {
@@ -388,38 +518,37 @@ class ApiExceptionHandlerTest {
     }
   }
 
-  private static final class NegativeStage implements Stage {
+  private static final class NegativeStage1 implements Stage<StageContext> {
 
     @Override
     public void execute(StageContext context) {
-      throw new IllegalStateException("Invalid operation state");
+      throw new RuntimeException("Stage error");
     }
 
     @Override
     public String toString() {
-      return "NegativeStage";
-    }
-  }
-
-  private static final class ParallelStage1 implements Stage {
-
-    @Override
-    public void execute(StageContext context) {}
-
-    @Override
-    public String toString() {
-      return "ParallelStage1";
+      return "NegativeStage1";
     }
   }
 
-  private static final class ParallelStage2 implements Stage {
+  private static final class NegativeStage2 implements Stage<StageContext> {
 
     @Override
-    public void execute(StageContext context) {}
+    public void execute(StageContext context) {
+      throw new RuntimeException("Stage error");
+    }
+
+    @Override
+    public void cancel(StageContext context) {}
+
+    @Override
+    public boolean shouldCancelIfFailed(StageContext context) {
+      return true;
+    }
 
     @Override
     public String toString() {
-      return "ParallelStage2";
+      return "NegativeStage2";
     }
   }
 }

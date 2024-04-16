@@ -4,7 +4,10 @@ import static org.apache.commons.lang3.RegExUtils.removeAll;
 import static org.apache.commons.lang3.StringUtils.chop;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.removeStart;
+import static org.folio.common.utils.CollectionUtils.toStream;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.regex.Pattern;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -45,6 +48,19 @@ public class SemverUtils {
       throw new IllegalArgumentException(ERROR_MSG);
     }
     return chop(removeAll(applicationId, VERSION_PATTERN));
+  }
+
+  /**
+   * Returns application names from application ids.
+   *
+   * @param ids - application ids list
+   * @return application's name
+   */
+  public static List<String> getNames(Collection<String> ids) {
+    return toStream(ids)
+      .map(SemverUtils::getName)
+      .distinct()
+      .toList();
   }
 
   /**

@@ -1,16 +1,17 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.systemUserTenantTopic;
+import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.applicationDescriptor;
+import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.folio.entitlement.support.TestValues.module;
 import static org.folio.entitlement.support.TestValues.simpleApplicationDescriptor;
 import static org.mockito.Mockito.verify;
@@ -20,12 +21,12 @@ import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.UserDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.entitlement.support.TestUtils;
-import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,25 +59,32 @@ class SystemUserEventPublisherTest {
 
   @Test
   void execute_positive() {
-    var flowParameters = Map.of(PARAM_REQUEST, request());
-    var systemUserEvent = SystemUserEvent.of("mod-foo", "system", List.of("foo.entities.post"));
-    var applicationDescriptor = appDescriptorWithModuleSystemUser();
-
-    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME, PARAM_APP_DESCRIPTOR, applicationDescriptor);
-    var stageContext = StageContext.of(FLOW_ID, flowParameters, contextParameters);
+    var flowParameters = flowParameters(request(ENTITLE), appDescriptorWithModuleSystemUser());
+    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var stageContext = appStageContext(FLOW_ID, flowParameters, contextData);
 
     publisher.execute(stageContext);
 
+    var systemUserEvent = SystemUserEvent.of("mod-foo", "system", List.of("foo.entities.post"));
     verify(kafkaEventPublisher).send(systemUserTenantTopic(), MODULE_FOO_ID, resourceEvent(systemUserEvent));
   }
 
   @Test
   void execute_positive_noSystemUsersDefined() {
-    var flowParameters = Map.of(PARAM_REQUEST, request());
-    var applicationDescriptor = simpleApplicationDescriptor(APPLICATION_ID);
+    var flowParameters = flowParameters(request(ENTITLE), simpleApplicationDescriptor(APPLICATION_ID));
+    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var stageContext = appStageContext(FLOW_ID, flowParameters, contextData);
 
-    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME, PARAM_APP_DESCRIPTOR, applicationDescriptor);
-    var stageContext = StageContext.of(FLOW_ID, flowParameters, contextParameters);
+    publisher.execute(stageContext);
+
+    verifyNoInteractions(kafkaEventPublisher);
+  }
+
+  @Test
+  void execute_positive_upgradeRequest() {
+    var flowParameters = flowParameters(request(UPGRADE), appDescriptorWithModuleSystemUser());
+    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var stageContext = appStageContext(FLOW_ID, flowParameters, contextData);
 
     publisher.execute(stageContext);
 
@@ -98,8 +106,8 @@ class SystemUserEventPublisherTest {
       .modules(modules);
   }
 
-  private static EntitlementRequest request() {
-    return EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
+  private static EntitlementRequest request(EntitlementType type) {
+    return EntitlementRequest.builder().tenantId(TENANT_ID).type(type).build();
   }
 
   private static ModuleDescriptor moduleDescriptor(String moduleId, UserDescriptor userDescriptor) {

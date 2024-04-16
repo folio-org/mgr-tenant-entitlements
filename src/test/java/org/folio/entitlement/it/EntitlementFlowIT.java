@@ -21,9 +21,9 @@ import java.util.UUID;
 import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.ApplicationFlows;
-import org.folio.entitlement.domain.dto.EntitlementFlow;
-import org.folio.entitlement.domain.dto.EntitlementStage;
-import org.folio.entitlement.domain.dto.EntitlementStages;
+import org.folio.entitlement.domain.dto.Flow;
+import org.folio.entitlement.domain.dto.FlowStage;
+import org.folio.entitlement.domain.dto.FlowStages;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
@@ -54,9 +54,9 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
 
-    var entitlementFlow = parseResponse(entitlementFlowResponse, EntitlementFlow.class);
-    assertThat(entitlementFlow).isEqualTo(new EntitlementFlow()
-      .id(FLOW_ID_1).status(FINISHED).entitlementType(ENTITLE)
+    var entitlementFlow = parseResponse(entitlementFlowResponse, Flow.class);
+    assertThat(entitlementFlow).isEqualTo(new Flow()
+      .id(FLOW_ID_1).status(FINISHED).type(ENTITLE)
       .startedAt(timestampFrom("2023-01-01T12:01:00"))
       .finishedAt(timestampFrom("2023-01-01T12:02:59"))
       .applicationFlows(List.of(applicationFlow1(), applicationFlow2())));
@@ -72,9 +72,12 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
 
-    var entitlementFlow = parseResponse(entitlementFlowResponse, EntitlementFlow.class);
-    assertThat(entitlementFlow).isEqualTo(new EntitlementFlow()
-      .id(FLOW_ID_1).status(FINISHED).entitlementType(ENTITLE)
+    var entitlementFlow = parseResponse(entitlementFlowResponse, Flow.class);
+    assertThat(entitlementFlow).isEqualTo(new Flow()
+      .id(FLOW_ID_1).status(FINISHED).type(ENTITLE)
+      .stages(List.of(
+        stage(FLOW_ID_1, "FlowInitializer", "2023-01-01T12:01:01", "2023-01-01T12:01:02"),
+        stage(FLOW_ID_1, "FlowFinalizer", "2023-01-01T12:02:46", "2023-01-01T12:02:50")))
       .startedAt(timestampFrom("2023-01-01T12:01:00"))
       .finishedAt(timestampFrom("2023-01-01T12:02:59"))
       .applicationFlows(List.of(
@@ -84,16 +87,16 @@ class EntitlementFlowIT extends BaseIntegrationTest {
 
   @Test
   void getEntitlementFlowById_positive_failedFlow() throws Exception {
-    var entitlementFlowReponse = mockMvc.perform(get("/entitlement-flows/{flowId}", FLOW_ID_2)
+    var entitlementFlowResponse = mockMvc.perform(get("/entitlement-flows/{flowId}", FLOW_ID_2)
         .contentType(APPLICATION_JSON)
         .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
 
-    var entitlementFlow = parseResponse(entitlementFlowReponse, EntitlementFlow.class);
-    assertThat(entitlementFlow).isEqualTo(new EntitlementFlow()
-      .id(FLOW_ID_2).status(FAILED).entitlementType(ENTITLE)
+    var entitlementFlow = parseResponse(entitlementFlowResponse, Flow.class);
+    assertThat(entitlementFlow).isEqualTo(new Flow()
+      .id(FLOW_ID_2).status(FAILED).type(ENTITLE)
       .startedAt(timestampFrom("2023-01-01T13:01:00"))
       .finishedAt(timestampFrom("2023-01-01T13:02:59"))
       .applicationFlows(List.of(applicationFlow3(), applicationFlow4())));
@@ -119,30 +122,28 @@ class EntitlementFlowIT extends BaseIntegrationTest {
 
   @Test
   void getApplicationFlowById_positive() throws Exception {
-    var applicationFlowResponse = mockMvc.perform(
-        get("/application-flows/{applicationFlowId}", "bed2dc08-17f4-45f1-82da-84ffc65c5825")
-          .contentType(APPLICATION_JSON)
-          .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
+    var mvcResult = mockMvc.perform(get("/application-flows/{applicationFlowId}", APP_FLOW_ID_1)
+        .contentType(APPLICATION_JSON)
+        .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
 
-    var applicationFlow = parseResponse(applicationFlowResponse, ApplicationFlow.class);
+    var applicationFlow = parseResponse(mvcResult, ApplicationFlow.class);
     assertThat(applicationFlow).isEqualTo(applicationFlow1());
   }
 
   @Test
   void getApplicationFlowById_positive_includeStages() throws Exception {
-    var applicationFlowResponse = mockMvc.perform(
-        get("/application-flows/{applicationFlowId}", "bed2dc08-17f4-45f1-82da-84ffc65c5825")
-          .queryParam("includeStages", "true")
-          .contentType(APPLICATION_JSON)
-          .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
+    var mvcResult = mockMvc.perform(get("/application-flows/{applicationFlowId}", APP_FLOW_ID_1)
+        .queryParam("includeStages", "true")
+        .contentType(APPLICATION_JSON)
+        .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
 
-    var applicationFlow = parseResponse(applicationFlowResponse, ApplicationFlow.class);
+    var applicationFlow = parseResponse(mvcResult, ApplicationFlow.class);
     assertThat(applicationFlow).isEqualTo(applicationFlow1().stages(entitlementStages1()));
   }
 
@@ -156,24 +157,24 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
 
-    var entitlementStages = parseResponse(entitlementStagesResponse, EntitlementStages.class);
+    var entitlementStages = parseResponse(entitlementStagesResponse, FlowStages.class);
     assertThat(entitlementStages).isEqualTo(
-      new EntitlementStages().totalRecords(9).entitlementStages(entitlementStages1()));
+      new FlowStages().totalRecords(9).stages(entitlementStages1()));
   }
 
   @Test
   void getApplicationFlowStageByName_positive() throws Exception {
-    var entitlementStageResponse = mockMvc.perform(
-        get("/application-flows/{applicationFlowId}/stages/{name}", APP_FLOW_ID_1, "KongGatewayRouteRegistrar")
+    var applicationFlowStageResponse = mockMvc.perform(
+        get("/application-flows/{applicationFlowId}/stages/{name}", APP_FLOW_ID_1, "KongRouteCreator")
           .contentType(APPLICATION_JSON)
           .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
 
-    var entitlementStage = parseResponse(entitlementStageResponse, EntitlementStage.class);
-    assertThat(entitlementStage).isEqualTo(
-      stage(APP_FLOW_ID_1, "KongGatewayRouteRegistrar", "2023-01-01T12:01:26", "2023-01-01T12:01:30"));
+    var applicationFlowStages = parseResponse(applicationFlowStageResponse, FlowStage.class);
+    var expectedStage = stage(APP_FLOW_ID_1, "KongRouteCreator", "2023-01-01T12:01:26", "2023-01-01T12:01:30");
+    assertThat(applicationFlowStages).isEqualTo(expectedStage);
   }
 
   private static ApplicationFlow applicationFlow1() {
@@ -187,31 +188,31 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .finishedAt(timestampFrom("2023-01-01T12:01:59"));
   }
 
-  private static List<EntitlementStage> entitlementStages1() {
+  private static List<FlowStage> entitlementStages1() {
     return List.of(
-      stage(APP_FLOW_ID_1, "EntitlementFlowInitializer", "2023-01-01T12:01:01", "2023-01-01T12:01:05"),
+      stage(APP_FLOW_ID_1, "EntitlementFlowInitializer", "2023-01-01T12:01:03", "2023-01-01T12:01:05"),
       stage(APP_FLOW_ID_1, "TenantLoader", "2023-01-01T12:01:06", "2023-01-01T12:01:10"),
       stage(APP_FLOW_ID_1, "ApplicationDescriptorLoader", "2023-01-01T12:01:11", "2023-01-01T12:01:15"),
       stage(APP_FLOW_ID_1, "ApplicationDependencyValidator", "2023-01-01T12:01:16", "2023-01-01T12:01:20"),
       stage(APP_FLOW_ID_1, "ApplicationDiscoveryValidator", "2023-01-01T12:01:21", "2023-01-01T12:01:25"),
-      stage(APP_FLOW_ID_1, "KongGatewayRouteRegistrar", "2023-01-01T12:01:26", "2023-01-01T12:01:30"),
+      stage(APP_FLOW_ID_1, "KongRouteCreator", "2023-01-01T12:01:26", "2023-01-01T12:01:30"),
       stage(APP_FLOW_ID_1, "OkapiModuleInstaller", "2023-01-01T12:01:31", "2023-01-01T12:01:35"),
       stage(APP_FLOW_ID_1, "EntitlementEventPublisher", "2023-01-01T12:01:36", "2023-01-01T12:01:40"),
-      stage(APP_FLOW_ID_1, "EntitlementFlowFinalizer", "2023-01-01T12:01:41", "2023-01-01T12:01:46")
+      stage(APP_FLOW_ID_1, "EntitlementFlowFinalizer", "2023-01-01T12:01:41", "2023-01-01T12:01:45")
     );
   }
 
-  private static List<EntitlementStage> entitlementStages2() {
+  private static List<FlowStage> entitlementStages2() {
     return List.of(
       stage(APP_FLOW_ID_2, "EntitlementFlowInitializer", "2023-01-01T12:02:01", "2023-01-01T12:02:05"),
       stage(APP_FLOW_ID_2, "TenantLoader", "2023-01-01T12:02:06", "2023-01-01T12:02:10"),
       stage(APP_FLOW_ID_2, "ApplicationDescriptorLoader", "2023-01-01T12:02:11", "2023-01-01T12:02:15"),
       stage(APP_FLOW_ID_2, "ApplicationDependencyValidator", "2023-01-01T12:02:16", "2023-01-01T12:02:20"),
       stage(APP_FLOW_ID_2, "ApplicationDiscoveryValidator", "2023-01-01T12:02:21", "2023-01-01T12:02:25"),
-      stage(APP_FLOW_ID_2, "KongGatewayRouteRegistrar", "2023-01-01T12:02:26", "2023-01-01T12:02:30"),
+      stage(APP_FLOW_ID_2, "KongRouteCreator", "2023-01-01T12:02:26", "2023-01-01T12:02:30"),
       stage(APP_FLOW_ID_2, "OkapiModuleInstaller", "2023-01-01T12:02:31", "2023-01-01T12:02:35"),
       stage(APP_FLOW_ID_2, "EntitlementEventPublisher", "2023-01-01T12:02:36", "2023-01-01T12:02:40"),
-      stage(APP_FLOW_ID_2, "EntitlementFlowFinalizer", "2023-01-01T12:02:41", "2023-01-01T12:02:46")
+      stage(APP_FLOW_ID_2, "EntitlementFlowFinalizer", "2023-01-01T12:02:41", "2023-01-01T12:02:45")
     );
   }
 
@@ -254,10 +255,10 @@ class EntitlementFlowIT extends BaseIntegrationTest {
     return Date.from(LocalDateTime.parse(value).atZone(ZoneId.of("UTC")).toInstant());
   }
 
-  private static EntitlementStage stage(UUID appId, String name, String startedAt, String finishedAt) {
-    return new EntitlementStage()
+  private static FlowStage stage(UUID appId, String name, String startedAt, String finishedAt) {
+    return new FlowStage()
       .name(name)
-      .applicationFlowId(appId)
+      .flowId(appId)
       .status(FINISHED)
       .startedAt(timestampFrom(startedAt))
       .finishedAt(timestampFrom(finishedAt));

@@ -2,8 +2,8 @@ package org.folio.entitlement.it;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
+import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
-import static org.folio.entitlement.support.TestValues.extendedEntitlement;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -60,7 +60,6 @@ class EntitlementValidationIT extends BaseIntegrationTest {
     @WireMockStub(scripts = {
       "/wiremock/mgr-tenants/test/get.json",
       "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
-      "/wiremock/mgr-applications/folio-app1/get.json",
       "/wiremock/mgr-applications/folio-app1/get-discovery.json",
       "/wiremock/mgr-applications/validate-any-descriptor.json",
       "/wiremock/folio-module1/install.json",
@@ -69,7 +68,7 @@ class EntitlementValidationIT extends BaseIntegrationTest {
     void validate_positive_parentEntitled() throws Exception {
       var parentRequest = entitlementRequest(FOLIO_APP_ID_1);
       var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
-      entitleApplications(parentRequest, queryParams, extendedEntitlements(extendedEntitlement(FOLIO_APP_ID_1)));
+      entitleApplications(parentRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP_ID_1)));
 
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
@@ -95,7 +94,6 @@ class EntitlementValidationIT extends BaseIntegrationTest {
     @WireMockStub(scripts = {
       "/wiremock/mgr-tenants/test/get.json",
       "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
-      "/wiremock/mgr-applications/folio-app1/get.json",
       "/wiremock/mgr-applications/folio-app1/get-discovery.json",
       "/wiremock/mgr-applications/validate-any-descriptor.json",
       "/wiremock/folio-module1/install.json",
@@ -104,7 +102,7 @@ class EntitlementValidationIT extends BaseIntegrationTest {
     void validate_negative_dependencyVersionMismatch_with_entitledApp() throws Exception {
       var parentRequest = entitlementRequest(FOLIO_APP_ID_1);
       var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
-      entitleApplications(parentRequest, queryParams, extendedEntitlements(extendedEntitlement(FOLIO_APP_ID_1)));
+      entitleApplications(parentRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP_ID_1)));
 
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
@@ -126,7 +124,6 @@ class EntitlementValidationIT extends BaseIntegrationTest {
     @WireMockStub(scripts = {
       "/wiremock/mgr-tenants/test/get.json",
       "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
-      "/wiremock/mgr-applications/folio-app1/get.json",
       "/wiremock/mgr-applications/folio-app1/get-discovery.json",
       "/wiremock/mgr-applications/validate-any-descriptor.json",
       "/wiremock/folio-module1/install.json",
@@ -135,7 +132,7 @@ class EntitlementValidationIT extends BaseIntegrationTest {
     void validate_negative_missingInterfaces() throws Exception {
       var parentRequest = entitlementRequest(FOLIO_APP_ID_1);
       var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
-      entitleApplications(parentRequest, queryParams, extendedEntitlements(extendedEntitlement(FOLIO_APP_ID_1)));
+      entitleApplications(parentRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP_ID_1)));
 
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 

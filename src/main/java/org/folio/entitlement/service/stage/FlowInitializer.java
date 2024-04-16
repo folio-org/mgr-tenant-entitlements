@@ -1,0 +1,31 @@
+package org.folio.entitlement.service.stage;
+
+import static org.folio.entitlement.utils.FlowUtils.getEntitlementRequest;
+
+import java.time.Instant;
+import java.util.Date;
+import lombok.RequiredArgsConstructor;
+import org.folio.entitlement.domain.dto.ExecutionStatus;
+import org.folio.entitlement.domain.dto.Flow;
+import org.folio.entitlement.integration.folio.CommonStageContext;
+import org.folio.entitlement.service.flow.FlowService;
+import org.springframework.stereotype.Component;
+
+@Component
+@RequiredArgsConstructor
+public class FlowInitializer extends DatabaseLoggingStage<CommonStageContext> {
+
+  private final FlowService flowService;
+
+  @Override
+  public void execute(CommonStageContext context) {
+    var entitlementRequest = getEntitlementRequest(context);
+    var flow = new Flow()
+      .id(context.getCurrentFlowId())
+      .status(ExecutionStatus.IN_PROGRESS)
+      .type(entitlementRequest.getType())
+      .startedAt(Date.from(Instant.now()));
+
+    flowService.create(flow);
+  }
+}

@@ -1,36 +1,37 @@
 package org.folio.entitlement.integration.kong;
 
-import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
-import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 
 import lombok.RequiredArgsConstructor;
+import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
-import org.folio.flow.api.Cancellable;
-import org.folio.flow.api.StageContext;
 import org.folio.tools.kong.service.KongGatewayService;
 
 @RequiredArgsConstructor
-public class KongRouteCreator extends DatabaseLoggingStage implements Cancellable {
+public class KongRouteCreator extends DatabaseLoggingStage<ApplicationStageContext> {
 
   private final KongGatewayService kongGatewayService;
 
   @Override
-  public void execute(StageContext context) {
-    var tenantName = context.<String>get(PARAM_TENANT_NAME);
-    var applicationDescriptor = getApplicationDescriptor(context);
-    kongGatewayService.addRoutes(tenantName, emptyIfNull(applicationDescriptor.getModuleDescriptors()));
+  public void execute(ApplicationStageContext context) {
+    if (context.getEntitlementRequest().getType() == UPGRADE) {
+      return;
+    }
+
+    var tenantName = context.getTenantName();
+    var applicationDescriptor = context.getApplicationDescriptor();
+    kongGatewayService.addRoutes(tenantName, applicationDescriptor.getModuleDescriptors());
   }
 
   @Override
-  public void cancel(StageContext context) {
-    var tenantName = context.<String>get(PARAM_TENANT_NAME);
-    var applicationDescriptor = getApplicationDescriptor(context);
-    kongGatewayService.removeRoutes(tenantName, emptyIfNull(applicationDescriptor.getModuleDescriptors()));
+  public void cancel(ApplicationStageContext context) {
+    var tenantName = context.getTenantName();
+    var applicationDescriptor = context.getApplicationDescriptor();
+    kongGatewayService.removeRoutes(tenantName, applicationDescriptor.getModuleDescriptors());
   }
 
   @Override
-  public boolean shouldCancelIfFailed(StageContext context) {
+  public boolean shouldCancelIfFailed(ApplicationStageContext context) {
     return true;
   }
 }

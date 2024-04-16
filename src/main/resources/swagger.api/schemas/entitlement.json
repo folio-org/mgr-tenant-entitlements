@@ -23,5 +23,5 @@
       }
     }
   },
-  "required": [ "applicationId", "tenantId", "complete" ]
+  "required": [ "applicationId", "tenantId" ]
 }

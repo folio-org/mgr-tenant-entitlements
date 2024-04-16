@@ -8,8 +8,8 @@ import static org.folio.common.utils.CollectionUtils.toStream;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,7 +40,7 @@ public class ApplicationInstallationGraph {
 
     var prevLevel = Collections.<String>emptySet();
     while (!dependenciesByAppId.isEmpty()) {
-      var currentLevel = new HashSet<String>();
+      var currentLevel = new LinkedHashSet<String>();
 
       iterMap(dependenciesByAppId, collectCurrentLevelApps(currentLevel, prevLevel));
       log.debug("Current level with #{} collected: {}", result.size(), currentLevel);

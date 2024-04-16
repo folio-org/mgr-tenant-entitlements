@@ -1,6 +1,5 @@
 package org.folio.entitlement.support.base;
 
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
@@ -11,18 +10,14 @@ import static org.springframework.test.context.TestExecutionListeners.MergeMode.
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.CollectionUtils;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.Entitlements;
-import org.folio.entitlement.domain.dto.ExtendedEntitlement;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.support.extensions.EnableKongGateway;
@@ -96,6 +91,25 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
     return mvcResult;
   }
 
+  protected static MvcResult upgradeApplications(EntitlementRequestBody entitlementRequest,
+    Map<String, String> queryParams, ExtendedEntitlements expectedEntitlements) throws Exception {
+    var request = put("/entitlements")
+      .contentType(APPLICATION_JSON)
+      .header(TOKEN, OKAPI_AUTH_TOKEN)
+      .content(asJsonString(entitlementRequest));
+    queryParams.forEach(request::queryParam);
+
+    var mvcResult = mockMvc.perform(request)
+      .andExpect(status().isOk())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(content().json(asJsonString(expectedEntitlements), false))
+      .andReturn();
+
+    verifyExtendedEntitlements(mvcResult, expectedEntitlements);
+
+    return mvcResult;
+  }
+
   protected static void revokeEntitlements(EntitlementRequestBody entitlementRequest,
     Map<String, String> queryParams, ExtendedEntitlements expectedEntitlements) throws Exception {
     var request = delete("/entitlements")
@@ -125,29 +139,23 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
     assertThat(result).isEqualTo(expected);
   }
 
-  protected static void getEntitlementsWithModules(String cqlQuery, Entitlements expected) throws Exception {
-    var mvcResult = mockMvc.perform(get("/entitlements")
+  protected static void assertEntitlementsWithModules(String cqlQuery, Entitlements expected) throws Exception {
+    mockMvc.perform(get("/entitlements")
         .contentType(APPLICATION_JSON)
         .header(TOKEN, OKAPI_AUTH_TOKEN)
         .queryParam("includeModules", "true")
         .queryParam("query", cqlQuery))
       .andExpect(status().isOk())
-      .andReturn();
-
-    var result = parseResponse(mvcResult, Entitlements.class);
-    assertThat(result).isEqualTo(expected);
+      .andExpect(content().json(asJsonString(expected), true));
   }
 
-  protected static void getModuleEntitlements(String moduleId, Entitlements expected) throws Exception {
-    var mvcResult = mockMvc.perform(get("/entitlements/modules/{moduleId}", moduleId)
+  protected static void assertModuleEntitlements(String moduleId, Entitlements expected) throws Exception {
+    mockMvc.perform(get("/entitlements/modules/{moduleId}", moduleId)
         .contentType(APPLICATION_JSON)
         .header(TOKEN, OKAPI_AUTH_TOKEN)
         .queryParam("includeModules", "true"))
       .andExpect(status().isOk())
-      .andReturn();
-
-    var result = parseResponse(mvcResult, Entitlements.class);
-    assertThat(result).isEqualTo(expected);
+      .andExpect(content().json(asJsonString(expected), true));
   }
 
   protected static ResultHandler logResponseBody() {
@@ -166,21 +174,5 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
     } else {
       assertThat(responseEntitlements.getFlowId()).isNotNull();
     }
-
-    var expectedFlowIds = getFlowIds(expectedEntitlements);
-    var resultFlowIds = getFlowIds(responseEntitlements);
-    if (CollectionUtils.isEmpty(expectedFlowIds)) {
-      assertThat(resultFlowIds).hasSize(expectedEntitlements.getTotalRecords());
-      return;
-    }
-
-    assertThat(resultFlowIds).containsExactlyElementsOf(expectedFlowIds);
-  }
-
-  private static List<UUID> getFlowIds(ExtendedEntitlements expectedEntitlements) {
-    return expectedEntitlements.getEntitlements().stream()
-      .map(ExtendedEntitlement::getFlowId)
-      .filter(Objects::nonNull)
-      .collect(toList());
   }
 }
