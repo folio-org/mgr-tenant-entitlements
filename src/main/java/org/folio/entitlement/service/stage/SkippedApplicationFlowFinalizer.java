@@ -19,7 +19,7 @@ public class SkippedApplicationFlowFinalizer extends DatabaseLoggingStage<Applic
   public void execute(ApplicationStageContext stageContext) {
     var flowUuid = stageContext.getCurrentFlowId();
     var flowEntity = applicationFlowRepository.getReferenceById(flowUuid);
-    if (QUEUED == flowEntity.getStatus()) {
+    if (flowEntity.getStatus() == QUEUED) {
       applicationFlowRepository.delete(flowEntity);
     }
   }
