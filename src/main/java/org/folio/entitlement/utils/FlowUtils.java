@@ -29,6 +29,7 @@ public class FlowUtils {
    * @param stages - list of stages to analyze
    * @return created {@link Stage} object.
    */
+  @SuppressWarnings("java:S1452")
   public static Stage<? extends StageContext> combineStages(String parallelStageName,
     List<? extends Stage<? extends StageContext>> stages) {
     if (CollectionUtils.isEmpty(stages)) {

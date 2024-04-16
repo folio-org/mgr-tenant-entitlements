@@ -162,6 +162,7 @@ public class ApplicationsFlowFactory {
         PARAM_APPLICATION_FLOW_ID, applicationFlowId);
     }
 
+    @SuppressWarnings("java:S1452")
     private static Stage<? extends StageContext> combineApplicationLayerFlows(String flowId, List<Flow> flows) {
       return combineStages(flowId, flows);
     }

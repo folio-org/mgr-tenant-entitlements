@@ -66,6 +66,13 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
     return this.getClass().getSimpleName();
   }
 
+  /**
+   * Returns stage name based on {@link C} context object.
+   *
+   * @param context - stage context
+   * @return stage name based on stage context
+   */
+  @SuppressWarnings("unused")
   public String getStageName(C context) {
     return getId();
   }

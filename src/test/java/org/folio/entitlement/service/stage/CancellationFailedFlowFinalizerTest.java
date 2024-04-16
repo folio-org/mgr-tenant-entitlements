@@ -2,7 +2,7 @@ package org.folio.entitlement.service.stage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.CANCELLATION_FAILED;
 import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
@@ -28,9 +28,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class FailedFlowFinalizerTest {
+class CancellationFailedFlowFinalizerTest {
 
-  @InjectMocks private FailedFlowFinalizer flowFinalizer;
+  @InjectMocks private CancellationFailedFlowFinalizer flowFinalizer;
 
   @Mock private FlowRepository flowRepository;
   @Mock private ApplicationFlowService applicationFlowService;
@@ -54,7 +54,7 @@ class FailedFlowFinalizerTest {
     flowFinalizer.execute(stageContext);
 
     var capturedValue = flowEntityCaptor.getValue();
-    assertThat(capturedValue.getStatus()).isEqualTo(FAILED);
+    assertThat(capturedValue.getStatus()).isEqualTo(CANCELLATION_FAILED);
     verify(applicationFlowService).removeAllQueuedFlows(FLOW_ID);
   }
 
