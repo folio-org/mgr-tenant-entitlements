@@ -37,6 +37,7 @@
     },
     "applicationFlows": {
       "type": "array",
+      "description": "List with executed application flows",
       "items": {
         "$ref": "applicationFlow.json"
       }
