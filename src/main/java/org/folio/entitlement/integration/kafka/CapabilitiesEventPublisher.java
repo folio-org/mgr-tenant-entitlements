@@ -9,7 +9,6 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
@@ -55,10 +54,6 @@ public class CapabilitiesEventPublisher extends DatabaseLoggingStage<Application
 
   @Override
   public void execute(ApplicationStageContext context) {
-    if (context.getEntitlementRequest().getType() == UPGRADE) {
-      return;
-    }
-
     var appDesc = context.getApplicationDescriptor();
     var tenant = context.getTenantName();
     var appId = appDesc.getId();

@@ -1,7 +1,6 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
@@ -72,17 +71,6 @@ class SystemUserEventPublisherTest {
   @Test
   void execute_positive_noSystemUsersDefined() {
     var flowParameters = flowParameters(request(ENTITLE), simpleApplicationDescriptor(APPLICATION_ID));
-    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_ID, flowParameters, contextData);
-
-    publisher.execute(stageContext);
-
-    verifyNoInteractions(kafkaEventPublisher);
-  }
-
-  @Test
-  void execute_positive_upgradeRequest() {
-    var flowParameters = flowParameters(request(UPGRADE), appDescriptorWithModuleSystemUser());
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = appStageContext(FLOW_ID, flowParameters, contextData);
 

@@ -1,7 +1,6 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
 import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
@@ -14,9 +13,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
 import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.Map;
@@ -68,17 +65,6 @@ class ScheduledJobEventPublisherTest {
     var barResourceEvent = resourceEvent(barTimerRoutingEntry());
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooResourceEvent);
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), barResourceEvent);
-  }
-
-  @Test
-  void execute_positive_upgradeRequest() {
-    var flowParameters = flowParameters(request(UPGRADE), applicationDescriptor(fooModuleDescriptor()));
-    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_ID, flowParameters, contextData);
-
-    publisher.execute(stageContext);
-
-    verifyNoInteractions(kafkaEventPublisher);
   }
 
   private static ModuleDescriptor fooModuleDescriptor() {

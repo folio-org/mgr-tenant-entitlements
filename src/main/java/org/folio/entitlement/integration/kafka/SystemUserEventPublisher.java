@@ -2,7 +2,6 @@ package org.folio.entitlement.integration.kafka;
 
 import static java.util.stream.Collectors.toMap;
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
@@ -30,10 +29,6 @@ public class SystemUserEventPublisher extends DatabaseLoggingStage<ApplicationSt
 
   @Override
   public void execute(ApplicationStageContext context) {
-    if (context.getEntitlementRequest().getType() == UPGRADE) {
-      return;
-    }
-
     var descriptor = context.getApplicationDescriptor();
     var tenantName = context.getTenantName();
 

@@ -1,7 +1,5 @@
 package org.folio.entitlement.integration.kong;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
-
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -14,10 +12,6 @@ public class KongRouteCreator extends DatabaseLoggingStage<ApplicationStageConte
 
   @Override
   public void execute(ApplicationStageContext context) {
-    if (context.getEntitlementRequest().getType() == UPGRADE) {
-      return;
-    }
-
     var tenantName = context.getTenantName();
     var applicationDescriptor = context.getApplicationDescriptor();
     kongGatewayService.addRoutes(tenantName, applicationDescriptor.getModuleDescriptors());

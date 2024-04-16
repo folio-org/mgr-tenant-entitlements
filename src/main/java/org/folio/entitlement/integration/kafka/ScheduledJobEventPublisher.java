@@ -1,7 +1,6 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
@@ -23,10 +22,6 @@ public class ScheduledJobEventPublisher extends DatabaseLoggingStage<Application
 
   @Override
   public void execute(ApplicationStageContext context) {
-    if (context.getEntitlementRequest().getType() == UPGRADE) {
-      return;
-    }
-
     var tenantId = context.getTenantId().toString();
     var tenantName = context.getTenantName();
     var moduleDescriptors = context.getApplicationDescriptor().getModuleDescriptors();

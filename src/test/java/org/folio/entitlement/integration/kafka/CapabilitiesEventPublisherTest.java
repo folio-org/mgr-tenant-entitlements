@@ -3,9 +3,7 @@ package org.folio.entitlement.integration.kafka;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
-import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
@@ -87,19 +85,6 @@ class CapabilitiesEventPublisherTest {
     var flowParameters = flowParameters(request, descriptor);
 
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, contextData);
-
-    capabilitiesEventPublisher.execute(stageContext);
-
-    verifyNoInteractions(kafkaTemplate);
-  }
-
-  @Test
-  void execute_positive_upgradeRequest() {
-    var request = EntitlementRequest.builder().type(UPGRADE).build();
-    var applicationDescriptor = readApplicationDescriptor("json/events/capabilities/full-app-desc.json");
-    var flowParameters = flowParameters(request, applicationDescriptor);
-    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_ID, flowParameters, contextData);
 
     capabilitiesEventPublisher.execute(stageContext);
 
