@@ -70,6 +70,12 @@ public class FlowService {
     return flow.applicationFlows(applicationFlows);
   }
 
+  /**
+   * Creates flow entity in database.
+   *
+   * @param flow - flow representation
+   * @return created {@link Flow} entity
+   */
   @Transactional
   public Flow create(Flow flow) {
     var flowEntity = flowMapper.map(flow);
