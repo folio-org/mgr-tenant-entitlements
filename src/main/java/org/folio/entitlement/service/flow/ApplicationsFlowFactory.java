@@ -61,6 +61,11 @@ public class ApplicationsFlowFactory {
     return buildApplicationsFlow(flowId, request, applicationLayerFlows);
   }
 
+  /**
+   * Returns factory name.
+   *
+   * @return factory name as {@link String} object
+   */
   public String getName() {
     return this.getClass().getSimpleName();
   }
