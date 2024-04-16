@@ -51,6 +51,6 @@ public class ApplicationDiscoveryLoader extends DatabaseLoggingStage<Application
       throw new IllegalStateException("Application discovery information is not defined for " + undefinedModules);
     }
 
-    ctx.setModuleDiscoveryData(moduleDiscoveryData);
+    ctx.withModuleDiscoveryData(moduleDiscoveryData);
   }
 }

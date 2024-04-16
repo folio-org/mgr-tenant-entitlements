@@ -60,7 +60,7 @@ public class ModuleInstallationFlowProvider {
 
   private Flow getFolioModuleInstaller(String flowId, String moduleId, ModuleDescriptor moduleDescriptor,
     ApplicationStageContext context) {
-    var moduleDiscovery = context.getModuleDiscoveries().get(moduleId);
+    var moduleDiscovery = context.getModuleDiscoveryData().get(moduleId);
     var requestType = context.getEntitlementRequest().getType();
     return Flow.builder()
       .id(flowId + "/" + moduleId)

@@ -100,31 +100,72 @@ public class ApplicationStageContext extends IdentifiableStageContext {
     context.put(CommonStageContext.PARAM_TENANT_NAME, tenantName);
   }
 
+  /**
+   * Returns tenant id from {@link EntitlementRequest}.
+   *
+   * @return tenant identifier as {@link UUID}
+   */
   public UUID getTenantId() {
     return context.<EntitlementRequest>getFlowParameter(CommonStageContext.PARAM_REQUEST).getTenantId();
   }
 
+  /**
+   * Returns tenant name (should be loaded from mgr-tenants to be non-null).
+   *
+   * @return tenant name as {@link String}
+   */
   public String getTenantName() {
     return context.get(CommonStageContext.PARAM_TENANT_NAME);
   }
 
+  /**
+   * Returns current module identifier from flow parameters.
+   *
+   * <p>This value will be non-null only in module installer stages</p>
+   *
+   * @return current module id as {@link String}
+   */
   public String getModuleId() {
     return context.getFlowParameter(PARAM_MODULE_ID);
   }
 
+  /**
+   * Returns current module descriptor from flow parameters.
+   *
+   * <p>This value will be non-null only in module installer stages</p>
+   *
+   * @return current module descriptor as {@link ModuleDescriptor}
+   */
   public ModuleDescriptor getModuleDescriptor() {
     return context.getFlowParameter(PARAM_MODULE_DESCRIPTOR);
   }
 
+  /**
+   * Return module location URL from flow parameters.
+   *
+   * <p>This value will be non-null only in module installer stages</p>
+   *
+   * @return module location url as {@link String} object
+   */
   public String getModuleDiscovery() {
     return context.getFlowParameter(PARAM_MODULE_DISCOVERY);
   }
 
-  public Map<String, String> getModuleDiscoveries() {
+  /**
+   * Returns loaded module discovery data as map, where key is the module id, value - module location URL.
+   *
+   * <p>This value is loaded before installing/revoking application</p>
+   *
+   * @return module discovery table as {@link Map} object
+   */
+  public Map<String, String> getModuleDiscoveryData() {
     return context.get(PARAM_MODULE_DISCOVERY_DATA);
   }
 
-  public void setModuleDiscoveryData(Map<String, String> moduleLocationsMap) {
+  /**
+   * Sets loaded module discovery data as map, where key is the module id, value - module location URL.
+   */
+  public void withModuleDiscoveryData(Map<String, String> moduleLocationsMap) {
     context.put(PARAM_MODULE_DISCOVERY_DATA, moduleLocationsMap);
   }
 }
