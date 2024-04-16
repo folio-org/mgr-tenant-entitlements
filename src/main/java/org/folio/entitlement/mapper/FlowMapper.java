@@ -20,6 +20,7 @@ public interface FlowMapper {
   @Mapping(target = "applicationFlows", ignore = true)
   Flow map(FlowEntity entity);
 
+  @Mapping(target = "tenantId", ignore = true)
   FlowEntity map(Flow entity);
 
   List<Flow> map(List<FlowEntity> entity);
