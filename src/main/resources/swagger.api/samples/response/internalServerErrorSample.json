@@ -1,9 +1,0 @@
-{
-  "errors": [
-    {
-      "type": "NullPointerException",
-      "code": "service_error"
-    }
-  ],
-  "total_records": 1
-}
