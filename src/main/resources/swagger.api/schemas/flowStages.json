@@ -11,8 +11,8 @@
     },
     "stages": {
       "type": "array",
+      "description": "Found flow stages",
       "items": {
-        "description": "Found flow stages",
         "$ref": "flowStage.json"
       }
     }

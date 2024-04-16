@@ -11,8 +11,8 @@
     },
     "entitlements": {
       "type": "array",
+      "description": "Found entitlement records",
       "items": {
-        "description": "Found entitlement records",
         "$ref": "entitlement.json"
       }
     }

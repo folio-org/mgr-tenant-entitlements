@@ -30,6 +30,7 @@
     },
     "stages": {
       "type": "array",
+      "description": "Executed stages for flow",
       "items": {
         "$ref": "flowStage.json"
       }

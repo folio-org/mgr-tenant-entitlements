@@ -11,8 +11,8 @@
     },
     "flows": {
       "type": "array",
+      "description": "Found entitlement flows",
       "items": {
-        "description": "Found entitlement flows",
         "$ref": "flow.json"
       }
     }
