@@ -37,7 +37,7 @@
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
     <semver4j.version>5.2.3</semver4j.version>
     <folio-spring-cql.version>8.1.0</folio-spring-cql.version>
-    <applications-poc-tools.version>1.4.0</applications-poc-tools.version>
+    <applications-poc-tools.version>1.4.1-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
     <folio-flow-engine.version>1.0.0</folio-flow-engine.version>
 
