@@ -8,189 +8,114 @@
       "handlers": [
         {
           "type": "internal",
-          "methods": [
-            "POST"
-          ],
+          "methods": [ "POST" ],
           "pathPattern": "/entitlements",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.entitlements.item.post"
-          ],
-          "modulePermissions": [
-            "mgr-tenants.tenants.item.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.item.post" ],
+          "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "PUT"
-          ],
+          "methods": [ "PUT" ],
           "pathPattern": "/entitlements",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.entitlements.item.put"
-          ],
-          "modulePermissions": [
-            "mgr-tenants.tenants.item.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.item.put" ],
+          "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/entitlements",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.entitlements.collection.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.collection.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/entitlements/{tenantId}",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.entitlements.item.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.item.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "DELETE"
-          ],
+          "methods": [ "DELETE" ],
           "pathPattern": "/entitlements",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.entitlements.item.delete"
-          ],
-          "modulePermissions": [
-            "mgr-tenants.tenants.item.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.item.delete" ],
+          "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/entitlements/{tenantName}/applications",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.entitlements.applications.collection.get"
-          ],
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.applications.collection.get" ],
           "permissionsRequiredTenant": [ ]
         },
         {
           "type": "internal",
-          "methods": [
-            "POST"
-          ],
+          "methods": [ "POST" ],
           "pathPattern": "/entitlements/validate",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.entitlements.validate.post"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.validate.post" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/entitlements/modules/{moduleId}",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.entitlements.modules.item.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.modules.item.get" ]
         }
       ]
-    },
-    {
+    }, {
       "id": "entitlement-flows",
       "version": "1.0",
       "handlers": [
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/entitlement-flows",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.flows.collection.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.flows.collection.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/entitlement-flows/{flowId}",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.flows.item.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.flows.item.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/entitlement-flows/{flowId}/applications/{applicationId}",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.flows.item.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.flows.item.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/entitlement-flows/{flowId}/applications/{applicationId}/stages",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.flows.stages.collection.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.flows.stages.collection.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/entitlement-flows/{flowId}/applications/{applicationId}/stages/{stageName}",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.flows.stages.item.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.flows.stages.item.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/application-flows",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.flows.collection.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.flows.collection.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/application-flows/{applicationFlowId}/stages",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.flows.stages.collection.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.flows.stages.collection.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/application-flows/{applicationFlowId}",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.flows.stages.collection.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.flows.stages.collection.get" ]
         },
         {
           "type": "internal",
-          "methods": [
-            "GET"
-          ],
+          "methods": [ "GET" ],
           "pathPattern": "/application-flows/{applicationFlowId}/stages/{stageName}",
-          "permissionsRequired": [
-            "mgr-tenant-entitlements.flows.stages.item.get"
-          ]
+          "permissionsRequired": [ "mgr-tenant-entitlements.flows.stages.item.get" ]
         }
       ]
     }
@@ -201,17 +126,19 @@
       "description": "Installs/enables application for tenant",
       "displayName": "Manager Tenant Entitlements - install application",
       "permissionName": "mgr-tenant-entitlements.entitlements.item.post",
-      "subPermissions": [
-        "okapi.proxy.tenants.install.post"
-      ]
+      "subPermissions": [ "okapi.proxy.tenants.install.post" ]
+    },
+    {
+      "description": "Upgrades application(s) for tenant",
+      "displayName": "Manager Tenant Entitlements - Upgrade application",
+      "permissionName": "mgr-tenant-entitlements.entitlements.item.put",
+      "subPermissions": [ "okapi.proxy.tenants.install.post" ]
     },
     {
       "description": "Delete an application installation from a tenant",
       "displayName": "Manager Tenant Entitlements - uninstall application",
       "permissionName": "mgr-tenant-entitlements.entitlements.item.delete",
-      "subPermissions": [
-        "okapi.proxy.tenants.install.post"
-      ]
+      "subPermissions": [ "okapi.proxy.tenants.install.post" ]
     },
     {
       "description": "Retrieve applications installed for tenant",
