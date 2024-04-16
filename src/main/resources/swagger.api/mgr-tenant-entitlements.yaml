@@ -24,8 +24,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/entitlementRequestBody'
-            example:
-              $ref: 'samples/request/entitlementSample.json'
       parameters:
         - $ref: '#/components/parameters/x-okapi-token'
         - $ref: '#/components/parameters/tenantParameters'
@@ -39,8 +37,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/extendedEntitlements'
-              example:
-                $ref: 'samples/response/extendedEntitlementsSample.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -58,8 +54,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/entitlementRequestBody'
-            example:
-              $ref: 'samples/request/entitlementSample.json'
       parameters:
         - $ref: '#/components/parameters/x-okapi-token'
         - $ref: '#/components/parameters/tenantParameters'
@@ -71,8 +65,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/extendedEntitlements'
-              example:
-                $ref: 'samples/response/extendedEntitlementsSample.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -96,8 +88,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/entitlements'
-              example:
-                $ref: 'samples/response/entitlementsSample.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -115,8 +105,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/entitlementRequestBody'
-            example:
-              $ref: 'samples/request/entitlementSample.json'
       parameters:
         - $ref: '#/components/parameters/x-okapi-token'
         - $ref: '#/components/parameters/tenantParameters'
@@ -130,8 +118,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/extendedEntitlements'
-              example:
-                $ref: 'samples/response/extendedEntitlementsSample.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -155,8 +141,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/entitlements'
-              example:
-                $ref: 'samples/response/entitlementsSample.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -181,8 +165,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationDescriptors'
-              example:
-                $ref: 'samples/response/entitlementsSample.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -204,8 +186,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/entitlements'
-              example:
-                $ref: 'samples/response/entitlementsSample.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -224,8 +204,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/entitlementRequestBody'
-            example:
-              $ref: 'samples/request/entitlementSample.json'
       parameters:
         - $ref: '#/components/parameters/entitlementType'
         - $ref: '#/components/parameters/entitlementValidator'
@@ -276,13 +254,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/flow'
-              examples:
-                "Entitlement Flow":
-                  value:
-                    $ref: 'samples/response/entitlementFlow.json'
-                "Entitlement Flow (includeStages=true)":
-                  value:
-                    $ref: 'samples/response/entitlementFlowIncludeStages.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -305,8 +276,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationFlows'
-              example:
-                $ref: 'samples/response/applicationFlows.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -328,13 +297,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationFlow'
-              examples:
-                "Application Flow":
-                  value:
-                    $ref: 'samples/response/applicationFlow.json'
-                "Application Flow (includeStages=true)":
-                  value:
-                    $ref: 'samples/response/applicationFlowIncludeStages.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -355,8 +317,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/flowStages'
-              example:
-                $ref: 'samples/response/entitlementStages.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -378,8 +338,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/flowStage'
-              example:
-                $ref: 'samples/response/entitlementStage.json'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -421,16 +379,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/errorResponse'
-          example:
-            $ref: 'samples/response/badRequestSample.json'
     internalServerErrorResponse:
       description: Error response for unhandled or critical server exceptions, e.g. NullPointerException.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/errorResponse'
-          example:
-            $ref: 'samples/response/internalServerErrorSample.json'
 
   parameters:
     path-entity-id:
