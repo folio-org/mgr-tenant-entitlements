@@ -15,4 +15,6 @@ public interface EntitlementModuleRepository extends JpaCqlRepository<Entitlemen
   Page<EntitlementModuleEntity> findAllByModuleId(String moduleId, Pageable pageable);
 
   List<EntitlementModuleEntity> findAllByModuleIdAndTenantId(String moduleId, UUID tenantId);
+
+  List<EntitlementModuleEntity> findAllByApplicationIdAndTenantId(String applicationId, UUID tenantId);
 }

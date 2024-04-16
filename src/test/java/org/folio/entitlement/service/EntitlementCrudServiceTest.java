@@ -7,6 +7,8 @@ import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementEntity;
+import static org.folio.entitlement.support.TestValues.entitlementModuleEntity;
+import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -17,6 +19,7 @@ import org.folio.entitlement.domain.entity.key.EntitlementKey;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.mapper.ApplicationDependencyMapper;
 import org.folio.entitlement.mapper.EntitlementMapper;
+import org.folio.entitlement.repository.EntitlementModuleRepository;
 import org.folio.entitlement.repository.EntitlementRepository;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
@@ -34,11 +37,13 @@ class EntitlementCrudServiceTest {
   @InjectMocks private EntitlementCrudService service;
   @Mock private EntitlementMapper entitlementMapper;
   @Mock private EntitlementRepository entitlementRepository;
+  @Mock private EntitlementModuleRepository entitlementModuleRepository;
   @Mock private ApplicationDependencyMapper applicationDependencyMapper;
 
   @AfterEach
   void tearDown() {
-    verifyNoMoreInteractions(entitlementMapper, entitlementRepository, applicationDependencyMapper);
+    verifyNoMoreInteractions(entitlementMapper, entitlementRepository, entitlementModuleRepository,
+      applicationDependencyMapper);
   }
 
   @Test
@@ -63,14 +68,20 @@ class EntitlementCrudServiceTest {
     var limit = 10;
     var cqlQuery = "cql.allRecords=1";
     var offsetRequest = OffsetRequest.of(offset, limit);
-    var entity = entitlementEntity();
 
+    var entity = entitlementEntity();
+    var entityModule = entitlementModuleEntity();
+    var moduleIdsList = singletonList(entityModule.getModuleId());
+
+    when(entitlementModuleRepository.findAllByApplicationIdAndTenantId(entity.getApplicationId(), entity.getTenantId()))
+      .thenReturn(singletonList(entityModule));
     when(entitlementRepository.findByCql(cqlQuery, offsetRequest)).thenReturn(new PageImpl<>(singletonList(entity)));
-    when(entitlementMapper.mapWithModules(entity)).thenReturn(entitlement(TENANT_ID, APPLICATION_ID));
+    when(entitlementMapper.mapWithModules(entity, singletonList(entityModule)))
+      .thenReturn(entitlement(TENANT_ID, APPLICATION_ID).modules(moduleIdsList));
 
     var actual = service.findByQuery(cqlQuery, true, limit, offset);
 
-    assertThat(actual).isEqualTo(asSinglePage(entitlement(TENANT_ID, APPLICATION_ID)));
+    assertThat(actual).isEqualTo(asSinglePage(entitlementWithModules(TENANT_ID, APPLICATION_ID, moduleIdsList)));
   }
 
   @Test
