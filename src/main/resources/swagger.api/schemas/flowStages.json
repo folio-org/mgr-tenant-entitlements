@@ -1,5 +1,5 @@
 {
-  "schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft-04/schema#",
   "id": "entitlementStage.json",
   "title": "Tenant Entitlement Stage Schema",
   "description": "Tenant entitlement stage descriptor",
@@ -12,6 +12,7 @@
     "stages": {
       "type": "array",
       "items": {
+        "description": "Found flow stages",
         "$ref": "flowStage.json"
       }
     }

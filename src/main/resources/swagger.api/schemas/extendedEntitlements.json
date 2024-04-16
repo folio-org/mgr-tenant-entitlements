@@ -17,6 +17,7 @@
     "entitlements": {
       "type": "array",
       "items": {
+        "description": "New, upgraded or revoked entitlement for request",
         "$ref": "entitlement.json"
       }
     }

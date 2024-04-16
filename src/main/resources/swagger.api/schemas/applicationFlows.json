@@ -12,6 +12,7 @@
     "applicationFlows": {
       "type": "array",
       "items": {
+        "description": "List with child application flows",
         "$ref": "applicationFlow.json"
       }
     }

@@ -25,9 +25,11 @@
       "format": "uuid"
     },
     "type": {
+      "description": "Application flow entitlement type",
       "$ref": "types/entitlementType.json"
     },
     "status": {
+      "description": "Application flow execution status",
       "$ref": "types/executionStatus.json"
     },
     "startedAt": {

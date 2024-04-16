@@ -11,9 +11,11 @@
       "format": "uuid"
     },
     "status": {
+      "description": "Flow execution status",
       "$ref": "types/executionStatus.json"
     },
     "type": {
+      "description": "Flow entitlement type",
       "$ref": "types/entitlementType.json"
     },
     "startedAt": {
