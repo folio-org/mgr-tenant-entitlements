@@ -38,7 +38,7 @@ class TenantLoaderTest {
 
   @Test
   void execute_positive() {
-    var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).authToken(OKAPI_TOKEN).build();
+    var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).okapiToken(OKAPI_TOKEN).build();
     var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
     var stageContext = commonStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     when(tenantManagerService.findTenant(TENANT_ID, OKAPI_TOKEN)).thenReturn(tenant());

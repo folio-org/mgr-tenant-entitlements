@@ -80,7 +80,7 @@ class OkapiModuleInstallerTest {
   public static EntitlementRequest entitlementRequest() {
     return EntitlementRequest.builder()
       .type(ENTITLE)
-      .authToken(OKAPI_TOKEN)
+      .okapiToken(OKAPI_TOKEN)
       .tenantParameters(TENANT_PARAMETERS)
       .tenantId(TENANT_ID)
       .applications(List.of(APPLICATION_ID))
@@ -92,7 +92,7 @@ class OkapiModuleInstallerTest {
   private static EntitlementRequest entitlementRevokeRequest() {
     return EntitlementRequest.builder()
       .type(REVOKE)
-      .authToken(OKAPI_TOKEN)
+      .okapiToken(OKAPI_TOKEN)
       .tenantParameters(TENANT_PARAMETERS)
       .tenantId(TENANT_ID)
       .applications(List.of(APPLICATION_ID))

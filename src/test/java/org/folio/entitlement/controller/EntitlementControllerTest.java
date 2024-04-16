@@ -201,7 +201,7 @@ class EntitlementControllerTest {
       .tenantParameters(TENANT_PARAMETERS)
       .ignoreErrors(IGNORE_ERRORS)
       .applications(List.of(APPLICATION_ID))
-      .authToken(OKAPI_TOKEN)
+      .okapiToken(OKAPI_TOKEN)
       .build();
   }
 
@@ -214,7 +214,7 @@ class EntitlementControllerTest {
       .tenantParameters(TENANT_PARAMETERS)
       .ignoreErrors(true)
       .applications(List.of(APPLICATION_ID))
-      .authToken(OKAPI_TOKEN)
+      .okapiToken(OKAPI_TOKEN)
       .build();
   }
 

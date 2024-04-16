@@ -86,7 +86,7 @@ class ApplicationDiscoveryLoaderTest {
   }
 
   private static ApplicationStageContext stageContext(ApplicationDescriptor applicationDescriptor) {
-    var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).authToken(OKAPI_TOKEN).build();
+    var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).okapiToken(OKAPI_TOKEN).build();
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var flowParams = flowParameters(entitlementRequest, applicationDescriptor);
     return appStageContext(FLOW_STAGE_ID, flowParams, contextParameters);

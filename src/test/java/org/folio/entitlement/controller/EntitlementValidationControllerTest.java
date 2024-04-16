@@ -106,7 +106,7 @@ class EntitlementValidationControllerTest {
       .type(type)
       .tenantId(TENANT_ID)
       .applications(List.of(APPLICATION_ID))
-      .authToken(OKAPI_TOKEN)
+      .okapiToken(OKAPI_TOKEN)
       .build();
   }
 }

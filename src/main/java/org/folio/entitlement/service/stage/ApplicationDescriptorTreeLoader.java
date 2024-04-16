@@ -54,7 +54,7 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
    */
   public List<ApplicationDescriptor> load(EntitlementRequest entitlementRequest) {
     var tenantId = entitlementRequest.getTenantId();
-    var token = entitlementRequest.getAuthToken();
+    var token = entitlementRequest.getOkapiToken();
     var applicationIds = toStream(entitlementRequest.getApplications()).sorted().toList();
     var descriptors = applicationManagerService.getApplicationDescriptors(applicationIds, token);
     var allApplications = descriptors.stream().collect(toMap(ApplicationDescriptor::getName, identity()));

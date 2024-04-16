@@ -100,7 +100,7 @@ class InterfaceIntegrityValidatorTest {
     return EntitlementRequest.builder()
       .applications(List.of(APPLICATION_ID))
       .tenantId(TENANT_ID)
-      .authToken(OKAPI_TOKEN)
+      .okapiToken(OKAPI_TOKEN)
       .type(ENTITLE)
       .build();
   }

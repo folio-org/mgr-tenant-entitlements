@@ -34,7 +34,7 @@ public class OkapiModulesInstaller extends DatabaseLoggingStage<ApplicationStage
 
     var tenantName = context.getTenantName();
     okapiClient.installTenantModules(tenantName, false, request.isPurge(), request.getTenantParameters(),
-      request.isIgnoreErrors(), false, descriptors, request.getAuthToken());
+      request.isIgnoreErrors(), false, descriptors, request.getOkapiToken());
   }
 
   private void updateModuleEntitlements(UUID tenantId, ApplicationDescriptor appDescriptor, ActionType action) {

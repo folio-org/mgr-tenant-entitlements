@@ -16,7 +16,7 @@ public class ApplicationDescriptorLoader extends DatabaseLoggingStage<CommonStag
   public void execute(CommonStageContext context) {
     var request = context.getEntitlementRequest();
     var applicationIds = request.getApplications();
-    var authToken = request.getAuthToken();
+    var authToken = request.getOkapiToken();
     var descriptors = applicationManagerService.getApplicationDescriptors(applicationIds, authToken);
     context.withApplicationDescriptors(descriptors);
 

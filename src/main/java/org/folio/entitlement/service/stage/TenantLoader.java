@@ -14,7 +14,7 @@ public class TenantLoader extends DatabaseLoggingStage<CommonStageContext> {
   @Override
   public void execute(CommonStageContext context) {
     var request = context.getEntitlementRequest();
-    var tenant = tenantManagerService.findTenant(request.getTenantId(), request.getAuthToken());
+    var tenant = tenantManagerService.findTenant(request.getTenantId(), request.getOkapiToken());
     context.withTenantName(tenant.getName());
   }
 }

@@ -35,7 +35,7 @@ public class EntitlementController extends BaseController implements Entitlement
     String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purgeOnRollback) {
     var entitlementRequest = EntitlementRequest.builder()
       .type(ENTITLE)
-      .authToken(token)
+      .okapiToken(token)
       .tenantParameters(tenantParameters)
       .tenantId(request.getTenantId())
       .applications(request.getApplications())
@@ -53,7 +53,7 @@ public class EntitlementController extends BaseController implements Entitlement
     String tenantParameters, Boolean async) {
     var entitlementRequest = EntitlementRequest.builder()
       .type(UPGRADE)
-      .authToken(token)
+      .okapiToken(token)
       .tenantParameters(tenantParameters)
       .tenantId(request.getTenantId())
       .applications(request.getApplications())
@@ -71,7 +71,7 @@ public class EntitlementController extends BaseController implements Entitlement
     var entitlementRequest = EntitlementRequest.builder()
       .type(REVOKE)
       .async(TRUE.equals(async))
-      .authToken(token)
+      .okapiToken(token)
       .tenantParameters(tenantParameters)
       .tenantId(request.getTenantId())
       .applications(request.getApplications())

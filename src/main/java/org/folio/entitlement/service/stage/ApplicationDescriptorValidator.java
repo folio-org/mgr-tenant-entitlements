@@ -13,6 +13,6 @@ public class ApplicationDescriptorValidator extends DatabaseLoggingStage<Applica
 
   @Override
   public void execute(ApplicationStageContext ctx) {
-    applicationManagerService.validate(ctx.getApplicationDescriptor(), ctx.getEntitlementRequest().getAuthToken());
+    applicationManagerService.validate(ctx.getApplicationDescriptor(), ctx.getEntitlementRequest().getOkapiToken());
   }
 }

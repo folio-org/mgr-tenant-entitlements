@@ -29,7 +29,7 @@ class ApplicationDescriptorValidatorTest {
 
   @Test
   void execute_entitleRequest() {
-    var request = EntitlementRequest.builder().type(EntitlementType.ENTITLE).authToken(OKAPI_TOKEN).build();
+    var request = EntitlementRequest.builder().type(EntitlementType.ENTITLE).okapiToken(OKAPI_TOKEN).build();
     var flowParameters = flowParameters(request, applicationDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 

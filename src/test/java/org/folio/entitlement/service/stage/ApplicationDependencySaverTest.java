@@ -54,7 +54,7 @@ class ApplicationDependencySaverTest {
   }
 
   private static ApplicationStageContext stageContext(EntitlementType type) {
-    var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(type).authToken(OKAPI_TOKEN).build();
+    var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(type).okapiToken(OKAPI_TOKEN).build();
     var flowParameters = Map.of(
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_REQUEST, request,
