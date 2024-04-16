@@ -29,7 +29,6 @@ public class UpgradeFlowFactory implements FlowFactory {
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorLoader applicationDescriptorLoader;
 
-  // flow database logging stages
   private final FinishedFlowFinalizer finishedFlowFinalizer;
   private final FlowInitializer flowInitializer;
   private final FailedFlowFinalizer failedFlowFinalizer;

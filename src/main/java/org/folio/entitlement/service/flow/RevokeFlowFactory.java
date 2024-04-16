@@ -29,7 +29,6 @@ public class RevokeFlowFactory implements FlowFactory {
   private final ApplicationDescriptorLoader applicationDescriptorLoader;
   private final ExistingEntitlementValidator existingEntitlementValidator;
 
-  // flow logging stages
   private final FlowInitializer flowInitializer;
   private final FailedFlowFinalizer failedFlowFinalizer;
   private final FinishedFlowFinalizer finishedFlowFinalizer;

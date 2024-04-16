@@ -45,12 +45,10 @@ public class EntitleApplicationFlowFactory implements ApplicationFlowFactory {
   private final EntitleRequestDependencyValidator entitleRequestDependencyValidator;
   private final KafkaTenantTopicCreator kafkaTenantTopicCreator;
 
-  // publishers
   private final SystemUserEventPublisher sysUserEventPublisher;
   private final ScheduledJobEventPublisher scheduledJobEventPublisher;
   private final CapabilitiesEventPublisher capabilitiesEventPublisher;
 
-  // application flow database logging stages
   private final ApplicationFlowInitializer flowInitializer;
   private final FailedApplicationFlowFinalizer failedFlowFinalizer;
   private final SkippedApplicationFlowFinalizer skippedFlowFinalizer;

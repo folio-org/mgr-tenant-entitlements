@@ -29,7 +29,6 @@ public class EntitleFlowFactory implements FlowFactory {
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorTreeLoader applicationDescriptorTreeLoader;
 
-  // flow database logging stages
   private final FinishedFlowFinalizer finishedFlowFinalizer;
   private final FlowInitializer flowInitializer;
   private final FailedFlowFinalizer failedFlowFinalizer;
