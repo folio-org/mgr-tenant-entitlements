@@ -126,6 +126,7 @@ public class ApplicationsFlowFactory {
       this.entitledApplicationDescriptors = toHashMap(entitledDescriptors, ApplicationDescriptor::getName, identity());
     }
 
+    @SuppressWarnings("java:S1452")
     Stage<? extends StageContext> prepareLayerStage(Set<String> layerApplicationIds) {
       var layerFlowId = seqLayerFlowId.nextValue();
       var applicationFlows = mapItems(layerApplicationIds, appId -> getPrepareApplicationFlow(appId, layerFlowId));
