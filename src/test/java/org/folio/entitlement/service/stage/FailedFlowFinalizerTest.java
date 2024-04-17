@@ -1,17 +1,21 @@
 package org.folio.entitlement.service.stage;
 
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
-import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
-import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.support.TestConstants.FLOW_ID;
+import static org.folio.entitlement.support.TestConstants.TENANT_ID;
+import static org.folio.entitlement.support.TestValues.commonStageContext;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Map;
-import org.folio.entitlement.domain.entity.EntitlementFlowEntity;
-import org.folio.entitlement.repository.EntitlementFlowRepository;
-import org.folio.flow.api.StageContext;
+import org.folio.entitlement.domain.entity.FlowEntity;
+import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.repository.FlowRepository;
+import org.folio.entitlement.service.flow.ApplicationFlowService;
+import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -26,27 +30,36 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class FailedFlowFinalizerTest {
 
-  @InjectMocks private FailedFlowFinalizer failedFlowFinalizer;
+  @InjectMocks private FailedFlowFinalizer flowFinalizer;
 
-  @Mock private EntitlementFlowRepository entitlementFlowRepository;
-  @Captor private ArgumentCaptor<EntitlementFlowEntity> entitlementFlowEntityCaptor;
+  @Mock private FlowRepository flowRepository;
+  @Mock private ApplicationFlowService applicationFlowService;
+  @Captor private ArgumentCaptor<FlowEntity> flowEntityCaptor;
 
   @AfterEach
   void tearDown() {
-    verifyNoMoreInteractions(entitlementFlowRepository);
+    TestUtils.verifyNoMoreInteractions(this);
   }
 
   @Test
-  void execute_positive() {
-    var stageContext = StageContext.of(FLOW_STAGE_ID, emptyMap(), Map.of());
+  void execute_entitle_positive() {
+    var entity = new FlowEntity();
+    entity.setId(FLOW_ID);
+    entity.setTenantId(TENANT_ID);
 
-    var entity = new EntitlementFlowEntity();
-    when(entitlementFlowRepository.getReferenceById(APPLICATION_FLOW_ID)).thenReturn(entity);
-    when(entitlementFlowRepository.save(entitlementFlowEntityCaptor.capture())).thenReturn(entity);
+    when(flowRepository.getReferenceById(FLOW_ID)).thenReturn(entity);
+    when(flowRepository.save(flowEntityCaptor.capture())).thenReturn(entity);
 
-    failedFlowFinalizer.execute(stageContext);
+    var stageContext = commonStageContext(FLOW_ID, flowParameters(), Map.of());
+    flowFinalizer.execute(stageContext);
 
-    var capturedValue = entitlementFlowEntityCaptor.getValue();
+    var capturedValue = flowEntityCaptor.getValue();
     assertThat(capturedValue.getStatus()).isEqualTo(FAILED);
+    verify(applicationFlowService).removeAllQueuedFlows(FLOW_ID);
+  }
+
+  private static Map<?, ?> flowParameters() {
+    var entitlementRequest = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    return Map.of(PARAM_REQUEST, entitlementRequest);
   }
 }

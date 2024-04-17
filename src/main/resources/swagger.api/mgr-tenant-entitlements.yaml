@@ -24,8 +24,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/entitlementRequestBody'
-            example:
-              $ref: '#/components/examples/entitlementRequest'
       parameters:
         - $ref: '#/components/parameters/x-okapi-token'
         - $ref: '#/components/parameters/tenantParameters'
@@ -39,8 +37,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/extendedEntitlements'
-              example:
-                $ref: '#/components/examples/extendedEntitlementsResponse'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+    put:
+      operationId: upgrade
+      description: |
+        Upgrades application (or install/enables) for tenant.
+        Basic authorization is required to perform request (e.g. Authorization=Basic dXNlcjp1c2Vy).
+      tags:
+        - entitlement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/entitlementRequestBody'
+      parameters:
+        - $ref: '#/components/parameters/x-okapi-token'
+        - $ref: '#/components/parameters/tenantParameters'
+        - $ref: '#/components/parameters/async'
+      responses:
+        '200':
+          description: 'A list with successfully created tenant entitlements'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/extendedEntitlements'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -64,8 +88,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/entitlements'
-              example:
-                $ref: '#/components/examples/entitlementsResponse'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -83,13 +105,12 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/entitlementRequestBody'
-            example:
-              $ref: '#/components/examples/entitlementRequest'
       parameters:
         - $ref: '#/components/parameters/x-okapi-token'
         - $ref: '#/components/parameters/tenantParameters'
         - $ref: '#/components/parameters/ignoreErrors'
         - $ref: '#/components/parameters/purge'
+        - $ref: '#/components/parameters/async'
       responses:
         '200':
           description: 'List with removed tenant entitlements'
@@ -97,8 +118,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/extendedEntitlements'
-              example:
-                $ref: '#/components/examples/extendedEntitlementsResponse'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -122,8 +141,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/entitlements'
-              example:
-                $ref: '#/components/examples/entitlementsResponse'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -148,8 +165,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationDescriptors'
-              example:
-                $ref: '#/components/examples/applicationDescriptorsResponse'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -171,8 +186,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/entitlements'
-              example:
-                $ref: '#/components/examples/entitlementsResponse'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -191,8 +204,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/entitlementRequestBody'
-            example:
-              $ref: '#/components/examples/entitlementRequest'
       parameters:
         - $ref: '#/components/parameters/entitlementType'
         - $ref: '#/components/parameters/entitlementValidator'
@@ -205,12 +216,34 @@ paths:
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
 
+  /entitlement-flows:
+    get:
+      operationId: findFlows
+      description: Retrieves flows by CQL query
+      tags:
+        - flow
+      parameters:
+        - $ref: '#/components/parameters/cql-query'
+        - $ref: '#/components/parameters/query-limit'
+        - $ref: '#/components/parameters/query-offset'
+      responses:
+        '200':
+          description: "A list with created tenant entitlements"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/flows'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
   /entitlement-flows/{flowId}:
     get:
-      operationId: getEntitlementFlowById
+      operationId: getFlowById
       description: Retrieves a flow by id
       tags:
-        - entitlement-flow
+        - flow
       parameters:
         - $ref: '#/components/parameters/path-flow-id'
         - $ref: '#/components/parameters/include-stages'
@@ -220,14 +253,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/entitlementFlow'
-              examples:
-                "Entitlement Flow":
-                  value:
-                    $ref: '#/components/examples/entitlementFlowResponse'
-                "Entitlement Flow (includeStages=true)":
-                  value:
-                    $ref: '#/components/examples/entitlementFlowIncludeStagesResponse'
+                $ref: '#/components/schemas/flow'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -238,7 +264,7 @@ paths:
       operationId: findApplicationFlows
       description: Retrieves an application entitlement flows by CQL query
       tags:
-        - entitlement-flow
+        - flow
       parameters:
         - $ref: '#/components/parameters/cql-query'
         - $ref: '#/components/parameters/query-limit'
@@ -250,8 +276,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationFlows'
-              example:
-                $ref: '#/components/examples/applicationFlowsResponse'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -262,7 +286,7 @@ paths:
       operationId: getApplicationFlowById
       description: Retrieves an entitlement flow per applicationId
       tags:
-        - entitlement-flow
+        - flow
       parameters:
         - $ref: '#/components/parameters/path-application-flow-id'
         - $ref: '#/components/parameters/include-stages'
@@ -273,13 +297,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/applicationFlow'
-              examples:
-                "Application Flow":
-                  value:
-                    $ref: '#/components/examples/applicationFlowResponse'
-                "Application Flow (includeStages=true)":
-                  value:
-                    $ref: '#/components/examples/applicationFlowIncludeStagesResponse'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -287,10 +304,10 @@ paths:
 
   /application-flows/{applicationFlowId}/stages:
     get:
-      operationId: findEntitlementStages
+      operationId: getApplicationFlowStages
       description: Retrieves entitlement stages by application id
       tags:
-        - entitlement-flow
+        - flow
       parameters:
         - $ref: '#/components/parameters/path-application-flow-id'
       responses:
@@ -299,9 +316,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/entitlementStages'
-              example:
-                $ref: '#/components/examples/entitlementStagesResponse'
+                $ref: '#/components/schemas/flowStages'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -309,10 +324,10 @@ paths:
 
   /application-flows/{applicationFlowId}/stages/{stageName}:
     get:
-      operationId: getEntitlementStageByName
+      operationId: getApplicationFlowStageByName
       description: Retrieves entitlement stages by application id
       tags:
-        - entitlement-flow
+        - flow
       parameters:
         - $ref: '#/components/parameters/path-application-flow-id'
         - $ref: '#/components/parameters/path-stage-name'
@@ -322,9 +337,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/entitlementStage'
-              example:
-                $ref: '#/components/examples/entitlementStageResponse'
+                $ref: '#/components/schemas/flowStage'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -342,12 +355,14 @@ components:
       $ref: schemas/applicationDescriptor.json
     extendedEntitlements:
       $ref: schemas/extendedEntitlements.json
-    entitlementStage:
-      $ref: schemas/entitlementStage.json
-    entitlementStages:
-      $ref: schemas/entitlementStages.json
-    entitlementFlow:
-      $ref: schemas/entitlementFlow.json
+    flowStage:
+      $ref: schemas/flowStage.json
+    flowStages:
+      $ref: schemas/flowStages.json
+    flow:
+      $ref: schemas/flow.json
+    flows:
+      $ref: schemas/flows.json
     applicationFlow:
       $ref: schemas/applicationFlow.json
     applicationFlows:
@@ -364,16 +379,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/errorResponse'
-          example:
-            $ref: '#/components/examples/badRequestResponse'
     internalServerErrorResponse:
       description: Error response for unhandled or critical server exceptions, e.g. NullPointerException.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/errorResponse'
-          example:
-            $ref: '#/components/examples/internalServerErrorResponse'
 
   parameters:
     path-entity-id:
@@ -485,7 +496,11 @@ components:
     purge:
       name: purge
       in: query
-      description: Disabled modules will also be purged.
+      description: |
+        Defines if create by entitlement process resources must be purged, including:
+          - Keycloak authorization resources (if integration is enabled)
+          - Kong routes (if integration is enabled)
+          - Folio modules data (_tenant API request will be performed with parameter: purge=true)
       required: false
       schema:
         type: boolean
@@ -552,32 +567,3 @@ components:
         All existing validators will be applied if none specified
       schema:
         type: string
-
-#  examples:
-#    entitlementRequest:
-#      $ref: samples/request/entitlementSample.json
-#    entitlementsResponse:
-#      $ref: samples/response/entitlementsSample.json
-#    extendedEntitlementsResponse:
-#      $ref: samples/response/extendedEntitlementsSample.json
-#    badRequestResponse:
-#      $ref: samples/response/badRequestSample.json
-#    entitlementFlowResponse:
-#      $ref: samples/response/entitlementFlow.json
-#    applicationDescriptorsResponse:
-#      $ref: samples/response/applicationDescriptors.json
-#    entitlementFlowIncludeStagesResponse:
-#      $ref: samples/response/entitlementFlowIncludeStages.json
-#    applicationFlowResponse:
-#      $ref: samples/response/applicationFlow.json
-#    applicationFlowsResponse:
-#      $ref: samples/response/applicationFlows.json
-#    applicationFlowIncludeStagesResponse:
-#      $ref: samples/response/applicationFlowIncludeStages.json
-#    entitlementStagesResponse:
-#      $ref: samples/response/entitlementStages.json
-#    entitlementStageResponse:
-#      $ref: samples/response/entitlementStage.json
-#    internalServerErrorResponse:
-#      $ref: samples/response/internalServerErrorSample.json
-

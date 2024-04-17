@@ -25,9 +25,11 @@
       "format": "uuid"
     },
     "type": {
+      "description": "Application flow entitlement type",
       "$ref": "types/entitlementType.json"
     },
     "status": {
+      "description": "Application flow execution status",
       "$ref": "types/executionStatus.json"
     },
     "startedAt": {
@@ -41,10 +43,10 @@
       "format": "date-time"
     },
     "stages": {
-      "description": "List of stages per application flow",
+      "description": "A list with executed stage results",
       "type": "array",
       "items": {
-        "$ref": "entitlementStage.json"
+        "$ref": "flowStage.json"
       }
     }
   }

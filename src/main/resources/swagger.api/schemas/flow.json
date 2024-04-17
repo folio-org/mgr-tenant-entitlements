@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "entitlementFlow.json",
+  "title": "Control Flow Schema",
+  "description": "Control flow that unifies one or more application flow for enable/disable/upgrade operations",
+  "type": "object",
+  "properties": {
+    "id": {
+      "description": "A control flow identifier",
+      "type": "string",
+      "format": "uuid"
+    },
+    "status": {
+      "description": "Flow execution status",
+      "$ref": "types/executionStatus.json"
+    },
+    "type": {
+      "description": "Flow entitlement type",
+      "$ref": "types/entitlementType.json"
+    },
+    "startedAt": {
+      "description": "A control flow start timestamp",
+      "type": "string",
+      "format": "date-time"
+    },
+    "finishedAt": {
+      "description": "A control flow end timestamp",
+      "type": "string",
+      "format": "date-time"
+    },
+    "stages": {
+      "type": "array",
+      "description": "Executed stages for flow",
+      "items": {
+        "$ref": "flowStage.json"
+      }
+    },
+    "applicationFlows": {
+      "type": "array",
+      "description": "List with executed application flows",
+      "items": {
+        "$ref": "applicationFlow.json"
+      }
+    }
+  }
+}

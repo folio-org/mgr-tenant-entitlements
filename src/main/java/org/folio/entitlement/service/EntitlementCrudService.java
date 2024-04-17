@@ -69,6 +69,19 @@ public class EntitlementCrudService {
   }
 
   /**
+   * Retrieve tenant entitlements by application names.
+   *
+   * @param tenantId - tenant identifier as {@link UUID} object
+   * @param applicationNames - list with application names
+   * @return list with found tenant {@link Entitlement} objects
+   */
+  @Transactional(readOnly = true)
+  public List<Entitlement> findByApplicationNames(UUID tenantId, List<String> applicationNames) {
+    var entitlementEntities = entitlementRepository.findByTenantIdAndApplicationNameIn(tenantId, applicationNames);
+    return mapItems(entitlementEntities, entitlementMapper::map);
+  }
+
+  /**
    * Saves entitlement.
    *
    * @param entitlement - entitlement as {@link Entitlement}

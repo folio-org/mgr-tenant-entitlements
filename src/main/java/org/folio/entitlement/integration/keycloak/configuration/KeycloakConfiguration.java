@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
+import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
 import org.folio.entitlement.integration.keycloak.KeycloakService;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
@@ -53,6 +54,11 @@ public class KeycloakConfiguration {
   @Bean
   public KeycloakAuthResourceCreator keycloakAuthResourceCreator(Keycloak keycloak, KeycloakService keycloakService) {
     return new KeycloakAuthResourceCreator(keycloak, keycloakService);
+  }
+
+  @Bean
+  public KeycloakAuthResourceUpdater keycloakAuthResourceUpdater(Keycloak keycloak, KeycloakService keycloakService) {
+    return new KeycloakAuthResourceUpdater(keycloak, keycloakService);
   }
 
   @Bean

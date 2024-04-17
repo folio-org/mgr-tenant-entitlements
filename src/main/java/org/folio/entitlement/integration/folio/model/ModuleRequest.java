@@ -2,11 +2,6 @@ package org.folio.entitlement.integration.folio.model;
 
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.folio.FolioIntegrationUtils.parseTenantParameters;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DISCOVERY;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
-import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,9 +10,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.folio.common.domain.model.InterfaceDescriptor;
-import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
-import org.folio.entitlement.service.stage.StageContextUtils;
+import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.flow.api.StageContext;
 
 @Data
@@ -42,8 +36,8 @@ public class ModuleRequest {
    * @param context - {@link StageContext} object with flow and stage parameters
    * @return created unmodifiable {@link ModuleRequest} object
    */
-  public static ModuleRequest fromStageContext(StageContext context) {
-    var request = getEntitlementRequest(context);
+  public static ModuleRequest fromStageContext(ApplicationStageContext context) {
+    var request = context.getEntitlementRequest();
     return fromStageContext(context, request.isPurge());
   }
 
@@ -53,23 +47,23 @@ public class ModuleRequest {
    * @param context - {@link StageContext} object with flow and stage parameters
    * @return created unmodifiable {@link ModuleRequest} object
    */
-  public static ModuleRequest fromStageContext(StageContext context, boolean purge) {
-    var request = getEntitlementRequest(context);
+  public static ModuleRequest fromStageContext(ApplicationStageContext context, boolean purge) {
+    var request = context.getEntitlementRequest();
 
     return ModuleRequest.builder()
-      .moduleId(context.getFlowParameter(PARAM_MODULE_ID))
+      .moduleId(context.getModuleId())
       .purge(purge)
-      .applicationId(StageContextUtils.getApplicationId(context))
-      .location(context.getFlowParameter(PARAM_MODULE_DISCOVERY))
+      .applicationId(context.getApplicationId())
+      .location(context.getModuleDiscovery())
       .tenantId(request.getTenantId())
-      .tenantName(context.get(PARAM_TENANT_NAME))
+      .tenantName(context.getTenantName())
       .tenantInterface(getTenantInterfaceDescriptor(context))
       .tenantParameters(parseTenantParameters(request.getTenantParameters()))
       .build();
   }
 
-  private static InterfaceDescriptor getTenantInterfaceDescriptor(StageContext context) {
-    var moduleDescriptor = context.<ModuleDescriptor>getFlowParameter(PARAM_MODULE_DESCRIPTOR);
+  private static InterfaceDescriptor getTenantInterfaceDescriptor(ApplicationStageContext context) {
+    var moduleDescriptor = context.getModuleDescriptor();
     return toStream(moduleDescriptor.getProvides())
       .filter(interfaceDescriptor -> TENANT_INTERFACE_ID.equals(interfaceDescriptor.getId()))
       .findFirst()

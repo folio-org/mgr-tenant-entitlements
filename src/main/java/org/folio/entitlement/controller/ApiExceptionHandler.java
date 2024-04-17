@@ -13,7 +13,10 @@ import static org.folio.common.domain.model.error.ErrorCode.SERVICE_ERROR;
 import static org.folio.common.domain.model.error.ErrorCode.UNKNOWN_ERROR;
 import static org.folio.common.domain.model.error.ErrorCode.VALIDATION_ERROR;
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.getErrorMessage;
+import static org.folio.flow.model.ExecutionStatus.CANCELLATION_FAILED;
+import static org.folio.flow.model.ExecutionStatus.CANCELLED;
+import static org.folio.flow.model.ExecutionStatus.FAILED;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
@@ -26,23 +29,29 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.Level;
 import org.folio.common.domain.model.error.Error;
 import org.folio.common.domain.model.error.ErrorCode;
 import org.folio.common.domain.model.error.ErrorResponse;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.cql2pgjson.exception.CQLFeatureUnsupportedException;
-import org.folio.entitlement.domain.dto.EntitlementStage;
+import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
-import org.folio.entitlement.service.flow.EntitlementFlowService;
+import org.folio.entitlement.service.FlowStageService;
+import org.folio.flow.exception.FlowCancellationException;
+import org.folio.flow.exception.FlowCancelledException;
 import org.folio.flow.exception.FlowExecutionException;
 import org.folio.flow.exception.StageExecutionException;
+import org.folio.flow.model.ExecutionStatus;
+import org.folio.flow.model.StageResult;
 import org.folio.security.exception.ForbiddenException;
 import org.folio.spring.cql.CqlQueryValidationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
@@ -64,7 +73,8 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RequiredArgsConstructor
 public class ApiExceptionHandler {
 
-  private final EntitlementFlowService entitlementFlowService;
+  public static final String FLOW_ID_HEADER = "x-mgr-tenant-entitlement-flow-id";
+  public final FlowStageService flowStageService;
 
   /**
    * Catches and handles all exceptions for type {@link UnsupportedOperationException}.
@@ -251,22 +261,31 @@ public class ApiExceptionHandler {
   public ResponseEntity<ErrorResponse> handleStageExecutionException(StageExecutionException exception) {
     logException(DEBUG, exception);
     var stageResults = exception.getStageResults();
-    var errors = new ArrayList<Error>();
     var flowId = stageResults.get(0).getFlowId();
-    var entitlementFlow = entitlementFlowService.findById(UUID.fromString(flowId), true);
 
-    for (var applicationFlow : entitlementFlow.getApplicationFlows()) {
-      var status = applicationFlow.getStatus();
-      if (status != FINISHED) {
-        errors.add(new Error()
-          .message(format("Application flow '%s' executed with status: %s", applicationFlow.getId(), status.name()))
-          .code(SERVICE_ERROR)
-          .type(exception.getClass().getSimpleName())
-          .parameters(mapItems(applicationFlow.getStages(), ApiExceptionHandler::getErrorParametersForStage)));
-      }
+    var failedStages = flowStageService.findFailedStages(UUID.fromString(flowId));
+    var executionStatus = getExecutionStatus(exception);
+
+    var errorParameters = mapItems(failedStages, ApiExceptionHandler::getErrorParametersForStage);
+
+    if (errorParameters.isEmpty()) {
+      errorParameters = findLastFailedStage(stageResults)
+        .map(ApiExceptionHandler::getErrorParametersForStage)
+        .map(List::of)
+        .orElseGet(Collections::emptyList);
     }
 
-    return badRequest().body(new ErrorResponse().errors(errors).totalRecords(errors.size()));
+    var errorResponse = new ErrorResponse()
+      .totalRecords(1)
+      .addErrorsItem(new Error()
+        .message(format("Flow '%s' finished with status: %s", flowId, executionStatus))
+        .code(SERVICE_ERROR)
+        .type(exception.getClass().getSimpleName())
+        .parameters(errorParameters));
+
+    return badRequest()
+      .header(FLOW_ID_HEADER, flowId)
+      .body(errorResponse);
   }
 
   /**
@@ -285,17 +304,6 @@ public class ApiExceptionHandler {
     return buildErrorResponse(exception, parameters, VALIDATION_ERROR);
   }
 
-  private static Parameter getErrorParametersForStage(EntitlementStage stage) {
-    var stageName = stage.getName();
-    var stageStatus = stage.getStatus();
-    if (stage.getErrorMessage() != null) {
-      var errorMessage = format("%s: [%s] %s", stageStatus.name(), stage.getErrorType(), stage.getErrorMessage());
-      return new Parameter().key(stageName).value(errorMessage);
-    }
-
-    return new Parameter().key(stageName).value(stageStatus.name());
-  }
-
   private static ErrorResponse buildErrorResponse(Exception exception, List<Parameter> parameters, ErrorCode code) {
     var error = new Error()
       .type(exception.getClass().getSimpleName())
@@ -306,7 +314,6 @@ public class ApiExceptionHandler {
   }
 
   private static ResponseEntity<ErrorResponse> buildResponseEntity(Exception error, HttpStatus status, ErrorCode code) {
-
     var errorResponse = new ErrorResponse()
       .errors(List.of(new Error()
         .message(error.getMessage())
@@ -321,7 +328,60 @@ public class ApiExceptionHandler {
     return ResponseEntity.status(status).body(errorResponse);
   }
 
+  private static Parameter getErrorParametersForStage(FlowStage stage) {
+    var stageName = stage.getName();
+    var stageStatus = stage.getStatus();
+    var errorMessage = format("%s: [%s] %s", stageStatus.name(), stage.getErrorType(), stage.getErrorMessage());
+    return new Parameter().key(stageName).value(errorMessage);
+  }
+
+  private static Parameter getErrorParametersForStage(StageResult stageResult) {
+    var stageName = stageResult.getStageId();
+    var stageStatus = stageResult.getStatus();
+    var error = stageResult.getError();
+    var errorType = error.getClass().getSimpleName();
+    var errorMessage = getErrorMessage(error);
+    var fullMessage = format("%s: [%s] %s", stageStatus.name(), errorType, errorMessage);
+    return new Parameter().key(stageName).value(fullMessage);
+  }
+
   private static void logException(Level level, Exception exception) {
     log.log(level, "Handling exception", exception);
+  }
+
+  private static Optional<StageResult> findLastFailedStage(List<StageResult> stageResults) {
+    var results = new ArrayList<>(stageResults);
+    Collections.reverse(results);
+    return results.stream()
+      .filter(ApiExceptionHandler::isNotFinishedStage)
+      .map(ApiExceptionHandler::getCauseStage)
+      .flatMap(Optional::stream)
+      .findFirst();
+  }
+
+  private static Optional<StageResult> getCauseStage(StageResult stageResult) {
+    var subStageResults = stageResult.getSubStageResults();
+    if (CollectionUtils.isEmpty(subStageResults)) {
+      return Optional.of(stageResult);
+    }
+
+    return findLastFailedStage(subStageResults);
+  }
+
+  private static boolean isNotFinishedStage(StageResult stageResult) {
+    var status = stageResult.getStatus();
+    return status == FAILED || status == CANCELLED || status == CANCELLATION_FAILED;
+  }
+
+  private static ExecutionStatus getExecutionStatus(StageExecutionException exception) {
+    if (exception instanceof FlowCancellationException) {
+      return CANCELLATION_FAILED;
+    }
+
+    if (exception instanceof FlowCancelledException) {
+      return CANCELLED;
+    }
+
+    return FAILED;
   }
 }

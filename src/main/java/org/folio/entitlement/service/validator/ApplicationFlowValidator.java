@@ -3,9 +3,10 @@ package org.folio.entitlement.service.validator;
 import static java.lang.String.format;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.capitalize;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.utils.SemverUtils.getNames;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -15,17 +16,24 @@ import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
-import org.folio.entitlement.service.flow.EntitlementFlowService;
-import org.folio.entitlement.utils.SemverUtils;
+import org.folio.entitlement.integration.folio.CommonStageContext;
+import org.folio.entitlement.service.flow.ApplicationFlowService;
+import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 @Order(1)
 @Component
 @RequiredArgsConstructor
-public class ApplicationFlowValidator implements EntitlementRequestValidator {
+public class ApplicationFlowValidator extends DatabaseLoggingStage<CommonStageContext>
+  implements EntitlementRequestValidator {
 
-  private final EntitlementFlowService entitlementFlowService;
+  private final ApplicationFlowService applicationFlowService;
+
+  @Override
+  public void execute(CommonStageContext context) {
+    validate(context.getEntitlementRequest());
+  }
 
   /**
    * Validates entitlement request.
@@ -33,7 +41,8 @@ public class ApplicationFlowValidator implements EntitlementRequestValidator {
    * <p>
    * Checks that:
    *   <ul>
-   *     <li>Entitled application pre-check, validates that 1 application can be entitled/revoked simultaneously</li>
+   *     <li>Entitled application pre-check, validates that only one application can be enabled, disabled,
+   *     or upgraded simultaneously</li>
    *   </ul>
    * </p>
    *
@@ -42,18 +51,16 @@ public class ApplicationFlowValidator implements EntitlementRequestValidator {
    */
   @Override
   public void validate(EntitlementRequest request) {
-    var applicationNames = request.getApplications().stream()
-      .map(SemverUtils::getName)
-      .distinct().collect(toList());
     var requestType = request.getType();
-    var applicationFlows = requestType.equals(ENTITLE)
-      ? entitlementFlowService.findLastFlowsByAppNames(applicationNames, request.getTenantId())
-      : entitlementFlowService.findLastFlows(request.getApplications(), request.getTenantId());
+    var applicationIds = request.getApplications();
+    var applicationFlows = requestType.equals(REVOKE)
+      ? applicationFlowService.findLastFlows(applicationIds, request.getTenantId())
+      : applicationFlowService.findLastFlowsByNames(getNames(applicationIds), request.getTenantId());
 
     var validationErrors = applicationFlows.stream()
       .map(applicationFlow -> validateApplicationFlow(applicationFlow, requestType))
       .flatMap(Optional::stream)
-      .collect(toList());
+      .toList();
 
     if (CollectionUtils.isNotEmpty(validationErrors)) {
       throw new RequestValidationException("Found validation errors in entitlement request", validationErrors);
@@ -82,7 +89,7 @@ public class ApplicationFlowValidator implements EntitlementRequestValidator {
     return switch (flow.getStatus()) {
       case QUEUED -> of(param.value(typeValue + " flow is in queue"));
       case IN_PROGRESS -> of(param.value(typeValue + " flow is in progress"));
-      case FINISHED -> of(param.value(typeValue + " flow finished"));
+      case FINISHED -> type != UPGRADE ? of(param.value(typeValue + " flow finished")) : Optional.empty();
       default -> empty();
     };
   }

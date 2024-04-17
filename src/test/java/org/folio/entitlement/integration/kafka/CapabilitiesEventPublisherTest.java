@@ -3,14 +3,14 @@ package org.folio.entitlement.integration.kafka;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
 import static org.folio.entitlement.support.TestUtils.readApplicationDescriptor;
 import static org.folio.entitlement.support.TestUtils.readCapabilityEvent;
+import static org.folio.entitlement.support.TestValues.appStageContext;
+import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -26,7 +26,6 @@ import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventBody;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.TestUtils;
-import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -61,8 +60,9 @@ class CapabilitiesEventPublisherTest {
   void execute_positive_parameterized(@SuppressWarnings("unused") String testName,
     ApplicationDescriptor descriptor, List<ResourceEvent<CapabilityEventBody>> expectedEvents) {
     var request = EntitlementRequest.builder().type(ENTITLE).build();
-    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME, PARAM_APP_DESCRIPTOR, descriptor);
-    var stageContext = StageContext.of(FLOW_STAGE_ID, Map.of(PARAM_REQUEST, request), contextData);
+    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var flowParameters = flowParameters(request, descriptor);
+    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
     var topicName = capabilitiesTenantTopic();
     doNothing().when(kafkaTemplate).send(eq(topicName), moduleIdCaptor.capture(), eventCaptor.capture());
@@ -81,8 +81,10 @@ class CapabilitiesEventPublisherTest {
   void execute_positive_noEventsPublished() {
     var request = EntitlementRequest.builder().type(ENTITLE).build();
     var descriptor = readApplicationDescriptor("json/events/capabilities/desc-with-nothing-to-publish.json");
-    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME, PARAM_APP_DESCRIPTOR, descriptor);
-    var stageContext = StageContext.of(FLOW_STAGE_ID, Map.of(PARAM_REQUEST, request), contextData);
+    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var flowParameters = flowParameters(request, descriptor);
+
+    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
     capabilitiesEventPublisher.execute(stageContext);
 

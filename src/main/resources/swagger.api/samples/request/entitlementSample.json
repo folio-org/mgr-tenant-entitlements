@@ -1,7 +1,0 @@
-{
-  "tenantId": "6ad28dae-7c02-4f89-9320-153c55bf1914",
-  "applications": [
-    "application-foo-1.0.0",
-    "application-bar-0.2.1"
-  ]
-}

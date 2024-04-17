@@ -55,6 +55,7 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
     }
   }
 
+  @SuppressWarnings("resource")
   private static GenericContainer<?> migrationContainer(String command) {
     return new GenericContainer<>(KONG_DOCKER_IMAGE)
       .withEnv(kongMigrationEnvironment())

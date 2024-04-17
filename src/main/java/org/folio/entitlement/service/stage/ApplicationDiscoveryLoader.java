@@ -1,52 +1,47 @@
 package org.folio.entitlement.service.stage;
 
 import static java.util.stream.Collectors.toCollection;
+import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.common.utils.Collectors.toLinkedHashMap;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DISCOVERY_DATA;
-import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
-import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationId;
-import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.collections4.CollectionUtils;
 import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
+import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.service.ApplicationManagerService;
-import org.folio.flow.api.StageContext;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ApplicationDiscoveryLoader extends DatabaseLoggingStage {
+public class ApplicationDiscoveryLoader extends DatabaseLoggingStage<ApplicationStageContext> {
 
   private final ApplicationManagerService applicationManagerService;
 
   @Override
-  public void execute(StageContext context) {
-    var modules = getApplicationDescriptor(context).getModules();
-    if (CollectionUtils.isEmpty(modules)) {
+  public void execute(ApplicationStageContext context) {
+    var modules = context.getApplicationDescriptor().getModules();
+    if (isEmpty(modules)) {
       return;
     }
 
-    var entitlementRequest = getEntitlementRequest(context);
-    var applicationId = getApplicationId(context);
+    var entitlementRequest = context.getEntitlementRequest();
+    var applicationId = context.getApplicationId();
     var token = entitlementRequest.getOkapiToken();
 
     var moduleDiscoveries = applicationManagerService.getModuleDiscoveries(applicationId, token).getRecords();
-    if (CollectionUtils.isEmpty(moduleDiscoveries)) {
-      throw new IllegalStateException("Module discovery information is not found");
+    if (isEmpty(moduleDiscoveries)) {
+      throw new IllegalStateException("Module discovery information is not found for application: " + applicationId);
     }
 
-    verifyDiscoveryInformationPerModule(context, moduleDiscoveries);
+    verifyDiscoveryInformation(context, moduleDiscoveries);
   }
 
-  private static void verifyDiscoveryInformationPerModule(StageContext ctx, List<ModuleDiscovery> moduleDiscoveries) {
-    var applicationDescriptor = getApplicationDescriptor(ctx);
-    var modules = applicationDescriptor.getModules();
-    var moduleDiscoveryData = moduleDiscoveries.stream()
+  private static void verifyDiscoveryInformation(ApplicationStageContext ctx, List<ModuleDiscovery> locationMap) {
+    var modules = ctx.getApplicationDescriptor().getModules();
+    var moduleDiscoveryData = locationMap.stream()
       .collect(toLinkedHashMap(ModuleDiscovery::getId, ModuleDiscovery::getLocation));
 
     var undefinedModules = modules.stream().map(Module::getId).collect(toCollection(LinkedHashSet::new));
@@ -56,6 +51,6 @@ public class ApplicationDiscoveryLoader extends DatabaseLoggingStage {
       throw new IllegalStateException("Application discovery information is not defined for " + undefinedModules);
     }
 
-    ctx.put(PARAM_MODULE_DISCOVERY_DATA, moduleDiscoveryData);
+    ctx.withModuleDiscoveryData(moduleDiscoveryData);
   }
 }

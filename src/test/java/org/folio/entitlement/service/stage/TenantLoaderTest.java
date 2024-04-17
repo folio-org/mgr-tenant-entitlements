@@ -1,21 +1,21 @@
 package org.folio.entitlement.service.stage;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.folio.entitlement.support.TestValues.tenant;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Map;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.tm.TenantManagerService;
-import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +39,8 @@ class TenantLoaderTest {
   @Test
   void execute_positive() {
     var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).okapiToken(OKAPI_TOKEN).build();
-    var stageContext = StageContext.of(FLOW_STAGE_ID, singletonMap(PARAM_REQUEST, entitlementRequest), emptyMap());
+    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
+    var stageContext = commonStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     when(tenantManagerService.findTenant(TENANT_ID, OKAPI_TOKEN)).thenReturn(tenant());
 
     tenantLoader.execute(stageContext);

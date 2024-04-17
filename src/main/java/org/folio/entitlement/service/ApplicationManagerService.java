@@ -1,6 +1,8 @@
 package org.folio.entitlement.service;
 
+import static java.lang.String.join;
 import static java.util.Collections.emptyList;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.ClassUtils.getSimpleName;
 import static org.folio.common.utils.PaginationUtils.loadInBatches;
 
@@ -11,6 +13,8 @@ import feign.FeignException.BadRequest;
 import feign.FeignException.NotFound;
 import jakarta.persistence.EntityNotFoundException;
 import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
@@ -58,24 +62,6 @@ public class ApplicationManagerService {
   }
 
   /**
-   * Queries application descriptors by application ids.
-   *
-   * @param applicationIds list of application ids
-   * @param token auth token
-   * @return @link ResultList} with {@link ApplicationDescriptor} descriptors
-   * @throws IntegrationException if other exception occurred during performing HTTP request
-   */
-  public ResultList<ApplicationDescriptor> getApplicationDescriptors(List<String> applicationIds, Integer limit,
-    Integer offset, String token) {
-    try {
-      var query = CqlQuery.exactMatchAny("id", applicationIds);
-      return applicationManagerClient.queryApplicationDescriptors(query, true, limit, offset, token);
-    } catch (FeignException cause) {
-      throw new IntegrationException("Failed to query application descriptors", cause);
-    }
-  }
-
-  /**
    * Queries application descriptors by ids in batches to prevent exceeding max query length.
    *
    * @param applicationIds application identifiers
@@ -83,13 +69,9 @@ public class ApplicationManagerService {
    * @return Application descriptors
    */
   public List<ApplicationDescriptor> getApplicationDescriptors(List<String> applicationIds, String token) {
-    return loadInBatches(applicationIds, loadAppDescriptorsBatch(token), APP_DESCRIPTOR_BATCH_SIZE);
-  }
-
-  private Function<List<String>, List<ApplicationDescriptor>> loadAppDescriptorsBatch(String token) {
-    return applicationIdsBatch ->
-      getApplicationDescriptors(applicationIdsBatch, APP_DESCRIPTOR_BATCH_SIZE, 0, token)
-        .getRecords();
+    var descriptors = loadInBatches(applicationIds, loadAppDescriptorsBatch(token), APP_DESCRIPTOR_BATCH_SIZE);
+    checkAllApplicationsFound(applicationIds, descriptors);
+    return descriptors;
   }
 
   /**
@@ -129,11 +111,33 @@ public class ApplicationManagerService {
     }
   }
 
+  private Function<List<String>, List<ApplicationDescriptor>> loadAppDescriptorsBatch(String token) {
+    return applicationIdsBatch ->
+      loadApplicationDescriptors(applicationIdsBatch, token).getRecords();
+  }
+
   private Error extractError(BadRequest badRequest) {
     return badRequest.responseBody()
       .map(this::parseErrors)
       .map(this::first)
       .orElse(null);
+  }
+
+  /**
+   * Queries application descriptors by application ids.
+   *
+   * @param applicationIds list of application ids
+   * @param token auth token
+   * @return @link ResultList} with {@link ApplicationDescriptor} descriptors
+   * @throws IntegrationException if other exception occurred during performing HTTP request
+   */
+  private ResultList<ApplicationDescriptor> loadApplicationDescriptors(List<String> applicationIds, String token) {
+    try {
+      var query = CqlQuery.exactMatchAny("id", applicationIds);
+      return applicationManagerClient.queryApplicationDescriptors(query, true, APP_DESCRIPTOR_BATCH_SIZE, 0, token);
+    } catch (FeignException cause) {
+      throw new IntegrationException("Failed to query application descriptors", cause);
+    }
   }
 
   private List<Error> parseErrors(ByteBuffer response) {
@@ -152,5 +156,16 @@ public class ApplicationManagerService {
 
   private <T> T first(List<T> items) {
     return ListUtils.emptyIfNull(items).size() == 1 ? items.get(0) : null;
+  }
+
+  private static void checkAllApplicationsFound(Collection<String> appIds, List<ApplicationDescriptor> descriptors) {
+    var notFoundIds = new HashSet<>(appIds);
+
+    descriptors.forEach(descriptor -> notFoundIds.remove(descriptor.getId()));
+
+    if (isNotEmpty(notFoundIds)) {
+      throw new RequestValidationException(
+        "Applications not found by the given ids", "applicationIds", join(", ", notFoundIds));
+    }
   }
 }

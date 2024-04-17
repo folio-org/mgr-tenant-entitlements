@@ -15,7 +15,7 @@ import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.service.EntitlementModuleService;
-import org.folio.entitlement.service.flow.EntitlementFlowService;
+import org.folio.entitlement.service.FlowStageService;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @UnitTest
 @EnableKeycloakSecurity
-@MockBean(EntitlementFlowService.class)
+@MockBean(FlowStageService.class)
 @WebMvcTest(EntitlementModuleController.class)
 @Import({ControllerTestConfiguration.class, EntitlementModuleController.class})
 @TestPropertySource(properties = "application.router.path-prefix=/")

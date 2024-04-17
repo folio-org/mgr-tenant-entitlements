@@ -1,34 +1,29 @@
 package org.folio.entitlement.service.stage;
 
-import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
-import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationId;
-import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
-
 import lombok.RequiredArgsConstructor;
+import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.service.ApplicationDependencyService;
-import org.folio.flow.api.Cancellable;
-import org.folio.flow.api.StageContext;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ApplicationDependencySaver extends DatabaseLoggingStage implements Cancellable {
+public class ApplicationDependencySaver extends DatabaseLoggingStage<ApplicationStageContext> {
 
   private final ApplicationDependencyService applicationDependencyService;
 
   @Override
-  public void execute(StageContext context) {
+  public void execute(ApplicationStageContext context) {
     applicationDependencyService.saveEntitlementDependencies(
-      getEntitlementRequest(context).getTenantId(),
-      getApplicationId(context),
-      getApplicationDescriptor(context).getDependencies());
+      context.getTenantId(),
+      context.getApplicationId(),
+      context.getApplicationDescriptor().getDependencies());
   }
 
   @Override
-  public void cancel(StageContext context) {
+  public void cancel(ApplicationStageContext context) {
     applicationDependencyService.deleteEntitlementDependencies(
-      getEntitlementRequest(context).getTenantId(),
-      getApplicationId(context),
-      getApplicationDescriptor(context).getDependencies());
+      context.getTenantId(),
+      context.getApplicationId(),
+      context.getApplicationDescriptor().getDependencies());
   }
 }

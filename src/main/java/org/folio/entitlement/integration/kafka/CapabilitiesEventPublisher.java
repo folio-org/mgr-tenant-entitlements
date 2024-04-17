@@ -12,8 +12,6 @@ import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
-import static org.folio.entitlement.service.stage.StageContextUtils.getApplicationDescriptor;
 import static org.folio.entitlement.utils.RoutingEntryUtils.getMethods;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
@@ -35,19 +33,19 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.Permission;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.common.utils.CollectionUtils;
+import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventBody;
 import org.folio.entitlement.integration.kafka.model.Endpoint;
 import org.folio.entitlement.integration.kafka.model.FolioResource;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
-import org.folio.flow.api.StageContext;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class CapabilitiesEventPublisher extends DatabaseLoggingStage {
+public class CapabilitiesEventPublisher extends DatabaseLoggingStage<ApplicationStageContext> {
 
   private static final String CAPABILITIES_TOPIC = "mgr-tenant-entitlements.capability";
   private static final String CAPABILITY_RESOURCE_NAME = "Capability";
@@ -55,9 +53,9 @@ public class CapabilitiesEventPublisher extends DatabaseLoggingStage {
   private final KafkaEventPublisher kafkaEventPublisher;
 
   @Override
-  public void execute(StageContext context) {
-    var appDesc = getApplicationDescriptor(context);
-    var tenant = context.<String>get(PARAM_TENANT_NAME);
+  public void execute(ApplicationStageContext context) {
+    var appDesc = context.getApplicationDescriptor();
+    var tenant = context.getTenantName();
     var appId = appDesc.getId();
     emptyIfNull(appDesc.getModuleDescriptors()).forEach(desc -> sendCapabilityEvent(desc, appId, tenant, MODULE));
     emptyIfNull(appDesc.getUiModuleDescriptors()).forEach(desc -> sendCapabilityEvent(desc, appId, tenant, UI_MODULE));

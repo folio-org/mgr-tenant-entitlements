@@ -1,18 +1,42 @@
 package org.folio.entitlement.service.flow;
 
-import java.util.UUID;
-import org.folio.flow.api.Flow;
-import org.folio.flow.model.FlowExecutionStrategy;
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 
-public interface FlowProvider {
+import java.util.Map;
+import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.flow.api.Flow;
+import org.springframework.stereotype.Component;
+
+@Component
+public class FlowProvider {
+
+  private final Map<EntitlementType, FlowFactory> flowFactories;
 
   /**
-   * Creates a {@link Flow} object for application installation / uninstallation.
+   * Creates {@link FlowProvider} for provided factories.
    *
-   * @param applicationFlowId - application flow identifier as {@link UUID} object
-   * @param applicationId - application identifier as {@link String} object
-   * @param strategy - flow execution strategy as {@link FlowExecutionStrategy} enum value
-   * @return created {@link Flow} for future execution
+   * @param entitleFlowFactory - {@link EntitleFlowFactory} bean from spring context.
+   * @param upgradeFlowFactory - {@link UpgradeFlowFactory} bean from spring context.
+   * @param revokeFlowFactory - {@link RevokeFlowFactory} bean from spring context.
    */
-  Flow prepareFlow(UUID applicationFlowId, String applicationId, FlowExecutionStrategy strategy);
+  public FlowProvider(EntitleFlowFactory entitleFlowFactory, UpgradeFlowFactory upgradeFlowFactory,
+    RevokeFlowFactory revokeFlowFactory) {
+    this.flowFactories = Map.of(
+      ENTITLE, entitleFlowFactory,
+      REVOKE, revokeFlowFactory,
+      UPGRADE, upgradeFlowFactory);
+  }
+
+  /**
+   * Creates flow for enabling/disabling/upgrading applications in the {@link EntitlementRequest} object.
+   *
+   * @param request - {@link EntitlementRequest} object with required information to perform a flow
+   * @return created {@link Flow} object to be executed
+   */
+  public Flow createFlow(EntitlementRequest request) {
+    return flowFactories.get(request.getType()).createFlow(request);
+  }
 }

@@ -3,27 +3,23 @@ package org.folio.entitlement.integration.kafka;
 import static java.lang.Boolean.TRUE;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
-import static org.folio.entitlement.service.stage.StageContextUtils.getEntitlementRequest;
 import static org.folio.integration.kafka.KafkaUtils.createTopic;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
+import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
-import org.folio.flow.api.Cancellable;
-import org.folio.flow.api.StageContext;
 import org.folio.integration.kafka.KafkaAdminService;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class KafkaTenantTopicCreator extends DatabaseLoggingStage implements Cancellable {
+public class KafkaTenantTopicCreator extends DatabaseLoggingStage<ApplicationStageContext> {
 
   private static final String PARAM_TOPICS_CREATED = "KafkaTenantTopicCreator.created";
 
@@ -32,14 +28,13 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage implements Can
   private final EntitlementCrudService entitlementCrudService;
 
   @Override
-  public void execute(StageContext context) {
-    var tenantName = context.<String>get(PARAM_TENANT_NAME);
-    var request = getEntitlementRequest(context);
-    var tenantId = request.getTenantId();
+  public void execute(ApplicationStageContext context) {
+    var tenantName = context.getTenantName();
+    var tenantId = context.getTenantId();
 
     var existingEntitlements = entitlementCrudService.findByTenantId(tenantId);
     if (CollectionUtils.isNotEmpty(existingEntitlements)) {
-      var appId = context.<String>get(PARAM_APP_ID);
+      var appId = context.getApplicationId();
       var msgTemplate = "Ignoring topics creation, current application is not first: applicationId = {}, tenantId = {}";
       log.debug(msgTemplate, appId, tenantId);
       return;
@@ -50,13 +45,13 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage implements Can
   }
 
   @Override
-  public void cancel(StageContext context) {
+  public void cancel(ApplicationStageContext context) {
     var topicsCreated = context.<Boolean>get(PARAM_TOPICS_CREATED);
     if (!TRUE.equals(topicsCreated)) {
       return;
     }
 
-    var tenantName = context.<String>get(PARAM_TENANT_NAME);
+    var tenantName = context.getTenantName();
     removeTenantTopics(tenantName);
   }
 

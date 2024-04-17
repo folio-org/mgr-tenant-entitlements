@@ -5,7 +5,6 @@ import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
-import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.IGNORE_ERRORS;
@@ -34,11 +33,10 @@ import java.util.List;
 import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
-import org.folio.entitlement.domain.dto.ExtendedEntitlement;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementService;
-import org.folio.entitlement.service.flow.EntitlementFlowService;
+import org.folio.entitlement.service.FlowStageService;
 import org.folio.security.exception.NotAuthorizedException;
 import org.folio.security.integration.keycloak.client.KeycloakAuthClient;
 import org.folio.test.extensions.EnableKeycloakSecurity;
@@ -53,7 +51,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @UnitTest
 @Import({ControllerTestConfiguration.class, EntitlementController.class})
-@MockBean(EntitlementFlowService.class)
+@MockBean(FlowStageService.class)
 @WebMvcTest(EntitlementController.class)
 @EnableKeycloakSecurity
 @TestPropertySource(properties = "application.router.path-prefix=/")
@@ -67,7 +65,7 @@ class EntitlementControllerTest {
   void create_positive() throws Exception {
     var requestBody = new EntitlementRequestBody().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
     var expectedEntitlements = entitlements();
-    when(entitlementService.execute(entitlementRequest())).thenReturn(expectedEntitlements);
+    when(entitlementService.performRequest(entitlementRequest())).thenReturn(expectedEntitlements);
 
     var mvcResult = mockMvc.perform(post("/entitlements")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
@@ -123,7 +121,7 @@ class EntitlementControllerTest {
   void delete_positive() throws Exception {
     var request = new EntitlementRequestBody().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
     var expectedEntitlements = entitlements();
-    when(entitlementService.execute(entitlementRevokeRequest())).thenReturn(expectedEntitlements);
+    when(entitlementService.performRequest(entitlementRevokeRequest())).thenReturn(expectedEntitlements);
 
     var mvcResult = mockMvc.perform(delete("/entitlements")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
@@ -168,7 +166,7 @@ class EntitlementControllerTest {
 
   @Test
   void delete_negative_unauthorized() throws Exception {
-    when(entitlementService.execute(entitlementRequest())).thenReturn(entitlements());
+    when(entitlementService.performRequest(entitlementRequest())).thenReturn(entitlements());
     when(authClient.evaluatePermissions(anyMap(), anyString())).thenThrow(new NotAuthorizedException("test"));
 
     mockMvc.perform(delete("/entitlements")
@@ -179,7 +177,7 @@ class EntitlementControllerTest {
 
   @Test
   void delete_negative_noAuthToken() throws Exception {
-    when(entitlementService.execute(entitlementRequest())).thenReturn(entitlements());
+    when(entitlementService.performRequest(entitlementRequest())).thenReturn(entitlements());
 
     mockMvc.perform(delete("/entitlements")
         .contentType(APPLICATION_JSON))
@@ -222,6 +220,6 @@ class EntitlementControllerTest {
 
   private static ExtendedEntitlements entitlements() {
     return new ExtendedEntitlements().totalRecords(1).flowId(FLOW_ID).addEntitlementsItem(
-      new ExtendedEntitlement().flowId(APPLICATION_FLOW_ID).applicationId(APPLICATION_ID).tenantId(TENANT_ID));
+      new Entitlement().applicationId(APPLICATION_ID).tenantId(TENANT_ID));
   }
 }

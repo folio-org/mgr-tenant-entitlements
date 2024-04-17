@@ -1,19 +1,18 @@
 package org.folio.entitlement.service.stage;
 
-import static java.util.Collections.singletonMap;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.DISABLE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.ENABLE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.TENANT_PARAMETERS;
+import static org.folio.entitlement.support.TestValues.appStageContext;
+import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.folio.entitlement.support.TestValues.simpleApplicationDescriptor;
 import static org.mockito.Mockito.verify;
 
@@ -25,7 +24,6 @@ import org.folio.entitlement.integration.okapi.OkapiModulesInstaller;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.support.TestUtils;
-import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -52,8 +50,9 @@ class OkapiModuleInstallerTest {
   @Test
   void execute_positive_installRequest() {
     var applicationDescriptor = simpleApplicationDescriptor(APPLICATION_ID);
-    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME, PARAM_APP_DESCRIPTOR, applicationDescriptor);
-    var stageContext = StageContext.of(FLOW_STAGE_ID, singletonMap(PARAM_REQUEST, entitlementRequest()), contextData);
+    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var flowParameters = flowParameters(entitlementRequest(), applicationDescriptor);
+    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
     okapiModulesInstaller.execute(stageContext);
 
@@ -65,10 +64,10 @@ class OkapiModuleInstallerTest {
 
   @Test
   void execute_positive_uninstallRequest() {
-    var applicationDescriptor = simpleApplicationDescriptor(APPLICATION_ID);
-    var parameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME, PARAM_APP_DESCRIPTOR, applicationDescriptor);
-    var flowParameters = singletonMap(PARAM_REQUEST, entitlementRevokeRequest());
-    var stageContext = StageContext.of(FLOW_STAGE_ID, flowParameters, parameters);
+    var descriptor = simpleApplicationDescriptor(APPLICATION_ID);
+    var parameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var flowParameters = flowParameters(entitlementRevokeRequest(), descriptor);
+    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, parameters);
 
     okapiModulesInstaller.execute(stageContext);
 

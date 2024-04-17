@@ -2,11 +2,12 @@ package org.folio.entitlement.integration.kafka;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -21,7 +22,6 @@ import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.support.TestUtils;
-import org.folio.flow.api.StageContext;
 import org.folio.integration.kafka.FolioKafkaProperties.KafkaTopic;
 import org.folio.integration.kafka.KafkaAdminService;
 import org.folio.test.types.UnitTest;
@@ -59,7 +59,7 @@ class KafkaTenantTopicCreatorTest {
     var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).build();
     var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = StageContext.of(FLOW_ID, flowParameters, contextParameters);
+    var stageContext = appStageContext(FLOW_ID, flowParameters, contextParameters);
 
     when(entitlementCrudService.findByTenantId(TENANT_ID)).thenReturn(emptyList());
 
@@ -75,7 +75,7 @@ class KafkaTenantTopicCreatorTest {
     var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).build();
     var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = StageContext.of(FLOW_ID, flowParameters, contextParameters);
+    var stageContext = appStageContext(FLOW_ID, flowParameters, contextParameters);
 
     when(entitlementCrudService.findByTenantId(TENANT_ID)).thenReturn(List.of(entitlement()));
 
@@ -92,7 +92,7 @@ class KafkaTenantTopicCreatorTest {
     var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME, "KafkaTenantTopicCreator.created", true);
 
-    var stageContext = StageContext.of(FLOW_ID, flowParameters, contextParameters);
+    var stageContext = appStageContext(FLOW_ID, flowParameters, contextParameters);
 
     topicCreator.cancel(stageContext);
 
@@ -106,7 +106,7 @@ class KafkaTenantTopicCreatorTest {
     var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
 
-    var stageContext = StageContext.of(FLOW_ID, flowParameters, contextParameters);
+    var stageContext = appStageContext(FLOW_ID, flowParameters, contextParameters);
 
     topicCreator.cancel(stageContext);
 

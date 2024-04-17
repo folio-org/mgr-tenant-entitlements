@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -28,9 +27,11 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
+import org.folio.entitlement.service.stage.ApplicationDescriptorTreeLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,16 +46,19 @@ public class ApplicationDependencyValidatorService {
 
   private final ApplicationDescriptorTreeLoader applicationTreeLoader;
 
-  public void validateApplications(UUID tenantId, Set<String> applicationIds, String token) {
+  public void validateApplications(EntitlementRequest request) {
+    var tenantId = request.getTenantId();
+    var applicationIds = request.getApplications();
     if (isEmpty(applicationIds)) {
       throw new RequestValidationException("No application ids provided", APPLICATION_IDS, null);
     }
+
     log.info("Validating dependencies of applications: appIds = [{}], tenantId = {}",
       () -> join(applicationIds, ", "), () -> tenantId);
 
-    var allApplications = applicationTreeLoader.load(applicationIds, tenantId, token);
+    var applicationDescriptors = applicationTreeLoader.load(request);
 
-    validateDescriptors(allApplications);
+    validateDescriptors(applicationDescriptors);
   }
 
   public void validateDescriptors(List<ApplicationDescriptor> descriptors) {

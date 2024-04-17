@@ -1,12 +1,15 @@
 package org.folio.entitlement.integration.folio;
 
+import static java.util.Collections.emptyMap;
 import static java.util.UUID.randomUUID;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_ID;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -18,7 +21,6 @@ import java.util.UUID;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
-import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +50,7 @@ class FolioModuleEventPublisherTest {
     var tenantName = "tenantName";
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(tenantId).build();
     var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID);
-    var stageContext = StageContext.of(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+    var stageContext = appStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
 
     folioModuleEventPublisher.execute(stageContext);
 
@@ -64,7 +66,7 @@ class FolioModuleEventPublisherTest {
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(randomUUID()).build();
     var flowParameters = Map.of(PARAM_MODULE_ID, MODULE_ID, PARAM_REQUEST, request);
     var contextParameters = Map.of(PARAM_TENANT_NAME, PARAM_TENANT_NAME);
-    var context = StageContext.of(FLOW_ID, flowParameters, contextParameters);
+    var context = appStageContext(FLOW_ID, flowParameters, contextParameters);
 
     assertThatThrownBy(() -> folioModuleEventPublisher.execute(context))
       .isInstanceOf(RuntimeException.class)
@@ -77,7 +79,7 @@ class FolioModuleEventPublisherTest {
     var tenantName = "tenantName";
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(tenantId).build();
     var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID);
-    var stageContext = StageContext.of(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+    var stageContext = appStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
 
     folioModuleEventPublisher.cancel(stageContext);
     var expectedEvent = new EntitlementEvent(REVOKE.name(), MODULE_ID, tenantName, tenantId);
@@ -90,10 +92,17 @@ class FolioModuleEventPublisherTest {
     var tenantName = "tenantName";
     var request = EntitlementRequest.builder().type(REVOKE).tenantId(tenantId).build();
     var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID);
-    var stageContext = StageContext.of(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+    var stageContext = appStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
 
     folioModuleEventPublisher.cancel(stageContext);
-    var expectedEvent = new EntitlementEvent(REVOKE.name(), MODULE_ID, tenantName, tenantId);
     verify(entitlementEventPublisher, never()).publish(any());
+  }
+
+  @Test
+  void getStageName_positive() {
+    var flowParameters = Map.of(PARAM_MODULE_ID, MODULE_ID);
+    var stageContext = appStageContext(FLOW_ID, flowParameters, emptyMap());
+    var result = folioModuleEventPublisher.getStageName(stageContext);
+    assertThat(result).isEqualTo(MODULE_ID + "-moduleEventPublisher");
   }
 }

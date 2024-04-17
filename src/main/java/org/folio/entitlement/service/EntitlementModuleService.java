@@ -5,7 +5,6 @@ import static org.folio.entitlement.domain.entity.key.EntitlementModuleEntity.SO
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.entitlement.domain.dto.Entitlement;
@@ -40,7 +39,7 @@ public class EntitlementModuleService {
   public List<Entitlement> findAllModuleEntitlements(String moduleId, UUID tenantId) {
     return repository.findAllByModuleIdAndTenantId(moduleId, tenantId).stream()
       .map(mapper::map)
-      .collect(Collectors.toList());
+      .toList();
   }
 
   public void save(ModuleRequest moduleRequest) {

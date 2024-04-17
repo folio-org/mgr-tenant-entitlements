@@ -1,11 +1,15 @@
 package org.folio.entitlement.service.validator;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
+import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
+import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -13,6 +17,7 @@ import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Map;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementCrudService;
@@ -34,6 +39,28 @@ class ExistingEntitlementValidatorTest {
   @Mock private EntitlementCrudService entitlementCrudService;
 
   @Test
+  void execute_positive() {
+    var entitlementRequest = entitlementRequest();
+    when(entitlementCrudService.getEntitlements(any())).thenReturn(List.of(entitlement()));
+
+    var stageContext = commonStageContext(FLOW_ID, Map.of(PARAM_REQUEST, entitlementRequest), emptyMap());
+    validator.execute(stageContext);
+
+    verify(entitlementCrudService).getEntitlements(entitlementRequest);
+  }
+
+  @Test
+  void execute_negative() {
+    var entitlementRequest = entitlementRequest();
+    when(entitlementCrudService.getEntitlements(entitlementRequest)).thenReturn(emptyList());
+
+    var stageContext = commonStageContext(FLOW_ID, Map.of(PARAM_REQUEST, entitlementRequest), emptyMap());
+    assertThatThrownBy(() -> validator.execute(stageContext))
+      .isInstanceOf(EntityNotFoundException.class)
+      .hasMessage("Entitlements are not found for applications: [test-app-1.0.0]");
+  }
+
+  @Test
   void validate_positive() {
     var entitlementRequest = entitlementRequest();
     when(entitlementCrudService.getEntitlements(any())).thenReturn(List.of(entitlement()));
@@ -53,7 +80,7 @@ class ExistingEntitlementValidatorTest {
 
   @ParameterizedTest
   @DisplayName("shouldValidate_parameterized")
-  @CsvSource({"ENTITLE, false", "REVOKE, true"})
+  @CsvSource({"ENTITLE,false", "REVOKE,true", "UPGRADE,false", ",false"})
   void shouldValidate_parameterized(EntitlementType type, boolean expected) {
     var request = EntitlementRequest.builder().type(type).build();
     var result = validator.shouldValidate(request);

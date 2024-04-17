@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "flowStage.json",
+  "title": "Flow Stage Schema",
+  "description": "Flow stage descriptor. A stage can be part of global flow or specific application flow.",
+  "type": "object",
+  "properties": {
+    "flowId": {
+      "description": "A parent flow identifier (global or application flow)",
+      "type": "string",
+      "format": "uuid"
+    },
+    "name": {
+      "description": "A stage name",
+      "type": "string"
+    },
+    "status": {
+      "description": "Stage execution status",
+      "$ref": "types/executionStatus.json"
+    },
+    "errorType": {
+      "description": "A relevant error type caused stage failure or cancellation, nullable if stage is finished",
+      "type": "string"
+    },
+    "errorMessage": {
+      "description": "A relevant error message caused stage failure or cancellation, nullable if stage is finished",
+      "type": "string"
+    },
+    "startedAt": {
+      "description": "Stage execution start timestamp",
+      "type": "string",
+      "format": "date-time"
+    },
+    "finishedAt": {
+      "description": "Stage execution end timestamp",
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

@@ -3,16 +3,17 @@ package org.folio.entitlement.integration.folio;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_APP_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DESCRIPTOR;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_DISCOVERY;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_MODULE_ID;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_REQUEST;
-import static org.folio.entitlement.service.flow.EntitlementFlowConstants.PARAM_TENANT_NAME;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_ID;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_DISCOVERY;
+import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_ID;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
@@ -25,7 +26,6 @@ import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
 import org.folio.entitlement.support.TestUtils;
-import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ class FolioModuleInstallerTest {
       .type(ENTITLE).tenantParameters("loadSamples=true").tenantId(TENANT_ID).build();
     var tenantInterface = tenantInterface();
     var flowParameters = flowParameters(moduleDescriptor(tenantInterface), request);
-    var context = StageContext.of(FLOW_ID, flowParameters, contextData());
+    var context = appStageContext(FLOW_ID, flowParameters, contextData());
 
     moduleInstaller.execute(context);
 
@@ -69,7 +69,7 @@ class FolioModuleInstallerTest {
     var request = EntitlementRequest.builder()
       .type(ENTITLE).tenantParameters("loadSamples=true").tenantId(TENANT_ID).build();
     var flowParameters = flowParameters(moduleDescriptor(), request);
-    var context = StageContext.of(FLOW_ID, flowParameters, contextData());
+    var context = appStageContext(FLOW_ID, flowParameters, contextData());
 
     moduleInstaller.execute(context);
 
@@ -88,7 +88,7 @@ class FolioModuleInstallerTest {
 
     var tenantApi = tenantInterface();
     var flowParameters = flowParameters(moduleDescriptor(tenantApi), request);
-    var context = StageContext.of(FLOW_ID, flowParameters, contextData());
+    var context = appStageContext(FLOW_ID, flowParameters, contextData());
 
     moduleInstaller.cancel(context);
 
@@ -99,7 +99,7 @@ class FolioModuleInstallerTest {
   @Test
   void getStageName_positive() {
     var flowParameters = Map.of(PARAM_MODULE_ID, MODULE_ID);
-    var context = StageContext.of(FLOW_ID, flowParameters, emptyMap());
+    var context = appStageContext(FLOW_ID, flowParameters, emptyMap());
 
     var stageName = moduleInstaller.getStageName(context);
 
@@ -125,7 +125,7 @@ class FolioModuleInstallerTest {
 
   private static Map<String, Object> flowParameters(ModuleDescriptor moduleDescriptor, EntitlementRequest request) {
     return Map.of(
-      PARAM_APP_ID, APPLICATION_ID,
+      PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_MODULE_ID, MODULE_ID,
       PARAM_MODULE_DISCOVERY, MODULE_URL,
       PARAM_MODULE_DESCRIPTOR, moduleDescriptor,

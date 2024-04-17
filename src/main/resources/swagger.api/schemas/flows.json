@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "entitlementFlows.json",
+  "title": "Control Flows Schema",
+  "description": "List of control flows containing application flows",
+  "type": "object",
+  "properties": {
+    "totalRecords": {
+      "type": "integer",
+      "description": "A total number of records"
+    },
+    "flows": {
+      "type": "array",
+      "description": "Found entitlement flows",
+      "items": {
+        "$ref": "flow.json"
+      }
+    }
+  }
+}
