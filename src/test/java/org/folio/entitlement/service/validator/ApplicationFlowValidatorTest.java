@@ -192,6 +192,7 @@ class ApplicationFlowValidatorTest {
 
       arguments("Upgrade: no application flows found", request(UPGRADE), emptyList()),
       arguments("Upgrade: revoked flow found", request(UPGRADE), List.of(flow(REVOKE, FINISHED))),
+      arguments("Upgrade: finished upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, FINISHED))),
       arguments("Upgrade: failed upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, FAILED))),
       arguments("Entitle: cancelled upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, CANCELLED)))
     );

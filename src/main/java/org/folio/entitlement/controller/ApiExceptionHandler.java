@@ -278,7 +278,7 @@ public class ApiExceptionHandler {
     var errorResponse = new ErrorResponse()
       .totalRecords(1)
       .addErrorsItem(new Error()
-        .message(format("Flow '%s' finished with status: %s",  flowId, executionStatus))
+        .message(format("Flow '%s' finished with status: %s", flowId, executionStatus))
         .code(SERVICE_ERROR)
         .type(exception.getClass().getSimpleName())
         .parameters(errorParameters));
@@ -331,12 +331,8 @@ public class ApiExceptionHandler {
   private static Parameter getErrorParametersForStage(FlowStage stage) {
     var stageName = stage.getName();
     var stageStatus = stage.getStatus();
-    if (stage.getErrorMessage() != null) {
-      var errorMessage = format("%s: [%s] %s", stageStatus.name(), stage.getErrorType(), stage.getErrorMessage());
-      return new Parameter().key(stageName).value(errorMessage);
-    }
-
-    return new Parameter().key(stageName).value(stageStatus.name());
+    var errorMessage = format("%s: [%s] %s", stageStatus.name(), stage.getErrorType(), stage.getErrorMessage());
+    return new Parameter().key(stageName).value(errorMessage);
   }
 
   private static Parameter getErrorParametersForStage(StageResult stageResult) {

@@ -96,10 +96,6 @@ public class ApplicationStageContext extends IdentifiableStageContext {
     return context.getFlowParameter(PARAM_ENTITLED_APPLICATION_DESCRIPTOR);
   }
 
-  public void setTenantName(String tenantName) {
-    context.put(CommonStageContext.PARAM_TENANT_NAME, tenantName);
-  }
-
   /**
    * Returns tenant id from {@link EntitlementRequest}.
    *

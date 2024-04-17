@@ -10,6 +10,7 @@ import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.folio.entitlement.support.TestValues.entitlement;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -191,6 +192,128 @@ class UpgradeRequestValidatorTest {
         new Parameter().key(applicationName).value("Entitled application has invalid version")));
 
     assertThat(stageContext.getEntitledApplicationIds()).isNull();
+  }
+
+  @Test
+  void validate_positive() {
+    var applicationIds = List.of(APP_FOO_V2, APP_BAR_V2);
+    var entitlementRequest = entitlementRequest(applicationIds);
+
+    var applicationNames = List.of("app-foo", "app-bar");
+    var entitlements = List.of(entitlement(APP_FOO_V1), entitlement(APP_BAR_V1));
+    when(entitlementService.findByApplicationNames(TENANT_ID, applicationNames)).thenReturn(entitlements);
+
+    upgradeRequestValidator.validate(entitlementRequest);
+
+    verify(entitlementService).findByApplicationNames(TENANT_ID, applicationNames);
+  }
+
+  @Test
+  void validate_positive_snapshotVersionUpgrade() {
+    var oldVersion = "app-foo-1.0.0-SNAPSHOT.1";
+    var newVersion = "app-foo-1.0.0-SNAPSHOT.2";
+    var applicationIds = List.of(newVersion);
+    var entitlementRequest = entitlementRequest(applicationIds);
+    var entitlements = List.of(entitlement(oldVersion));
+    var applicationNames = List.of("app-foo");
+
+    when(entitlementService.findByApplicationNames(TENANT_ID, applicationNames)).thenReturn(entitlements);
+
+    upgradeRequestValidator.validate(entitlementRequest);
+
+    verify(entitlementService).findByApplicationNames(TENANT_ID, applicationNames);
+  }
+
+  @Test
+  void validate_positive_preReleaseSnapshotVersionUpgrade() {
+    var oldVersion = "app-foo-0.0.1-SNAPSHOT.1";
+    var newVersion = "app-foo-0.0.1-SNAPSHOT.2";
+    var entitlementRequest = entitlementRequest(List.of(newVersion));
+    var entitlements = List.of(entitlement(oldVersion));
+
+    var applicationNames = List.of("app-foo");
+    when(entitlementService.findByApplicationNames(TENANT_ID, applicationNames)).thenReturn(entitlements);
+
+    upgradeRequestValidator.validate(entitlementRequest);
+
+    verify(entitlementService).findByApplicationNames(TENANT_ID, applicationNames);
+  }
+
+  @Test
+  void validate_negative_versionNotChangedForOneOfApplications() {
+    var applicationIds = List.of(APP_FOO_V2, APP_BAR_V1);
+    var entitlementRequest = entitlementRequest(applicationIds);
+
+    var applicationNames = List.of("app-foo", "app-bar");
+    var entitlements = List.of(entitlement(APP_FOO_V1), entitlement(APP_BAR_V1));
+    when(entitlementService.findByApplicationNames(TENANT_ID, applicationNames)).thenReturn(entitlements);
+
+    assertThatThrownBy(() -> upgradeRequestValidator.validate(entitlementRequest))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Invalid applications provided for upgrade")
+      .extracting(error -> ((RequestValidationException) error).getErrorParameters())
+      .satisfies(parameters -> assertThat(parameters).containsExactly(
+        new Parameter().key(APP_BAR_V1).value("Application version is same or lower than entitled")));
+  }
+
+  @Test
+  void validate_negative_versionIsLowerForSnapshot() {
+    var oldVersion = "app-foo-0.0.1-SNAPSHOT.22";
+    var newVersion = "app-foo-0.0.1-SNAPSHOT.11";
+    var entitlementRequest = entitlementRequest(List.of(newVersion));
+
+    var entitlements = List.of(entitlement(oldVersion));
+    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-foo"))).thenReturn(entitlements);
+
+    assertThatThrownBy(() -> upgradeRequestValidator.validate(entitlementRequest))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Invalid applications provided for upgrade")
+      .extracting(error -> ((RequestValidationException) error).getErrorParameters())
+      .satisfies(parameters -> assertThat(parameters).containsExactly(
+        new Parameter().key(newVersion).value("Application version is same or lower than entitled")));
+  }
+
+  @Test
+  void validate_negative_previousVersionOfNotFound() {
+    var entitlementRequest = entitlementRequest(List.of(APP_FOO_V2));
+    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-foo"))).thenReturn(emptyList());
+
+    assertThatThrownBy(() -> upgradeRequestValidator.validate(entitlementRequest))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Invalid applications provided for upgrade")
+      .extracting(error -> ((RequestValidationException) error).getErrorParameters())
+      .satisfies(parameters -> assertThat(parameters).containsExactly(
+        new Parameter().key(APP_FOO_V2).value("Entitlement is not found for application")));
+  }
+
+  @Test
+  void validate_negative_invalidApplicationVersion() {
+    var applicationName = "app-foo";
+    var entitlementRequest = entitlementRequest(List.of(applicationName));
+    var entitlements = List.of(entitlement("app-fo-1.2.3"));
+    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-fo"))).thenReturn(entitlements);
+
+    assertThatThrownBy(() -> upgradeRequestValidator.validate(entitlementRequest))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Invalid applications provided for upgrade")
+      .extracting(error -> ((RequestValidationException) error).getErrorParameters())
+      .satisfies(parameters -> assertThat(parameters).containsExactly(
+        new Parameter().key(applicationName).value("Application has invalid version")));
+  }
+
+  @Test
+  void validate_negative_invalidRequestApplicationVersion() {
+    var applicationName = "app-foo";
+    var entitlementRequest = entitlementRequest(List.of(applicationName));
+    var entitlements = List.of(entitlement(applicationName));
+    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-fo"))).thenReturn(entitlements);
+
+    assertThatThrownBy(() -> upgradeRequestValidator.validate(entitlementRequest))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Invalid applications provided for upgrade")
+      .extracting(error -> ((RequestValidationException) error).getErrorParameters())
+      .satisfies(parameters -> assertThat(parameters).containsExactly(
+        new Parameter().key(applicationName).value("Entitled application has invalid version")));
   }
 
   @ParameterizedTest

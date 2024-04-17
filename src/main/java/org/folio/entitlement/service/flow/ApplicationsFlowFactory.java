@@ -1,5 +1,6 @@
 package org.folio.entitlement.service.flow;
 
+import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.reverseList;
@@ -147,8 +148,8 @@ public class ApplicationsFlowFactory {
       var descriptor = applicationDescriptorMap.get(applicationId);
       var applicationName = descriptor.getName();
 
-      var entitledApplicationDescriptor = entitledApplicationDescriptors.get(applicationName);
-      if (request.getType() == UPGRADE && entitledApplicationDescriptor != null) {
+      if (request.getType() == UPGRADE) {
+        var entitledApplicationDescriptor = requireNonNull(entitledApplicationDescriptors.get(applicationName));
         return Map.of(
           PARAM_APPLICATION_ID, descriptor.getId(),
           PARAM_APPLICATION_DESCRIPTOR, descriptor,

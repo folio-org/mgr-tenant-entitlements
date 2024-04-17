@@ -26,6 +26,7 @@ import java.util.List;
 import org.folio.common.domain.model.error.ErrorResponse;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.common.utils.CqlQuery;
+import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.am.ApplicationManagerClient;
@@ -87,6 +88,18 @@ class ApplicationManagerServiceTest {
       .isInstanceOf(IntegrationException.class)
       .hasMessage("Failed to query application descriptors")
       .hasCauseInstanceOf(InternalServerError.class);
+  }
+
+  @Test
+  void getApplicationDescriptors_negative_applicationNotFound() {
+    var query = CqlQuery.exactMatchAny("id", List.of(APPLICATION_ID));
+    when(client.queryApplicationDescriptors(query, true, 50, 0, OKAPI_TOKEN)).thenReturn(ResultList.empty());
+    assertThatThrownBy(() -> applicationManagerService.getApplicationDescriptors(List.of(APPLICATION_ID), OKAPI_TOKEN))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Applications not found by the given ids")
+      .extracting(error -> ((RequestValidationException) error).getErrorParameters())
+      .satisfies(parameters -> assertThat(parameters).containsExactly(
+        new Parameter().key("applicationIds").value(APPLICATION_ID)));
   }
 
   @Test
