@@ -87,12 +87,31 @@ public class FolioConfiguration {
     return new FolioModuleUninstaller(folioModuleService);
   }
 
+  /**
+   * Creates a {@link FolioModulesFlowProvider} bean for modules flow.
+   *
+   * @param entitleFlowFactory - {@link FolioModuleEntitleFlowFactory} bean from spring context
+   * @param revokeFlowFactory - {@link FolioModuleRevokeFlowFactory} bean from spring context
+   * @param upgradeFlowFactory - {@link FolioModuleUpgradeFlowFactory} bean from spring context
+   * @return created {@link FolioModulesFlowProvider} flow provider
+   */
   @Bean
   public FolioModulesFlowProvider folioModulesFlowProvider(FolioModuleEntitleFlowFactory entitleFlowFactory,
     FolioModuleRevokeFlowFactory revokeFlowFactory, FolioModuleUpgradeFlowFactory upgradeFlowFactory) {
     return new FolioModulesFlowProvider(asList(entitleFlowFactory, revokeFlowFactory, upgradeFlowFactory));
   }
 
+
+  /**
+   * Creates a {@link FolioModuleEntitleFlowFactory} bean for module flow.
+   *
+   * @param folioModuleInstaller - {@link FolioModuleInstaller} bean
+   * @param eventPublisher - {@link FolioModuleEventPublisher} bean
+   * @param systemUserPublisher - {@link SystemUserModuleEventPublisher} bean
+   * @param scheduledJobPublisher - {@link ScheduledJobModuleEventPublisher} bean
+   * @param capabilitiesPublisher - {@link CapabilitiesModuleEventPublisher} bean
+   * @return created {@link FolioModuleEntitleFlowFactory} bean
+   */
   @Bean
   public FolioModuleEntitleFlowFactory folioModuleEntitleFlowFactory(FolioModuleInstaller folioModuleInstaller,
     FolioModuleEventPublisher eventPublisher, SystemUserModuleEventPublisher systemUserPublisher,
@@ -101,19 +120,37 @@ public class FolioConfiguration {
       systemUserPublisher, scheduledJobPublisher, capabilitiesPublisher);
   }
 
+  /**
+   * Creates a {@link FolioModuleRevokeFlowFactory} bean for module flow.
+   *
+   * @param folioModuleUninstaller - {@link FolioModuleUninstaller} bean
+   * @param folioModuleEventPublisher - {@link FolioModuleEventPublisher} bean
+   * @return created {@link FolioModuleEntitleFlowFactory} bean
+   */
   @Bean
   public FolioModuleRevokeFlowFactory folioModuleRevokeFlowFactory(FolioModuleUninstaller folioModuleUninstaller,
     FolioModuleEventPublisher folioModuleEventPublisher) {
     return new FolioModuleRevokeFlowFactory(folioModuleUninstaller, folioModuleEventPublisher);
   }
 
+  /**
+   * Creates a {@link FolioModuleUpgradeFlowFactory} bean for module flow.
+   *
+   * @return created {@link FolioModuleUpgradeFlowFactory} bean
+   */
   @Bean
   public FolioModuleUpgradeFlowFactory folioModuleUpgradeFlowFactory() {
     return new FolioModuleUpgradeFlowFactory();
   }
 
+  /**
+   * Creates {@link FolioModuleEventPublisher} bean for module flow.
+   *
+   * @param publisher - {@link EntitlementEventPublisher} bean
+   * @return created {@link FolioModuleEventPublisher} bean
+   */
   @Bean
-  public FolioModuleEventPublisher kafkaPublisherStage(EntitlementEventPublisher publisher) {
+  public FolioModuleEventPublisher folioModuleEventPublisher(EntitlementEventPublisher publisher) {
     return new FolioModuleEventPublisher(publisher);
   }
 }
