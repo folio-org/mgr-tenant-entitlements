@@ -91,8 +91,8 @@ class FolioModuleEntitleFlowFactoryTest {
     var flow = entitleFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(kongModuleRouteCreator, kcModuleResourceCreator, folioModuleEventPublisher,
-      systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher, folioModuleInstaller);
+    var inOrder = Mockito.inOrder(folioModuleEventPublisher, systemUserEventPublisher,
+      scheduledJobEventPublisher, capabilitiesEventPublisher, folioModuleInstaller);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     verifyStageExecution(inOrder, folioModuleInstaller, stageContext);

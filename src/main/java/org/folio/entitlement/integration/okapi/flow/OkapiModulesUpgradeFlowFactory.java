@@ -8,28 +8,21 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
 import org.folio.entitlement.integration.kong.KongRouteUpdater;
-import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
-import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.flow.api.Flow;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @RequiredArgsConstructor
 public class OkapiModulesUpgradeFlowFactory implements OkapiModulesFlowFactory {
 
-  private final OkapiModulesInstaller moduleInstaller;
-  private final OkapiModulesEventPublisher okapiModulesEventPublisher;
-
-  private KongRouteUpdater kongRouteCreator;
-  private KeycloakAuthResourceUpdater keycloakAuthResourceCreator;
+  private KongRouteUpdater kongRouteUpdater;
+  private KeycloakAuthResourceUpdater keycloakAuthResourceUpdater;
 
   @Override
   public Flow createFlow(ApplicationStageContext context) {
     var request = context.getEntitlementRequest();
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesUpgradeFlow")
-      .stage(combineStages("ParallelResourcesUpdater", asList(kongRouteCreator, keycloakAuthResourceCreator)))
-      .stage(moduleInstaller)
-      .stage(okapiModulesEventPublisher)
+      .stage(combineStages("ParallelResourcesUpdater", asList(kongRouteUpdater, keycloakAuthResourceUpdater)))
       .executionStrategy(request.getExecutionStrategy())
       .build();
   }
@@ -40,12 +33,12 @@ public class OkapiModulesUpgradeFlowFactory implements OkapiModulesFlowFactory {
   }
 
   @Autowired(required = false)
-  public void setKongRouteCreator(KongRouteUpdater kongRouteCreator) {
-    this.kongRouteCreator = kongRouteCreator;
+  public void setKongRouteUpdater(KongRouteUpdater kongRouteCreator) {
+    this.kongRouteUpdater = kongRouteCreator;
   }
 
   @Autowired(required = false)
-  public void setKeycloakAuthResourceCreator(KeycloakAuthResourceUpdater keycloakAuthResourceCreator) {
-    this.keycloakAuthResourceCreator = keycloakAuthResourceCreator;
+  public void setKeycloakAuthResourceUpdater(KeycloakAuthResourceUpdater keycloakAuthResourceUpdater) {
+    this.keycloakAuthResourceUpdater = keycloakAuthResourceUpdater;
   }
 }

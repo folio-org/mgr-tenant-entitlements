@@ -30,6 +30,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -500,7 +501,13 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
 
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
-    getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V1_ID, emptyEntitlements());
+
+    mockMvc.perform(get("/entitlements")
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .queryParam("query", "applicationId == " + FOLIO_APP6_V1_ID))
+      .andExpect(status().isOk())
+      .andExpect(content().json(asJsonString(emptyEntitlements())));
   }
 
   @Test

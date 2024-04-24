@@ -1,0 +1,124 @@
+package org.folio.entitlement.integration.okapi.flow;
+
+import static java.util.Collections.emptyMap;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
+import static org.folio.entitlement.support.TestConstants.TENANT_ID;
+import static org.folio.entitlement.support.TestUtils.mockStageNames;
+import static org.folio.entitlement.support.TestUtils.verifyNoMoreInteractions;
+import static org.folio.entitlement.support.TestValues.appStageContext;
+import static org.folio.entitlement.support.TestValues.applicationDescriptor;
+import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
+
+import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.domain.model.IdentifiableStageContext;
+import org.folio.entitlement.integration.kafka.CapabilitiesEventPublisher;
+import org.folio.entitlement.integration.kafka.ScheduledJobEventPublisher;
+import org.folio.entitlement.integration.kafka.SystemUserEventPublisher;
+import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
+import org.folio.entitlement.integration.kong.KongRouteCreator;
+import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
+import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
+import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.entitlement.support.TestValues;
+import org.folio.flow.api.FlowEngine;
+import org.folio.test.types.UnitTest;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@UnitTest
+@ExtendWith(MockitoExtension.class)
+class OkapiModulesEntitleFlowFactoryTest {
+
+  private final FlowEngine flowEngine = singleThreadFlowEngine("test-flow-engine", false);
+
+  @InjectMocks private OkapiModulesEntitleFlowFactory entitleFlowFactory;
+
+  @Mock private SystemUserEventPublisher systemUserEventPublisher;
+  @Mock private ScheduledJobEventPublisher scheduledJobEventPublisher;
+  @Mock private CapabilitiesEventPublisher capabilitiesEventPublisher;
+  @Mock private OkapiModulesEventPublisher okapiModulesEventPublisher;
+
+  @Mock private KongRouteCreator kongRouteCreator;
+  @Mock private OkapiModulesInstaller okapiModulesInstaller;
+  @Mock private KeycloakAuthResourceCreator keycloakAuthResourceCreator;
+
+  @AfterEach
+  void tearDown() {
+    verifyNoMoreInteractions(this);
+  }
+
+  @Test
+  void createFlow_positive_allConditionalStages() {
+    mockStageNames(kongRouteCreator, keycloakAuthResourceCreator, okapiModulesEventPublisher,
+      systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher, okapiModulesInstaller);
+    entitleFlowFactory.setKongRouteCreator(kongRouteCreator);
+    entitleFlowFactory.setKeycloakAuthResourceCreator(keycloakAuthResourceCreator);
+
+    var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
+    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+
+    var flow = entitleFlowFactory.createFlow(stageContext);
+    flowEngine.execute(flow);
+
+    var inOrder = Mockito.inOrder(kongRouteCreator, keycloakAuthResourceCreator, okapiModulesEventPublisher,
+      systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher, okapiModulesInstaller);
+
+    var flowId = FLOW_STAGE_ID + "/OkapiModulesEntitleFlow";
+    var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
+    verifyStageExecution(inOrder, kongRouteCreator, expectedStageContext);
+    verifyStageExecution(inOrder, keycloakAuthResourceCreator, expectedStageContext);
+    verifyStageExecution(inOrder, okapiModulesInstaller, expectedStageContext);
+    verifyStageExecution(inOrder, systemUserEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, scheduledJobEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, capabilitiesEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, okapiModulesEventPublisher, expectedStageContext);
+  }
+
+  @Test
+  void createFlow_positive_noConditionalStages() {
+    mockStageNames(okapiModulesEventPublisher, systemUserEventPublisher, scheduledJobEventPublisher,
+      capabilitiesEventPublisher, okapiModulesInstaller);
+
+    var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
+    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+
+    var flow = entitleFlowFactory.createFlow(stageContext);
+    flowEngine.execute(flow);
+
+    var inOrder = Mockito.inOrder(okapiModulesEventPublisher, systemUserEventPublisher,
+      scheduledJobEventPublisher, capabilitiesEventPublisher, okapiModulesInstaller);
+
+    var flowId = FLOW_STAGE_ID + "/OkapiModulesEntitleFlow";
+    var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
+    verifyStageExecution(inOrder, okapiModulesInstaller, expectedStageContext);
+    verifyStageExecution(inOrder, systemUserEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, scheduledJobEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, capabilitiesEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, okapiModulesEventPublisher, expectedStageContext);
+  }
+
+  @Test
+  void getEntitlementType_positive() {
+    var result = entitleFlowFactory.getEntitlementType();
+    assertThat(result).isEqualTo(ENTITLE);
+  }
+
+  private static <T extends IdentifiableStageContext> void verifyStageExecution(InOrder inOrder,
+    DatabaseLoggingStage<T> stage, T context) {
+    inOrder.verify(stage).onStart(context);
+    inOrder.verify(stage).execute(context);
+    inOrder.verify(stage).onSuccess(context);
+  }
+
+  private static EntitlementRequest entitlementRequest() {
+    return EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+  }
+}

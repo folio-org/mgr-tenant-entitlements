@@ -19,9 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 @RequiredArgsConstructor
 public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
 
-  private final OkapiModulesInstaller moduleInstaller;
+  private final OkapiModulesInstaller okapiModulesInstaller;
 
-  private final SystemUserEventPublisher sysUserEventPublisher;
+  private final SystemUserEventPublisher systemUserEventPublisher;
   private final ScheduledJobEventPublisher scheduledJobEventPublisher;
   private final CapabilitiesEventPublisher capabilitiesEventPublisher;
   private final OkapiModulesEventPublisher okapiModulesEventPublisher;
@@ -35,9 +35,9 @@ public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesEntitleFlow")
       .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCreator, keycloakAuthResourceCreator)))
-      .stage(moduleInstaller)
+      .stage(okapiModulesInstaller)
       .stage(combineStages("EventPublishingParallelStage", asList(
-        sysUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
+        systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
       .stage(okapiModulesEventPublisher)
       .executionStrategy(request.getExecutionStrategy())
       .build();

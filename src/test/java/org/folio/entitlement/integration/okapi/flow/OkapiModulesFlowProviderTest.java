@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.okapi;
+package org.folio.entitlement.integration.okapi.flow;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -14,10 +14,6 @@ import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.okapi.flow.OkapiModulesEntitleFlowFactory;
-import org.folio.entitlement.integration.okapi.flow.OkapiModulesFlowProvider;
-import org.folio.entitlement.integration.okapi.flow.OkapiModulesRevokeFlowFactory;
-import org.folio.entitlement.integration.okapi.flow.OkapiModulesUpgradeFlowFactory;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;

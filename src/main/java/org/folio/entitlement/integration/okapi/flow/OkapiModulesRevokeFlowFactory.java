@@ -27,9 +27,9 @@ public class OkapiModulesRevokeFlowFactory implements OkapiModulesFlowFactory {
     var request = context.getEntitlementRequest();
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesRevokeFlow")
-      .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCleaner, keycloakAuthResourceCleaner)))
       .stage(moduleInstaller)
       .stage(okapiModulesEventPublisher)
+      .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCleaner, keycloakAuthResourceCleaner)))
       .executionStrategy(request.getExecutionStrategy())
       .build();
   }

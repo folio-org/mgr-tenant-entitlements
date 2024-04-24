@@ -111,13 +111,10 @@ public class OkapiConfiguration {
   /**
    * Creates {@link OkapiModulesUpgradeFlowFactory} bean.
    *
-   * @param moduleInstaller - {@link OkapiModulesInstaller} bean
-   * @param eventPublisherStage - {@link OkapiModulesEventPublisher} bean
    * @return created {@link OkapiModulesUpgradeFlowFactory} bean
    */
   @Bean
-  public OkapiModulesUpgradeFlowFactory upgradeOkapiModulesFlowFactory(
-    OkapiModulesInstaller moduleInstaller, OkapiModulesEventPublisher eventPublisherStage) {
-    return new OkapiModulesUpgradeFlowFactory(moduleInstaller, eventPublisherStage);
+  public OkapiModulesUpgradeFlowFactory upgradeOkapiModulesFlowFactory() {
+    return new OkapiModulesUpgradeFlowFactory();
   }
 }
