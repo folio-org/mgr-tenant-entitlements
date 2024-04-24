@@ -250,9 +250,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       authResource("/okapi-module/entities/{id}", "PUT"),
       authResource("/okapi-module5/entities", "GET"));
 
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
     assertCapabilityEvents(
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"),
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-2.json"));

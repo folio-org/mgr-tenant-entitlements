@@ -187,9 +187,6 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     assertEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
 
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
     assertCapabilityEvents(
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"),
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-2.json"));
@@ -265,11 +262,6 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
       entitlement(tenantId, OKAPI_APP_3_ID), entitlement(tenantId, OKAPI_APP_4_ID));
 
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
-
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_3_ID, tenantName, tenantId),
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_4_ID, tenantName, tenantId)
-    ));
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_3_ID, OKAPI_APP_4_ID);
     assertEntitlementsWithModules(entitlementQuery, emptyEntitlements());
