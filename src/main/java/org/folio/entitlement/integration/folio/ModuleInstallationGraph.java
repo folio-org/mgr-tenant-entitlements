@@ -143,7 +143,7 @@ public class ModuleInstallationGraph {
       .sorted(Comparator.comparingInt(Entry::getKey))
       .map(Entry::getValue)
       .filter(CollectionUtils::isNotEmpty)
-      .map(ModuleInstallationGraph::orderedList)
+      .map(ModuleInstallationGraph::toOrderedList)
       .toList();
   }
 
@@ -201,7 +201,7 @@ public class ModuleInstallationGraph {
     return result;
   }
 
-  private static List<String> orderedList(Set<String> moduleIds) {
+  private static List<String> toOrderedList(Set<String> moduleIds) {
     var moduleIdsList = new ArrayList<>(moduleIds);
     Collections.sort(moduleIdsList);
     return moduleIdsList;
