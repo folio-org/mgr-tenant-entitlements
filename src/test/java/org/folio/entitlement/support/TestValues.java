@@ -11,6 +11,7 @@ import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_E
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_ID;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_NAME;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_TYPE;
 import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
@@ -271,6 +272,7 @@ public class TestValues {
     return Map.of(
       PARAM_REQUEST, request,
       PARAM_MODULE_TYPE, MODULE,
+      PARAM_MODULE_ID, descriptor.getId(),
       PARAM_MODULE_NAME, SemverUtils.getName(descriptor.getId()),
       PARAM_MODULE_DESCRIPTOR, descriptor,
       PARAM_APPLICATION_ID, APPLICATION_ID,
@@ -282,6 +284,7 @@ public class TestValues {
     return Map.of(
       PARAM_REQUEST, request,
       PARAM_MODULE_TYPE, type,
+      PARAM_MODULE_ID, desc.getId(),
       PARAM_MODULE_NAME, SemverUtils.getName(desc.getId()),
       PARAM_MODULE_DESCRIPTOR, desc,
       PARAM_APPLICATION_ID, APPLICATION_ID,

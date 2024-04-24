@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.keycloak;
 
+import static org.apache.commons.lang3.StringUtils.uncapitalize;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
@@ -25,5 +27,10 @@ public class KeycloakModuleResourceCleaner extends DatabaseLoggingStage<ModuleSt
     var tenantName = context.getTenantName();
     keycloakClient.tokenManager().grantToken();
     keycloakService.removeAuthResources(moduleDescriptor, tenantName);
+  }
+
+  @Override
+  public String getStageName(ModuleStageContext context) {
+    return context.getModuleId() + "-" + uncapitalize(this.getClass().getSimpleName());
   }
 }

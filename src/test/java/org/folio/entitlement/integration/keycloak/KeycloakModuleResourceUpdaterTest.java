@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.keycloak;
 
+import static java.util.Collections.emptyMap;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
@@ -16,6 +18,7 @@ import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -51,8 +54,7 @@ class KeycloakModuleResourceUpdaterTest {
     when(keycloakClient.tokenManager()).thenReturn(tokenManager);
     when(tokenManager.grantToken()).thenReturn(null);
 
-    var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build();
-    var flowParameters = moduleFlowParameters(request, moduleDescriptor);
+    var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor);
     var stageData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, stageData);
 
@@ -69,8 +71,7 @@ class KeycloakModuleResourceUpdaterTest {
     when(keycloakClient.tokenManager()).thenReturn(tokenManager);
     when(tokenManager.grantToken()).thenReturn(null);
 
-    var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build();
-    var flowParameters = moduleFlowParameters(request, moduleDescriptor, installedModuleDescriptor);
+    var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor, installedModuleDescriptor);
     var stageData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, stageData);
 
@@ -86,9 +87,8 @@ class KeycloakModuleResourceUpdaterTest {
     when(keycloakClient.tokenManager()).thenReturn(tokenManager);
     when(tokenManager.grantToken()).thenReturn(null);
 
-    var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build();
     var flowParameters = Map.of(
-      PARAM_REQUEST, request,
+      PARAM_REQUEST, entitlementRequest(),
       PARAM_INSTALLED_MODULE_DESCRIPTOR, installedModuleDescriptor,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
@@ -100,7 +100,24 @@ class KeycloakModuleResourceUpdaterTest {
     verify(keycloakService).updateAuthResources(installedModuleDescriptor, null, TENANT_NAME);
   }
 
+  @Test
+  void getStageName_positive() {
+    var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor("mod-foo-1.0.0"));
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+
+    var result = keycloakModuleResourceUpdater.getStageName(stageContext);
+    assertThat(result).isEqualTo("mod-foo-1.0.0-keycloakModuleResourceUpdater");
+  }
+
   private static ModuleDescriptor moduleDescriptor(String id) {
     return new ModuleDescriptor().id(id);
+  }
+
+  private static EntitlementRequest entitlementRequest() {
+    return EntitlementRequest.builder()
+      .type(UPGRADE)
+      .applications(List.of(APPLICATION_ID))
+      .tenantId(TENANT_ID)
+      .build();
   }
 }

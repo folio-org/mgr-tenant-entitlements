@@ -1,5 +1,6 @@
 package org.folio.entitlement.integration.kong;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
@@ -56,6 +57,16 @@ class KongModuleRouteCleanerTest {
     kongModuleRouteCleaner.execute(stageContext);
 
     verifyNoInteractions(kongGatewayService);
+  }
+
+  @Test
+  void getStageName_positive() {
+    var request = EntitlementRequest.builder().type(REVOKE).purge(false).build();
+    var moduleDescriptor = new ModuleDescriptor().id("mod-foo-1.0.0");
+    var stageContext = stageContext(request, moduleDescriptor);
+
+    var result = kongModuleRouteCleaner.getStageName(stageContext);
+    assertThat(result).isEqualTo("mod-foo-1.0.0-kongModuleRouteCleaner");
   }
 
   private static ModuleStageContext stageContext(EntitlementRequest request, ModuleDescriptor desc) {

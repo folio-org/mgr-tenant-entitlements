@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.kong;
 
+import static org.apache.commons.lang3.StringUtils.uncapitalize;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
@@ -23,6 +25,11 @@ public class KongModuleRouteUpdater extends DatabaseLoggingStage<ModuleStageCont
     if (moduleDescriptor != null) {
       kongGatewayService.addRoutes(tenantName, List.of(moduleDescriptor));
     }
+  }
+
+  @Override
+  public String getStageName(ModuleStageContext context) {
+    return context.getModuleId() + "-" + uncapitalize(this.getClass().getSimpleName());
   }
 }
 

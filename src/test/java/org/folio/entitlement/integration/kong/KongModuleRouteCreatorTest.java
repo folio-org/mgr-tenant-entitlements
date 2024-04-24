@@ -1,5 +1,6 @@
 package org.folio.entitlement.integration.kong;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
@@ -82,6 +83,15 @@ class KongModuleRouteCreatorTest {
     var result = kongModuleRouteCreator.shouldCancelIfFailed(stageContext);
 
     assertThat(result).isTrue();
+  }
+
+  @Test
+  void getStageName_positive() {
+    var flowParameters = moduleFlowParameters(entitlementRequest(false), moduleDescriptor());
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+
+    var result = kongModuleRouteCreator.getStageName(stageContext);
+    assertThat(result).isEqualTo("mod-foo-1.0.0-kongModuleRouteCreator");
   }
 
   private static EntitlementRequest entitlementRequest(boolean purgeOnRollback) {

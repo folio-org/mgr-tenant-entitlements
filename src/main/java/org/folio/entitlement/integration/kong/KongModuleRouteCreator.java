@@ -1,6 +1,7 @@
 package org.folio.entitlement.integration.kong;
 
 import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.uncapitalize;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -35,5 +36,10 @@ public class KongModuleRouteCreator extends DatabaseLoggingStage<ModuleStageCont
   @Override
   public boolean shouldCancelIfFailed(ModuleStageContext context) {
     return true;
+  }
+
+  @Override
+  public String getStageName(ModuleStageContext context) {
+    return context.getModuleId() + "-" + uncapitalize(this.getClass().getSimpleName());
   }
 }
