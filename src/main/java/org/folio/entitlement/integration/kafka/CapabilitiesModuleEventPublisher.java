@@ -58,6 +58,14 @@ public class CapabilitiesModuleEventPublisher extends DatabaseLoggingStage<Modul
     sendEvent(moduleDescriptor, applicationId, tenant, moduleType);
   }
 
+  /**
+   * Sends a capabilities event for provided {@link ModuleDescriptor} object.
+   *
+   * @param descriptor - {@link ModuleDescriptor} object
+   * @param applicationId - application identifier
+   * @param tenant - tenant name
+   * @param type - module type (ui or be)
+   */
   public void sendEvent(ModuleDescriptor descriptor, String applicationId, String tenant, ModuleType type) {
     var folioResourcesList = getFolioResourcesList(descriptor);
     if (isEmpty(folioResourcesList)) {

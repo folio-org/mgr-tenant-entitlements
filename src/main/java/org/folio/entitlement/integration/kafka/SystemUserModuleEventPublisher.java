@@ -32,21 +32,28 @@ public class SystemUserModuleEventPublisher extends DatabaseLoggingStage<ModuleS
     }
 
     var moduleName = context.getModuleName();
-    sendSystemUserEvent(moduleName, descriptor, tenantName);
+    sendEvent(moduleName, tenantName, descriptor);
   }
 
-  public void sendSystemUserEvent(String moduleName, ModuleDescriptor descriptor, String tenant) {
-    var systemUser = descriptor.getUser();
-    var moduleId = descriptor.getId();
+  /**
+   * Sends a system user event for provided {@link ModuleDescriptor} object.
+   *
+   * @param moduleDescriptor - {@link ModuleDescriptor} object
+   * @param moduleName - tenant identifier
+   * @param tenantName - tenant name
+   */
+  public void sendEvent(String moduleName, String tenantName, ModuleDescriptor moduleDescriptor) {
+    var systemUser = moduleDescriptor.getUser();
+    var moduleId = moduleDescriptor.getId();
     var payload = SystemUserEvent.of(moduleName, systemUser.getType(), systemUser.getPermissions());
 
     var event = ResourceEvent.<SystemUserEvent>builder()
       .type(CREATE)
-      .tenant(tenant)
+      .tenant(tenantName)
       .resourceName(SYS_USER_RESOURCE_NAME)
       .newValue(payload)
       .build();
 
-    kafkaEventPublisher.send(getTenantTopicName(SYS_USER_TOPIC, tenant), moduleId, event);
+    kafkaEventPublisher.send(getTenantTopicName(SYS_USER_TOPIC, tenantName), moduleId, event);
   }
 }

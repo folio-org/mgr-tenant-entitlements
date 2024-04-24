@@ -29,7 +29,7 @@ public class SystemUserEventPublisher extends DatabaseLoggingStage<ApplicationSt
 
     toStream(descriptor.getModuleDescriptors())
       .filter(SystemUserEventPublisher::hasSystemUser)
-      .forEach(md -> moduleEventPublisher.sendSystemUserEvent(resolveModuleName(moduleIdNameMap, md), md, tenantName));
+      .forEach(md -> moduleEventPublisher.sendEvent(resolveModuleName(moduleIdNameMap, md), tenantName, md));
   }
 
   private static boolean hasSystemUser(ModuleDescriptor moduleDescriptor) {

@@ -27,6 +27,13 @@ public class ScheduledJobModuleEventPublisher extends DatabaseLoggingStage<Modul
     sendEvent(ctx.getTenantId(), ctx.getTenantName(), ctx.getModuleDescriptor());
   }
 
+  /**
+   * Sends a scheduled job event for provided {@link ModuleDescriptor} object.
+   *
+   * @param tenantId - tenant identifier
+   * @param tenantName - tenant name
+   * @param moduleDescriptor - {@link ModuleDescriptor} object
+   */
   public void sendEvent(UUID tenantId, String tenantName, ModuleDescriptor moduleDescriptor) {
     var eventKey = tenantId.toString();
     var topicName = getTenantTopicName(SCHEDULED_JOB_TOPIC, tenantName);
