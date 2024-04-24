@@ -148,10 +148,10 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   @AfterEach
   void tearDown() {
     Mockito.reset(kongAdminClient);
+    FakeKafkaConsumer.removeAllEvents();
     for (var kr : kongAdminClient.getRoutesByTag(TENANT_NAME, null)) {
       kongAdminClient.deleteRoute(kr.getService().getId(), kr.getId());
     }
-    FakeKafkaConsumer.removeAllEvents();
   }
 
   @AfterAll

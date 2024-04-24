@@ -4,7 +4,6 @@ import static java.util.Arrays.asList;
 import static org.folio.entitlement.utils.FlowUtils.combineStages;
 
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
@@ -20,18 +19,15 @@ public class OkapiModulesRevokeFlowFactory implements OkapiModulesFlowFactory {
   private final OkapiModulesInstaller moduleInstaller;
   private final OkapiModulesEventPublisher okapiModulesEventPublisher;
 
-  @Setter(onMethod_ = @__(@Autowired(required = false)))
   private KongRouteCleaner kongRouteCleaner;
-
-  @Setter(onMethod_ = @__(@Autowired(required = false)))
-  private KeycloakAuthResourceCleaner kcAuthResourceCleaner;
+  private KeycloakAuthResourceCleaner keycloakAuthResourceCleaner;
 
   @Override
   public Flow createFlow(ApplicationStageContext context) {
     var request = context.getEntitlementRequest();
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesRevokeFlow")
-      .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCleaner, kcAuthResourceCleaner)))
+      .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCleaner, keycloakAuthResourceCleaner)))
       .stage(moduleInstaller)
       .stage(okapiModulesEventPublisher)
       .executionStrategy(request.getExecutionStrategy())
@@ -41,5 +37,15 @@ public class OkapiModulesRevokeFlowFactory implements OkapiModulesFlowFactory {
   @Override
   public EntitlementType getEntitlementType() {
     return EntitlementType.REVOKE;
+  }
+
+  @Autowired(required = false)
+  public void setKongRouteCleaner(KongRouteCleaner kongRouteCleaner) {
+    this.kongRouteCleaner = kongRouteCleaner;
+  }
+
+  @Autowired(required = false)
+  public void setKeycloakAuthResourceCleaner(KeycloakAuthResourceCleaner keycloakAuthResourceCleaner) {
+    this.keycloakAuthResourceCleaner = keycloakAuthResourceCleaner;
   }
 }

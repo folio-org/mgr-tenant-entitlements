@@ -4,7 +4,6 @@ import static java.util.Arrays.asList;
 import static org.folio.entitlement.utils.FlowUtils.combineStages;
 
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
@@ -20,10 +19,7 @@ public class OkapiModulesUpgradeFlowFactory implements OkapiModulesFlowFactory {
   private final OkapiModulesInstaller moduleInstaller;
   private final OkapiModulesEventPublisher okapiModulesEventPublisher;
 
-  @Setter(onMethod_ = @__(@Autowired(required = false)))
   private KongRouteUpdater kongRouteCreator;
-
-  @Setter(onMethod_ = @__(@Autowired(required = false)))
   private KeycloakAuthResourceUpdater keycloakAuthResourceCreator;
 
   @Override
@@ -41,5 +37,15 @@ public class OkapiModulesUpgradeFlowFactory implements OkapiModulesFlowFactory {
   @Override
   public EntitlementType getEntitlementType() {
     return EntitlementType.UPGRADE;
+  }
+
+  @Autowired(required = false)
+  public void setKongRouteCreator(KongRouteUpdater kongRouteCreator) {
+    this.kongRouteCreator = kongRouteCreator;
+  }
+
+  @Autowired(required = false)
+  public void setKeycloakAuthResourceCreator(KeycloakAuthResourceUpdater keycloakAuthResourceCreator) {
+    this.keycloakAuthResourceCreator = keycloakAuthResourceCreator;
   }
 }

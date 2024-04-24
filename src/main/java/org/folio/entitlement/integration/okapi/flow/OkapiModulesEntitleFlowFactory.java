@@ -4,7 +4,6 @@ import static java.util.Arrays.asList;
 import static org.folio.entitlement.utils.FlowUtils.combineStages;
 
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.kafka.CapabilitiesEventPublisher;
@@ -27,18 +26,15 @@ public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
   private final CapabilitiesEventPublisher capabilitiesEventPublisher;
   private final OkapiModulesEventPublisher okapiModulesEventPublisher;
 
-  @Setter(onMethod_ = @__(@Autowired(required = false)))
   private KongRouteCreator kongRouteCreator;
-
-  @Setter(onMethod_ = @__(@Autowired(required = false)))
-  private KeycloakAuthResourceCreator kcAuthResourceCreator;
+  private KeycloakAuthResourceCreator keycloakAuthResourceCreator;
 
   @Override
   public Flow createFlow(ApplicationStageContext context) {
     var request = context.getEntitlementRequest();
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesEntitleFlow")
-      .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCreator, kcAuthResourceCreator)))
+      .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCreator, keycloakAuthResourceCreator)))
       .stage(moduleInstaller)
       .stage(combineStages("EventPublishingParallelStage", asList(
         sysUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
@@ -50,5 +46,15 @@ public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
   @Override
   public EntitlementType getEntitlementType() {
     return EntitlementType.ENTITLE;
+  }
+
+  @Autowired(required = false)
+  public void setKongRouteCreator(KongRouteCreator kongRouteCreator) {
+    this.kongRouteCreator = kongRouteCreator;
+  }
+
+  @Autowired(required = false)
+  public void setKeycloakAuthResourceCreator(KeycloakAuthResourceCreator keycloakAuthResourceCreator) {
+    this.keycloakAuthResourceCreator = keycloakAuthResourceCreator;
   }
 }
