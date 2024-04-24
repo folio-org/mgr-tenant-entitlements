@@ -1,6 +1,6 @@
 package org.folio.entitlement.service.flow;
 
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 public class RevokeFlowFactory implements FlowFactory {
 
   private final TenantLoader tenantLoader;
-  private final ApplicationsFlowFactory applicationsFlowFactory;
+  private final ApplicationsFlowProvider applicationsFlowFactory;
   private final ApplicationFlowValidator applicationFlowValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorLoader applicationDescriptorLoader;
@@ -45,7 +45,7 @@ public class RevokeFlowFactory implements FlowFactory {
       .stage(tenantLoader)
       .stage(applicationDescriptorLoader)
       .stage(applicationFlowQueuingStage)
-      .stage(DynamicStage.of(applicationsFlowFactory.getName(), applicationsFlowFactory::createFlow))
+      .stage(DynamicStage.of(applicationsFlowFactory.getClass().getSimpleName(), applicationsFlowFactory::createFlow))
       .stage(finishedFlowFinalizer)
       .onFlowError(failedFlowFinalizer)
       .onFlowCancellation(cancelledFlowFinalizer)

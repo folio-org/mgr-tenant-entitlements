@@ -1,9 +1,9 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_NAME;
@@ -30,7 +30,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -38,12 +37,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ScheduledJobEventPublisherTest {
 
-  @InjectMocks private ScheduledJobEventPublisher publisher;
+  private ScheduledJobEventPublisher publisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
 
   @BeforeEach
   void setUp() {
     System.setProperty("env", "test-env");
+    var scheduledJobModuleEventPublisher = new ScheduledJobModuleEventPublisher(kafkaEventPublisher);
+    this.publisher = new ScheduledJobEventPublisher(scheduledJobModuleEventPublisher);
   }
 
   @AfterEach

@@ -4,12 +4,17 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.awaitility.Durations.ONE_SECOND;
 import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_NAME;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_TYPE;
 import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_ID;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_DESCRIPTOR;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_NAME;
@@ -34,15 +39,18 @@ import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.entity.ApplicationDependencyEntity;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
 import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Dependency;
 import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
-import org.folio.entitlement.integration.folio.CommonStageContext;
+import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.tm.model.Tenant;
+import org.folio.entitlement.utils.SemverUtils;
 import org.folio.flow.api.FlowEngine;
 import org.folio.flow.api.StageContext;
 
@@ -227,6 +235,10 @@ public class TestValues {
       .build();
   }
 
+  public static ModuleStageContext moduleStageContext(Object flowId, Map<?, ?> flowParams, Map<?, ?> ctxParams) {
+    return ModuleStageContext.decorate(StageContext.of(flowId, flowParams, ctxParams));
+  }
+
   public static ApplicationStageContext appStageContext(Object flowId, Map<?, ?> flowParams, Map<?, ?> ctxParams) {
     return ApplicationStageContext.decorate(StageContext.of(flowId, flowParams, ctxParams));
   }
@@ -251,6 +263,40 @@ public class TestValues {
       PARAM_APPLICATION_DESCRIPTOR, descriptor,
       PARAM_ENTITLED_APPLICATION_DESCRIPTOR, entitledDescriptor,
       PARAM_APPLICATION_ID, descriptor.getId(),
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
+    );
+  }
+
+  public static Map<?, ?> moduleFlowParameters(EntitlementRequest request, ModuleDescriptor descriptor) {
+    return Map.of(
+      PARAM_REQUEST, request,
+      PARAM_MODULE_TYPE, MODULE,
+      PARAM_MODULE_NAME, SemverUtils.getName(descriptor.getId()),
+      PARAM_MODULE_DESCRIPTOR, descriptor,
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
+    );
+  }
+
+  public static Map<?, ?> moduleFlowParameters(EntitlementRequest request, ModuleDescriptor desc, ModuleType type) {
+    return Map.of(
+      PARAM_REQUEST, request,
+      PARAM_MODULE_TYPE, type,
+      PARAM_MODULE_NAME, SemverUtils.getName(desc.getId()),
+      PARAM_MODULE_DESCRIPTOR, desc,
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
+    );
+  }
+
+  public static Map<?, ?> moduleFlowParameters(EntitlementRequest request,
+    ModuleDescriptor descriptor, ModuleDescriptor installedDescriptor) {
+    return Map.of(
+      PARAM_REQUEST, request,
+      PARAM_MODULE_TYPE, MODULE,
+      PARAM_MODULE_DESCRIPTOR, descriptor,
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, installedDescriptor,
+      PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
     );
   }

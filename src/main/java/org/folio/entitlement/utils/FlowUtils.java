@@ -1,13 +1,10 @@
 package org.folio.entitlement.utils;
 
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
-
 import java.util.List;
 import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
-import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.flow.api.NoOpStage;
 import org.folio.flow.api.ParallelStage;
 import org.folio.flow.api.Stage;
@@ -46,9 +43,5 @@ public class FlowUtils {
     }
 
     return conditionalStagesSize == 1 ? nonNullStages.get(0) : ParallelStage.of(parallelStageName, nonNullStages);
-  }
-
-  public static EntitlementRequest getEntitlementRequest(StageContext context) {
-    return context.getFlowParameter(PARAM_REQUEST);
   }
 }

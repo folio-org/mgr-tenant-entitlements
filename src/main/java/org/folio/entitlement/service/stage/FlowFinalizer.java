@@ -1,7 +1,7 @@
 package org.folio.entitlement.service.stage;
 
 import org.folio.entitlement.domain.entity.FlowEntity;
-import org.folio.entitlement.integration.folio.CommonStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
 import org.folio.entitlement.repository.FlowRepository;
 import org.folio.entitlement.service.flow.ApplicationFlowService;

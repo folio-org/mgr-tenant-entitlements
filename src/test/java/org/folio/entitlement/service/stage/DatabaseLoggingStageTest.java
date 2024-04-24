@@ -6,7 +6,7 @@ import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.CAN
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestValues.appStageContext;
@@ -17,8 +17,8 @@ import java.util.Map;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.entity.FlowStageEntity;
 import org.folio.entitlement.domain.entity.key.FlowStageKey;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.IntegrationException;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.repository.FlowStageRepository;
 import org.folio.test.types.UnitTest;
 import org.jetbrains.annotations.NotNull;

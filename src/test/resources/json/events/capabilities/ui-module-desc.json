@@ -1,0 +1,42 @@
+{
+  "id": "ui-foo-module-1.0.0",
+  "name": "UI Foo Service",
+  "permissionSets": [
+    {
+      "permissionName": "ui-foo.collection.view",
+      "displayName": "ui-foo.collection.view display name",
+      "description": "ui-foo.collection.view description",
+      "subPermissions": [ "ui-foo.item.view" ],
+      "visible": true
+    },
+    {
+      "permissionName": "ui-foo.item.view",
+      "displayName": "ui-foo.item.view display name",
+      "description": "ui-foo.item.view description",
+      "subPermissions": [ "foo.item.get", "foo.item-refs.get" ]
+    }
+  ],
+  "requires": [
+    {
+      "id": "foo-interface",
+      "version": "1.0"
+    }
+  ],
+  "capabilities": [
+    {
+      "resource": "Foo",
+      "action": "view",
+      "type": "data",
+      "permissions": [ "ui-foo.item.view", "ui-foo.collection.get" ]
+    },
+    {
+      "resource": "Foo",
+      "action": "edit",
+      "type": "data",
+      "permissions": [ "ui-foo.item.edit", "foo.item.put" ],
+      "capabilities": {
+        "Foo": [ "edit" ]
+      }
+    }
+  ]
+}

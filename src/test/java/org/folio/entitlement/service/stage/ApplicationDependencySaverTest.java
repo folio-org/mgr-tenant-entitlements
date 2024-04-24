@@ -1,9 +1,9 @@
 package org.folio.entitlement.service.stage;
 
 import static java.util.Collections.emptyMap;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_ID;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
@@ -16,9 +16,9 @@ import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.am.model.Dependency;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.service.ApplicationDependencyService;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.extension.ExtendWith;

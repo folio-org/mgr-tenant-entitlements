@@ -1,7 +1,7 @@
 package org.folio.entitlement.service.stage;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.springframework.stereotype.Component;
 
 @Component

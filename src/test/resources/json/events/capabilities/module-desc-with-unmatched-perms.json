@@ -1,0 +1,34 @@
+{
+  "id": "foo-module-1.0.0",
+  "name": "Foo Service",
+  "provides": [
+    {
+      "id": "foo-interface",
+      "version": "0.1",
+      "handlers": [
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/foo/{id}",
+          "permissionsRequired": [ "foo.item.get" ]
+        },
+        {
+          "methods": [ "POST" ],
+          "pathPattern": "/foo",
+          "permissionsRequired": [ "foo.item.post" ]
+        }
+      ]
+    }
+  ],
+  "permissionSets": [
+    {
+      "permissionName": "foo.item.post",
+      "displayName": "foo.item.post display name",
+      "description": "foo.item.post description"
+    },
+    {
+      "permissionName": "foo.item.unknown",
+      "displayName": "foo.item.unknown display name",
+      "description": "foo.item.unknown description"
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.entity.AbstractFlowEntity;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
-import org.folio.entitlement.integration.folio.IdentifiableStageContext;
+import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.repository.AbstractFlowRepository;
 import org.springframework.transaction.annotation.Transactional;
 

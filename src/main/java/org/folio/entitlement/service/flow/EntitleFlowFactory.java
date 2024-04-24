@@ -1,6 +1,6 @@
 package org.folio.entitlement.service.flow;
 
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 public class EntitleFlowFactory implements FlowFactory {
 
   private final TenantLoader tenantLoader;
-  private final ApplicationsFlowFactory applicationsFlowFactory;
+  private final ApplicationsFlowProvider applicationsFlowFactory;
   private final ApplicationFlowValidator applicationFlowValidator;
   private final InterfaceIntegrityValidator interfaceIntegrityValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;

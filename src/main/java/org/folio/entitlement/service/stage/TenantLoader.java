@@ -1,7 +1,7 @@
 package org.folio.entitlement.service.stage;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.integration.folio.CommonStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.springframework.stereotype.Component;
 

@@ -35,6 +35,7 @@ import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.io.FileUtils;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
@@ -107,6 +108,10 @@ public class TestUtils {
     var file = new File(Objects.requireNonNull(resource).toURI());
 
     return FileUtils.readFileToString(file, StandardCharsets.UTF_8.name());
+  }
+
+  public static ModuleDescriptor readModuleDescriptor(String path) {
+    return parse(readString(path), ModuleDescriptor.class);
   }
 
   public static ApplicationDescriptor readApplicationDescriptor(String path) {

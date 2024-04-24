@@ -12,7 +12,7 @@ import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.QUEUED;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;

@@ -2,9 +2,8 @@ package org.folio.entitlement.service.stage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_DISCOVERY;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_DISCOVERY_DATA;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_MODULE_DISCOVERY_DATA;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
@@ -20,10 +19,10 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
@@ -57,7 +56,7 @@ class ApplicationDiscoveryLoaderTest {
     var stageContext = stageContext(uiApplicationDescriptor());
     applicationDiscoveryLoader.execute(stageContext);
 
-    var moduleDiscoveryParam = stageContext.<Map<String, String>>get(PARAM_MODULE_DISCOVERY);
+    var moduleDiscoveryParam = stageContext.<Map<String, String>>get(PARAM_MODULE_DISCOVERY_DATA);
     assertThat(moduleDiscoveryParam).isNull();
   }
 

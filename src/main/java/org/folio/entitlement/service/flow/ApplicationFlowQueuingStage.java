@@ -4,7 +4,7 @@ import static org.folio.entitlement.utils.EntitlementServiceUtils.toHashMap;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
-import org.folio.entitlement.integration.folio.CommonStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

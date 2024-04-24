@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.kong;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.tools.kong.service.KongGatewayService;
 

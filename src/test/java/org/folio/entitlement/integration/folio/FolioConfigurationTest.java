@@ -6,6 +6,8 @@ import static org.mockito.Mockito.when;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import org.folio.entitlement.integration.folio.configuration.FolioClientConfigurationProperties;
+import org.folio.entitlement.integration.folio.configuration.FolioConfiguration;
 import org.folio.entitlement.utils.JsonConverter;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
@@ -17,7 +19,7 @@ class FolioConfigurationTest {
 
   @Test
   void httpClient_positive() {
-    var folioClientConfiguration = mock(FolioClientConfiguration.class);
+    var folioClientConfiguration = mock(FolioClientConfigurationProperties.class);
     when(folioClientConfiguration.getConnectTimeout()).thenReturn(Duration.ofSeconds(1));
 
     var httpClient = folioConfiguration.httpClient(folioClientConfiguration);
@@ -29,7 +31,7 @@ class FolioConfigurationTest {
   void folioTenantApiClient_positive() {
     var jsonConverter = mock(JsonConverter.class);
     var httpClient = mock(HttpClient.class);
-    var clientConfiguration = mock(FolioClientConfiguration.class);
+    var clientConfiguration = mock(FolioClientConfigurationProperties.class);
 
     var folioTenantApiClient = folioConfiguration.folioTenantApiClient(httpClient, jsonConverter, clientConfiguration);
 

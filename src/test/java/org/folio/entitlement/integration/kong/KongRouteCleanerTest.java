@@ -1,20 +1,20 @@
 package org.folio.entitlement.integration.kong;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.applicationDescriptor;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
@@ -59,7 +59,7 @@ class KongRouteCleanerTest {
 
     kongRouteCleaner.execute(stageContext);
 
-    verify(kongGatewayService, never()).removeRoutes(TENANT_NAME, moduleDescriptors);
+    verifyNoInteractions(kongGatewayService);
   }
 
   private static ApplicationStageContext stageContext(EntitlementRequest request, ApplicationDescriptor desc) {

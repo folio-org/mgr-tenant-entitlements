@@ -12,9 +12,7 @@ import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.folio.flow.model.FlowExecutionStrategy.IGNORE_ON_ERROR;
 
 import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
-import org.folio.entitlement.integration.folio.IdentifiableStageContext;
-import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
+import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.service.stage.ApplicationDependencyUpdater;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -23,7 +21,6 @@ import org.folio.entitlement.service.stage.SkippedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.UpgradeApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.UpgradeRequestDependencyValidator;
 import org.folio.flow.api.FlowEngine;
-import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,40 +38,36 @@ class UpgradeApplicationFlowFactoryTest {
 
   @InjectMocks private UpgradeApplicationFlowFactory flowFactory;
 
-  @Mock private KeycloakAuthResourceUpdater keycloakAuthResourceUpdater;
   @Mock private ApplicationDependencyUpdater applicationDependencyUpdater;
-  @Mock private UpgradeRequestDependencyValidator requestDependencyValidator;
+  @Mock private UpgradeRequestDependencyValidator upgradeRequestDependencyValidator;
 
+  @Mock private ModulesFlowProvider modulesFlowProvider;
   @Mock private ApplicationFlowInitializer flowInitializer;
   @Mock private FailedApplicationFlowFinalizer failedFlowFinalizer;
   @Mock private UpgradeApplicationFlowFinalizer finishedFlowFinalizer;
   @Mock private SkippedApplicationFlowFinalizer skippedFlowFinalizer;
 
   @Test
-  void prepareFlow_positive() {
-    mockStageNames(applicationDependencyUpdater, requestDependencyValidator, flowInitializer,
-      failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer, keycloakAuthResourceUpdater);
-
-    flowFactory.setKeycloakAuthResourceUpdater(keycloakAuthResourceUpdater);
+  void prepareFlow() {
+    mockStageNames(applicationDependencyUpdater, upgradeRequestDependencyValidator, flowInitializer,
+      failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer);
 
     var request = EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).ignoreErrors(true).build();
     var entitledApplicationDescriptor = applicationDescriptor("app-foo-1.0.0");
     var flowParameters = flowParameters(request, applicationDescriptor("app-foo-1.1.0"), entitledApplicationDescriptor);
+
     var actual = flowFactory.createFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(actual);
 
     var context = appStageContext(actual.getId(), flowParameters, emptyMap());
 
-    var inOrder = Mockito.inOrder(applicationDependencyUpdater, requestDependencyValidator, flowInitializer,
-      failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer, keycloakAuthResourceUpdater);
+    var inOrder = Mockito.inOrder(applicationDependencyUpdater, upgradeRequestDependencyValidator,
+      flowInitializer, failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer, modulesFlowProvider);
 
+    inOrder.verify(modulesFlowProvider).getName();
     verifyStageExecution(inOrder, flowInitializer, context);
-    verifyStageExecution(inOrder, requestDependencyValidator, context);
-
-    var moduleStageContext = StageContext.of(FLOW_STAGE_ID + "/ModuleUpdater", flowParameters, emptyMap());
-    var moduleInstallerContextWrapper = ApplicationStageContext.decorate(moduleStageContext);
-
-    verifyStageExecution(inOrder, keycloakAuthResourceUpdater, moduleInstallerContextWrapper);
+    verifyStageExecution(inOrder, upgradeRequestDependencyValidator, context);
+    inOrder.verify(modulesFlowProvider).createFlow(context);
     verifyStageExecution(inOrder, applicationDependencyUpdater, context);
     verifyStageExecution(inOrder, finishedFlowFinalizer, context);
   }

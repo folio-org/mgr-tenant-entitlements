@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.keycloak;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
@@ -16,7 +16,9 @@ import static org.mockito.Mockito.when;
 
 import java.util.Map;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
@@ -33,6 +35,11 @@ class KeycloakAuthResourceCleanerTest {
   @Mock private Keycloak keycloakClient;
   @Mock private KeycloakService keycloakService;
   @Mock private TokenManager tokenManager;
+
+  @AfterEach
+  void tearDown() {
+    TestUtils.verifyNoMoreInteractions(this);
+  }
 
   @Test
   void execute_positive_purgeTrue() {

@@ -11,7 +11,7 @@ import lombok.Builder;
 import lombok.Data;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.error.Parameter;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.flow.api.StageContext;
 
 @Data
@@ -36,7 +36,7 @@ public class ModuleRequest {
    * @param context - {@link StageContext} object with flow and stage parameters
    * @return created unmodifiable {@link ModuleRequest} object
    */
-  public static ModuleRequest fromStageContext(ApplicationStageContext context) {
+  public static ModuleRequest fromStageContext(ModuleStageContext context) {
     var request = context.getEntitlementRequest();
     return fromStageContext(context, request.isPurge());
   }
@@ -47,7 +47,7 @@ public class ModuleRequest {
    * @param context - {@link StageContext} object with flow and stage parameters
    * @return created unmodifiable {@link ModuleRequest} object
    */
-  public static ModuleRequest fromStageContext(ApplicationStageContext context, boolean purge) {
+  public static ModuleRequest fromStageContext(ModuleStageContext context, boolean purge) {
     var request = context.getEntitlementRequest();
 
     return ModuleRequest.builder()
@@ -62,7 +62,7 @@ public class ModuleRequest {
       .build();
   }
 
-  private static InterfaceDescriptor getTenantInterfaceDescriptor(ApplicationStageContext context) {
+  private static InterfaceDescriptor getTenantInterfaceDescriptor(ModuleStageContext context) {
     var moduleDescriptor = context.getModuleDescriptor();
     return toStream(moduleDescriptor.getProvides())
       .filter(interfaceDescriptor -> TENANT_INTERFACE_ID.equals(interfaceDescriptor.getId()))

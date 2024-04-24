@@ -5,7 +5,6 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Comparator.comparing;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestConstants.HTTP_CLIENT_DUMMY_SSL;
-import static org.folio.test.TestConstants.TENANT_ID;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -69,7 +68,7 @@ public class KeycloakTestClientConfiguration {
       var uri = fromUriString(keycloakConfiguration.getUrl() + path)
         .queryParam("first", 0)
         .queryParam("last", 100)
-        .buildAndExpand(Map.of("realm", TENANT_ID, "clientId", clientId))
+        .buildAndExpand(Map.of("realm", realm, "clientId", clientId))
         .encode().toUri();
 
       var responseJson = sendAndParseGetResponseAsString(uri);
@@ -104,7 +103,7 @@ public class KeycloakTestClientConfiguration {
       var uri = fromUriString(keycloakConfiguration.getUrl() + path)
         .queryParam("first", 0)
         .queryParam("max", 101)
-        .buildAndExpand(Map.of("realm", TENANT_ID, "clientId", clientId))
+        .buildAndExpand(Map.of("realm", realm, "clientId", clientId))
         .encode()
         .toUri();
 

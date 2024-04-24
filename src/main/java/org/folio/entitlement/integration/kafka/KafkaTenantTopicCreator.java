@@ -9,7 +9,7 @@ import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
