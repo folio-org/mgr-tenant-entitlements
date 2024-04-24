@@ -47,6 +47,7 @@ import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
+import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
@@ -109,6 +110,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
 
   @AfterEach
   void tearDown() {
+    FakeKafkaConsumer.removeAllEvents();
     for (var kr : kongAdminClient.getRoutesByTag(TENANT_NAME, null)) {
       kongAdminClient.deleteRoute(kr.getService().getId(), kr.getId());
     }

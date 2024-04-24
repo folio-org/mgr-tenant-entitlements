@@ -40,10 +40,12 @@ import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
+import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -79,6 +81,11 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
   static void beforeAll(@Autowired ApplicationContext appContext) {
     checkApplicationContextBeans(appContext);
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
+  }
+
+  @AfterEach
+  void tearDown() {
+    FakeKafkaConsumer.removeAllEvents();
   }
 
   @Test

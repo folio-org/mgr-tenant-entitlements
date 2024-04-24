@@ -80,6 +80,7 @@ import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
+import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.EnableOkapiSecurity;
 import org.folio.test.extensions.KeycloakRealms;
@@ -150,6 +151,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     for (var kr : kongAdminClient.getRoutesByTag(TENANT_NAME, null)) {
       kongAdminClient.deleteRoute(kr.getService().getId(), kr.getId());
     }
+    FakeKafkaConsumer.removeAllEvents();
   }
 
   @AfterAll
