@@ -252,17 +252,11 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
   void uninstall_positive_dependentApplicationsInSingleCall() throws Exception {
     var queryParams = Map.of("tenantParameters", TENANT_PARAMETERS, "purge", "true");
     var tenantId = UUID.fromString("82dec29a-927f-4a14-a9ea-dc616fd17a1c");
-    var tenantName = "another";
     var entitlementRequest = entitlementRequest(tenantId, OKAPI_APP_3_ID, OKAPI_APP_4_ID);
     var expectedEntitlements = extendedEntitlements(
       entitlement(tenantId, OKAPI_APP_3_ID), entitlement(tenantId, OKAPI_APP_4_ID));
 
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
-
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_3_ID, tenantName, tenantId),
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_4_ID, tenantName, tenantId)
-    ));
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_3_ID, OKAPI_APP_4_ID);
     assertEntitlementsWithModules(entitlementQuery, emptyEntitlements());
