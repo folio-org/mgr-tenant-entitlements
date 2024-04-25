@@ -1,9 +1,12 @@
 package org.folio.entitlement.integration.kafka;
 
+import static java.util.Collections.emptyMap;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
+import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
@@ -60,6 +63,18 @@ class ScheduledJobModuleEventPublisherTest {
     var barTimerEvent = resourceEvent(barTimerRoutingEntry());
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), barTimerEvent);
+  }
+
+  @Test
+  void getStageName_positive() {
+    var request = EntitlementRequest.builder().type(ENTITLE).build();
+    var moduleDescriptor = new ModuleDescriptor().id("mod-foo-1.0.0");
+    var flowParameters = moduleFlowParameters(request, moduleDescriptor);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+
+    var result = moduleEventPublisher.getStageName(stageContext);
+
+    assertThat(result).isEqualTo("mod-foo-1.0.0-scheduledJobModuleEventPublisher");
   }
 
   private static ModuleDescriptor fooModuleDescriptor() {

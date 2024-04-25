@@ -35,6 +35,7 @@ import lombok.NoArgsConstructor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.entity.ApplicationDependencyEntity;
@@ -49,6 +50,7 @@ import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Dependency;
 import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
+import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.tm.model.Tenant;
 import org.folio.entitlement.utils.SemverUtils;
@@ -302,5 +304,13 @@ public class TestValues {
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
     );
+  }
+
+  public static EntitlementEvent entitlementEvent(EntitlementType type, String moduleId) {
+    return new EntitlementEvent(type.name(), moduleId, TENANT_NAME, TENANT_ID);
+  }
+
+  public static EntitlementEvent entitlementEvent(EntitlementType type, String moduleId, String tenant, UUID tenantId) {
+    return new EntitlementEvent(type.name(), moduleId, tenant, tenantId);
   }
 }

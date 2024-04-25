@@ -27,6 +27,7 @@ class FlowEngineConfigurationTest {
 
   @Test
   void flowEngine_positive() {
+    when(configurationProperties.getPoolThreads()).thenReturn(2);
     when(configurationProperties.getPrintFlowResult()).thenReturn(false);
     when(configurationProperties.getExecutionTimeout()).thenReturn(Duration.ofMillis(100));
     when(configurationProperties.getLastExecutionsStatusCacheSize()).thenReturn(20);

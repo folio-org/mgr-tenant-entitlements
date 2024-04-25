@@ -77,7 +77,7 @@ class FolioModuleUninstallerTest {
 
     var stageName = folioModuleUninstaller.getStageName(context);
 
-    assertThat(stageName).isEqualTo(MODULE_ID + "-moduleUninstaller");
+    assertThat(stageName).isEqualTo(MODULE_ID + "-folioModuleUninstaller");
   }
 
   private static Map<String, Object> flowParameters(ModuleDescriptor moduleDescriptor, EntitlementRequest request) {

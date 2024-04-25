@@ -12,12 +12,12 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
-import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ScheduledJobModuleEventPublisher extends DatabaseLoggingStage<ModuleStageContext> {
+public class ScheduledJobModuleEventPublisher extends ModuleDatabaseLoggingStage {
 
   private static final String SCHEDULED_JOB_TOPIC = "mgr-tenant-entitlements.scheduled-job";
   private final KafkaEventPublisher kafkaEventPublisher;

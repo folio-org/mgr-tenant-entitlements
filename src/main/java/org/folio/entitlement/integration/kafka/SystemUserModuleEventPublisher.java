@@ -9,13 +9,13 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
-import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class SystemUserModuleEventPublisher extends DatabaseLoggingStage<ModuleStageContext> {
+public class SystemUserModuleEventPublisher extends ModuleDatabaseLoggingStage {
 
   private static final String SYS_USER_TOPIC = "mgr-tenant-entitlements.system-user";
   private static final String SYS_USER_RESOURCE_NAME = "System user";

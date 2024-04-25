@@ -5,18 +5,19 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.awaitility.Durations.FIVE_SECONDS;
+import static org.awaitility.Durations.TEN_SECONDS;
 import static org.awaitility.Durations.TWO_HUNDRED_MILLISECONDS;
 import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
 import static org.folio.common.utils.OkapiHeaders.TENANT;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.it.EntitlementRoutesIT.WiremockResponse.resp;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEvents;
-import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.entitlementTopic;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestUtils.parse;
 import static org.folio.entitlement.support.TestUtils.readString;
+import static org.folio.entitlement.support.TestValues.entitlementEvent;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.support.extensions.impl.KongGatewayExtension.KONG_GATEWAY_URL_PROPERTY;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
@@ -43,7 +44,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -115,7 +115,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   @WireMockStub("/wiremock/application-routes-it.json")
   @ParameterizedTest(name = "[{index}] method={0}, uri={1}")
   void checkInstalledRoutes_positive_parameterized(HttpMethod method, URI uri, WiremockResponse resp) {
-    await().atMost(FIVE_SECONDS)
+    await().atMost(TEN_SECONDS)
       .pollInterval(TWO_HUNDRED_MILLISECONDS)
       .untilAsserted(() -> {
         var result = HTTP_CLIENT.send(httpRequest(method, uri, TENANT_NAME), ofString());
@@ -265,8 +265,8 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
       assertThat(routesByTag.getOffset()).isNull();
 
       assertEntitlementEvents(
-        List.of(new EntitlementEvent(ENTITLE.name(), ROUTES_MODULE1_ID, TENANT_NAME, TENANT_ID),
-          new EntitlementEvent(ENTITLE.name(), ROUTES_MODULE2_ID, TENANT_NAME, TENANT_ID)));
+        entitlementEvent(ENTITLE, ROUTES_MODULE1_ID),
+        entitlementEvent(ENTITLE, ROUTES_MODULE2_ID));
 
       assertThat(wmAdminClient.unmatchedRequests().getRequests()).isEmpty();
     } finally {

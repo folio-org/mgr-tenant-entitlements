@@ -259,8 +259,13 @@ public class ApiExceptionHandler {
    */
   @ExceptionHandler(StageExecutionException.class)
   public ResponseEntity<ErrorResponse> handleStageExecutionException(StageExecutionException exception) {
-    logException(DEBUG, exception);
     var stageResults = exception.getStageResults();
+    if (CollectionUtils.isEmpty(stageResults)) {
+      logException(WARN, exception);
+      return buildResponseEntity(exception, INTERNAL_SERVER_ERROR, SERVICE_ERROR);
+    }
+
+    logException(DEBUG, exception);
     var flowId = stageResults.get(0).getFlowId();
 
     var failedStages = flowStageService.findFailedStages(UUID.fromString(flowId));

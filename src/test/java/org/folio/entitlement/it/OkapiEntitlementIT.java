@@ -37,6 +37,7 @@ import static org.folio.entitlement.support.TestUtils.readScheduledJobEvent;
 import static org.folio.entitlement.support.TestUtils.readSystemUserEvent;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
+import static org.folio.entitlement.support.TestValues.entitlementEvent;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
@@ -80,7 +81,6 @@ import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.EnableOkapiSecurity;
 import org.folio.test.extensions.KeycloakRealms;
@@ -148,7 +148,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   @AfterEach
   void tearDown() {
     Mockito.reset(kongAdminClient);
-    FakeKafkaConsumer.removeAllEvents();
     for (var kr : kongAdminClient.getRoutesByTag(TENANT_NAME, null)) {
       kongAdminClient.deleteRoute(kr.getService().getId(), kr.getId());
     }
@@ -213,11 +212,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     assertEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
-
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
-
+    assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID));
     assertCapabilityEvents(
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"),
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-2.json"));
@@ -250,6 +245,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       authResource("/okapi-module/entities/{id}", "PUT"),
       authResource("/okapi-module5/entities", "GET"));
 
+    assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID));
     assertCapabilityEvents(
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"),
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-2.json"));
@@ -279,7 +275,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
     var entitlement = entitlementWithModules(TENANT_ID, OKAPI_APP_ID, List.of(OKAPI_MODULE_ID));
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement));
-    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), "okapi-module-1.0.0", "test", TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, "okapi-module-1.0.0"));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
@@ -304,7 +300,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var entitlementRequest = entitlementRequest(OKAPI_APP_ID);
     var expectedEntitlements = extendedEntitlements(entitlement(OKAPI_APP_ID));
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
-    assertEntitlementEvents(List.of(new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(REVOKE, OKAPI_MODULE_ID));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
@@ -331,9 +327,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
 
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_3_ID, tenantName, tenantId),
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_4_ID, tenantName, tenantId)));
+    assertEntitlementEvents(
+      entitlementEvent(REVOKE, OKAPI_MODULE_3_ID, tenantName, tenantId),
+      entitlementEvent(REVOKE, OKAPI_MODULE_4_ID, tenantName, tenantId));
 
     assertThat(kongAdminClient.getRoutesByTag(tenantName, null)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationResources(tenantName)).isEmpty();
@@ -389,6 +385,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID));
 
     // entitle application
     var entitlementRequest = entitlementRequest(OKAPI_APP_5_ID);
@@ -410,11 +407,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     // entitle test application again
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_5_ID), entitlements(entitlement(OKAPI_APP_5_ID)));
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(
+      entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID),
+      entitlementEvent(REVOKE, OKAPI_MODULE_5_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID));
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(

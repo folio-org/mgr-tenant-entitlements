@@ -17,6 +17,7 @@ import static org.folio.entitlement.support.TestConstants.entitlementTopic;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
+import static org.folio.entitlement.support.TestValues.entitlementEvent;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
@@ -41,12 +42,10 @@ import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,11 +83,6 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
   }
 
-  @AfterEach
-  void tearDown() {
-    FakeKafkaConsumer.removeAllEvents();
-  }
-
   @Test
   @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
@@ -108,7 +102,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     var expectedModuleEntitlements = entitlements(entitlement(TENANT_ID, FOLIO_APP1_ID));
     assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP1_ID), expected);
     assertModuleEntitlements(FOLIO_MODULE1_ID, expectedModuleEntitlements);
-    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID));
   }
 
   @Test
@@ -131,7 +125,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     var expectedModuleEntitlements = entitlements(entitlement(TENANT_ID, applicationId));
     assertEntitlementsWithModules(queryByTenantAndAppId(applicationId), expected);
     assertModuleEntitlements(moduleId, expectedModuleEntitlements);
-    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), moduleId, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, moduleId));
   }
 
   @Test
@@ -151,7 +145,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP1_ID), entitlements(entitlement(FOLIO_APP1_ID)));
     var expectedModuleEntitlements = entitlements(entitlement(FOLIO_APP1_ID));
     assertModuleEntitlements(FOLIO_MODULE1_ID, expectedModuleEntitlements);
-    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID));
   }
 
   @Test
@@ -258,16 +252,14 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.total_records", is(1)))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-folioModuleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
           + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
 
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID), entitlementEvent(REVOKE, FOLIO_MODULE1_ID));
   }
 
   @Test
@@ -294,20 +286,20 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.total_records", is(1)))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancellationException")))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLATION_FAILED")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-folioModuleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
           + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")))
-      .andExpect(jsonPath("$.errors[0].parameters[1].key", is("folio-module1-1.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[1].key", is("folio-module1-1.0.0-folioModuleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[1].value", matchesPattern(
         "CANCELLATION_FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
           + "\\[method: POST, uri: http://.+:\\d+/folio-module1/_/tenant], cause: request timed out")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
 
-    assertEntitlementEvents(List.of(
+    assertEntitlementEvents(
       new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
+      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID));
   }
 
   @Test
@@ -333,16 +325,16 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.total_records", is(1)))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-folioModuleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
           + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
 
-    assertEntitlementEvents(List.of(
+    assertEntitlementEvents(
       new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
+      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID));
   }
 
   @Test
@@ -366,13 +358,13 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-folioModuleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
           + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
-    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID));
   }
 
   @Test
@@ -396,14 +388,14 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.total_records", is(1)))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-moduleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-folioModuleInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", matchesPattern(
         "FAILED: \\[IntegrationException] \\[IOException] Failed to perform request "
           + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], "
           + "cause: HTTP/1.1 header parser received no bytes")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
-    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID));
   }
 
   @Test
@@ -422,7 +414,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
 
     var expectedEntitlements = extendedEntitlements(entitlement(FOLIO_APP2_ID));
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
-    assertEntitlementEvents(List.of(new EntitlementEvent(REVOKE.name(), moduleId, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(new EntitlementEvent(REVOKE.name(), moduleId, TENANT_NAME, TENANT_ID));
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP2_ID), emptyEntitlements());
   }
 
@@ -445,11 +437,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
 
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
 
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(REVOKE.name(), FOLIO_MODULE3_ID, TENANT_NAME, TENANT_ID)
-    ));
-
+    assertEntitlementEvents(entitlementEvent(REVOKE, FOLIO_MODULE3_ID), entitlementEvent(REVOKE, FOLIO_MODULE1_ID));
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP1_ID), emptyEntitlements());
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP3_ID), emptyEntitlements());
   }

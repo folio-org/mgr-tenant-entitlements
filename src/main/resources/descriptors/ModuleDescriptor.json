@@ -192,6 +192,7 @@
       "visible": true,
       "subPermissions": [
         "mgr-tenant-entitlements.entitlements.item.post",
+        "mgr-tenant-entitlements.entitlements.item.put",
         "mgr-tenant-entitlements.entitlements.item.get",
         "mgr-tenant-entitlements.entitlements.item.delete",
         "mgr-tenant-entitlements.entitlements.collection.get"

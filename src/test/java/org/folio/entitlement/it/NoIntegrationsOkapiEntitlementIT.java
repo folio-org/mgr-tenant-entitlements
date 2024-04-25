@@ -22,7 +22,6 @@ import static org.folio.entitlement.support.TestConstants.OKAPI_KONG_INTEGRATION
 import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.PURGE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
-import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.TENANT_PARAMETERS;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
 import static org.folio.entitlement.support.TestConstants.entitlementTopic;
@@ -35,6 +34,7 @@ import static org.folio.entitlement.support.TestUtils.readScheduledJobEvent;
 import static org.folio.entitlement.support.TestUtils.readSystemUserEvent;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
+import static org.folio.entitlement.support.TestValues.entitlementEvent;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
@@ -66,11 +66,9 @@ import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableOkapiSecurity;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -107,11 +105,6 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     fakeKafkaConsumer.registerTopic(capabilitiesTenantTopic(), ResourceEvent.class);
     fakeKafkaConsumer.registerTopic(scheduledJobsTenantTopic(), ResourceEvent.class);
     fakeKafkaConsumer.registerTopic(systemUserTenantTopic(), ResourceEvent.class);
-  }
-
-  @AfterEach
-  void tearDown() {
-    FakeKafkaConsumer.removeAllEvents();
   }
 
   @Test
@@ -158,9 +151,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     assertEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
 
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID));
     assertCapabilityEvents(
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"),
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-2.json"));
@@ -186,6 +177,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
 
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     assertEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID));
 
     assertCapabilityEvents(
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"),
@@ -216,7 +208,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
 
     var entitlement = entitlementWithModules(TENANT_ID, OKAPI_APP_ID, List.of(OKAPI_MODULE_ID));
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement));
-    assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), "okapi-module-1.0.0", "test", TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID));
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
     assertScheduledJobEvents(readScheduledJobEvent("json/events/okapi-it/scheduled-job-event.json"));
     assertSystemUserEvents(readSystemUserEvent("json/events/okapi-it/system-user-event.json"));
@@ -237,8 +229,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     var entitlementRequest = entitlementRequest(OKAPI_APP_ID);
     var expectedEntitlements = extendedEntitlements(entitlement(OKAPI_APP_ID));
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(entitlementEvent(REVOKE, OKAPI_MODULE_ID));
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
@@ -262,6 +253,9 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
       entitlement(tenantId, OKAPI_APP_3_ID), entitlement(tenantId, OKAPI_APP_4_ID));
 
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
+    assertEntitlementEvents(
+      entitlementEvent(REVOKE, OKAPI_MODULE_3_ID, tenantName, tenantId),
+      entitlementEvent(REVOKE, OKAPI_MODULE_4_ID, tenantName, tenantId));
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_3_ID, OKAPI_APP_4_ID);
     assertEntitlementsWithModules(entitlementQuery, emptyEntitlements());
@@ -313,24 +307,27 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     var expectedExtendedEntitlements = extendedEntitlements(entitlement(OKAPI_APP_ID));
     entitleApplications(entitlementRequest(OKAPI_APP_ID), queryParams, expectedExtendedEntitlements);
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID));
 
     // entitle application
     var entitlementRequest = entitlementRequest(OKAPI_APP_5_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
+    assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID));
 
     // revoke entitlement for test application
     var revokeParams = Map.of("purge", "true");
     revokeEntitlements(entitlementRequest, revokeParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_5_ID), emptyEntitlements());
+    assertEntitlementEvents(
+      entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID),
+      entitlementEvent(REVOKE, OKAPI_MODULE_5_ID));
 
     // entitle test application again
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_5_ID), entitlements(entitlement(OKAPI_APP_5_ID)));
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(
+      entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID),
+      entitlementEvent(REVOKE, OKAPI_MODULE_5_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID));
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
   }
 

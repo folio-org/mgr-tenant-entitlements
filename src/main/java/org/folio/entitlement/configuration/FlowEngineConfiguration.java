@@ -5,6 +5,7 @@ import static java.lang.Runtime.getRuntime;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
+import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.service.InheritedClassLoaderThreadFactory;
 import org.folio.flow.api.FlowEngine;
 import org.folio.flow.utils.StageReportProvider;
@@ -13,13 +14,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.concurrent.DelegatingSecurityContextExecutor;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+@Log4j2
 @Configuration
 public class FlowEngineConfiguration {
-
-  /**
-   * max #workers - 1.
-   */
-  private static final int POOL_MAX_CAP = 32767;
 
   /**
    * Creates a {@link FlowEngine} bean.
@@ -30,7 +27,7 @@ public class FlowEngineConfiguration {
   public FlowEngine flowEngine(FlowEngineConfigurationProperties configuration) {
     return FlowEngine.builder()
       .name("entitlement-flow-engine")
-      .executor(inheritedClassLoaderPool())
+      .executor(inheritedClassLoaderPool(configuration.getPoolThreads()))
       .executionTimeout(configuration.getExecutionTimeout())
       .printFlowResult(TRUE.equals(configuration.getPrintFlowResult()))
       .stageReportProvider(StageReportProvider.builder()
@@ -42,9 +39,11 @@ public class FlowEngineConfiguration {
       .build();
   }
 
-  private static Executor inheritedClassLoaderPool() {
+  private static Executor inheritedClassLoaderPool(int threadsNumber) {
     var factory = new InheritedClassLoaderThreadFactory();
-    var pool = new ForkJoinPool(Math.min(POOL_MAX_CAP, getRuntime().availableProcessors()), factory, null, false);
+    var fjpProcessorsNumber = Math.min(threadsNumber, getRuntime().availableProcessors());
+    log.info("Creating Flow engine Fork-Join Poll with {} threads", fjpProcessorsNumber);
+    var pool = new ForkJoinPool(threadsNumber, factory, null, false);
     return new DelegatingSecurityContextExecutor(pool, SecurityContextHolder.getContext());
   }
 

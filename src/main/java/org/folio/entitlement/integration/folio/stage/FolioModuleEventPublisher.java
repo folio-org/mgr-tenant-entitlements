@@ -9,11 +9,11 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
-import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 
 @Log4j2
 @RequiredArgsConstructor
-public class FolioModuleEventPublisher extends DatabaseLoggingStage<ModuleStageContext> {
+public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
 
   private final EntitlementEventPublisher publisher;
 
@@ -35,11 +35,6 @@ public class FolioModuleEventPublisher extends DatabaseLoggingStage<ModuleStageC
     var event = prepareEntitlementEvent(context, REVOKE);
     publisher.publish(event);
     log.debug("Published event: event = {}", event);
-  }
-
-  @Override
-  public String getStageName(ModuleStageContext context) {
-    return context.getModuleId() + "-moduleEventPublisher";
   }
 
   private static EntitlementEvent prepareEntitlementEvent(ModuleStageContext ctx, EntitlementType type) {
