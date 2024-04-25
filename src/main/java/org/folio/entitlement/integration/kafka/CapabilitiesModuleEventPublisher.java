@@ -36,13 +36,13 @@ import org.folio.entitlement.integration.kafka.model.Endpoint;
 import org.folio.entitlement.integration.kafka.model.FolioResource;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
-import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class CapabilitiesModuleEventPublisher extends DatabaseLoggingStage<ModuleStageContext> {
+public class CapabilitiesModuleEventPublisher extends ModuleDatabaseLoggingStage {
 
   private static final String CAPABILITIES_TOPIC = "mgr-tenant-entitlements.capability";
   private static final String CAPABILITY_RESOURCE_NAME = "Capability";

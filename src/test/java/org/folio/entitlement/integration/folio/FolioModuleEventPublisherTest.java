@@ -104,6 +104,6 @@ class FolioModuleEventPublisherTest {
     var flowParameters = Map.of(PARAM_MODULE_ID, MODULE_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, emptyMap());
     var result = folioModuleEventPublisher.getStageName(stageContext);
-    assertThat(result).isEqualTo(MODULE_ID + "-moduleEventPublisher");
+    assertThat(result).isEqualTo(MODULE_ID + "-folioModuleEventPublisher");
   }
 }

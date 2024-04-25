@@ -104,7 +104,7 @@ class FolioModuleInstallerTest {
 
     var stageName = moduleInstaller.getStageName(context);
 
-    assertThat(stageName).isEqualTo(MODULE_ID + "-moduleInstaller");
+    assertThat(stageName).isEqualTo(MODULE_ID + "-folioModuleInstaller");
   }
 
   private static ModuleDescriptor moduleDescriptor(InterfaceDescriptor... interfaceDescriptors) {

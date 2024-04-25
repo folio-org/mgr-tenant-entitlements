@@ -37,7 +37,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -60,7 +59,6 @@ import org.springframework.test.web.servlet.ResultMatcher;
 @ActiveProfiles("it")
 @EnableKongGateway
 @AutoConfigureMockMvc
-@Import(FakeKafkaConsumer.class)
 @DirtiesContext(classMode = AFTER_CLASS)
 @TestExecutionListeners(mergeMode = MERGE_WITH_DEFAULTS, value = {
   WireMockExecutionListener.class,

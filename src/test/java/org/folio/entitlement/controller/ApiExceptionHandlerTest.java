@@ -50,6 +50,7 @@ import org.folio.flow.api.FlowEngine;
 import org.folio.flow.api.ParallelStage;
 import org.folio.flow.api.Stage;
 import org.folio.flow.api.StageContext;
+import org.folio.flow.exception.FlowExecutionException;
 import org.folio.flow.model.FlowExecutionStrategy;
 import org.folio.security.exception.ForbiddenException;
 import org.folio.test.types.UnitTest;
@@ -177,6 +178,18 @@ class ApiExceptionHandlerTest {
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
       .andExpect(jsonPath("$.errors[0].parameters[0].key", is("test-route-id")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", is("409 Conflict")));
+  }
+
+  @Test
+  void handleIntegrationException_positive_flowExecutionException() throws Exception {
+    var flowId = UUID.randomUUID().toString();
+    when(testService.execute()).thenThrow(new FlowExecutionException("Failed to execute flow", flowId, null));
+    mockMvc.perform(get("/tests").queryParam("query", "cql.allRecords=1").contentType(APPLICATION_JSON))
+      .andExpect(status().isInternalServerError())
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].message", is("Failed to execute flow")))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
+      .andExpect(jsonPath("$.errors[0].code", is("service_error")));
   }
 
   @Test

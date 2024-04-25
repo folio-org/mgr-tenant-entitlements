@@ -5,11 +5,11 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
-import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 
 @Log4j2
 @RequiredArgsConstructor
-public class FolioModuleInstaller extends DatabaseLoggingStage<ModuleStageContext> {
+public class FolioModuleInstaller extends ModuleDatabaseLoggingStage {
 
   private final FolioModuleService folioModuleService;
 
@@ -24,10 +24,5 @@ public class FolioModuleInstaller extends DatabaseLoggingStage<ModuleStageContex
     var request = context.getEntitlementRequest();
     var moduleRequest = ModuleRequest.fromStageContext(context, request.isPurgeOnRollback());
     folioModuleService.disable(moduleRequest);
-  }
-
-  @Override
-  public String getStageName(ModuleStageContext context) {
-    return context.getModuleId() + "-moduleInstaller";
   }
 }

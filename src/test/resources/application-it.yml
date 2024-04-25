@@ -10,7 +10,7 @@ spring:
 
 application:
   flow-engine:
-    print-flow-result: true
+    print-flow-result: false
   kong:
     enabled: true
     register-module: false
