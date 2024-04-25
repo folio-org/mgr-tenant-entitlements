@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
+import org.folio.entitlement.integration.folio.configuration.FolioClientConfigurationProperties;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
 import org.folio.entitlement.integration.folio.model.TenantAttributes;
 import org.folio.entitlement.support.TestUtils;
@@ -53,7 +54,7 @@ class FolioTenantApiClientTest {
   @InjectMocks private FolioTenantApiClient folioTenantApiClient;
   @Mock private HttpClient httpClient;
   @Mock private HttpResponse<String> httpResponse;
-  @Mock private FolioClientConfiguration folioClientConfiguration;
+  @Mock private FolioClientConfigurationProperties folioClientConfigurationProperties;
   @Captor private ArgumentCaptor<HttpRequest> httpRequestCaptor;
   @Spy private final JsonConverter jsonConverter = new JsonConverter(OBJECT_MAPPER);
 
@@ -64,7 +65,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void install_positive() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse);
     when(httpResponse.statusCode()).thenReturn(204);
 
@@ -77,7 +78,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void install_positive_statusEqualToCreated() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse);
     when(httpResponse.statusCode()).thenReturn(201);
 
@@ -90,7 +91,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void install_negative_invalidResponse() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse);
     when(httpResponse.statusCode()).thenReturn(500);
     when(httpResponse.body()).thenReturn("Failed to install tenant");
@@ -107,7 +108,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void install_negative_ioException() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenThrow(IOException.class);
 
     var parameters = List.of(new Parameter().key("loadReference").value("true"));
@@ -122,7 +123,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void install_negative_interruptedException() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenThrow(InterruptedException.class);
 
     var parameters = List.of(new Parameter().key("loadReference").value("true"));
@@ -137,7 +138,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void uninstall_positive() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse);
     when(httpResponse.statusCode()).thenReturn(204);
 
@@ -150,7 +151,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void uninstallLegacy_positive() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse);
     when(httpResponse.statusCode()).thenReturn(204);
 
@@ -162,7 +163,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void disableLegacy_positive() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse);
     when(httpResponse.statusCode()).thenReturn(204);
 
@@ -174,7 +175,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void uninstall_negative_invalidResponse() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse);
     when(httpResponse.statusCode()).thenReturn(500);
     when(httpResponse.body()).thenReturn("Failed to install tenant");
@@ -190,7 +191,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void uninstall_negative_ioException() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenThrow(IOException.class);
 
     var moduleRequest = moduleRequest(true);
@@ -204,7 +205,7 @@ class FolioTenantApiClientTest {
 
   @Test
   void uninstall_negative_interruptedException() throws IOException, InterruptedException {
-    when(folioClientConfiguration.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenThrow(InterruptedException.class);
 
     var moduleRequest = moduleRequest(true);

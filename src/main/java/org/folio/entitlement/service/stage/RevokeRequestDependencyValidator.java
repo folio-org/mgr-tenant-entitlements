@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.Entitlement;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

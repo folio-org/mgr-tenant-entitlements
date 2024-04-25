@@ -1,0 +1,53 @@
+{
+  "realm": "another",
+  "enabled": true,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": true,
+  "resetPasswordAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "System",
+        "description": "System role for module-to-module communication",
+        "composite": false,
+        "clientRole": false,
+        "containerId": "bc6c2684-cc3b-41a2-805c-d828f6d0c2ba",
+        "attributes": { }
+      }
+    ],
+    "client": {
+      "another-login-application": [
+        {
+          "name": "uma_protection",
+          "composite": false,
+          "clientRole": true,
+          "attributes": { }
+        }
+      ]
+    }
+  },
+  "clients": [
+    {
+      "clientId": "another-login-application",
+      "name": "another-application",
+      "description": "Client for login operations",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "another-login-application-secret",
+      "redirectUris": [ "/*" ],
+      "webOrigins": [ "/*" ],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "authorizationSettings": {
+        "allowRemoteResourceManagement": true,
+        "policyEnforcementMode": "ENFORCING",
+        "decisionStrategy": "AFFIRMATIVE"
+      }
+    }
+  ]
+}

@@ -11,7 +11,7 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.entity.FlowStageEntity;
 import org.folio.entitlement.domain.entity.key.FlowStageKey;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
-import org.folio.entitlement.integration.folio.IdentifiableStageContext;
+import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.repository.FlowStageRepository;
 import org.folio.flow.api.Stage;
 import org.springframework.beans.factory.annotation.Autowired;

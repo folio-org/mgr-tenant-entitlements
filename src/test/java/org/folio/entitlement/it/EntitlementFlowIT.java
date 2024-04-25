@@ -56,7 +56,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
 
     var entitlementFlow = parseResponse(entitlementFlowResponse, Flow.class);
     assertThat(entitlementFlow).isEqualTo(new Flow()
-      .id(FLOW_ID_1).status(FINISHED).type(ENTITLE)
+      .id(FLOW_ID_1).status(FINISHED).type(ENTITLE).tenantId(TENANT_ID_1)
       .startedAt(timestampFrom("2023-01-01T12:01:00"))
       .finishedAt(timestampFrom("2023-01-01T12:02:59"))
       .applicationFlows(List.of(applicationFlow1(), applicationFlow2())));
@@ -74,7 +74,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
 
     var entitlementFlow = parseResponse(entitlementFlowResponse, Flow.class);
     assertThat(entitlementFlow).isEqualTo(new Flow()
-      .id(FLOW_ID_1).status(FINISHED).type(ENTITLE)
+      .id(FLOW_ID_1).status(FINISHED).type(ENTITLE).tenantId(TENANT_ID_1)
       .stages(List.of(
         stage(FLOW_ID_1, "FlowInitializer", "2023-01-01T12:01:01", "2023-01-01T12:01:02"),
         stage(FLOW_ID_1, "FlowFinalizer", "2023-01-01T12:02:46", "2023-01-01T12:02:50")))
@@ -96,7 +96,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
 
     var entitlementFlow = parseResponse(entitlementFlowResponse, Flow.class);
     assertThat(entitlementFlow).isEqualTo(new Flow()
-      .id(FLOW_ID_2).status(FAILED).type(ENTITLE)
+      .id(FLOW_ID_2).status(FAILED).type(ENTITLE).tenantId(TENANT_ID_2)
       .startedAt(timestampFrom("2023-01-01T13:01:00"))
       .finishedAt(timestampFrom("2023-01-01T13:02:59"))
       .applicationFlows(List.of(applicationFlow3(), applicationFlow4())));

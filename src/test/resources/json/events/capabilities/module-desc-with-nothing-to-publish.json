@@ -1,0 +1,17 @@
+{
+  "id": "foo-module",
+  "name": "Foo Service",
+  "provides": [
+    {
+      "id": "_timer",
+      "version": "0.1",
+      "handlers": [
+        {
+          "methods": [ "GET" ],
+          "pathPattern": "/foo/{id}"
+        }
+      ]
+    }
+  ],
+  "permissionSets": [ ]
+}

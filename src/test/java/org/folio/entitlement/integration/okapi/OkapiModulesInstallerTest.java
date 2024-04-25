@@ -2,7 +2,7 @@ package org.folio.entitlement.integration.okapi;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.ENABLE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor;
+import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.support.TestConstants;
 import org.folio.test.types.UnitTest;

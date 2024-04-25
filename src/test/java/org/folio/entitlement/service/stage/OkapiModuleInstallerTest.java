@@ -2,7 +2,7 @@ package org.folio.entitlement.service.stage;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.DISABLE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.ENABLE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.okapi.OkapiClient;
-import org.folio.entitlement.integration.okapi.OkapiModulesInstaller;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor;
+import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;

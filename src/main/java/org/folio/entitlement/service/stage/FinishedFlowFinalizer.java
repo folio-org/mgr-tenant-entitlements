@@ -4,7 +4,7 @@ import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.entity.FlowEntity;
-import org.folio.entitlement.integration.folio.CommonStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
 import org.folio.entitlement.repository.FlowRepository;
 import org.springframework.stereotype.Component;

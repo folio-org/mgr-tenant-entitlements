@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.entity.ApplicationFlowEntity;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.springframework.stereotype.Component;

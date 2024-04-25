@@ -7,9 +7,12 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.apache.commons.collections4.SetUtils.difference;
+import static org.folio.common.utils.CollectionUtils.reverseList;
+import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,32 +26,30 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 
 public class ModuleInstallationGraph {
 
   private final List<ModuleDescriptor> modules;
   private final Map<String, Integer> moduleIndices;
+  private final EntitlementType entitlementType;
   private final Map<InterfaceReference, List<String>> interfacesByModule;
   private final int[][] adjacencyMatrix;
 
-  public ModuleInstallationGraph(ApplicationDescriptor applicationDescriptor) {
-    this.modules = emptyIfNull(applicationDescriptor.getModuleDescriptors());
+  /**
+   * Creates {@link ModuleInstallationGraph} from application descriptor and {@link EntitlementType}.
+   *
+   * @param applicationDescriptor - application descriptor
+   * @param type - entitlement type
+   */
+  public ModuleInstallationGraph(ApplicationDescriptor applicationDescriptor, EntitlementType type) {
+    this.modules = getAllModuleDescriptors(applicationDescriptor);
+    this.entitlementType = type;
     var counter = new AtomicInteger();
     this.moduleIndices = modules.stream().collect(toMap(ModuleDescriptor::getId, v -> counter.getAndIncrement()));
     this.interfacesByModule = getInterfacesByModule();
     this.adjacencyMatrix = prepareAdjacencyMatrix();
-  }
-
-  private Map<InterfaceReference, List<String>> getInterfacesByModule() {
-    var result = new HashMap<InterfaceReference, List<String>>();
-    for (var moduleDescriptor : modules) {
-      for (var desc : emptyIfNull(moduleDescriptor.getProvides())) {
-        var interfaceReference = InterfaceReference.of(desc.getId(), desc.getVersion());
-        result.computeIfAbsent(interfaceReference, v -> new ArrayList<>()).add(moduleDescriptor.getId());
-      }
-    }
-    return unmodifiableMap(result);
   }
 
   /**
@@ -61,7 +62,7 @@ public class ModuleInstallationGraph {
    *
    * @return list of lists of module identifiers as installation sequence
    */
-  public List<Set<String>> getModuleInstallationSequence() {
+  public List<List<String>> getModuleInstallationSequence() {
     var remainingIndices = new HashSet<Integer>();
     for (var i = 0; i < adjacencyMatrix.length; i++) {
       remainingIndices.add(i);
@@ -81,14 +82,14 @@ public class ModuleInstallationGraph {
     cycleCounter++;
 
     while (isNotEmpty(remainingIndices)) {
-      var currInterationVisitedModuleIndices = new HashSet<Integer>();
+      var currIterationVisitedModuleIndices = new HashSet<Integer>();
       var visitedIndicesMap = new HashMap<Integer, Set<Integer>>();
       for (var remainingIdx : new ArrayList<>(remainingIndices)) {
         var remainingIndexMatrixRow = adjacencyMatrix[remainingIdx];
         var dependentModuleIndices = getDependentModuleIndices(remainingIndexMatrixRow);
         visitedIndicesMap.put(remainingIdx, difference(dependentModuleIndices, visitedModuleIndices));
         if (visitedModuleIndices.containsAll(dependentModuleIndices)) {
-          currInterationVisitedModuleIndices.add(remainingIdx);
+          currIterationVisitedModuleIndices.add(remainingIdx);
           moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(getModuleId(remainingIdx));
           remainingIndices.remove(remainingIdx);
         }
@@ -97,20 +98,52 @@ public class ModuleInstallationGraph {
       var unresolvedDependenciesGraph = new UnresolvedDependenciesGraph(visitedIndicesMap);
       var moduleIdsInCyclicDependency = unresolvedDependenciesGraph.getCyclicDependencies();
       for (var moduleIdx : moduleIdsInCyclicDependency) {
-        currInterationVisitedModuleIndices.add(moduleIdx);
+        currIterationVisitedModuleIndices.add(moduleIdx);
         moduleInstallationSequence.computeIfAbsent(cycleCounter, v -> new HashSet<>()).add(getModuleId(moduleIdx));
         remainingIndices.remove(moduleIdx);
       }
 
-      visitedModuleIndices.addAll(currInterationVisitedModuleIndices);
+      visitedModuleIndices.addAll(currIterationVisitedModuleIndices);
       cycleCounter++;
     }
 
-    return moduleInstallationSequence.entrySet()
+    var installationSequence = finalizeModuleInstallationSequence(moduleInstallationSequence);
+    return entitlementType == REVOKE ? reverseList(installationSequence) : installationSequence;
+  }
+
+  private static List<ModuleDescriptor> getAllModuleDescriptors(ApplicationDescriptor applicationDescriptor) {
+    var resultDescriptors = new ArrayList<ModuleDescriptor>();
+    var moduleDescriptors = applicationDescriptor.getModuleDescriptors();
+    if (CollectionUtils.isNotEmpty(moduleDescriptors)) {
+      resultDescriptors.addAll(moduleDescriptors);
+    }
+
+    var uiModuleDescriptors = applicationDescriptor.getUiModuleDescriptors();
+    if (CollectionUtils.isNotEmpty(uiModuleDescriptors)) {
+      resultDescriptors.addAll(uiModuleDescriptors);
+    }
+
+    return resultDescriptors;
+  }
+
+  private Map<InterfaceReference, List<String>> getInterfacesByModule() {
+    var result = new HashMap<InterfaceReference, List<String>>();
+    for (var moduleDescriptor : modules) {
+      for (var desc : emptyIfNull(moduleDescriptor.getProvides())) {
+        var interfaceReference = InterfaceReference.of(desc.getId(), desc.getVersion());
+        result.computeIfAbsent(interfaceReference, v -> new ArrayList<>()).add(moduleDescriptor.getId());
+      }
+    }
+    return unmodifiableMap(result);
+  }
+
+  private static List<List<String>> finalizeModuleInstallationSequence(Map<Integer, Set<String>> sequenceMap) {
+    return sequenceMap.entrySet()
       .stream()
       .sorted(Comparator.comparingInt(Entry::getKey))
       .map(Entry::getValue)
       .filter(CollectionUtils::isNotEmpty)
+      .map(ModuleInstallationGraph::toOrderedList)
       .toList();
   }
 
@@ -166,6 +199,12 @@ public class ModuleInstallationGraph {
     }
 
     return result;
+  }
+
+  private static List<String> toOrderedList(Set<String> moduleIds) {
+    var moduleIdsList = new ArrayList<>(moduleIds);
+    Collections.sort(moduleIdsList);
+    return moduleIdsList;
   }
 
   @RequiredArgsConstructor

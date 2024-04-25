@@ -8,9 +8,9 @@ import static org.folio.common.utils.Collectors.toLinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.springframework.stereotype.Component;
 

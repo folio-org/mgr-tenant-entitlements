@@ -5,6 +5,14 @@ import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEvents;
 import static org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient.ALL_HTTP_METHODS;
+import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.COMMON_KONG_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.FOLIO_KONG_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.FOLIO_MODULE_INSTALLER_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.OKAPI_KONG_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.entitlementTopic;
@@ -16,7 +24,10 @@ import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
+import static org.folio.entitlement.support.model.AuthorizationResource.authResource;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
+import static org.folio.test.extensions.impl.WireMockExtension.WM_DOCKER_PORT;
+import static org.folio.test.extensions.impl.WireMockExtension.WM_NETWORK_ALIAS;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -36,11 +47,16 @@ import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.entitlement.support.model.AuthorizationResource;
+import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
+import org.folio.tools.kong.client.KongAdminClient;
+import org.folio.tools.kong.model.Route;
+import org.folio.tools.kong.model.Service;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,9 +71,9 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @SqlMergeMode(MERGE)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 @TestPropertySource(properties = {
+  "application.kong.enabled=true",
   "application.keycloak.enabled=true",
   "application.okapi.enabled=false",
-  "application.kong.enabled=false",
   "application.clients.folio.connect-timeout=250ms",
   "application.clients.folio.read-timeout=250ms"
 })
@@ -68,27 +84,41 @@ class FolioEntitlementIT extends BaseIntegrationTest {
   private static final String FOLIO_APP2_ID = "folio-app2-2.0.0";
   private static final String FOLIO_APP3_ID = "folio-app3-3.0.0";
   private static final String FOLIO_APP5_ID = "folio-app5-5.0.0";
-  private static final String FOLIO_MODULE1_ID = "folio-module1-1.0.0";
-  private static final String FOLIO_MODULE3_ID = "folio-module3-3.0.0";
-
   private static final String FOLIO_APP6_V1_ID = "folio-app6-6.0.0";
   private static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
 
+  private static final String FOLIO_MODULE1_ID = "folio-module1-1.0.0";
+  private static final String FOLIO_MODULE2_ID = "folio-module2-2.0.0";
+  private static final String FOLIO_MODULE2_V2_ID = "folio-module2-2.1.0";
+  private static final String FOLIO_MODULE3_ID = "folio-module3-3.0.0";
+  private static final String FOLIO_MODULE4_ID = "folio-module4-4.0.0";
+
+  private static final List<String> MODULES = List.of(
+    FOLIO_MODULE1_ID, FOLIO_MODULE2_ID, FOLIO_MODULE2_V2_ID, FOLIO_MODULE3_ID, FOLIO_MODULE4_ID);
+
+  @Autowired private KongAdminClient kongAdminClient;
   @Autowired private KeycloakTestClient keycloakTestClient;
 
   @BeforeAll
-  static void beforeAll(@Autowired ApplicationContext appContext) {
-    fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
+  static void beforeAll(@Autowired ApplicationContext appContext, @Autowired KongAdminClient kongAdminClient) {
+    checkApplicationContextBeans(appContext);
+    var wiremockUrl = String.format("http://%s:%s", WM_NETWORK_ALIAS, WM_DOCKER_PORT);
+    MODULES.forEach(moduleId -> kongAdminClient.upsertService(moduleId, new Service().name(moduleId).url(wiremockUrl)));
 
-    assertThat(appContext.containsBean("folioModuleInstallerFlowProvider")).isTrue();
-    assertThat(appContext.containsBean("keycloakAuthResourceCreator")).isTrue();
-    assertThat(appContext.containsBean("keycloakAuthResourceCleaner")).isTrue();
-    assertThat(appContext.containsBean("okapiModuleInstaller")).isFalse();
-    assertThat(appContext.containsBean("kongRouteCreator")).isFalse();
-    assertThat(appContext.containsBean("kongRouteCleaner")).isFalse();
-    assertThat(appContext.containsBean("folioKongAdminClient")).isFalse();
-    assertThat(appContext.containsBean("folioKongGatewayService")).isFalse();
-    assertThat(appContext.containsBean("folioKongModuleRegistrar")).isFalse();
+    fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
+  }
+
+  @AfterEach
+  void tearDown() {
+    FakeKafkaConsumer.removeAllEvents();
+    for (var kr : kongAdminClient.getRoutesByTag(TENANT_NAME, null)) {
+      kongAdminClient.deleteRoute(kr.getService().getId(), kr.getId());
+    }
+  }
+
+  @AfterAll
+  static void tearDown(@Autowired KongAdminClient kongAdminClient) {
+    MODULES.forEach(kongAdminClient::deleteService);
   }
 
   @Test
@@ -113,8 +143,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      AuthorizationResource.of("/folio-module1/events", "GET", "POST"),
-      AuthorizationResource.of("/folio-module1/events/{id}", "GET"));
+      authResource("/folio-module1/events", "GET", "POST"), authResource("/folio-module1/events/{id}", "GET"));
   }
 
   @Test
@@ -140,7 +169,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), moduleId, TENANT_NAME, TENANT_ID)));
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      AuthorizationResource.of("/folio-module4/events", "GET"));
+      authResource("/folio-module4/events", "GET"));
   }
 
   @Test
@@ -161,10 +190,10 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     var expectedModuleEntitlements = entitlements(entitlement(FOLIO_APP1_ID));
     assertModuleEntitlements(FOLIO_MODULE1_ID, expectedModuleEntitlements);
 
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      AuthorizationResource.of("/folio-module1/events", "GET", "POST"),
-      AuthorizationResource.of("/folio-module1/events/{id}", "GET"));
+      authResource("/folio-module1/events", "GET", "POST"), authResource("/folio-module1/events/{id}", "GET"));
     assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
   }
 
@@ -283,6 +312,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID),
       new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
 
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
   }
@@ -326,6 +356,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID),
       new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
 
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
   }
@@ -344,6 +375,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     mockMvc.perform(post("/entitlements")
         .queryParam("tenantParameters", "loadReference=true")
         .queryParam("ignoreErrors", "false")
+        .queryParam("purgeOnRollback", "false")
         .contentType(APPLICATION_JSON)
         .header(TOKEN, OKAPI_AUTH_TOKEN)
         .content(asJsonString(entitlementRequest(FOLIO_APP5_ID))))
@@ -363,8 +395,13 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID),
       new EntitlementEvent(REVOKE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
 
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(6);
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
-    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/folio-module1/events", "GET", "POST"),
+      authResource("/folio-module1/events/{id}", "GET"),
+      authResource("/folio-module2/events", "GET", "POST"),
+      authResource("/folio-module2/events/{id}", "GET"));
   }
 
   @Test
@@ -394,12 +431,13 @@ class FolioEntitlementIT extends BaseIntegrationTest {
           + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(6);
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      AuthorizationResource.of("/folio-module1/events", "GET", "POST"),
-      AuthorizationResource.of("/folio-module1/events/{id}", "GET"),
-      AuthorizationResource.of("/folio-module2/events", "GET", "POST"),
-      AuthorizationResource.of("/folio-module2/events/{id}", "GET"));
+      authResource("/folio-module1/events", "GET", "POST"),
+      authResource("/folio-module1/events/{id}", "GET"),
+      authResource("/folio-module2/events", "GET", "POST"),
+      authResource("/folio-module2/events/{id}", "GET"));
     assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
   }
 
@@ -431,12 +469,13 @@ class FolioEntitlementIT extends BaseIntegrationTest {
           + "cause: HTTP/1.1 header parser received no bytes")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(6);
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      AuthorizationResource.of("/folio-module1/events", "GET", "POST"),
-      AuthorizationResource.of("/folio-module1/events/{id}", "GET"),
-      AuthorizationResource.of("/folio-module2/events", "GET", "POST"),
-      AuthorizationResource.of("/folio-module2/events/{id}", "GET"));
+      authResource("/folio-module1/events", "GET", "POST"),
+      authResource("/folio-module1/events/{id}", "GET"),
+      authResource("/folio-module2/events", "GET", "POST"),
+      authResource("/folio-module2/events/{id}", "GET"));
     assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), FOLIO_MODULE1_ID, TENANT_NAME, TENANT_ID)));
   }
 
@@ -458,6 +497,8 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
     assertEntitlementEvents(List.of(new EntitlementEvent(REVOKE.name(), moduleId, TENANT_NAME, TENANT_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP2_ID), emptyEntitlements());
+
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
   }
@@ -489,6 +530,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP1_ID), emptyEntitlements());
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP3_ID), emptyEntitlements());
 
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
   }
@@ -535,22 +577,50 @@ class FolioEntitlementIT extends BaseIntegrationTest {
 
     var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
+
+    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_ID, null)).hasSize(3);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null))
+      .map(Route::getExpression)
+      .containsExactlyInAnyOrder(
+        regexRouteExpression("^/folio-module1/events/([^/]+)$", "GET"),
+        regexRouteExpression("^/folio-module2/events/([^/]+)$", "GET"),
+        exactRouteExpression("/folio-module2/events", "GET"),
+        exactRouteExpression("/folio-module1/events", "POST"),
+        exactRouteExpression("/folio-module2/events", "POST"),
+        exactRouteExpression("/folio-module1/events", "GET"));
+
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      AuthorizationResource.of("/folio-module1/events", "GET", "POST"),
-      AuthorizationResource.of("/folio-module1/events/{id}", "GET"),
-      AuthorizationResource.of("/folio-module2/events", "GET", "POST"),
-      AuthorizationResource.of("/folio-module2/events/{id}", "GET"));
+      authResource("/folio-module1/events", "GET", "POST"),
+      authResource("/folio-module1/events/{id}", "GET"),
+      authResource("/folio-module2/events", "GET", "POST"),
+      authResource("/folio-module2/events/{id}", "GET"));
 
     var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
+    getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
+    getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V1_ID, emptyEntitlements());
+
+    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_ID, null)).isEmpty();
+    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_V2_ID, null)).hasSize(4);
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null))
+      .map(Route::getExpression)
+      .containsExactlyInAnyOrder(
+        regexRouteExpression("^/folio-module1/events/([^/]+)$", "GET"),
+        regexRouteExpression("^/folio-module2/events/([^/]+)$", "GET"),
+        exactRouteExpression("/folio-module2/v2/events", "POST"),
+        exactRouteExpression("/folio-module2/events", "PUT"),
+        exactRouteExpression("/folio-module1/events", "GET"),
+        exactRouteExpression("/folio-module1/events", "POST"),
+        exactRouteExpression("/folio-module2/events", "GET"));
+
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      AuthorizationResource.of("/folio-module1/events", "GET", "POST"),
-      AuthorizationResource.of("/folio-module1/events/{id}", "GET"),
-      AuthorizationResource.of("/folio-module2/events", "GET", "PUT"),
-      AuthorizationResource.of("/folio-module2/events/{id}", "GET"),
-      AuthorizationResource.of("/folio-module2/v2/events", "POST"));
+      authResource("/folio-module1/events", "GET", "POST"),
+      authResource("/folio-module1/events/{id}", "GET"),
+      authResource("/folio-module2/events", "GET", "PUT"),
+      authResource("/folio-module2/events/{id}", "GET"),
+      authResource("/folio-module2/v2/events", "POST"));
   }
 
   @Test
@@ -581,7 +651,33 @@ class FolioEntitlementIT extends BaseIntegrationTest {
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP6_V2_ID), emptyEntitlements());
 
+    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).isEmpty();
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
+  }
+
+  private static void checkApplicationContextBeans(ApplicationContext appContext) {
+    checkExistingBeans(appContext, FOLIO_MODULE_INSTALLER_BEAN_TYPES);
+    checkExistingBeans(appContext, COMMON_KONG_INTEGRATION_BEAN_TYPES);
+    checkExistingBeans(appContext, COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES);
+    checkExistingBeans(appContext, FOLIO_KONG_INTEGRATION_BEAN_TYPES);
+    checkExistingBeans(appContext, FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES);
+
+    checkMissingBeans(appContext, OKAPI_KONG_INTEGRATION_BEAN_TYPES);
+    checkMissingBeans(appContext, OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES);
+    checkMissingBeans(appContext, OKAPI_MODULE_INSTALLER_BEAN_TYPES);
+  }
+
+  private static String exactRouteExpression(String path, String method) {
+    return "(http.path == \"" + path + "\""
+      + " && http.method == \"" + method + "\""
+      + " && http.headers.x_okapi_tenant == \"test\")";
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  private static String regexRouteExpression(String expression, String method) {
+    return "(http.path ~ \"" + expression + "\""
+      + " && http.method == \"" + method + "\""
+      + " && http.headers.x_okapi_tenant == \"test\")";
   }
 }

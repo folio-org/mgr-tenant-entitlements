@@ -2,7 +2,7 @@ package org.folio.entitlement.service.stage;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

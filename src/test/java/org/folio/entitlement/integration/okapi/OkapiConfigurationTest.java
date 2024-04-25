@@ -7,6 +7,8 @@ import static org.mockito.Mockito.when;
 import feign.Contract;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
+import org.folio.entitlement.integration.okapi.configuration.OkapiConfiguration;
+import org.folio.entitlement.integration.okapi.configuration.OkapiConfigurationProperties;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;

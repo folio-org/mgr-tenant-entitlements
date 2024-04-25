@@ -12,7 +12,16 @@ import static org.folio.entitlement.support.KafkaEventAssertions.assertCapabilit
 import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertScheduledJobEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertSystemUserEvents;
+import static org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient.ALL_HTTP_METHODS;
+import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.COMMON_KONG_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.FOLIO_KONG_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.FOLIO_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.IGNORE_ERRORS;
+import static org.folio.entitlement.support.TestConstants.OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.OKAPI_KONG_INTEGRATION_BEAN_TYPES;
+import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.PURGE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
@@ -33,6 +42,7 @@ import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
+import static org.folio.entitlement.support.model.AuthorizationResource.authResource;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.folio.test.extensions.impl.WireMockExtension.WM_DOCKER_PORT;
 import static org.folio.test.extensions.impl.WireMockExtension.WM_NETWORK_ALIAS;
@@ -67,8 +77,13 @@ import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
+import org.folio.entitlement.support.KeycloakTestClientConfiguration;
+import org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
+import org.folio.test.FakeKafkaConsumer;
+import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.EnableOkapiSecurity;
+import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient;
@@ -82,13 +97,22 @@ import org.mockito.invocation.InvocationOnMock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
 
 @IntegrationTest
 @EnableOkapiSecurity
 @SqlMergeMode(MERGE)
-@WireMockStub("/wiremock/mod-authtoken/verify-token-any.json")
+@EnableKeycloakTlsMode
+@TestPropertySource(properties = {
+  "application.okapi.enabled=true",
+  "application.kong.enabled=true",
+  "application.keycloak.enabled=true",
+  "application.security.enabled=false",
+})
+@Import(KeycloakTestClientConfiguration.class)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "/sql/truncate-tables.sql")
 class OkapiEntitlementIT extends BaseIntegrationTest {
 
@@ -102,19 +126,12 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   private static final String OKAPI_MODULE_5_ID = "okapi-module5-5.0.0";
   private static final String INVALID_ROUTE_HASH = "4737040f862ad8b9cad357726503dae4952836e7";
 
+  @Autowired private KeycloakTestClient keycloakTestClient;
   @SpyBean private KongAdminClient kongAdminClient;
 
   @BeforeAll
   static void beforeAll(@Autowired KongAdminClient kongAdminClient, @Autowired ApplicationContext appContext) {
-    assertThat(appContext.containsBean("folioModuleInstallerFlowProvider")).isFalse();
-    assertThat(appContext.containsBean("keycloakAuthResourceCreator")).isFalse();
-    assertThat(appContext.containsBean("keycloakAuthResourceCleaner")).isFalse();
-    assertThat(appContext.containsBean("okapiModuleInstaller")).isTrue();
-    assertThat(appContext.containsBean("kongRouteCreator")).isTrue();
-    assertThat(appContext.containsBean("kongRouteCleaner")).isTrue();
-    assertThat(appContext.containsBean("folioKongAdminClient")).isTrue();
-    assertThat(appContext.containsBean("folioKongGatewayService")).isTrue();
-    assertThat(appContext.containsBean("folioKongModuleRegistrar")).isFalse();
+    checkApplicationContextBeans(appContext);
 
     var wiremockUrl = String.format("http://%s:%s", WM_NETWORK_ALIAS, WM_DOCKER_PORT);
     kongAdminClient.upsertService(OKAPI_MODULE_ID, new Service().name(OKAPI_MODULE_ID).url(wiremockUrl));
@@ -131,6 +148,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   @AfterEach
   void tearDown() {
     Mockito.reset(kongAdminClient);
+    FakeKafkaConsumer.removeAllEvents();
     for (var kr : kongAdminClient.getRoutesByTag(TENANT_NAME, null)) {
       kongAdminClient.deleteRoute(kr.getService().getId(), kr.getId());
     }
@@ -143,6 +161,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @Sql(scripts = "classpath:/sql/okapi-app-installed.sql")
   void get_positive() throws Exception {
     var expectedEntitlements =
@@ -160,8 +179,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/okapi-app5/get-by-ids-query-full.json",
@@ -177,6 +196,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     entitleApplications(entitlementRequest(OKAPI_APP_ID), emptyMap(), extendedEntitlements(entitlement(OKAPI_APP_ID)));
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement1));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
+    assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
 
     // entitle dependent application
     var request = entitlementRequest(OKAPI_APP_5_ID);
@@ -184,6 +206,10 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var entitlement2 = entitlementWithModules(TENANT_ID, OKAPI_APP_5_ID, List.of(OKAPI_MODULE_5_ID));
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_5_ID), entitlements(entitlement2));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/okapi-module/entities", "GET"),
+      authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module5/entities", "GET"));
 
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     assertEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
@@ -191,14 +217,15 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertEntitlementEvents(List.of(
       new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
       new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
+
     assertCapabilityEvents(
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"),
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-2.json"));
   }
 
   @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app15/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
@@ -218,18 +245,19 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/okapi-module/entities", "GET"),
+      authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module5/entities", "GET"));
 
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID),
-      new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
     assertCapabilityEvents(
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"),
       readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-2.json"));
   }
 
   @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
@@ -253,6 +281,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement));
     assertEntitlementEvents(List.of(new EntitlementEvent(ENTITLE.name(), "okapi-module-1.0.0", "test", TENANT_ID)));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
+
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
     assertScheduledJobEvents(readScheduledJobEvent("json/events/okapi-it/scheduled-job-event.json"));
     assertSystemUserEvents(readSystemUserEvent("json/events/okapi-it/system-user-event.json"));
@@ -260,8 +291,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
   @Test
   @Sql("/sql/okapi-app-installed.sql")
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-uninstall.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/okapi/_proxy/uninstall-okapi-module.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
@@ -273,16 +304,16 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var entitlementRequest = entitlementRequest(OKAPI_APP_ID);
     var expectedEntitlements = extendedEntitlements(entitlement(OKAPI_APP_ID));
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
-    assertEntitlementEvents(List.of(
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID)));
+    assertEntitlementEvents(List.of(new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_ID, TENANT_NAME, TENANT_ID)));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
   @Test
   @Sql("/sql/okapi-app3-installed.sql")
+  @KeycloakRealms("/keycloak/another-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-uninstall.json",
     "/wiremock/mgr-tenants/another/get.json",
     "/wiremock/okapi/_proxy/uninstall-okapi-module4.json",
     "/wiremock/okapi/_proxy/uninstall-okapi-module3.json",
@@ -302,9 +333,10 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
     assertEntitlementEvents(List.of(
       new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_3_ID, tenantName, tenantId),
-      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_4_ID, tenantName, tenantId)
-    ));
+      new EntitlementEvent(REVOKE.name(), OKAPI_MODULE_4_ID, tenantName, tenantId)));
+
     assertThat(kongAdminClient.getRoutesByTag(tenantName, null)).isEmpty();
+    assertThat(keycloakTestClient.getAuthorizationResources(tenantName)).isEmpty();
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_3_ID, OKAPI_APP_4_ID);
     assertEntitlementsWithModules(entitlementQuery, emptyEntitlements());
@@ -312,9 +344,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
   @Test
   @Sql("/sql/okapi-app-revoked.sql")
-  @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-uninstall.json",
-    "/wiremock/mgr-tenants/test/get.json"})
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub("/wiremock/mgr-tenants/test/get.json")
   void uninstall_negative_revokedApplication() throws Exception {
     mockMvc.perform(delete("/entitlements")
         .queryParam("purge", "true")
@@ -335,9 +366,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-install.json",
-    "/wiremock/mod-authtoken/verify-token-uninstall.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/okapi/_proxy/install-okapi-module.json",
     "/wiremock/okapi/_proxy/install-okapi-module5.json",
@@ -357,17 +387,25 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     entitleApplications(entitlementRequest(OKAPI_APP_ID), queryParams, expectedExtendedEntitlements);
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
 
     // entitle application
     var entitlementRequest = entitlementRequest(OKAPI_APP_5_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/okapi-module/entities", "GET"),
+      authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module5/entities", "GET"));
 
     // revoke entitlement for test application
     var revokeParams = Map.of("purge", "true");
     revokeEntitlements(entitlementRequest, revokeParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_5_ID), emptyEntitlements());
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
 
     // entitle test application again
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
@@ -379,10 +417,14 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       new EntitlementEvent(ENTITLE.name(), OKAPI_MODULE_5_ID, TENANT_NAME, TENANT_ID)));
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/okapi-module/entities", "GET"),
+      authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module5/entities", "GET"));
   }
 
   @Test
-  @WireMockStub("/wiremock/mod-authtoken/verify-token-install.json")
+  @KeycloakRealms("/keycloak/test-realm.json")
   void install_negative_invalidTenantId() throws Exception {
     var entitlementRequest = Map.of("tenantId", "invalid", "applications", List.of(OKAPI_APP_ID));
 
@@ -403,7 +445,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @WireMockStub("/wiremock/mod-authtoken/verify-token-install.json")
   void install_negative_emptyApplications() throws Exception {
     var entitlementRequest = new EntitlementRequestBody().tenantId(TENANT_ID);
 
@@ -422,7 +463,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @WireMockStub("/wiremock/mod-authtoken/verify-token-install.json")
   void install_negative_applicationsNotArray() throws Exception {
     var entitlementRequest = Map.of("tenantId", TENANT_ID, "applications", OKAPI_APP_ID);
 
@@ -442,7 +482,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @WireMockStub("/wiremock/mod-authtoken/verify-token-install.json")
   void install_negative_applicationsMissing() throws Exception {
     mockMvc.perform(post("/entitlements")
         .queryParam("tenantParameters", TENANT_PARAMETERS)
@@ -460,7 +499,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   @Test
   @Sql("/sql/okapi-app3-installed.sql")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-uninstall.json",
     "/wiremock/mgr-tenants/another/get.json",
     "/wiremock/mgr-applications/okapi-app4/get-by-ids-query-full.json"
   })
@@ -488,13 +526,12 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[0].value", is(
         "FAILED: [IllegalStateException] The following applications must be uninstalled first: [okapi-app3-3.0.0]")));
 
-    getEntitlementsByQuery(
-      queryByTenantAndAppId(tenantId, applicationId), entitlements(expectedEntitlement));
+    getEntitlementsByQuery(queryByTenantAndAppId(tenantId, applicationId), entitlements(expectedEntitlement));
   }
 
   @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
@@ -504,6 +541,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   void install_negative() throws Exception {
     mockMvc.perform(post("/entitlements")
         .queryParam("ignoreErrors", "false")
+        .queryParam("purgeOnRollback", "true")
         .contentType(APPLICATION_JSON)
         .header(TOKEN, OKAPI_AUTH_TOKEN)
         .content(asJsonString(entitlementRequest(OKAPI_APP_ID))))
@@ -518,12 +556,13 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
   @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
@@ -535,6 +574,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
     mockMvc.perform(post("/entitlements")
         .queryParam("ignoreErrors", "false")
+        .queryParam("purgeOnRollback", "true")
         .contentType(APPLICATION_JSON)
         .header(TOKEN, OKAPI_AUTH_TOKEN)
         .content(asJsonString(entitlementRequest(OKAPI_APP_ID))))
@@ -549,12 +589,13 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         "CANCELLATION_FAILED: [KongIntegrationException] Failed to remove routes, parameters:")));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(2);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
   @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
@@ -578,13 +619,15 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
   @Test
   @Sql("/sql/okapi-app-installed.sql")
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-uninstall.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery.json",
@@ -606,11 +649,11 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
   }
 
   @Test
-  @WireMockStub("/wiremock/mod-authtoken/verify-token-uninstall.json")
   void uninstall_negative_emptyApplications() throws Exception {
     var entitlementRequest = new EntitlementRequestBody().tenantId(TENANT_ID);
     mockMvc.perform(delete("/entitlements")
@@ -641,42 +684,14 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @WireMockStub("/wiremock/mod-authtoken/verify-token-install-not-authorized.json")
-  void install_negative_unauthorized() throws Exception {
-    var entitlementRequest = new EntitlementRequestBody().tenantId(TENANT_ID);
-
-    mockMvc.perform(post("/entitlements")
-        .queryParam("tenantParameters", TENANT_PARAMETERS)
-        .queryParam("ignoreErrors", "true")
-        .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
-        .content(asJsonString(entitlementRequest)))
-      .andExpect(status().isUnauthorized());
-  }
-
-  @Test
-  @WireMockStub("/wiremock/mod-authtoken/verify-token-install-permission-denied.json")
-  void install_negative_forbidden() throws Exception {
-    var entitlementRequest = new EntitlementRequestBody().tenantId(TENANT_ID);
-
-    mockMvc.perform(post("/entitlements")
-        .queryParam("tenantParameters", TENANT_PARAMETERS)
-        .queryParam("ignoreErrors", String.valueOf(IGNORE_ERRORS))
-        .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
-        .content(asJsonString(entitlementRequest)))
-      .andExpect(status().isForbidden());
-  }
-
-  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
-    "/wiremock/mod-authtoken/verify-token-install.json",
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/okapi-app15/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/okapi-app/get-discovery-not-found.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json"
   })
-  void install_negative_dependentApplicationsInSingleCall_queuedAppFlowsRemoved() throws Exception {
+  void install_negative_dependentApplicationsInSingleCallAndQueuedAppFlowsRemoved() throws Exception {
     mockMvc.perform(post("/entitlements")
         .queryParam("ignoreErrors", "false")
         .contentType(APPLICATION_JSON)
@@ -694,6 +709,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     assertEntitlementsWithModules(entitlementQuery, emptyEntitlements());
+    assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
 
     var mvcResult = mockMvc.perform(get("/application-flows")
         .contentType(APPLICATION_JSON)
@@ -715,5 +731,17 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var url = String.format("/services/%s/routes/%s", serviceId, routeId);
     var request = Request.create(HttpMethod.PUT, url, emptyMap(), null, UTF_8, null);
     throw new BadGateway("502 Bad Gateway", request, null, emptyMap());
+  }
+
+  private static void checkApplicationContextBeans(ApplicationContext appContext) {
+    checkExistingBeans(appContext, OKAPI_MODULE_INSTALLER_BEAN_TYPES);
+    checkExistingBeans(appContext, COMMON_KONG_INTEGRATION_BEAN_TYPES);
+    checkExistingBeans(appContext, OKAPI_KONG_INTEGRATION_BEAN_TYPES);
+    checkExistingBeans(appContext, COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES);
+    checkExistingBeans(appContext, OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES);
+
+    checkMissingBeans(appContext, FOLIO_KONG_INTEGRATION_BEAN_TYPES);
+    checkMissingBeans(appContext, FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES);
+    checkMissingBeans(appContext, FOLIO_MODULE_INSTALLER_BEAN_TYPES);
   }
 }

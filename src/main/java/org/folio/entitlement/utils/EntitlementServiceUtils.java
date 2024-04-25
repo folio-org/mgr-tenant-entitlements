@@ -3,12 +3,15 @@ package org.folio.entitlement.utils;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.stream.Collectors.joining;
 import static org.folio.common.utils.CollectionUtils.toStream;
+import static org.folio.common.utils.Collectors.toLinkedHashMap;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -17,6 +20,7 @@ import org.apache.commons.collections4.IterableUtils;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
+import org.folio.entitlement.integration.am.model.Module;
 import org.folio.tools.kong.exception.KongIntegrationException;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -24,6 +28,28 @@ public class EntitlementServiceUtils {
 
   public static String getErrorMessage(Exception exception) {
     return buildErrorMessageForParameters(exception, getErrors(exception), exception.getCause());
+  }
+
+  /**
+   * Creates a {@link HashMap} from given iterable using key and value mappers.
+   *
+   * @param it - iterable object to process
+   * @param keyMapper - a mapping function to produce keys
+   * @param <T> - generic type for iterable element
+   * @param <K> - generic type for {@link HashMap} key
+   * @return - created {@link HashMap} object
+   */
+  public static <T, K> Map<K, T> toHashMap(Iterable<T> it, Function<T, K> keyMapper) {
+    if (IterableUtils.isEmpty(it)) {
+      return emptyMap();
+    }
+
+    var resultMap = new HashMap<K, T>();
+    for (var value : it) {
+      resultMap.put(keyMapper.apply(value), value);
+    }
+
+    return resultMap;
   }
 
   /**
@@ -48,6 +74,33 @@ public class EntitlementServiceUtils {
     }
 
     return resultMap;
+  }
+
+  /**
+   * Creates a {@link HashMap} from given iterable using key and value mappers.
+   *
+   * @param it - iterable object to process
+   * @param keyMapper - a mapping function to produce keys
+   * @param <T> - generic type for iterable element
+   * @param <K> - generic type for {@link HashMap} key
+   * @return - created {@link HashMap} object
+   */
+  public static <T, K> Map<K, T> toUnmodifiableMap(Iterable<T> it, Function<T, K> keyMapper) {
+    if (IterableUtils.isEmpty(it)) {
+      return emptyMap();
+    }
+
+    var resultMap = new HashMap<K, T>();
+    for (var value : it) {
+      var key = Objects.requireNonNull(keyMapper.apply(value));
+      resultMap.put(key, Objects.requireNonNull(value));
+    }
+
+    return unmodifiableMap(resultMap);
+  }
+
+  public static Map<String, Module> groupModulesByNames(List<Module> modules) {
+    return toStream(modules).collect(toLinkedHashMap(Module::getName));
   }
 
   private static List<Parameter> getErrors(Throwable throwable) {

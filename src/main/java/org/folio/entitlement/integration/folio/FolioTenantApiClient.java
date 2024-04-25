@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
+import org.folio.entitlement.integration.folio.configuration.FolioClientConfigurationProperties;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
 import org.folio.entitlement.integration.folio.model.TenantAttributes;
 import org.folio.entitlement.utils.JsonConverter;
@@ -35,7 +36,7 @@ public class FolioTenantApiClient {
 
   private final HttpClient httpClient;
   private final JsonConverter jsonConverter;
-  private final FolioClientConfiguration clientConfiguration;
+  private final FolioClientConfigurationProperties clientConfiguration;
 
   /**
    * Sends a tenant installation request for module using provided module location.

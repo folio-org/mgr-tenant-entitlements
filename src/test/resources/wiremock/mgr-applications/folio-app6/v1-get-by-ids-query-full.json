@@ -43,7 +43,7 @@
               "provides": [
                 {
                   "id": "folio-module1-api",
-                  "version": "1.0.0",
+                  "version": "1.0",
                   "handlers": [
                     {
                       "methods": [ "POST" ],
@@ -102,13 +102,13 @@
               "requires": [
                 {
                   "id": "folio-module1-api",
-                  "version": "1.0.0"
+                  "version": "1.0"
                 }
               ],
               "provides": [
                 {
                   "id": "folio-module2-api",
-                  "version": "1.0.0",
+                  "version": "1.0",
                   "handlers": [
                     {
                       "methods": [ "POST" ],

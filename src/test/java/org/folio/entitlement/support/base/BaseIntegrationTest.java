@@ -14,7 +14,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.Map;
+import junit.framework.AssertionFailedError;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.Entitlements;
@@ -30,9 +32,11 @@ import org.folio.test.extensions.impl.KafkaTestExecutionListener;
 import org.folio.test.extensions.impl.WireMockAdminClient;
 import org.folio.test.extensions.impl.WireMockExecutionListener;
 import org.junit.jupiter.api.BeforeAll;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -156,6 +160,31 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
         .queryParam("includeModules", "true"))
       .andExpect(status().isOk())
       .andExpect(content().json(asJsonString(expected), true));
+  }
+
+  protected static void checkExistingBean(ApplicationContext appContext, Class<?> beanClass) {
+    try {
+      appContext.getBean(beanClass);
+    } catch (NoSuchBeanDefinitionException e) {
+      throw new AssertionFailedError("No Bean of type " + beanClass.getName() + " found");
+    }
+  }
+
+  protected static void checkExistingBeans(ApplicationContext appContext, List<Class<?>> beanClasses) {
+    beanClasses.forEach(beanClass -> checkExistingBean(appContext, beanClass));
+  }
+
+  protected static void checkMissingBean(ApplicationContext appContext, Class<?> beanClass) {
+    try {
+      appContext.getBean(beanClass);
+      throw new AssertionFailedError("Bean of type " + beanClass.getName() + " found");
+    } catch (NoSuchBeanDefinitionException e) {
+      // nothing to do, bean should be missing
+    }
+  }
+
+  protected static void checkMissingBeans(ApplicationContext appContext, List<Class<?>> beanClasses) {
+    beanClasses.forEach(beanClass -> checkMissingBean(appContext, beanClass));
   }
 
   protected static ResultHandler logResponseBody() {

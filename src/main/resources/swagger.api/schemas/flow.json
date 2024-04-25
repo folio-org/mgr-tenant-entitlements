@@ -18,6 +18,11 @@
       "description": "Flow entitlement type",
       "$ref": "types/entitlementType.json"
     },
+    "tenantId": {
+      "description": "A tenant identifier",
+      "type": "string",
+      "format": "uuid"
+    },
     "startedAt": {
       "description": "A control flow start timestamp",
       "type": "string",

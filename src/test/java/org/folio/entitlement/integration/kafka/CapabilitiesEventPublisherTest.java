@@ -3,7 +3,7 @@ package org.folio.entitlement.integration.kafka;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
@@ -28,6 +28,7 @@ import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -44,10 +44,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CapabilitiesEventPublisherTest {
 
-  @InjectMocks private CapabilitiesEventPublisher capabilitiesEventPublisher;
-  @Mock private KafkaEventPublisher kafkaTemplate;
+  private CapabilitiesEventPublisher capabilitiesEventPublisher;
+  @Mock private KafkaEventPublisher kafkaEventPublisher;
   @Captor private ArgumentCaptor<ResourceEvent<CapabilityEventBody>> eventCaptor;
   @Captor private ArgumentCaptor<String> moduleIdCaptor;
+
+  @BeforeEach
+  void setUp() {
+    var capabilitiesModuleEventPublisher = new CapabilitiesModuleEventPublisher(kafkaEventPublisher);
+    this.capabilitiesEventPublisher = new CapabilitiesEventPublisher(capabilitiesModuleEventPublisher);
+  }
 
   @AfterEach
   void tearDown() {
@@ -65,7 +71,7 @@ class CapabilitiesEventPublisherTest {
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
     var topicName = capabilitiesTenantTopic();
-    doNothing().when(kafkaTemplate).send(eq(topicName), moduleIdCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(topicName), moduleIdCaptor.capture(), eventCaptor.capture());
 
     capabilitiesEventPublisher.execute(stageContext);
 
@@ -88,7 +94,7 @@ class CapabilitiesEventPublisherTest {
 
     capabilitiesEventPublisher.execute(stageContext);
 
-    verifyNoInteractions(kafkaTemplate);
+    verifyNoInteractions(kafkaEventPublisher);
   }
 
   private static Stream<Arguments> executeDatasetProvider() {

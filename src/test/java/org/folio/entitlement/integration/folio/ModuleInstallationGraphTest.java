@@ -3,10 +3,11 @@ package org.folio.entitlement.integration.folio;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.common.utils.CollectionUtils.mapItems;
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.InterfaceReference;
@@ -14,6 +15,7 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -25,10 +27,19 @@ class ModuleInstallationGraphTest {
   @ParameterizedTest(name = "[{index}] {0}")
   @DisplayName("getModuleInstallationSequence_parameterized")
   void getModuleInstallationSequence_parameterized(@SuppressWarnings("unused") String testName,
-    ApplicationDescriptor descriptor, List<Set<String>> expected) {
-    var moduleInstallationGraph = new ModuleInstallationGraph(descriptor);
+    ApplicationDescriptor descriptor, List<List<String>> expected) {
+    var moduleInstallationGraph = new ModuleInstallationGraph(descriptor, ENTITLE);
     var result = moduleInstallationGraph.getModuleInstallationSequence();
     assertThat(result).isEqualTo(expected);
+  }
+
+  @Test
+  void getModuleInstallationSequence_revokeRequest() {
+    var applicationDescriptor = appDescriptor(
+      module("m1", List.of("m1-int")), module("m2", List.of("m2-int"), List.of("m1-int")));
+    var moduleInstallationGraph = new ModuleInstallationGraph(applicationDescriptor, REVOKE);
+    var result = moduleInstallationGraph.getModuleInstallationSequence();
+    assertThat(result).isEqualTo(List.of(List.of("m2"), List.of("m1")));
   }
 
   private static Stream<Arguments> applicationDescriptorDataProvider() {
@@ -37,33 +48,33 @@ class ModuleInstallationGraphTest {
 
       arguments("Independent modules (count=1)",
         appDescriptor(module("m1", List.of("m1-i1", "m1-i2"))),
-        List.of(Set.of("m1"))),
+        List.of(List.of("m1"))),
 
       arguments("Independent modules (count=3)",
         appDescriptor(
           module("m1", List.of("m1-int1", "m1-int2")),
           module("m2", List.of("m2-int")),
           module("m3", List.of("m3-int", "m3-int2", "m3-int3"))),
-        List.of(Set.of("m1", "m2", "m3"))),
+        List.of(List.of("m1", "m2", "m3"))),
 
       arguments("Independent modules [unknown interface]",
         appDescriptor(
           module("m1", List.of("m1-int")),
           module("m2", List.of("m2-int"), List.of("unknown"))),
-        List.of(Set.of("m1", "m2"))),
+        List.of(List.of("m1", "m2"))),
 
       arguments("Dependent modules (m1 <- m2)",
         appDescriptor(
           module("m1", List.of("m1-int")),
           module("m2", List.of("m2-int"), List.of("m1-int"))),
-        List.of(Set.of("m1"), Set.of("m2"))),
+        List.of(List.of("m1"), List.of("m2"))),
 
       arguments("Dependent modules (m2 <- m1 <- m3)",
         appDescriptor(
           module("m1", List.of("m1-int"), List.of("m2-int")),
           module("m2", List.of("m2-int")),
           module("m3", List.of("m3-int"), List.of("m1-int"))),
-        List.of(Set.of("m2"), Set.of("m1"), Set.of("m3"))),
+        List.of(List.of("m2"), List.of("m1"), List.of("m3"))),
 
       arguments("Dependent modules (m2 <- (m1, m3) <- m4)",
         appDescriptor(
@@ -71,7 +82,7 @@ class ModuleInstallationGraphTest {
           module("m2", List.of("m2-int")),
           module("m3", List.of("m3-int"), List.of("m2-int")),
           module("m4", List.of("m4-int"), List.of("m3-int"))),
-        List.of(Set.of("m2"), Set.of("m1", "m3"), Set.of("m4"))),
+        List.of(List.of("m2"), List.of("m1", "m3"), List.of("m4"))),
 
       arguments("Dependent modules (m2 <- (m1, m3) <- m4(depends on m3 and m2))",
         appDescriptor(
@@ -79,7 +90,7 @@ class ModuleInstallationGraphTest {
           module("m2", List.of("m2-int")),
           module("m3", List.of("m3-int"), List.of("m2-int")),
           module("m4", List.of("m4-int"), List.of("m2-int", "m3-int"))),
-        List.of(Set.of("m2"), Set.of("m1", "m3"), Set.of("m4"))),
+        List.of(List.of("m2"), List.of("m1", "m3"), List.of("m4"))),
 
       arguments("Dependent modules (m1 <- m4, m2 <- m3)",
         appDescriptor(
@@ -87,40 +98,40 @@ class ModuleInstallationGraphTest {
           module("m2", List.of("m2-int")),
           module("m3", List.of("m3-int"), List.of("m2-int")),
           module("m4", List.of("m4-int"), List.of("m1-int"))),
-        List.of(Set.of("m1", "m2"), Set.of("m3", "m4"))),
+        List.of(List.of("m1", "m2"), List.of("m3", "m4"))),
 
       arguments("Dependent modules ((m1, m2) <- m3)",
         appDescriptor(
           module("m1", List.of("m1-int")),
           module("m2", List.of("m2-int")),
           module("m3", List.of("m3-int"), List.of("m1-int", "m2-int"))),
-        List.of(Set.of("m1", "m2"), Set.of("m3"))),
+        List.of(List.of("m1", "m2"), List.of("m3"))),
 
       arguments("Dependent modules[self-reference] (m1 <- m2 <- m2)",
         appDescriptor(
           module("m1", List.of("m1-int")),
           module("m2", List.of("m2-int"), List.of("m2-int"))),
-        List.of(Set.of("m1", "m2"))),
+        List.of(List.of("m1", "m2"))),
 
       arguments("Circular dependency [m1 <-> m2]",
         appDescriptor(
           module("m1", List.of("m1-int"), List.of("m2-int")),
           module("m2", List.of("m2-int"), List.of("m1-int"))),
-        List.of(Set.of("m1", "m2"))),
+        List.of(List.of("m1", "m2"))),
 
       arguments("Circular dependency [3 modules]",
         appDescriptor(
           module("m1", List.of("m1-int"), List.of("m2-int")),
           module("m2", List.of("m2-int"), List.of("m3-int")),
           module("m3", List.of("m3-int"), List.of("m1-int"))),
-        List.of(Set.of("m1", "m2", "m3"))),
+        List.of(List.of("m1", "m2", "m3"))),
 
       arguments("Circular dependency [m1 <- m2 <-> m3]",
         appDescriptor(
           module("m1", List.of("m1-int")),
           module("m2", List.of("m2-int"), List.of("m1-int", "m3-int")),
           module("m3", List.of("m3-int"), List.of("m2-int"))),
-        List.of(Set.of("m1"), Set.of("m2", "m3"))),
+        List.of(List.of("m1"), List.of("m2", "m3"))),
 
       arguments("Circular dependency [m1 <- m2 <-> m3 <- m4]",
         appDescriptor(
@@ -128,7 +139,7 @@ class ModuleInstallationGraphTest {
           module("m2", List.of("m2-api"), List.of("m1-api", "m3-api")),
           module("m3", List.of("m3-api"), List.of("m2-api")),
           module("m4", List.of("m4-api"), List.of("m3-api"))),
-        List.of(Set.of("m1"), Set.of("m2", "m3"), Set.of("m4"))),
+        List.of(List.of("m1"), List.of("m2", "m3"), List.of("m4"))),
 
       arguments("Circular dependency [m1 <- (m2, m3), m4 <- m5]",
         appDescriptor(
@@ -137,7 +148,7 @@ class ModuleInstallationGraphTest {
           module("m3", List.of("m3-api"), List.of("m2-api")),
           module("m4", List.of("m4-api"), List.of("m1-api")),
           module("m5", List.of("m5-api"), List.of("m3-api"))),
-        List.of(Set.of("m1"), Set.of("m2", "m3", "m4"), Set.of("m5"))),
+        List.of(List.of("m1"), List.of("m2", "m3", "m4"), List.of("m5"))),
 
       arguments("Two circular dependencies [m1 <- (m2 <-> m3, m4 <-> m5) <- m6]",
         appDescriptor(
@@ -147,7 +158,7 @@ class ModuleInstallationGraphTest {
           module("m4", List.of("m4-api"), List.of("m1-api", "m5-api")),
           module("m5", List.of("m5-api"), List.of("m4-api")),
           module("m6", List.of("m6-api"), List.of("m5-api"))),
-        List.of(Set.of("m1"), Set.of("m2", "m3", "m4", "m5"), Set.of("m6"))),
+        List.of(List.of("m1"), List.of("m2", "m3", "m4", "m5"), List.of("m6"))),
 
       arguments("Two circular dependencies [m1 <- m2 <-> m3 <- m4 <-> m5 <- m6]",
         appDescriptor(
@@ -157,7 +168,7 @@ class ModuleInstallationGraphTest {
           module("m4", List.of("m4-api"), List.of("m3-api", "m5-api")),
           module("m5", List.of("m5-api"), List.of("m4-api")),
           module("m6", List.of("m6-api"), List.of("m5-api"))),
-        List.of(Set.of("m1"), Set.of("m2", "m3"), Set.of("m4", "m5"), Set.of("m6"))),
+        List.of(List.of("m1"), List.of("m2", "m3"), List.of("m4", "m5"), List.of("m6"))),
 
       arguments("Two circular dependencies [m1 <- (m2, m3, m4) <-> (m2, m5, m6) <- m7]",
         appDescriptor(
@@ -168,7 +179,7 @@ class ModuleInstallationGraphTest {
           module("m5", List.of("m5-api"), List.of("m6-api")),
           module("m6", List.of("m6-api"), List.of("m2-api")),
           module("m7", List.of("m7-api"), List.of("m2-api"))),
-        List.of(Set.of("m1"), Set.of("m2", "m3", "m4", "m5", "m6"), Set.of("m7"))),
+        List.of(List.of("m1"), List.of("m2", "m3", "m4", "m5", "m6"), List.of("m7"))),
 
       arguments("Two circular dependencies [m1 <- (m2, m3, m4) <- (m2, m5) -> (m5, m6, m7) <- m8]",
         appDescriptor(
@@ -180,9 +191,9 @@ class ModuleInstallationGraphTest {
           module("m6", List.of("m6-api"), List.of("m7-api")),
           module("m7", List.of("m7-api"), List.of("m5-api")),
           module("m8", List.of("m8-api"), List.of("m5-api"))),
-        List.of(Set.of("m1"), Set.of("m2", "m3", "m4", "m5", "m6", "m7"), Set.of("m8"))),
+        List.of(List.of("m1"), List.of("m2", "m3", "m4", "m5", "m6", "m7"), List.of("m8"))),
 
-      arguments("Dependent modules[null provides]", appDescriptor(module("m1", null)), List.of(Set.of("m1")))
+      arguments("Dependent modules[null provides]", appDescriptor(module("m1", null)), List.of(List.of("m1")))
     );
   }
 

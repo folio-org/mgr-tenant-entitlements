@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
@@ -31,7 +31,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -42,12 +41,14 @@ class SystemUserEventPublisherTest {
   private static final String MODULE_FOO_ID = "mod-foo-1.2.3";
   private static final String MODULE_BAR_ID = "mod-bar-1.0.0";
 
-  @InjectMocks private SystemUserEventPublisher publisher;
+  private SystemUserEventPublisher publisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
 
   @BeforeEach
   void setUp() {
     System.setProperty("env", "test-env");
+    var moduleEventPublisher = new SystemUserModuleEventPublisher(kafkaEventPublisher);
+    this.publisher = new SystemUserEventPublisher(moduleEventPublisher);
   }
 
   @AfterEach

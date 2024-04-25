@@ -1,14 +1,12 @@
 package org.folio.entitlement.integration.keycloak;
 
-import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.common.utils.Collectors.toLinkedHashMap;
-import static org.folio.entitlement.utils.SemverUtils.getName;
+import static java.util.Optional.ofNullable;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.groupModulesByNames;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.toHashMap;
 
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.ModuleDescriptor;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.keycloak.admin.client.Keycloak;
 
@@ -21,29 +19,32 @@ public class KeycloakAuthResourceUpdater extends DatabaseLoggingStage<Applicatio
   @Override
   public void execute(ApplicationStageContext context) {
     var tenantName = context.getTenantName();
-    var entitledApplicationDescriptor = context.getEntitledApplicationDescriptor();
-    var applicationDescriptor = context.getApplicationDescriptor();
+    var entitledAppDescriptor = context.getEntitledApplicationDescriptor();
+    var appDescriptor = context.getApplicationDescriptor();
 
-    var entitledModuleDescriptors = groupModulesByNames(entitledApplicationDescriptor.getModuleDescriptors());
-    var moduleDescriptors = groupModulesByNames(applicationDescriptor.getModuleDescriptors());
+    var entitledModulesByName = groupModulesByNames(entitledAppDescriptor.getModules());
+    var modulesByName = groupModulesByNames(appDescriptor.getModules());
+    var descriptorsById = toHashMap(appDescriptor.getModuleDescriptors(), ModuleDescriptor::getId);
+    var entitledDescriptorsById = toHashMap(entitledAppDescriptor.getModuleDescriptors(), ModuleDescriptor::getId);
 
     keycloakClient.tokenManager().grantToken();
-    for (var moduleDescriptorEntry : moduleDescriptors.entrySet()) {
-      var moduleName = moduleDescriptorEntry.getKey();
-      var entitledModuleDescriptor = entitledModuleDescriptors.get(moduleName);
-      keycloakService.updateAuthResources(entitledModuleDescriptor, moduleDescriptorEntry.getValue(), tenantName);
+    for (var moduleEntry : modulesByName.entrySet()) {
+      var moduleName = moduleEntry.getKey();
+      var module = moduleEntry.getValue();
+      var entitledModuleDescriptor = ofNullable(entitledModulesByName.get(moduleName))
+        .map(entitledModule -> entitledDescriptorsById.get(entitledModule.getId()))
+        .orElse(null);
+
+      keycloakService.updateAuthResources(entitledModuleDescriptor, descriptorsById.get(module.getId()), tenantName);
     }
 
-    for (var moduleDescriptorEntry : entitledModuleDescriptors.entrySet()) {
-      var moduleName = moduleDescriptorEntry.getKey();
-      var moduleDescriptor = moduleDescriptors.get(moduleName);
-      if (moduleDescriptor == null) {
-        keycloakService.updateAuthResources(moduleDescriptorEntry.getValue(), null, tenantName);
+    for (var entitledModuleEntry : entitledModulesByName.entrySet()) {
+      var moduleName = entitledModuleEntry.getKey();
+      var module = modulesByName.get(moduleName);
+      if (module == null) {
+        var entitledModuleDescriptor = entitledDescriptorsById.get(entitledModuleEntry.getValue().getId());
+        keycloakService.updateAuthResources(entitledModuleDescriptor, null, tenantName);
       }
     }
-  }
-
-  private static Map<String, ModuleDescriptor> groupModulesByNames(List<ModuleDescriptor> moduleDescriptors) {
-    return toStream(moduleDescriptors).collect(toLinkedHashMap(desc -> getName(desc.getId())));
   }
 }

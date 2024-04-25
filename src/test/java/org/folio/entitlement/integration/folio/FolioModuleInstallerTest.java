@@ -3,17 +3,17 @@ package org.folio.entitlement.integration.folio;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_APPLICATION_ID;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_DESCRIPTOR;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_DISCOVERY;
-import static org.folio.entitlement.integration.folio.ApplicationStageContext.PARAM_MODULE_ID;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_REQUEST;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DISCOVERY;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
-import static org.folio.entitlement.support.TestValues.appStageContext;
+import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
@@ -25,6 +25,7 @@ import org.folio.common.domain.model.RoutingEntry;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
+import org.folio.entitlement.integration.folio.stage.FolioModuleInstaller;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
@@ -55,7 +56,7 @@ class FolioModuleInstallerTest {
       .type(ENTITLE).tenantParameters("loadSamples=true").tenantId(TENANT_ID).build();
     var tenantInterface = tenantInterface();
     var flowParameters = flowParameters(moduleDescriptor(tenantInterface), request);
-    var context = appStageContext(FLOW_ID, flowParameters, contextData());
+    var context = moduleStageContext(FLOW_ID, flowParameters, contextData());
 
     moduleInstaller.execute(context);
 
@@ -69,7 +70,7 @@ class FolioModuleInstallerTest {
     var request = EntitlementRequest.builder()
       .type(ENTITLE).tenantParameters("loadSamples=true").tenantId(TENANT_ID).build();
     var flowParameters = flowParameters(moduleDescriptor(), request);
-    var context = appStageContext(FLOW_ID, flowParameters, contextData());
+    var context = moduleStageContext(FLOW_ID, flowParameters, contextData());
 
     moduleInstaller.execute(context);
 
@@ -88,7 +89,7 @@ class FolioModuleInstallerTest {
 
     var tenantApi = tenantInterface();
     var flowParameters = flowParameters(moduleDescriptor(tenantApi), request);
-    var context = appStageContext(FLOW_ID, flowParameters, contextData());
+    var context = moduleStageContext(FLOW_ID, flowParameters, contextData());
 
     moduleInstaller.cancel(context);
 
@@ -99,7 +100,7 @@ class FolioModuleInstallerTest {
   @Test
   void getStageName_positive() {
     var flowParameters = Map.of(PARAM_MODULE_ID, MODULE_ID);
-    var context = appStageContext(FLOW_ID, flowParameters, emptyMap());
+    var context = moduleStageContext(FLOW_ID, flowParameters, emptyMap());
 
     var stageName = moduleInstaller.getStageName(context);
 

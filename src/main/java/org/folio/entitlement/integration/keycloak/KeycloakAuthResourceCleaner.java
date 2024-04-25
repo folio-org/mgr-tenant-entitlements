@@ -1,10 +1,10 @@
 package org.folio.entitlement.integration.keycloak;
 
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
-import static org.folio.entitlement.integration.folio.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.integration.folio.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.keycloak.admin.client.Keycloak;
 

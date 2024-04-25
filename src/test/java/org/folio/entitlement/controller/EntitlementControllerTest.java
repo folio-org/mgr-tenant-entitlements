@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
@@ -25,6 +26,8 @@ import static org.springframework.http.MediaType.APPLICATION_XML;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -121,7 +124,7 @@ class EntitlementControllerTest {
   void delete_positive() throws Exception {
     var request = new EntitlementRequestBody().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
     var expectedEntitlements = entitlements();
-    when(entitlementService.performRequest(entitlementRevokeRequest())).thenReturn(expectedEntitlements);
+    when(entitlementService.performRequest(revokeRequest())).thenReturn(expectedEntitlements);
 
     var mvcResult = mockMvc.perform(delete("/entitlements")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
@@ -184,6 +187,23 @@ class EntitlementControllerTest {
       .andExpect(status().isUnauthorized());
   }
 
+  @Test
+  void upgrade_positive() throws Exception {
+    var requestBody = new EntitlementRequestBody().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
+    var expectedEntitlements = entitlements();
+    when(entitlementService.performRequest(upgradeRequest())).thenReturn(expectedEntitlements);
+
+    mockMvc.perform(put("/entitlements")
+        .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
+        .queryParam("tenantParameters", TENANT_PARAMETERS)
+        .queryParam("purge", String.valueOf(PURGE))
+        .queryParam("ignoreErrors", String.valueOf(IGNORE_ERRORS))
+        .content(asJsonString(requestBody))
+        .contentType(APPLICATION_JSON))
+      .andExpect(status().isOk())
+      .andExpect(content().json(asJsonString(expectedEntitlements)));
+  }
+
   private static Entitlement entitlement() {
     return new Entitlement().applicationId(APPLICATION_ID).tenantId(TENANT_ID);
   }
@@ -205,11 +225,24 @@ class EntitlementControllerTest {
       .build();
   }
 
-  private static EntitlementRequest entitlementRevokeRequest() {
+  private static EntitlementRequest revokeRequest() {
     return EntitlementRequest.builder()
       .type(REVOKE)
       .tenantId(TENANT_ID)
       .purge(PURGE)
+      .async(false)
+      .tenantParameters(TENANT_PARAMETERS)
+      .ignoreErrors(true)
+      .applications(List.of(APPLICATION_ID))
+      .okapiToken(OKAPI_TOKEN)
+      .build();
+  }
+
+  private static EntitlementRequest upgradeRequest() {
+    return EntitlementRequest.builder()
+      .type(UPGRADE)
+      .tenantId(TENANT_ID)
+      .purge(false)
       .async(false)
       .tenantParameters(TENANT_PARAMETERS)
       .ignoreErrors(true)
