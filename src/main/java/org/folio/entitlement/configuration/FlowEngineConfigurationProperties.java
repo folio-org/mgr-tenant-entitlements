@@ -1,5 +1,7 @@
 package org.folio.entitlement.configuration;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.Duration;
@@ -18,6 +20,13 @@ public class FlowEngineConfigurationProperties {
    * Defines if flow engine must print results after each execution.
    */
   private Boolean printFlowResult = false;
+
+  /**
+   * Number of fork-join pool thread.
+   */
+  @Min(1)
+  @Max(12)
+  private int poolThreads = 4;
 
   /**
    * Defines maximum execution timeout, after flow engine will stop flow execution, not applied to executeAsync().
