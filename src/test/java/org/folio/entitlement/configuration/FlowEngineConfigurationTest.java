@@ -37,4 +37,3 @@ class FlowEngineConfigurationTest {
     assertThat(flowEngine).isNotNull();
   }
 }
-
