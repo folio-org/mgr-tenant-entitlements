@@ -20,6 +20,7 @@ public class FlowInitializer extends DatabaseLoggingStage<CommonStageContext> {
     var entitlementRequest = context.getEntitlementRequest();
     var flow = new Flow()
       .id(context.getCurrentFlowId())
+      .tenantId(entitlementRequest.getTenantId())
       .status(ExecutionStatus.IN_PROGRESS)
       .type(entitlementRequest.getType())
       .startedAt(Date.from(Instant.now()));
