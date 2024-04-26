@@ -35,14 +35,14 @@ public interface ApplicationFlowRepository extends AbstractFlowRepository<Applic
   @Query(nativeQuery = true, value = """
     SELECT DISTINCT af.* FROM {h-schema}application_flow af
     INNER JOIN (
-      SELECT MAX(finished_at) AS finished_at, tenant_id, application_id
+      SELECT MAX(finished_at) AS finished_at, tenant_id, application_name
       FROM {h-schema}application_flow af
       WHERE af.tenant_id = :tenant_id
         AND af.application_name IN :application_names
-      GROUP BY tenant_id, application_id
+      GROUP BY tenant_id, application_name
     ) laf ON af.finished_at = laf.finished_at
           AND af.tenant_id = laf.tenant_id
-          AND af.application_id = laf.application_id""")
+          AND af.application_name = laf.application_name""")
   List<ApplicationFlowEntity> findLastFlowsByApplicationNames(
     @Param("application_names") Collection<String> applicationNames, @Param("tenant_id") UUID tenantId);
 
