@@ -27,6 +27,8 @@ import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.folio.entitlement.support.TestValues.module;
+import static org.folio.entitlement.support.TestValues.moduleDescriptorHolder;
+import static org.folio.entitlement.support.TestValues.modulesSequence;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.folio.flow.model.FlowExecutionStrategy.IGNORE_ON_ERROR;
 import static org.mockito.ArgumentMatchers.any;
@@ -49,6 +51,7 @@ import org.folio.entitlement.integration.folio.flow.FolioModuleRevokeFlowFactory
 import org.folio.entitlement.integration.folio.flow.FolioModuleUpgradeFlowFactory;
 import org.folio.entitlement.integration.folio.flow.FolioModulesFlowProvider;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
+import org.folio.entitlement.service.ModuleSequenceProvider;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.FlowEngine;
@@ -75,20 +78,21 @@ class FolioModulesFlowProviderTest {
   private static final String UI_BAR_ID = "folio_bar-2.0.0";
 
   private FolioModulesFlowProvider flowProvider;
-  @Mock private FolioModuleRevokeFlowFactory folioModuleRevokeFlowFactory;
-  @Mock private FolioModuleEntitleFlowFactory folioModuleEntitleFlowFactory;
-  @Mock private FolioModuleUpgradeFlowFactory folioModuleUpgradeFlowFactory;
+  @Mock private FolioModuleRevokeFlowFactory moduleRevokeFlowFactory;
+  @Mock private ModuleSequenceProvider moduleSequenceProvider;
+  @Mock private FolioModuleEntitleFlowFactory moduleEntitleFlowFactory;
+  @Mock private FolioModuleUpgradeFlowFactory moduleUpgradeFlowFactory;
   @Mock private Stage<StageContext> moduleStage;
 
   private final FlowEngine flowEngine = singleThreadFlowEngine("folio-module-installer-flow-engine", false);
 
   @BeforeEach
   void setUp() {
-    when(folioModuleEntitleFlowFactory.getEntitlementType()).thenReturn(ENTITLE);
-    when(folioModuleRevokeFlowFactory.getEntitlementType()).thenReturn(REVOKE);
-    when(folioModuleUpgradeFlowFactory.getEntitlementType()).thenReturn(UPGRADE);
-    flowProvider = new FolioModulesFlowProvider(List.of(
-      folioModuleEntitleFlowFactory, folioModuleRevokeFlowFactory, folioModuleUpgradeFlowFactory));
+    when(moduleEntitleFlowFactory.getEntitlementType()).thenReturn(ENTITLE);
+    when(moduleRevokeFlowFactory.getEntitlementType()).thenReturn(REVOKE);
+    when(moduleUpgradeFlowFactory.getEntitlementType()).thenReturn(UPGRADE);
+    var moduleFlowFactories = List.of(moduleEntitleFlowFactory, moduleRevokeFlowFactory, moduleUpgradeFlowFactory);
+    flowProvider = new FolioModulesFlowProvider(moduleFlowFactories, moduleSequenceProvider);
   }
 
   @AfterEach
@@ -106,15 +110,20 @@ class FolioModulesFlowProviderTest {
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
     mockStageNames(moduleStage);
-    when(folioModuleEntitleFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
-    var inOrder = inOrder(folioModuleEntitleFlowFactory, moduleStage);
+    when(moduleEntitleFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
+    var layer = List.of(moduleDescriptorHolder(fooModuleDesc(), null));
+    when(moduleSequenceProvider.getSequence(stageContext, MODULE)).thenReturn(modulesSequence(layer));
+    when(moduleSequenceProvider.getSequence(stageContext, UI_MODULE)).thenReturn(modulesSequence());
 
     var flow = flowProvider.createFlow(stageContext);
     flowEngine.execute(flow);
 
     var fooFlowId = getEntitleStageFlowId(ENTITLE, 0, MOD_FOO_ID);
     var fooFlowParams = fooFlowParams();
-    inOrder.verify(folioModuleEntitleFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
+    var inOrder = inOrder(moduleEntitleFlowFactory, moduleStage, moduleSequenceProvider);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
+    inOrder.verify(moduleEntitleFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParams, emptyMap()));
   }
 
@@ -126,24 +135,30 @@ class FolioModulesFlowProviderTest {
     var flowParameters = flowParameters(request, applicationDescriptor);
     var stageParameters = Map.of(PARAM_MODULE_DISCOVERY_DATA, Map.of(MOD_FOO_ID, "https://mod-foo:8443"));
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
+
+    var layer = List.of(moduleDescriptorHolder(fooModuleDesc(), null));
+    when(moduleSequenceProvider.getSequence(stageContext, MODULE)).thenReturn(modulesSequence(layer));
+    when(moduleSequenceProvider.getSequence(stageContext, UI_MODULE)).thenReturn(modulesSequence());
+
     mockStageNames(moduleStage);
-    var inOrder = inOrder(folioModuleRevokeFlowFactory, moduleStage);
-    when(folioModuleRevokeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
+    when(moduleRevokeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
 
     var flow = flowProvider.createFlow(stageContext);
     flowEngine.execute(flow);
 
     var fooFlowId = getEntitleStageFlowId(REVOKE, 0, MOD_FOO_ID);
     var fooFlowParams = fooFlowParams();
-    inOrder.verify(folioModuleRevokeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
+    var inOrder = inOrder(moduleRevokeFlowFactory, moduleStage, moduleSequenceProvider);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
+    inOrder.verify(moduleRevokeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParams, emptyMap()));
   }
 
   @Test
   void createFlow_positive_upgradeRequestSingleModule() {
     mockStageNames(moduleStage);
-    when(folioModuleUpgradeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
-    var inOrder = inOrder(folioModuleUpgradeFlowFactory, moduleStage);
+    when(moduleUpgradeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
 
     var request = EntitlementRequest.builder().type(UPGRADE).ignoreErrors(true).build();
     var applicationDescriptor = appDescriptor(List.of(fooModuleDescV2()), emptyList());
@@ -152,22 +167,28 @@ class FolioModulesFlowProviderTest {
     var stageParameters = Map.of(PARAM_MODULE_DISCOVERY_DATA, Map.of(MOD_FOO_V2_ID, "https://mod-foo-v2:8443"));
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
+    var layer = List.of(moduleDescriptorHolder(fooModuleDescV2(), fooModuleDesc()));
+    when(moduleSequenceProvider.getSequence(stageContext, MODULE)).thenReturn(modulesSequence(layer));
+    when(moduleSequenceProvider.getSequence(stageContext, UI_MODULE)).thenReturn(modulesSequence());
+
     var flow = flowProvider.createFlow(stageContext);
     flowEngine.execute(flow);
 
     var fooFlowId = getEntitleStageFlowId(UPGRADE, 0, MOD_FOO_V2_ID);
     var fooFlowParameters = upgradeModFooV2Params();
 
-    inOrder.verify(folioModuleUpgradeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParameters);
+    var inOrder = inOrder(moduleUpgradeFlowFactory, moduleStage, moduleSequenceProvider);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
+    inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParameters);
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParameters, emptyMap()));
   }
 
   @Test
   void createFlow_positive_upgradeRequestNewModules() {
     mockStageNames(moduleStage);
-    when(folioModuleUpgradeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
-    when(folioModuleUpgradeFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
-    var inOrder = inOrder(folioModuleUpgradeFlowFactory, moduleStage);
+    when(moduleUpgradeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
+    when(moduleUpgradeFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
 
     var request = EntitlementRequest.builder().type(UPGRADE).ignoreErrors(true).build();
     var applicationDescriptor = appDescriptor(List.of(fooModuleDesc()), List.of(uiFooModuleDesc()));
@@ -175,6 +196,11 @@ class FolioModulesFlowProviderTest {
     var flowParameters = flowParameters(request, applicationDescriptor, entitledAppDescriptor);
     var stageParameters = Map.of(PARAM_MODULE_DISCOVERY_DATA, moduleDiscoveryTable());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
+
+    var layer = List.of(moduleDescriptorHolder(fooModuleDesc(), null));
+    var uiLayer = List.of(moduleDescriptorHolder(uiFooModuleDesc(), null));
+    when(moduleSequenceProvider.getSequence(stageContext, MODULE)).thenReturn(modulesSequence(layer));
+    when(moduleSequenceProvider.getSequence(stageContext, UI_MODULE)).thenReturn(modulesSequence(uiLayer));
 
     var flow = flowProvider.createFlow(stageContext);
     flowEngine.execute(flow);
@@ -196,8 +222,11 @@ class FolioModulesFlowProviderTest {
       PARAM_MODULE_ID, UI_FOO_ID,
       PARAM_MODULE_DESCRIPTOR, uiFooModuleDesc());
 
-    inOrder.verify(folioModuleUpgradeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParameters);
-    inOrder.verify(folioModuleUpgradeFlowFactory).createUiModuleFlow(uiFlowId, IGNORE_ON_ERROR, uiFooFlowParameters);
+    var inOrder = inOrder(moduleUpgradeFlowFactory, moduleStage, moduleSequenceProvider);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
+    inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParameters);
+    inOrder.verify(moduleUpgradeFlowFactory).createUiModuleFlow(uiFlowId, IGNORE_ON_ERROR, uiFooFlowParameters);
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParameters, emptyMap()));
     inOrder.verify(moduleStage).execute(StageContext.of(uiFlowId, uiFooFlowParameters, emptyMap()));
   }
@@ -205,21 +234,25 @@ class FolioModulesFlowProviderTest {
   @Test
   void createFlow_positive_upgradeRequestDeprecatedModule() {
     mockStageNames(moduleStage);
-    when(folioModuleUpgradeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
-    when(folioModuleUpgradeFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
-    var inOrder = inOrder(folioModuleUpgradeFlowFactory, moduleStage);
+    when(moduleUpgradeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
+    when(moduleUpgradeFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
 
     var request = EntitlementRequest.builder().type(UPGRADE).ignoreErrors(true).build();
     var applicationDescriptor = appDescriptor(emptyList(), emptyList());
     var entitledAppDescriptor = appDescriptor(List.of(fooModuleDesc()), List.of(uiFooModuleDesc()));
     var flowParameters = flowParameters(request, applicationDescriptor, entitledAppDescriptor);
     var stageParameters = Map.of(PARAM_MODULE_DISCOVERY_DATA, moduleDiscoveryTable());
-    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
+    var context = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
-    var flow = flowProvider.createFlow(stageContext);
+    var beLayers = List.of(List.of(fooModuleDesc()));
+    var uiLayers = List.of(List.of(uiFooModuleDesc()));
+    when(moduleSequenceProvider.getSequence(context, MODULE)).thenReturn(modulesSequence(emptyList(), beLayers));
+    when(moduleSequenceProvider.getSequence(context, UI_MODULE)).thenReturn(modulesSequence(emptyList(), uiLayers));
+
+    var flow = flowProvider.createFlow(context);
     flowEngine.execute(flow);
 
-    var fooFlowId = getDeprecatedStageFlowId(1, MOD_FOO_ID);
+    var fooFlowId = getDeprecatedStageFlowId(0, MOD_FOO_ID);
     var fooFlowParameters = Map.of(
       PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
@@ -228,21 +261,23 @@ class FolioModulesFlowProviderTest {
       PARAM_INSTALLED_MODULE_DESCRIPTOR, fooModuleDesc(),
       PARAM_MODULE_DISCOVERY, "https://mod-foo:8443");
 
-    var uiFooFlowId = getDeprecatedStageFlowId(0, UI_FOO_ID);
+    var uiFooFlowId = getDeprecatedStageFlowId(1, UI_FOO_ID);
     var uiFlowParameters = deprecatedUiFooParams();
 
-    inOrder.verify(folioModuleUpgradeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFlowParameters);
-    inOrder.verify(folioModuleUpgradeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParameters);
-    inOrder.verify(moduleStage).execute(StageContext.of(uiFooFlowId, uiFlowParameters, emptyMap()));
+    var inOrder = inOrder(moduleUpgradeFlowFactory, moduleStage, moduleSequenceProvider);
+    inOrder.verify(moduleSequenceProvider).getSequence(context, MODULE);
+    inOrder.verify(moduleSequenceProvider).getSequence(context, UI_MODULE);
+    inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParameters);
+    inOrder.verify(moduleUpgradeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFlowParameters);
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParameters, emptyMap()));
+    inOrder.verify(moduleStage).execute(StageContext.of(uiFooFlowId, uiFlowParameters, emptyMap()));
   }
 
   @Test
   void createFlow_positive_complexEntitleRequest() {
     mockStageNames(moduleStage);
-    when(folioModuleEntitleFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
-    when(folioModuleEntitleFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
-    var inOrder = inOrder(folioModuleEntitleFlowFactory, moduleStage);
+    when(moduleEntitleFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
+    when(moduleEntitleFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
 
     var request = EntitlementRequest.builder().type(ENTITLE).ignoreErrors(true).build();
     var applicationDescriptor = appDescriptor(List.of(fooModuleDesc(), barModuleDesc()), List.of(uiFooModuleDesc()));
@@ -250,34 +285,43 @@ class FolioModulesFlowProviderTest {
     var stageParameters = Map.of(PARAM_MODULE_DISCOVERY_DATA, moduleDiscoveryTable());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
+    var layer1 = List.of(moduleDescriptorHolder(fooModuleDesc(), null));
+    var layer2 = List.of(moduleDescriptorHolder(barModuleDesc(), null));
+    var uiLayer = List.of(moduleDescriptorHolder(uiFooModuleDesc(), null));
+    when(moduleSequenceProvider.getSequence(stageContext, MODULE)).thenReturn(modulesSequence(layer1, layer2));
+    when(moduleSequenceProvider.getSequence(stageContext, UI_MODULE)).thenReturn(modulesSequence(uiLayer));
+
     var flow = flowProvider.createFlow(stageContext);
     flowEngine.execute(flow);
 
     assertThat(flow).isNotNull();
 
+    var inOrder = inOrder(moduleEntitleFlowFactory, moduleStage, moduleSequenceProvider);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
+
     var fooFlowId = getEntitleStageFlowId(ENTITLE, 0, MOD_FOO_ID);
     var fooFlowParams = fooFlowParams();
-    inOrder.verify(folioModuleEntitleFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
-
-    var uiFooFlowId = getEntitleStageFlowId(ENTITLE, 1, UI_FOO_ID);
-    var uiFooFlowParams = uiFooFlowParams();
-    inOrder.verify(folioModuleEntitleFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
+    inOrder.verify(moduleEntitleFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
 
     var barFlowId = getEntitleStageFlowId(ENTITLE, 1, MOD_BAR_ID);
     var barFlowParams = barFlowParams();
-    inOrder.verify(folioModuleEntitleFlowFactory).createModuleFlow(barFlowId, IGNORE_ON_ERROR, barFlowParams);
+    inOrder.verify(moduleEntitleFlowFactory).createModuleFlow(barFlowId, IGNORE_ON_ERROR, barFlowParams);
+
+    var uiFooFlowId = getEntitleStageFlowId(ENTITLE, 2, UI_FOO_ID);
+    var uiFooFlowParams = uiFooFlowParams();
+    inOrder.verify(moduleEntitleFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
 
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParams, emptyMap()));
-    inOrder.verify(moduleStage).execute(StageContext.of(uiFooFlowId, uiFooFlowParams, emptyMap()));
     inOrder.verify(moduleStage).execute(StageContext.of(barFlowId, barFlowParams, emptyMap()));
+    inOrder.verify(moduleStage).execute(StageContext.of(uiFooFlowId, uiFooFlowParams, emptyMap()));
   }
 
   @Test
   void createFlow_positive_complexRevokeRequest() {
     mockStageNames(moduleStage);
-    when(folioModuleRevokeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
-    when(folioModuleRevokeFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
-    var inOrder = inOrder(folioModuleRevokeFlowFactory, moduleStage);
+    when(moduleRevokeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
+    when(moduleRevokeFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
 
     var request = EntitlementRequest.builder().type(REVOKE).ignoreErrors(true).build();
     var applicationDescriptor = appDescriptor(List.of(fooModuleDesc(), barModuleDesc()), List.of(uiFooModuleDesc()));
@@ -285,34 +329,43 @@ class FolioModulesFlowProviderTest {
     var stageParameters = Map.of(PARAM_MODULE_DISCOVERY_DATA, moduleDiscoveryTable());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
+    var layer1 = List.of(moduleDescriptorHolder(barModuleDesc(), null));
+    var layer2 = List.of(moduleDescriptorHolder(fooModuleDesc(), null));
+    var uiLayer = List.of(moduleDescriptorHolder(uiFooModuleDesc(), null));
+    when(moduleSequenceProvider.getSequence(stageContext, MODULE)).thenReturn(modulesSequence(layer1, layer2));
+    when(moduleSequenceProvider.getSequence(stageContext, UI_MODULE)).thenReturn(modulesSequence(uiLayer));
+
     var flow = flowProvider.createFlow(stageContext);
     flowEngine.execute(flow);
 
     assertThat(flow).isNotNull();
 
-    var uiFooFlowId = getEntitleStageFlowId(REVOKE, 0, UI_FOO_ID);
-    var uiFooFlowParams = uiFooFlowParams();
-    inOrder.verify(folioModuleRevokeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
+    var inOrder = inOrder(moduleRevokeFlowFactory, moduleStage, moduleSequenceProvider);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
 
     var barFlowId = getEntitleStageFlowId(REVOKE, 0, MOD_BAR_ID);
     var barFlowParams = barFlowParams();
-    inOrder.verify(folioModuleRevokeFlowFactory).createModuleFlow(barFlowId, IGNORE_ON_ERROR, barFlowParams);
+    inOrder.verify(moduleRevokeFlowFactory).createModuleFlow(barFlowId, IGNORE_ON_ERROR, barFlowParams);
 
     var fooFlowId = getEntitleStageFlowId(REVOKE, 1, MOD_FOO_ID);
     var fooFlowParams = fooFlowParams();
-    inOrder.verify(folioModuleRevokeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
+    inOrder.verify(moduleRevokeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
 
-    inOrder.verify(moduleStage).execute(StageContext.of(uiFooFlowId, uiFooFlowParams, emptyMap()));
+    var uiFooFlowId = getEntitleStageFlowId(REVOKE, 2, UI_FOO_ID);
+    var uiFooFlowParams = uiFooFlowParams();
+    inOrder.verify(moduleRevokeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
+
     inOrder.verify(moduleStage).execute(StageContext.of(barFlowId, barFlowParams, emptyMap()));
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParams, emptyMap()));
+    inOrder.verify(moduleStage).execute(StageContext.of(uiFooFlowId, uiFooFlowParams, emptyMap()));
   }
 
   @Test
   void createFlow_positive_complexUpgradeRequest() {
     mockStageNames(moduleStage);
-    when(folioModuleUpgradeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
-    when(folioModuleUpgradeFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
-    var inOrder = inOrder(folioModuleUpgradeFlowFactory, moduleStage);
+    when(moduleUpgradeFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
+    when(moduleUpgradeFlowFactory.createUiModuleFlow(any(), any(), any())).then(this::createFlow);
 
     var request = EntitlementRequest.builder().type(UPGRADE).ignoreErrors(true).build();
     var applicationDescriptor = appDescriptor(List.of(fooModuleDescV2(), barModuleDesc()), List.of(uiBarModuleDesc()));
@@ -321,22 +374,33 @@ class FolioModulesFlowProviderTest {
     var stageParameters = Map.of(PARAM_MODULE_DISCOVERY_DATA, moduleDiscoveryTable());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
+    var layer1 = List.of(moduleDescriptorHolder(fooModuleDescV2(), fooModuleDesc()));
+    var layer2 = List.of(moduleDescriptorHolder(barModuleDesc(), barModuleDesc()));
+    var uiLayer = List.of(moduleDescriptorHolder(uiBarModuleDesc(), null));
+    var uiModuleSequence = modulesSequence(List.of(uiLayer), List.of(List.of(uiFooModuleDesc())));
+    when(moduleSequenceProvider.getSequence(stageContext, MODULE)).thenReturn(modulesSequence(layer1, layer2));
+    when(moduleSequenceProvider.getSequence(stageContext, UI_MODULE)).thenReturn(uiModuleSequence);
+
     var flow = flowProvider.createFlow(stageContext);
     flowEngine.execute(flow);
 
     assertThat(flow).isNotNull();
 
+    var inOrder = inOrder(moduleUpgradeFlowFactory, moduleStage, moduleSequenceProvider);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
+
     var fooV2FlowId = getEntitleStageFlowId(UPGRADE, 0, MOD_FOO_V2_ID);
     var fooV2FlowParams = upgradeModFooV2Params();
-    inOrder.verify(folioModuleUpgradeFlowFactory).createModuleFlow(fooV2FlowId, IGNORE_ON_ERROR, fooV2FlowParams);
+    inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(fooV2FlowId, IGNORE_ON_ERROR, fooV2FlowParams);
 
-    var uiBarFlowId = getEntitleStageFlowId(UPGRADE, 1, UI_BAR_ID);
+    var uiBarFlowId = getEntitleStageFlowId(UPGRADE, 2, UI_BAR_ID);
     var uiBarFlowParams = uiBarFlowParams();
-    inOrder.verify(folioModuleUpgradeFlowFactory).createUiModuleFlow(uiBarFlowId, IGNORE_ON_ERROR, uiBarFlowParams);
+    inOrder.verify(moduleUpgradeFlowFactory).createUiModuleFlow(uiBarFlowId, IGNORE_ON_ERROR, uiBarFlowParams);
 
     var uiFooFlowId = getDeprecatedStageFlowId(0, UI_FOO_ID);
     var uiFooFlowParams = deprecatedUiFooParams();
-    inOrder.verify(folioModuleUpgradeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
+    inOrder.verify(moduleUpgradeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
 
     inOrder.verify(moduleStage).execute(StageContext.of(fooV2FlowId, fooV2FlowParams, emptyMap()));
     inOrder.verify(moduleStage).execute(StageContext.of(uiBarFlowId, uiBarFlowParams, emptyMap()));

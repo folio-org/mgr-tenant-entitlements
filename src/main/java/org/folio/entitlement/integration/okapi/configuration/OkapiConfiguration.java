@@ -19,6 +19,7 @@ import org.folio.entitlement.integration.okapi.flow.OkapiModulesUpgradeFlowFacto
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.entitlement.service.EntitlementModuleService;
+import org.folio.entitlement.service.ModuleSequenceProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -74,8 +75,10 @@ public class OkapiConfiguration {
   @Bean
   @Primary
   public OkapiModulesFlowProvider okapiModulesFlowFactory(OkapiModulesEntitleFlowFactory entitleFlowFactory,
-    OkapiModulesRevokeFlowFactory revokeFlowFactory, OkapiModulesUpgradeFlowFactory upgradeFlowFactory) {
-    return new OkapiModulesFlowProvider(asList(entitleFlowFactory, revokeFlowFactory, upgradeFlowFactory));
+    OkapiModulesRevokeFlowFactory revokeFlowFactory, OkapiModulesUpgradeFlowFactory upgradeFlowFactory,
+    ModuleSequenceProvider moduleSequenceProvider) {
+    var factories = asList(entitleFlowFactory, revokeFlowFactory, upgradeFlowFactory);
+    return new OkapiModulesFlowProvider(moduleSequenceProvider, factories);
   }
 
   /**

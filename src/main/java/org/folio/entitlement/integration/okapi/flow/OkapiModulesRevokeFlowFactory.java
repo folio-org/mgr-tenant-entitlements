@@ -3,6 +3,7 @@ package org.folio.entitlement.integration.okapi.flow;
 import static java.util.Arrays.asList;
 import static org.folio.entitlement.utils.FlowUtils.combineStages;
 
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
@@ -23,7 +24,7 @@ public class OkapiModulesRevokeFlowFactory implements OkapiModulesFlowFactory {
   private KeycloakAuthResourceCleaner keycloakAuthResourceCleaner;
 
   @Override
-  public Flow createFlow(ApplicationStageContext context) {
+  public Flow createFlow(ApplicationStageContext context, Map<?, ?> additionalFlowParameters) {
     var request = context.getEntitlementRequest();
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesRevokeFlow")
@@ -31,6 +32,7 @@ public class OkapiModulesRevokeFlowFactory implements OkapiModulesFlowFactory {
       .stage(okapiModulesEventPublisher)
       .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCleaner, keycloakAuthResourceCleaner)))
       .executionStrategy(request.getExecutionStrategy())
+      .flowParameters(additionalFlowParameters)
       .build();
   }
 

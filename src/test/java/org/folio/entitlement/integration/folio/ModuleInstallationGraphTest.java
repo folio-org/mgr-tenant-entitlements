@@ -26,19 +26,19 @@ class ModuleInstallationGraphTest {
   @MethodSource("applicationDescriptorDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
   @DisplayName("getModuleInstallationSequence_parameterized")
-  void getModuleInstallationSequence_parameterized(@SuppressWarnings("unused") String testName,
+  void getInstallationSequence_parameterized(@SuppressWarnings("unused") String testName,
     ApplicationDescriptor descriptor, List<List<String>> expected) {
     var moduleInstallationGraph = new ModuleInstallationGraph(descriptor, ENTITLE);
-    var result = moduleInstallationGraph.getModuleInstallationSequence();
+    var result = moduleInstallationGraph.getInstallationSequence();
     assertThat(result).isEqualTo(expected);
   }
 
   @Test
-  void getModuleInstallationSequence_revokeRequest() {
+  void getInstallationSequence_revokeRequest() {
     var applicationDescriptor = appDescriptor(
       module("m1", List.of("m1-int")), module("m2", List.of("m2-int"), List.of("m1-int")));
     var moduleInstallationGraph = new ModuleInstallationGraph(applicationDescriptor, REVOKE);
-    var result = moduleInstallationGraph.getModuleInstallationSequence();
+    var result = moduleInstallationGraph.getInstallationSequence();
     assertThat(result).isEqualTo(List.of(List.of("m2"), List.of("m1")));
   }
 

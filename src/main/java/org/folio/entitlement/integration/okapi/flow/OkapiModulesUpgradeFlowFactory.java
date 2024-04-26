@@ -3,6 +3,7 @@ package org.folio.entitlement.integration.okapi.flow;
 import static java.util.Arrays.asList;
 import static org.folio.entitlement.utils.FlowUtils.combineStages;
 
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
@@ -18,12 +19,13 @@ public class OkapiModulesUpgradeFlowFactory implements OkapiModulesFlowFactory {
   private KeycloakAuthResourceUpdater keycloakAuthResourceUpdater;
 
   @Override
-  public Flow createFlow(ApplicationStageContext context) {
+  public Flow createFlow(ApplicationStageContext context, Map<?, ?> additionalFlowParameters) {
     var request = context.getEntitlementRequest();
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesUpgradeFlow")
       .stage(combineStages("ParallelResourcesUpdater", asList(kongRouteUpdater, keycloakAuthResourceUpdater)))
       .executionStrategy(request.getExecutionStrategy())
+      .flowParameters(additionalFlowParameters)
       .build();
   }
 

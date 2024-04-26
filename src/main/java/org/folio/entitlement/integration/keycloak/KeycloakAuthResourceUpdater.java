@@ -22,27 +22,27 @@ public class KeycloakAuthResourceUpdater extends DatabaseLoggingStage<Applicatio
     var entitledAppDescriptor = context.getEntitledApplicationDescriptor();
     var appDescriptor = context.getApplicationDescriptor();
 
-    var entitledModulesByName = groupModulesByNames(entitledAppDescriptor.getModules());
+    var installedModulesByName = groupModulesByNames(entitledAppDescriptor.getModules());
     var modulesByName = groupModulesByNames(appDescriptor.getModules());
     var descriptorsById = toHashMap(appDescriptor.getModuleDescriptors(), ModuleDescriptor::getId);
-    var entitledDescriptorsById = toHashMap(entitledAppDescriptor.getModuleDescriptors(), ModuleDescriptor::getId);
+    var installedDescriptorsById = toHashMap(entitledAppDescriptor.getModuleDescriptors(), ModuleDescriptor::getId);
 
     keycloakClient.tokenManager().grantToken();
     for (var moduleEntry : modulesByName.entrySet()) {
       var moduleName = moduleEntry.getKey();
       var module = moduleEntry.getValue();
-      var entitledModuleDescriptor = ofNullable(entitledModulesByName.get(moduleName))
-        .map(entitledModule -> entitledDescriptorsById.get(entitledModule.getId()))
+      var entitledModuleDescriptor = ofNullable(installedModulesByName.get(moduleName))
+        .map(entitledModule -> installedDescriptorsById.get(entitledModule.getId()))
         .orElse(null);
 
       keycloakService.updateAuthResources(entitledModuleDescriptor, descriptorsById.get(module.getId()), tenantName);
     }
 
-    for (var entitledModuleEntry : entitledModulesByName.entrySet()) {
+    for (var entitledModuleEntry : installedModulesByName.entrySet()) {
       var moduleName = entitledModuleEntry.getKey();
       var module = modulesByName.get(moduleName);
       if (module == null) {
-        var entitledModuleDescriptor = entitledDescriptorsById.get(entitledModuleEntry.getValue().getId());
+        var entitledModuleDescriptor = installedDescriptorsById.get(entitledModuleEntry.getValue().getId());
         keycloakService.updateAuthResources(entitledModuleDescriptor, null, tenantName);
       }
     }

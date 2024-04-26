@@ -53,7 +53,7 @@ class OkapiModulesUpgradeFlowFactoryTest {
     var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
-    var flow = upgradeFlowFactory.createFlow(stageContext);
+    var flow = upgradeFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
     var inOrder = Mockito.inOrder(kongRouteUpdater, keycloakAuthResourceUpdater);
@@ -72,7 +72,7 @@ class OkapiModulesUpgradeFlowFactoryTest {
     var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
-    var flow = upgradeFlowFactory.createFlow(stageContext);
+    var flow = upgradeFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
     verifyNoInteractions(keycloakAuthResourceUpdater, kongRouteUpdater);

@@ -56,7 +56,7 @@ class OkapiModulesRevokeFlowFactoryTest {
     var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
-    var flow = revokeFlowFactory.createFlow(stageContext);
+    var flow = revokeFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
     var inOrder = Mockito.inOrder(kongRouteCleaner, keycloakAuthResourceCleaner,
@@ -77,7 +77,7 @@ class OkapiModulesRevokeFlowFactoryTest {
     var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
-    var flow = revokeFlowFactory.createFlow(stageContext);
+    var flow = revokeFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
     var inOrder = Mockito.inOrder(okapiModulesEventPublisher, okapiModulesInstaller);

@@ -1,5 +1,6 @@
 package org.folio.entitlement.integration.okapi.flow;
 
+import java.util.Map;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.flow.api.Flow;
@@ -12,7 +13,7 @@ public interface OkapiModulesFlowFactory {
    * @param context - {@link ApplicationStageContext} object
    * @return created {@link Flow} to be executed
    */
-  Flow createFlow(ApplicationStageContext context);
+  Flow createFlow(ApplicationStageContext context, Map<?, ?> additionalFlowParameters);
 
   /**
    * Returns entitlement type for flow factory (must not repeat).

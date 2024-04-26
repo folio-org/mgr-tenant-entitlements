@@ -4,6 +4,7 @@ import static java.util.Arrays.asList;
 
 import java.net.http.HttpClient;
 import lombok.RequiredArgsConstructor;
+import org.folio.entitlement.service.ModuleSequenceProvider;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.integration.folio.FolioTenantApiClient;
 import org.folio.entitlement.integration.folio.flow.FolioModuleEntitleFlowFactory;
@@ -97,8 +98,10 @@ public class FolioConfiguration {
    */
   @Bean
   public FolioModulesFlowProvider folioModulesFlowProvider(FolioModuleEntitleFlowFactory entitleFlowFactory,
-    FolioModuleRevokeFlowFactory revokeFlowFactory, FolioModuleUpgradeFlowFactory upgradeFlowFactory) {
-    return new FolioModulesFlowProvider(asList(entitleFlowFactory, revokeFlowFactory, upgradeFlowFactory));
+    FolioModuleRevokeFlowFactory revokeFlowFactory, FolioModuleUpgradeFlowFactory upgradeFlowFactory,
+    ModuleSequenceProvider moduleSequenceProvider) {
+    var factories = asList(entitleFlowFactory, revokeFlowFactory, upgradeFlowFactory);
+    return new FolioModulesFlowProvider(factories, moduleSequenceProvider);
   }
 
 

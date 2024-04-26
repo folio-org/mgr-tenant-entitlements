@@ -44,7 +44,17 @@ public class ModuleInstallationGraph {
    * @param type - entitlement type
    */
   public ModuleInstallationGraph(ApplicationDescriptor applicationDescriptor, EntitlementType type) {
-    this.modules = getAllModuleDescriptors(applicationDescriptor);
+    this(getAllModuleDescriptors(applicationDescriptor), type);
+  }
+
+  /**
+   * Creates {@link ModuleInstallationGraph} from application descriptor and {@link EntitlementType}.
+   *
+   * @param moduleDescriptors - list with module descriptors
+   * @param type - entitlement type
+   */
+  public ModuleInstallationGraph(List<ModuleDescriptor> moduleDescriptors, EntitlementType type) {
+    this.modules = emptyIfNull(moduleDescriptors);
     this.entitlementType = type;
     var counter = new AtomicInteger();
     this.moduleIndices = modules.stream().collect(toMap(ModuleDescriptor::getId, v -> counter.getAndIncrement()));
@@ -62,7 +72,7 @@ public class ModuleInstallationGraph {
    *
    * @return list of lists of module identifiers as installation sequence
    */
-  public List<List<String>> getModuleInstallationSequence() {
+  public List<List<String>> getInstallationSequence() {
     var remainingIndices = new HashSet<Integer>();
     for (var i = 0; i < adjacencyMatrix.length; i++) {
       remainingIndices.add(i);
