@@ -69,6 +69,11 @@ application:
     url: ${AM_CLIENT_URL:${am.url:}}
   mt:
     url: ${MT_URL:${tenant.url:}}
+    tls:
+      enabled: ${MT_TLS_ENABLED:false}
+      trust-store-path: ${MT_TLS_TRUSTSTORE_PATH:}
+      trust-store-password: ${MT_TLS_TRUSTSTORE_PASSWORD:}
+      trust-store-type: ${MT_TLS_TRUSTSTORE_TYPE:}
   keycloak:
     enabled: ${KC_INTEGRATION_ENABLED:false}
     url: ${KC_URL:http://keycloak:8080}
