@@ -120,7 +120,7 @@ public class FolioModulesFlowProvider implements ModulesFlowProvider {
     flowParameters.put(PARAM_APPLICATION_ID, context.getApplicationId());
     flowParameters.put(PARAM_APPLICATION_FLOW_ID, context.getCurrentFlowId());
 
-    var moduleId = (String) null;
+    String moduleId = null;
     if (descriptor != null) {
       moduleId = descriptor.getId();
       flowParameters.put(PARAM_MODULE_DESCRIPTOR, descriptor);
