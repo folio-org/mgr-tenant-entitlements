@@ -20,7 +20,6 @@ import org.apache.commons.collections4.IterableUtils;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Module;
 import org.folio.tools.kong.exception.KongIntegrationException;
 
@@ -100,12 +99,14 @@ public class EntitlementServiceUtils {
     return unmodifiableMap(resultMap);
   }
 
+  /**
+   * Groups {@link Module} objects by name.
+   *
+   * @param modules - list with module definitions
+   * @return grouped module objects by name.
+   */
   public static Map<String, Module> groupModulesByNames(List<Module> modules) {
     return toStream(modules).collect(toLinkedHashMap(Module::getName));
-  }
-
-  public static Map<String, Module> groupInstalledModulesByName(ApplicationDescriptor entitledAppDescriptor) {
-    return entitledAppDescriptor == null ? emptyMap() : groupModulesByNames(entitledAppDescriptor.getModules());
   }
 
   private static List<Parameter> getErrors(Throwable throwable) {

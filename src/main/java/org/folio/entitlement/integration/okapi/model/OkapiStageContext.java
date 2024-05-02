@@ -113,22 +113,47 @@ public class OkapiStageContext extends IdentifiableStageContext {
     return context.getFlowParameter(PARAM_MODULE_DESCRIPTORS);
   }
 
+  /**
+   * Returns a list of UI module descriptors in order for installation/uninstallation.
+   *
+   * @return {@link List} with {@link ModuleDescriptor} objects
+   */
   public List<ModuleDescriptor> getUiModuleDescriptors() {
     return context.getFlowParameter(PARAM_UI_MODULE_DESCRIPTORS);
   }
 
+  /**
+   * Returns a list of module descriptors holder (pair of old and new module descriptor) in order for upgrade.
+   *
+   * @return {@link List} with {@link ModuleDescriptorHolder} objects
+   */
   public List<ModuleDescriptorHolder> getModuleDescriptorHolders() {
     return context.getFlowParameter(PARAM_MODULE_DESCRIPTOR_HOLDERS);
   }
 
+  /**
+   * Returns a list of ui module descriptors holder (pair of old and new module descriptor) in order for upgrade.
+   *
+   * @return {@link List} with {@link ModuleDescriptorHolder} objects
+   */
   public List<ModuleDescriptorHolder> getUiModuleDescriptorHolders() {
     return context.getFlowParameter(PARAM_UI_MODULE_DESCRIPTOR_HOLDERS);
   }
 
+  /**
+   * Returns a list of deprecated {@link ModuleDescriptor} in order for upgrade.
+   *
+   * @return {@link List} with {@link ModuleDescriptor} objects
+   */
   public List<ModuleDescriptor> getDeprecatedModuleDescriptors() {
     return context.getFlowParameter(PARAM_DEPRECATED_MODULE_DESCRIPTORS);
   }
 
+  /**
+   * Returns a list of deprecated ui {@link ModuleDescriptor} in order for upgrade.
+   *
+   * @return {@link List} with {@link ModuleDescriptor} objects
+   */
   public List<ModuleDescriptor> getDeprecatedUiModuleDescriptors() {
     return context.getFlowParameter(PARAM_DEPRECATED_UI_MODULE_DESCRIPTORS);
   }
