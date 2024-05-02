@@ -202,4 +202,17 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
       assertThat(responseEntitlements.getFlowId()).isNotNull();
     }
   }
+
+  public static String exactRouteExpression(String path, String method) {
+    return "(http.path == \"" + path + "\""
+      + " && http.method == \"" + method + "\""
+      + " && http.headers.x_okapi_tenant == \"test\")";
+  }
+
+  @SuppressWarnings("SameParameterValue")
+  public static String regexRouteExpression(String expression, String method) {
+    return "(http.path ~ \"" + expression + "\""
+      + " && http.method == \"" + method + "\""
+      + " && http.headers.x_okapi_tenant == \"test\")";
+  }
 }

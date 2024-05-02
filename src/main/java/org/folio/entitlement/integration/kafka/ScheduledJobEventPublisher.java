@@ -26,10 +26,10 @@ public class ScheduledJobEventPublisher extends DatabaseLoggingStage<OkapiStageC
   @Override
   public void execute(OkapiStageContext context) {
     var tenantName = context.getTenantName();
-    var applicationId = context.getApplicationId();
+    var entitledApplicationId = context.getEntitledApplicationId();
     var timerEventsStream = getTimerEventsStream(context);
     var deprecatedTimerEventsStream = toStream(context.getDeprecatedModuleDescriptors())
-      .map(moduleDescriptor -> createEvent(moduleDescriptor, tenantName, applicationId, true))
+      .map(moduleDescriptor -> getEvent(moduleDescriptor, tenantName, entitledApplicationId, true))
       .flatMap(Optional::stream);
 
     var messageKey = context.getTenantId().toString();
@@ -44,23 +44,23 @@ public class ScheduledJobEventPublisher extends DatabaseLoggingStage<OkapiStageC
     var request = context.getEntitlementRequest();
     if (request.getType() == UPGRADE) {
       return toStream(context.getModuleDescriptorHolders())
-        .map(moduleDescriptorHolder -> createEvent(moduleDescriptorHolder, tenantName, applicationId))
+        .map(moduleDescriptorHolder -> getEvent(moduleDescriptorHolder, context))
         .flatMap(Optional::stream);
     }
 
     return toStream(context.getModuleDescriptors())
-      .map(moduleDescriptor -> createEvent(moduleDescriptor, tenantName, applicationId, false))
+      .map(moduleDescriptor -> getEvent(moduleDescriptor, tenantName, applicationId, false))
       .flatMap(Optional::stream);
   }
 
-  private static Optional<ResourceEvent<ScheduledTimers>> createEvent(ModuleDescriptorHolder holder, String tenantName,
-    String applicationId) {
-    var scheduledTimers = getScheduledTimers(applicationId, holder.moduleDescriptor());
-    var oldScheduledTimers = getScheduledTimers(applicationId, holder.installedModuleDescriptor());
+  private static Optional<ResourceEvent<ScheduledTimers>> getEvent(ModuleDescriptorHolder mdh, OkapiStageContext ctx) {
+    var tenantName = ctx.getTenantName();
+    var scheduledTimers = getScheduledTimers(ctx.getApplicationId(), mdh.moduleDescriptor());
+    var oldScheduledTimers = getScheduledTimers(ctx.getEntitledApplicationId(), mdh.installedModuleDescriptor());
     return ScheduledJobModuleEventPublisher.createEvent(tenantName, scheduledTimers, oldScheduledTimers);
   }
 
-  private static Optional<ResourceEvent<ScheduledTimers>> createEvent(ModuleDescriptor moduleDescriptor,
+  private static Optional<ResourceEvent<ScheduledTimers>> getEvent(ModuleDescriptor moduleDescriptor,
     String tenantName, String applicationId, boolean isDeprecated) {
     var scheduledTimers = getScheduledTimers(applicationId, moduleDescriptor);
     return isDeprecated

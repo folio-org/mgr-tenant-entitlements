@@ -74,11 +74,12 @@ class OkapiModulesEntitleFlowFactoryTest {
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesEntitleFlow";
     var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
-    var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
     verifyStageExecution(inOrder, kongRouteCreator, expectedStageContext);
     verifyStageExecution(inOrder, keycloakAuthResourceCreator, expectedStageContext);
     verifyStageExecution(inOrder, okapiModulesInstaller, expectedStageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, expectedStageContext);
+
+    var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
     verifyStageExecution(inOrder, scheduledJobEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, expectedStageContext);
     verifyStageExecution(inOrder, okapiModulesEventPublisher, expectedStageContext);

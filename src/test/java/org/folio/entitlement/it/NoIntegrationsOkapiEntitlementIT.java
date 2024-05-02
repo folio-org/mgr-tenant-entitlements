@@ -67,6 +67,7 @@ import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.EnableOkapiSecurity;
+import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.BeforeAll;
@@ -97,6 +98,9 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
   private static final String OKAPI_MODULE_3_ID = "okapi-module3-1.0.0";
   private static final String OKAPI_MODULE_4_ID = "okapi-module4-4.0.0";
   private static final String OKAPI_MODULE_5_ID = "okapi-module5-5.0.0";
+
+  private static final String FOLIO_APP6_V1_ID = "folio-app6-6.0.0";
+  private static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
 
   @BeforeAll
   static void beforeAll(@Autowired ApplicationContext appContext) {
@@ -210,7 +214,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement));
     assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID));
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
-    assertScheduledJobEvents(readScheduledJobEvent("json/events/okapi-it/scheduled-job-event.json"));
+    assertScheduledJobEvents(readScheduledJobEvent("json/events/okapi-it/okapi-module1/scheduled-job-event.json"));
     assertSystemUserEvents(readSystemUserEvent("json/events/okapi-it/system-user-event.json"));
   }
 
@@ -623,6 +627,40 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
       appFlows -> assertThat(appFlows).hasSize(1),
       appFlows -> assertThat(appFlows.get(0).getStatus()).isEqualTo(ExecutionStatus.CANCELLED)
     );
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app6/v1-get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app6/v2-get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app6/v1-get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json",
+    "/wiremock/okapi/_proxy/install-module-for-upgrade-test.json"
+  })
+  void upgrade_positive_freshInstallation() throws Exception {
+    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+
+    var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
+    entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
+    assertScheduledJobEvents(
+      readScheduledJobEvent("json/events/folio-app6/folio-module1/scheduled-job-event.json"),
+      readScheduledJobEvent("json/events/folio-app6/folio-module2/v1-scheduled-job-event.json"));
+
+    var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
+    upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
+
+    getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
+    assertScheduledJobEvents(
+      readScheduledJobEvent("json/events/folio-app6/folio-module2/v2-scheduled-job-update-event.json"));
+
+    mockMvc.perform(get("/entitlements")
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .queryParam("query", "applicationId == " + FOLIO_APP6_V1_ID))
+      .andExpect(status().isOk())
+      .andExpect(content().json(asJsonString(emptyEntitlements())));
   }
 
   private static void checkApplicationContextBeans(ApplicationContext appContext) {

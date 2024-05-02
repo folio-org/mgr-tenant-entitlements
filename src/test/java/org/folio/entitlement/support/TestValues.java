@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.EntitlementType;
@@ -54,6 +55,7 @@ import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
+import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.integration.tm.model.Tenant;
 import org.folio.entitlement.utils.SemverUtils;
@@ -338,5 +340,9 @@ public class TestValues {
   public static ModulesSequence modulesSequence(List<List<ModuleDescriptorHolder>> moduleDescriptorHolders,
     List<List<ModuleDescriptor>> deprecatedModuleDescriptors) {
     return new ModulesSequence(moduleDescriptorHolders, deprecatedModuleDescriptors);
+  }
+
+  public static ScheduledTimers scheduledTimers(String moduleId, String applicationId, RoutingEntry... handlers) {
+    return ScheduledTimers.of(moduleId, applicationId, asList(handlers));
   }
 }

@@ -1,11 +1,13 @@
 package org.folio.entitlement.integration.folio.flow;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.folio.entitlement.utils.FlowUtils.combineStages;
 
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
 import org.folio.entitlement.integration.kong.KongModuleRouteUpdater;
 import org.folio.entitlement.service.flow.ModuleFlowFactory;
@@ -16,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @RequiredArgsConstructor
 public class FolioModuleUpgradeFlowFactory implements ModuleFlowFactory {
 
+  private final ScheduledJobModuleEventPublisher scheduledJobEventPublisher;
   private KongModuleRouteUpdater kongModuleRouteUpdater;
   private KeycloakModuleResourceUpdater kcModuleResourceUpdater;
 
@@ -25,6 +28,7 @@ public class FolioModuleUpgradeFlowFactory implements ModuleFlowFactory {
       .id(flowId)
       .executionStrategy(strategy)
       .stage(combineStages("ResourceUpdaterParallelStage", asList(kongModuleRouteUpdater, kcModuleResourceUpdater)))
+      .stage(combineStages("EventPublishingParallelStage", singletonList(scheduledJobEventPublisher)))
       .flowParameters(additionalFlowParameters)
       .build();
   }

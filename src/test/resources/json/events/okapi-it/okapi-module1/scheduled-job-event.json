@@ -1,0 +1,15 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Scheduled Job",
+  "new": {
+    "moduleId": "okapi-module-1.0.0",
+    "applicationId": "okapi-app-1.0.0",
+    "timers": [
+      {
+        "methods": [ "POST" ],
+        "pathPattern": "/okapi_module/timer-api"
+      }
+    ]
+  }
+}

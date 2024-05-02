@@ -17,10 +17,10 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
-import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventBody;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
+import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 
 @Log4j2
@@ -46,8 +46,8 @@ public final class KafkaEventAssertions {
   }
 
   @SafeVarargs
-  public static void assertScheduledJobEvents(ResourceEvent<RoutingEntry>... events) {
-    var type = new TypeReference<ResourceEvent<RoutingEntry>>() {};
+  public static void assertScheduledJobEvents(ResourceEvent<ScheduledTimers>... events) {
+    var type = new TypeReference<ResourceEvent<ScheduledTimers>>() {};
     await().untilAsserted(() -> assertEventsSequence(scheduledJobsTenantTopic(), type, events));
   }
 

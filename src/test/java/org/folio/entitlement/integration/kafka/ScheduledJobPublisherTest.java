@@ -2,6 +2,7 @@ package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
@@ -87,9 +88,11 @@ class ScheduledJobPublisherTest {
 
   @Test
   void execute_positive_updateRequest() {
+    var entitledApplicationId = "test-app-0.0.9";
     var flowParameters = Map.of(
       PARAM_REQUEST, request(UPGRADE),
       PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, entitledApplicationId,
       PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(fooModuleDescriptorV2(), fooModuleDescriptor())),
       PARAM_DEPRECATED_MODULE_DESCRIPTORS, List.of(barModuleDescriptor()));
 
@@ -101,13 +104,13 @@ class ScheduledJobPublisherTest {
     var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(FOO_MODULE_V2_ID, APPLICATION_ID, List.of(fooTimerRoutingEntryV2())))
-      .oldValue(ScheduledTimers.of(FOO_MODULE_ID, APPLICATION_ID, List.of(fooTimerRoutingEntry())))
+      .oldValue(ScheduledTimers.of(FOO_MODULE_ID, entitledApplicationId, List.of(fooTimerRoutingEntry())))
       .build();
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
 
     var barTimerEvent = ResourceEvent.<ScheduledTimers>builder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
-      .oldValue(ScheduledTimers.of(BAR_MODULE_ID, APPLICATION_ID, List.of(barTimerRoutingEntry())))
+      .oldValue(ScheduledTimers.of(BAR_MODULE_ID, entitledApplicationId, List.of(barTimerRoutingEntry())))
       .build();
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), barTimerEvent);
   }

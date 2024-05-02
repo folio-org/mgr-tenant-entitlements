@@ -76,6 +76,17 @@
                       "pathPattern": "/_/tenant/{id}"
                     }
                   ]
+                },
+                {
+                  "id": "_timer",
+                  "version": "1.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module1/v1/scheduled-timer"
+                    }
+                  ]
                 }
               ],
               "permissionSets": [
@@ -139,6 +150,21 @@
                     {
                       "methods": [ "GET", "DELETE" ],
                       "pathPattern": "/_/tenant/{id}"
+                    }
+                  ]
+                },
+                {
+                  "id": "_timer",
+                  "version": "1.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module2/v1/scheduled-timer1"
+                    },
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module2/v1/scheduled-timer2"
                     }
                   ]
                 }
