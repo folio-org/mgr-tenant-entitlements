@@ -1,0 +1,29 @@
+{
+  "type": "DELETE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "old": {
+    "moduleId": "ui-foo-module-1.0.0",
+    "moduleType": "ui-module",
+    "applicationId": "test-app-0.0.9",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "ui-foo.collection.view",
+          "displayName": "ui-foo.collection.view display name",
+          "description": "ui-foo.collection.view description",
+          "subPermissions": [ "ui-foo.item.view" ],
+          "visible": true
+        }
+      },
+      {
+        "permission": {
+          "permissionName": "ui-foo.item.view",
+          "displayName": "ui-foo.item.view display name",
+          "description": "ui-foo.item.view description",
+          "subPermissions": [ "foo.item.get", "foo.item-refs.get" ]
+        }
+      }
+    ]
+  }
+}

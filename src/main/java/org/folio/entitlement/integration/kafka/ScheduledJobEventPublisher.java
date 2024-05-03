@@ -7,6 +7,7 @@ import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
 import java.util.Optional;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.springframework.stereotype.Component;
 
@@ -14,8 +15,8 @@ import org.springframework.stereotype.Component;
 public class ScheduledJobEventPublisher extends AbstractEventPublisher<ScheduledTimers> {
 
   @Override
-  protected Optional<ScheduledTimers> getEventPayload(String applicationId, ModuleDescriptor moduleDescriptor) {
-    return getScheduledTimers(applicationId, moduleDescriptor);
+  protected Optional<ScheduledTimers> getEventPayload(String appId, ModuleType type, ModuleDescriptor descriptor) {
+    return getScheduledTimers(appId, descriptor);
   }
 
   @Override

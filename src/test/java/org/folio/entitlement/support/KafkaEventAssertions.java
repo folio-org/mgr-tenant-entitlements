@@ -17,7 +17,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
-import org.folio.entitlement.integration.kafka.model.CapabilityEventBody;
+import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
@@ -40,8 +40,8 @@ public final class KafkaEventAssertions {
   }
 
   @SafeVarargs
-  public static void assertCapabilityEvents(ResourceEvent<CapabilityEventBody>... events) {
-    var type = new TypeReference<ResourceEvent<CapabilityEventBody>>() {};
+  public static void assertCapabilityEvents(ResourceEvent<CapabilityEventPayload>... events) {
+    var type = new TypeReference<ResourceEvent<CapabilityEventPayload>>() {};
     await().untilAsserted(() -> assertEventsSequence(capabilitiesTenantTopic(), type, events));
   }
 
@@ -60,7 +60,7 @@ public final class KafkaEventAssertions {
   @SafeVarargs
   private static <T> void assertEventsSequence(String topic, TypeReference<T> type, T... events) {
     var consumerRecords = getEvents(topic, type);
-    var entitlementEvents = mapItems(consumerRecords, ConsumerRecord::value);
-    assertThat(entitlementEvents).containsSequence(events);
+    var eventValues = mapItems(consumerRecords, ConsumerRecord::value);
+    assertThat(eventValues).containsSequence(events);
   }
 }

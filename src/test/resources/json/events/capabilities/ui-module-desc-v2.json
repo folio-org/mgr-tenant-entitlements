@@ -14,12 +14,18 @@
       "displayName": "ui-foo.item.view display name",
       "description": "ui-foo.item.view description",
       "subPermissions": [ "foo.item.get", "foo.item-refs.get" ]
+    },
+    {
+      "permissionName": "ui-foo.item.manage",
+      "displayName": "ui-foo.item.manage display name",
+      "description": "ui-foo.item.manage description",
+      "subPermissions": [ "ui-foo.item.view", "ui-foo.collection.view" ]
     }
   ],
   "requires": [
     {
       "id": "foo-interface",
-      "version": "0.1"
+      "version": "0.2"
     }
   ]
 }

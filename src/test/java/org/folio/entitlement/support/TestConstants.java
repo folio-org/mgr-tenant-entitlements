@@ -47,6 +47,7 @@ public class TestConstants {
   public static final String APPLICATION_NAME = "test-app";
   public static final String APPLICATION_VERSION = "1.0.0";
   public static final String APPLICATION_ID = APPLICATION_NAME + "-" + APPLICATION_VERSION;
+  public static final String ENTITLED_APPLICATION_ID = APPLICATION_NAME + "-0.0.9";
 
   public static final String OKAPI_TOKEN = "X-Okapi-Token test value";
   public static final String TENANT_PARAMETERS = "loadSample=true";

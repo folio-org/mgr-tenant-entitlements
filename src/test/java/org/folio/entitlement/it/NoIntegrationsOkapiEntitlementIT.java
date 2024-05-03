@@ -645,15 +645,19 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
     assertScheduledJobEvents(
-      readScheduledJobEvent("json/events/folio-app6/folio-module1/scheduled-job-event.json"),
-      readScheduledJobEvent("json/events/folio-app6/folio-module2/v1-scheduled-job-event.json"));
+      readScheduledJobEvent("json/events/folio-app6/folio-module1/timer-event.json"),
+      readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-event.json"));
+
+    assertCapabilityEvents(
+      readCapabilityEvent("json/events/folio-app6/folio-module1/capability-event.json"),
+      readCapabilityEvent("json/events/folio-app6/folio-module2/capability-event.json"));
 
     var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
 
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
-    assertScheduledJobEvents(
-      readScheduledJobEvent("json/events/folio-app6/folio-module2/v2-scheduled-job-update-event.json"));
+    assertScheduledJobEvents(readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-update-event.json"));
+    assertCapabilityEvents(readCapabilityEvent("json/events/folio-app6/folio-module2/capability-update-event.json"));
 
     mockMvc.perform(get("/entitlements")
         .contentType(APPLICATION_JSON)

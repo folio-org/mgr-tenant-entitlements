@@ -38,7 +38,7 @@ import org.apache.commons.io.FileUtils;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.integration.kafka.model.CapabilityEventBody;
+import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
@@ -118,7 +118,7 @@ public class TestUtils {
     return parse(readString(path), ApplicationDescriptor.class);
   }
 
-  public static ResourceEvent<CapabilityEventBody> readCapabilityEvent(String path) {
+  public static ResourceEvent<CapabilityEventPayload> readCapabilityEvent(String path) {
     return parse(readString(path), new TypeReference<>() {});
   }
 

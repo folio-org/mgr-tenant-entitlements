@@ -5,6 +5,7 @@ import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_A
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
+import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +16,7 @@ import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
+import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.flow.api.StageContext;
 
 @ToString(callSuper = true)
@@ -114,13 +116,8 @@ public class OkapiStageContext extends IdentifiableStageContext {
     return emptyIfNull(context.getFlowParameter(PARAM_MODULE_DESCRIPTORS));
   }
 
-  /**
-   * Returns a list of UI module descriptors in order for installation/uninstallation.
-   *
-   * @return {@link List} with {@link ModuleDescriptor} objects
-   */
-  public List<ModuleDescriptor> getUiModuleDescriptors() {
-    return emptyIfNull(context.getFlowParameter(PARAM_UI_MODULE_DESCRIPTORS));
+  public List<ModuleDescriptor> getModuleDescriptors(ModuleType moduleType) {
+    return moduleType == MODULE ? getModuleDescriptors() : getUiModuleDescriptors();
   }
 
   /**
@@ -130,6 +127,19 @@ public class OkapiStageContext extends IdentifiableStageContext {
    */
   public List<ModuleDescriptorHolder> getModuleDescriptorHolders() {
     return emptyIfNull(context.getFlowParameter(PARAM_MODULE_DESCRIPTOR_HOLDERS));
+  }
+
+  public List<ModuleDescriptorHolder> getModuleDescriptorHolders(ModuleType moduleType) {
+    return moduleType == MODULE ? getModuleDescriptorHolders() : getUiModuleDescriptorHolders();
+  }
+
+  /**
+   * Returns a list of UI module descriptors in order for installation/uninstallation.
+   *
+   * @return {@link List} with {@link ModuleDescriptor} objects
+   */
+  public List<ModuleDescriptor> getUiModuleDescriptors() {
+    return emptyIfNull(context.getFlowParameter(PARAM_UI_MODULE_DESCRIPTORS));
   }
 
   /**
@@ -148,6 +158,15 @@ public class OkapiStageContext extends IdentifiableStageContext {
    */
   public List<ModuleDescriptor> getDeprecatedModuleDescriptors() {
     return emptyIfNull(context.getFlowParameter(PARAM_DEPRECATED_MODULE_DESCRIPTORS));
+  }
+
+  /**
+   * Returns a list of deprecated {@link ModuleDescriptor} in order for upgrade.
+   *
+   * @return {@link List} with {@link ModuleDescriptor} objects
+   */
+  public List<ModuleDescriptor> getDeprecatedModuleDescriptors(ModuleType moduleType) {
+    return moduleType == MODULE ? getDeprecatedModuleDescriptors() : getDeprecatedUiModuleDescriptors();
   }
 
   /**

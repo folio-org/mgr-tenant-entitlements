@@ -1,34 +1,39 @@
 package org.folio.entitlement.integration.kafka;
 
-import static org.apache.commons.collections4.ListUtils.emptyIfNull;
-import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
-import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITIES_TOPIC;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITY_RESOURCE_NAME;
+import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.folio.entitlement.domain.model.ApplicationStageContext;
-import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
+import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class CapabilitiesEventPublisher extends DatabaseLoggingStage<ApplicationStageContext> {
-
-  private final CapabilitiesModuleEventPublisher capabilitiesModuleEventPublisher;
+public class CapabilitiesEventPublisher extends AbstractEventPublisher<CapabilityEventPayload> {
 
   @Override
-  public void execute(ApplicationStageContext context) {
-    var appDesc = context.getApplicationDescriptor();
-    var tenant = context.getTenantName();
-    var appId = appDesc.getId();
+  protected Optional<CapabilityEventPayload> getEventPayload(String appId, ModuleType type, ModuleDescriptor desc) {
+    return CapabilitiesModuleEventPublisher.getCapabilityEventPayload(appId, type, desc);
+  }
 
-    for (var moduleDescriptor : emptyIfNull(appDesc.getModuleDescriptors())) {
-      capabilitiesModuleEventPublisher.sendEvent(moduleDescriptor, appId, tenant, MODULE);
-    }
+  @Override
+  protected String getTopicName(String tenantName) {
+    return getTenantTopicName(CAPABILITIES_TOPIC, tenantName);
+  }
 
-    for (var desc : emptyIfNull(appDesc.getUiModuleDescriptors())) {
-      capabilitiesModuleEventPublisher.sendEvent(desc, appId, tenant, UI_MODULE);
-    }
+  @Override
+  protected String getResourceName() {
+    return CAPABILITY_RESOURCE_NAME;
+  }
+
+  @Override
+  protected boolean includeUiDescriptors() {
+    return true;
   }
 }

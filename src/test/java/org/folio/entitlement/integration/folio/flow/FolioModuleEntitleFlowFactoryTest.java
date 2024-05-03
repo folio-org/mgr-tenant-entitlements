@@ -105,7 +105,7 @@ class FolioModuleEntitleFlowFactoryTest {
   @Test
   void createUiModuleFlow_positive_allConditionalStages() {
     mockStageNames(capabilitiesEventPublisher);
-    var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor(), UI_MODULE);
+    var flowParameters = moduleFlowParameters(entitlementRequest(), UI_MODULE, moduleDescriptor());
 
     var flow = entitleFlowFactory.createUiModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);

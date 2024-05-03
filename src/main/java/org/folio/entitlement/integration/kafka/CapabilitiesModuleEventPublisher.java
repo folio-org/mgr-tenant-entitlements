@@ -9,7 +9,8 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITIES_TOPIC;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITY_RESOURCE_NAME;
 import static org.folio.entitlement.utils.RoutingEntryUtils.getMethods;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
@@ -22,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -30,58 +32,47 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.Permission;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.common.utils.CollectionUtils;
-import org.folio.entitlement.domain.model.ModuleStageContext;
-import org.folio.entitlement.integration.kafka.model.CapabilityEventBody;
+import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
 import org.folio.entitlement.integration.kafka.model.Endpoint;
 import org.folio.entitlement.integration.kafka.model.FolioResource;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
-import org.folio.entitlement.integration.kafka.model.ResourceEvent;
-import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class CapabilitiesModuleEventPublisher extends ModuleDatabaseLoggingStage {
-
-  private static final String CAPABILITIES_TOPIC = "mgr-tenant-entitlements.capability";
-  private static final String CAPABILITY_RESOURCE_NAME = "Capability";
-
-  private final KafkaEventPublisher kafkaEventPublisher;
+public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublisher<CapabilityEventPayload> {
 
   @Override
-  public void execute(ModuleStageContext context) {
-    var tenant = context.getTenantName();
-    var applicationId = context.getApplicationId();
-    var moduleDescriptor = context.getModuleDescriptor();
-    var moduleType = context.getModuleType();
-    sendEvent(moduleDescriptor, applicationId, tenant, moduleType);
+  protected Optional<CapabilityEventPayload> getEventPayload(String appId, ModuleType type, ModuleDescriptor desc) {
+    return getCapabilityEventPayload(appId, type, desc);
   }
 
-  /**
-   * Sends a capabilities event for provided {@link ModuleDescriptor} object.
-   *
-   * @param descriptor - {@link ModuleDescriptor} object
-   * @param applicationId - application identifier
-   * @param tenant - tenant name
-   * @param type - module type (ui or be)
-   */
-  public void sendEvent(ModuleDescriptor descriptor, String applicationId, String tenant, ModuleType type) {
+  @Override
+  protected String getTopicName(String tenantName) {
+    return getTenantTopicName(CAPABILITIES_TOPIC, tenantName);
+  }
+
+  @Override
+  protected String getResourceName() {
+    return CAPABILITY_RESOURCE_NAME;
+  }
+
+  public static Optional<CapabilityEventPayload> getCapabilityEventPayload(String applicationId,
+    ModuleType moduleType, ModuleDescriptor descriptor) {
+    if (descriptor == null) {
+      return Optional.empty();
+    }
+
     var folioResourcesList = getFolioResourcesList(descriptor);
     if (isEmpty(folioResourcesList)) {
       log.debug("FolioResource list is empty: applicationId = {}, moduleId = {}", applicationId, descriptor.getId());
-      return;
+      return Optional.empty();
     }
 
     var moduleId = descriptor.getId();
-    var capabilityEvent = ResourceEvent.<CapabilityEventBody>builder()
-      .type(CREATE)
-      .tenant(tenant)
-      .resourceName(CAPABILITY_RESOURCE_NAME)
-      .newValue(CapabilityEventBody.of(moduleId, type, applicationId, folioResourcesList))
-      .build();
-
-    kafkaEventPublisher.send(getTenantTopicName(CAPABILITIES_TOPIC, tenant), moduleId, capabilityEvent);
+    var capabilityEventPayload = CapabilityEventPayload.of(moduleId, moduleType, applicationId, folioResourcesList);
+    return Optional.of(capabilityEventPayload);
   }
 
   private static List<FolioResource> getFolioResourcesList(ModuleDescriptor moduleDescriptor) {

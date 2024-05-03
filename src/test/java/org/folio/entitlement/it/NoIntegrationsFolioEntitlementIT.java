@@ -2,6 +2,7 @@ package org.folio.entitlement.it;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.support.KafkaEventAssertions.assertCapabilityEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertScheduledJobEvents;
 import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
@@ -14,9 +15,11 @@ import static org.folio.entitlement.support.TestConstants.OKAPI_KONG_INTEGRATION
 import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
 import static org.folio.entitlement.support.TestConstants.entitlementTopic;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
+import static org.folio.entitlement.support.TestUtils.readCapabilityEvent;
 import static org.folio.entitlement.support.TestUtils.readScheduledJobEvent;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
@@ -86,6 +89,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     checkApplicationContextBeans(appContext);
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
     fakeKafkaConsumer.registerTopic(scheduledJobsTenantTopic(), ResourceEvent.class);
+    fakeKafkaConsumer.registerTopic(capabilitiesTenantTopic(), ResourceEvent.class);
   }
 
   @Test
@@ -490,15 +494,19 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
     assertScheduledJobEvents(
-      readScheduledJobEvent("json/events/folio-app6/folio-module1/scheduled-job-event.json"),
-      readScheduledJobEvent("json/events/folio-app6/folio-module2/v1-scheduled-job-event.json"));
+      readScheduledJobEvent("json/events/folio-app6/folio-module1/timer-event.json"),
+      readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-event.json"));
+
+    assertCapabilityEvents(
+      readCapabilityEvent("json/events/folio-app6/folio-module1/capability-event.json"),
+      readCapabilityEvent("json/events/folio-app6/folio-module2/capability-event.json"));
 
     var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
 
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
-    assertScheduledJobEvents(
-      readScheduledJobEvent("json/events/folio-app6/folio-module2/v2-scheduled-job-update-event.json"));
+    assertScheduledJobEvents(readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-update-event.json"));
+    assertCapabilityEvents(readCapabilityEvent("json/events/folio-app6/folio-module2/capability-update-event.json"));
 
     mockMvc.perform(get("/entitlements")
         .contentType(APPLICATION_JSON)
