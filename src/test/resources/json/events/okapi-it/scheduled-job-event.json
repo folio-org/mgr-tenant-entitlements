@@ -1,9 +1,0 @@
-{
-  "type": "CREATE",
-  "tenant": "test",
-  "resourceName": "Scheduled Job",
-  "new": {
-    "methods": [ "POST" ],
-    "pathPattern": "/okapi_module/timer-api"
-  }
-}

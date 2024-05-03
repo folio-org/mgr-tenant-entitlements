@@ -3,6 +3,7 @@ package org.folio.entitlement.it;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEvents;
+import static org.folio.entitlement.support.KafkaEventAssertions.assertScheduledJobEvents;
 import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.COMMON_KONG_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES;
@@ -14,7 +15,9 @@ import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.entitlementTopic;
+import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
+import static org.folio.entitlement.support.TestUtils.readScheduledJobEvent;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementEvent;
@@ -41,6 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
+import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
@@ -81,6 +85,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
   static void beforeAll(@Autowired ApplicationContext appContext) {
     checkApplicationContextBeans(appContext);
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
+    fakeKafkaConsumer.registerTopic(scheduledJobsTenantTopic(), ResourceEvent.class);
   }
 
   @Test
@@ -484,11 +489,16 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
 
     var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
+    assertScheduledJobEvents(
+      readScheduledJobEvent("json/events/folio-app6/folio-module1/scheduled-job-event.json"),
+      readScheduledJobEvent("json/events/folio-app6/folio-module2/v1-scheduled-job-event.json"));
 
     var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
 
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
+    assertScheduledJobEvents(
+      readScheduledJobEvent("json/events/folio-app6/folio-module2/v2-scheduled-job-update-event.json"));
 
     mockMvc.perform(get("/entitlements")
         .contentType(APPLICATION_JSON)

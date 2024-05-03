@@ -44,7 +44,9 @@ import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.domain.model.ModuleStageContext;
+import org.folio.entitlement.domain.model.ModulesSequence;
 import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Dependency;
@@ -52,6 +54,7 @@ import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
+import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.integration.tm.model.Tenant;
 import org.folio.entitlement.utils.SemverUtils;
 import org.folio.flow.api.FlowEngine;
@@ -246,6 +249,10 @@ public class TestValues {
     return ApplicationStageContext.decorate(StageContext.of(flowId, flowParams, ctxParams));
   }
 
+  public static OkapiStageContext okapiStageContext(Object flowId, Map<?, ?> flowParams, Map<?, ?> ctxParams) {
+    return OkapiStageContext.decorate(StageContext.of(flowId, flowParams, ctxParams));
+  }
+
   public static CommonStageContext commonStageContext(Object flowId, Map<?, ?> flowParams, Map<?, ?> ctxParams) {
     return CommonStageContext.decorate(StageContext.of(flowId, flowParams, ctxParams));
   }
@@ -312,5 +319,24 @@ public class TestValues {
 
   public static EntitlementEvent entitlementEvent(EntitlementType type, String moduleId, String tenant, UUID tenantId) {
     return new EntitlementEvent(type.name(), moduleId, tenant, tenantId);
+  }
+
+  public static ModuleDescriptorHolder moduleDescriptorHolder(ModuleDescriptor moduleDescriptor,
+    ModuleDescriptor installedModuleDescriptor) {
+    return new ModuleDescriptorHolder(moduleDescriptor, installedModuleDescriptor);
+  }
+
+  public static ModulesSequence modulesSequence(List<List<ModuleDescriptorHolder>> moduleDescriptorHolders) {
+    return new ModulesSequence(moduleDescriptorHolders, emptyList());
+  }
+
+  @SafeVarargs
+  public static ModulesSequence modulesSequence(List<ModuleDescriptorHolder>... moduleDescriptorHolders) {
+    return new ModulesSequence(asList(moduleDescriptorHolders), emptyList());
+  }
+
+  public static ModulesSequence modulesSequence(List<List<ModuleDescriptorHolder>> moduleDescriptorHolders,
+    List<List<ModuleDescriptor>> deprecatedModuleDescriptors) {
+    return new ModulesSequence(moduleDescriptorHolders, deprecatedModuleDescriptors);
   }
 }

@@ -1,0 +1,61 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPath": "/_/proxy/tenants/test/install",
+    "queryParameters": {
+      "reinstall": {
+        "equalTo": "false"
+      },
+      "purge": {
+        "equalTo": "false"
+      },
+      "tenantParameters": {
+        "equalTo": "loadReference=true"
+      },
+      "ignoreErrors": {
+        "equalTo": "true"
+      },
+      "async": {
+        "equalTo": "false"
+      }
+    },
+    "headers": {
+      "X-Okapi-Token": {
+        "equalTo": "X-Okapi-Token test value"
+      },
+      "Content-Type": {
+        "equalTo": "application/json"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": [
+          {
+            "id": "folio-module1-1.0.0",
+            "action": "enable"
+          },
+          {
+            "id": "folio-module2-2.0.0",
+            "action": "enable"
+          }
+        ]
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": [
+      {
+        "id": "folio-module1-1.0.0",
+        "action": "enable"
+      },
+      {
+        "id": "folio-module2-2.0.0",
+        "action": "enable"
+      }
+    ]
+  }
+}

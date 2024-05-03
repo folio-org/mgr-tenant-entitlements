@@ -1,18 +1,24 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
+import static org.folio.entitlement.integration.kafka.model.ResourceEventType.DELETE;
+import static org.folio.entitlement.integration.kafka.model.ResourceEventType.UPDATE;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_DEPRECATED_MODULE_DESCRIPTORS;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTOR_HOLDERS;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
-import static org.folio.entitlement.support.TestConstants.APPLICATION_NAME;
-import static org.folio.entitlement.support.TestConstants.APPLICATION_VERSION;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
-import static org.folio.entitlement.support.TestValues.appStageContext;
+import static org.folio.entitlement.support.TestValues.moduleDescriptorHolder;
+import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
@@ -22,14 +28,15 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
+import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -37,14 +44,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ScheduledJobEventPublisherTest {
 
-  private ScheduledJobEventPublisher publisher;
+  private static final String FOO_MODULE_ID = "mod-foo-1.0.0";
+  private static final String FOO_MODULE_V2_ID = "mod-foo-2.0.0";
+  private static final String BAR_MODULE_ID = "mod-bar-1.0.0";
+
+  @InjectMocks private ScheduledJobEventPublisher publisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
 
   @BeforeEach
   void setUp() {
     System.setProperty("env", "test-env");
-    var scheduledJobModuleEventPublisher = new ScheduledJobModuleEventPublisher(kafkaEventPublisher);
-    this.publisher = new ScheduledJobEventPublisher(scheduledJobModuleEventPublisher);
   }
 
   @AfterEach
@@ -55,21 +64,61 @@ class ScheduledJobEventPublisherTest {
 
   @Test
   void execute_positive() {
-    var applicationDescriptor = applicationDescriptor(fooModuleDescriptor(), barModuleDescriptor());
-    var flowParameters = Map.of(PARAM_REQUEST, request(ENTITLE), PARAM_APPLICATION_DESCRIPTOR, applicationDescriptor);
+    var moduleDescriptors = List.of(fooModuleDescriptor(), barModuleDescriptor());
+    var flowParameters = Map.of(
+      PARAM_REQUEST, request(ENTITLE),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_MODULE_DESCRIPTORS, moduleDescriptors);
+
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_ID, flowParameters, contextParameters);
+    var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
 
     publisher.execute(stageContext);
 
-    var fooResourceEvent = resourceEvent(fooTimerRoutingEntry());
-    var barResourceEvent = resourceEvent(barTimerRoutingEntry());
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooResourceEvent);
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), barResourceEvent);
+    var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+      .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
+      .newValue(ScheduledTimers.of(FOO_MODULE_ID, APPLICATION_ID, List.of(fooTimerRoutingEntry())))
+      .build();
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
+
+    var barTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+      .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
+      .newValue(ScheduledTimers.of(BAR_MODULE_ID, APPLICATION_ID, List.of(barTimerRoutingEntry())))
+      .build();
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), barTimerEvent);
+  }
+
+  @Test
+  void execute_positive_updateRequest() {
+    var entitledApplicationId = "test-app-0.0.9";
+    var flowParameters = Map.of(
+      PARAM_REQUEST, request(UPGRADE),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, entitledApplicationId,
+      PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(fooModuleDescriptorV2(), fooModuleDescriptor())),
+      PARAM_DEPRECATED_MODULE_DESCRIPTORS, List.of(barModuleDescriptor()));
+
+    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
+
+    publisher.execute(stageContext);
+
+    var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+      .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
+      .newValue(ScheduledTimers.of(FOO_MODULE_V2_ID, APPLICATION_ID, List.of(fooTimerRoutingEntryV2())))
+      .oldValue(ScheduledTimers.of(FOO_MODULE_ID, entitledApplicationId, List.of(fooTimerRoutingEntry())))
+      .build();
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
+
+    var barTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+      .type(DELETE).tenant(TENANT_NAME).resourceName("Scheduled Job")
+      .oldValue(ScheduledTimers.of(BAR_MODULE_ID, entitledApplicationId, List.of(barTimerRoutingEntry())))
+      .build();
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), barTimerEvent);
   }
 
   private static ModuleDescriptor fooModuleDescriptor() {
-    return new ModuleDescriptor().id("mod-foo-1.0.0")
+    return new ModuleDescriptor().id(FOO_MODULE_ID)
       .addProvidesItem(new InterfaceDescriptor()
         .id("foo").handlers(List.of(
           new RoutingEntry().pathPattern("/foo/entities/{id}").methods(List.of("GET")),
@@ -78,12 +127,26 @@ class ScheduledJobEventPublisherTest {
         .id("_timer").interfaceType("system").handlers(List.of(fooTimerRoutingEntry())));
   }
 
+  private static ModuleDescriptor fooModuleDescriptorV2() {
+    return new ModuleDescriptor().id(FOO_MODULE_V2_ID)
+      .addProvidesItem(new InterfaceDescriptor()
+        .id("foo").version("1.0").handlers(List.of(
+          new RoutingEntry().pathPattern("/foo/entities/{id}").methods(List.of("GET")),
+          new RoutingEntry().pathPattern("/foo/entities").methods(List.of("POST")))))
+      .addProvidesItem(new InterfaceDescriptor()
+        .id("_timer").interfaceType("system").version("2.0").handlers(List.of(fooTimerRoutingEntryV2())));
+  }
+
   private static RoutingEntry fooTimerRoutingEntry() {
     return new RoutingEntry().pathPattern("/foo/entities/scheduled").methods(List.of("POST"));
   }
 
+  private static RoutingEntry fooTimerRoutingEntryV2() {
+    return new RoutingEntry().pathPattern("/foo/v2/entities/scheduled").methods(List.of("POST"));
+  }
+
   private static ModuleDescriptor barModuleDescriptor() {
-    return new ModuleDescriptor().id("mod-foo-1.0.0")
+    return new ModuleDescriptor().id(BAR_MODULE_ID)
       .addProvidesItem(new InterfaceDescriptor()
         .id("_timer").interfaceType("system")
         .handlers(List.of(barTimerRoutingEntry())));
@@ -94,23 +157,10 @@ class ScheduledJobEventPublisherTest {
   }
 
   private static EntitlementRequest request(EntitlementType type) {
-    return EntitlementRequest.builder().tenantId(TENANT_ID).type(type).build();
-  }
-
-  private static ApplicationDescriptor applicationDescriptor(ModuleDescriptor... moduleDescriptors) {
-    return new ApplicationDescriptor()
-      .id(APPLICATION_ID)
-      .name(APPLICATION_NAME)
-      .version(APPLICATION_VERSION)
-      .moduleDescriptors(List.of(moduleDescriptors));
-  }
-
-  private static ResourceEvent<RoutingEntry> resourceEvent(RoutingEntry entry) {
-    return ResourceEvent.<RoutingEntry>builder()
-      .type(CREATE)
-      .tenant(TENANT_NAME)
-      .resourceName("Scheduled Job")
-      .newValue(entry)
+    return EntitlementRequest.builder()
+      .tenantId(TENANT_ID)
+      .applications(List.of(APPLICATION_ID))
+      .type(type)
       .build();
   }
 }

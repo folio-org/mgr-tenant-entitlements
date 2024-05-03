@@ -9,6 +9,7 @@ import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestUtils.verifyNoMoreInteractions;
 import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.applicationDescriptor;
+import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -53,15 +54,15 @@ class OkapiModulesUpgradeFlowFactoryTest {
     var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
-    var flow = upgradeFlowFactory.createFlow(stageContext);
+    var flow = upgradeFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
     var inOrder = Mockito.inOrder(kongRouteUpdater, keycloakAuthResourceUpdater);
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesUpgradeFlow";
-    var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, kongRouteUpdater, expectedStageContext);
-    verifyStageExecution(inOrder, keycloakAuthResourceUpdater, expectedStageContext);
+    var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
+    verifyStageExecution(inOrder, kongRouteUpdater, okapiStageContext);
+    verifyStageExecution(inOrder, keycloakAuthResourceUpdater, okapiStageContext);
   }
 
   @Test
@@ -72,7 +73,7 @@ class OkapiModulesUpgradeFlowFactoryTest {
     var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
-    var flow = upgradeFlowFactory.createFlow(stageContext);
+    var flow = upgradeFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
     verifyNoInteractions(keycloakAuthResourceUpdater, kongRouteUpdater);

@@ -99,6 +99,12 @@ public class EntitlementServiceUtils {
     return unmodifiableMap(resultMap);
   }
 
+  /**
+   * Groups {@link Module} objects by name.
+   *
+   * @param modules - list with module definitions
+   * @return grouped module objects by name.
+   */
   public static Map<String, Module> groupModulesByNames(List<Module> modules) {
     return toStream(modules).collect(toLinkedHashMap(Module::getName));
   }

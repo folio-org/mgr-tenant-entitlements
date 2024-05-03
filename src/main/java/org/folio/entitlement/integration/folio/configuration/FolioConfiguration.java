@@ -18,6 +18,7 @@ import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.service.EntitlementModuleService;
+import org.folio.entitlement.service.ModuleSequenceProvider;
 import org.folio.entitlement.utils.JsonConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
@@ -97,8 +98,10 @@ public class FolioConfiguration {
    */
   @Bean
   public FolioModulesFlowProvider folioModulesFlowProvider(FolioModuleEntitleFlowFactory entitleFlowFactory,
-    FolioModuleRevokeFlowFactory revokeFlowFactory, FolioModuleUpgradeFlowFactory upgradeFlowFactory) {
-    return new FolioModulesFlowProvider(asList(entitleFlowFactory, revokeFlowFactory, upgradeFlowFactory));
+    FolioModuleRevokeFlowFactory revokeFlowFactory, FolioModuleUpgradeFlowFactory upgradeFlowFactory,
+    ModuleSequenceProvider moduleSequenceProvider) {
+    var factories = asList(entitleFlowFactory, revokeFlowFactory, upgradeFlowFactory);
+    return new FolioModulesFlowProvider(factories, moduleSequenceProvider);
   }
 
 
@@ -139,8 +142,9 @@ public class FolioConfiguration {
    * @return created {@link FolioModuleUpgradeFlowFactory} bean
    */
   @Bean
-  public FolioModuleUpgradeFlowFactory folioModuleUpgradeFlowFactory() {
-    return new FolioModuleUpgradeFlowFactory();
+  public FolioModuleUpgradeFlowFactory folioModuleUpgradeFlowFactory(
+    ScheduledJobModuleEventPublisher scheduledJobModuleEventPublisher) {
+    return new FolioModuleUpgradeFlowFactory(scheduledJobModuleEventPublisher);
   }
 
   /**

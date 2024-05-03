@@ -9,6 +9,8 @@ import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestUtils.verifyNoMoreInteractions;
 import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.applicationDescriptor;
+import static org.folio.entitlement.support.TestValues.flowParameters;
+import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -21,7 +23,6 @@ import org.folio.entitlement.integration.kong.KongRouteCreator;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
-import org.folio.entitlement.support.TestValues;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
@@ -62,24 +63,26 @@ class OkapiModulesEntitleFlowFactoryTest {
     entitleFlowFactory.setKongRouteCreator(kongRouteCreator);
     entitleFlowFactory.setKeycloakAuthResourceCreator(keycloakAuthResourceCreator);
 
-    var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
+    var flowParameters = flowParameters(entitlementRequest(), applicationDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
-    var flow = entitleFlowFactory.createFlow(stageContext);
+    var flow = entitleFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
     var inOrder = Mockito.inOrder(kongRouteCreator, keycloakAuthResourceCreator, okapiModulesEventPublisher,
       systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher, okapiModulesInstaller);
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesEntitleFlow";
+    var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
+    verifyStageExecution(inOrder, kongRouteCreator, okapiStageContext);
+    verifyStageExecution(inOrder, keycloakAuthResourceCreator, okapiStageContext);
+    verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);
+
     var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, kongRouteCreator, expectedStageContext);
-    verifyStageExecution(inOrder, keycloakAuthResourceCreator, expectedStageContext);
-    verifyStageExecution(inOrder, okapiModulesInstaller, expectedStageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, expectedStageContext);
-    verifyStageExecution(inOrder, scheduledJobEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, scheduledJobEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, expectedStageContext);
-    verifyStageExecution(inOrder, okapiModulesEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, okapiModulesEventPublisher, okapiStageContext);
   }
 
   @Test
@@ -87,10 +90,10 @@ class OkapiModulesEntitleFlowFactoryTest {
     mockStageNames(okapiModulesEventPublisher, systemUserEventPublisher, scheduledJobEventPublisher,
       capabilitiesEventPublisher, okapiModulesInstaller);
 
-    var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
+    var flowParameters = flowParameters(entitlementRequest(), applicationDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
-    var flow = entitleFlowFactory.createFlow(stageContext);
+    var flow = entitleFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
     var inOrder = Mockito.inOrder(okapiModulesEventPublisher, systemUserEventPublisher,
@@ -98,11 +101,12 @@ class OkapiModulesEntitleFlowFactoryTest {
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesEntitleFlow";
     var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, okapiModulesInstaller, expectedStageContext);
+    var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
+    verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, expectedStageContext);
-    verifyStageExecution(inOrder, scheduledJobEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, scheduledJobEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, expectedStageContext);
-    verifyStageExecution(inOrder, okapiModulesEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, okapiModulesEventPublisher, okapiStageContext);
   }
 
   @Test

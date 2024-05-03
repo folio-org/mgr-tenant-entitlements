@@ -5,12 +5,11 @@ import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.DISABLE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.ENABLE;
 
-import java.util.UUID;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.domain.model.ApplicationStageContext;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.integration.am.model.Module;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.integration.okapi.OkapiClient;
+import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType;
 import org.folio.entitlement.service.EntitlementModuleService;
@@ -19,30 +18,27 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
 @RequiredArgsConstructor
-public class OkapiModulesInstaller extends DatabaseLoggingStage<ApplicationStageContext> {
+public class OkapiModulesInstaller extends DatabaseLoggingStage<OkapiStageContext> {
 
   private final OkapiClient okapiClient;
   private final EntitlementModuleService moduleService;
 
   @Override
-  public void execute(ApplicationStageContext context) {
+  public void execute(OkapiStageContext context) {
     var request = context.getEntitlementRequest();
     var action = request.getType() == ENTITLE ? ENABLE : DISABLE;
-    var applicationDescriptor = context.getApplicationDescriptor();
-    var descriptors = mapItems(applicationDescriptor.getModules(), module -> buildOkapiDescriptors(action, module));
+    var moduleDescriptors = context.getModuleDescriptors();
+    updateModuleEntitlements(context, action, moduleDescriptors);
 
-    updateModuleEntitlements(request.getTenantId(), applicationDescriptor, action);
-
-    var tenantName = context.getTenantName();
-    okapiClient.installTenantModules(tenantName, false, request.isPurge(), request.getTenantParameters(),
+    var descriptors = mapItems(moduleDescriptors, desc -> buildTenantModuleDescriptor(action, desc));
+    okapiClient.installTenantModules(context.getTenantName(), false, request.isPurge(), request.getTenantParameters(),
       request.isIgnoreErrors(), false, descriptors, request.getOkapiToken());
   }
 
-  private void updateModuleEntitlements(UUID tenantId, ApplicationDescriptor appDescriptor, ActionType action) {
-    var modules = appDescriptor.getModules();
-    var applicationId = appDescriptor.getId();
-    var moduleIds = mapItems(modules, Module::getId);
-
+  private void updateModuleEntitlements(OkapiStageContext ctx, ActionType action, List<ModuleDescriptor> descriptors) {
+    var moduleIds = mapItems(descriptors, ModuleDescriptor::getId);
+    var tenantId = ctx.getTenantId();
+    var applicationId = ctx.getApplicationId();
     if (ENABLE == action) {
       moduleService.saveAll(tenantId, applicationId, moduleIds);
     } else {
@@ -50,7 +46,7 @@ public class OkapiModulesInstaller extends DatabaseLoggingStage<ApplicationStage
     }
   }
 
-  private static TenantModuleDescriptor buildOkapiDescriptors(ActionType action, Module module) {
-    return new TenantModuleDescriptor().id(module.getId()).action(action);
+  private static TenantModuleDescriptor buildTenantModuleDescriptor(ActionType action, ModuleDescriptor descriptor) {
+    return new TenantModuleDescriptor().id(descriptor.getId()).action(action);
   }
 }

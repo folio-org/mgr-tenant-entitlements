@@ -1,26 +1,30 @@
 package org.folio.entitlement.integration.kafka;
 
-import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SCHEDULED_JOB_RESOURCE_NAME;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SCHEDULED_JOB_TOPIC;
+import static org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher.getScheduledTimers;
+import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
-import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.domain.model.ApplicationStageContext;
-import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import java.util.Optional;
+import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
-public class ScheduledJobEventPublisher extends DatabaseLoggingStage<ApplicationStageContext> {
-
-  private final ScheduledJobModuleEventPublisher scheduledJobModuleEventPublisher;
+public class ScheduledJobEventPublisher extends AbstractEventPublisher<ScheduledTimers> {
 
   @Override
-  public void execute(ApplicationStageContext context) {
-    var tenantId = context.getTenantId();
-    var tenantName = context.getTenantName();
-    var moduleDescriptors = emptyIfNull(context.getApplicationDescriptor().getModuleDescriptors());
+  protected Optional<ScheduledTimers> getEventPayload(String applicationId, ModuleDescriptor moduleDescriptor) {
+    return getScheduledTimers(applicationId, moduleDescriptor);
+  }
 
-    for (var moduleDescriptor : moduleDescriptors) {
-      scheduledJobModuleEventPublisher.sendEvent(tenantId, tenantName, moduleDescriptor);
-    }
+  @Override
+  protected String getTopicName(String tenantName) {
+    return getTenantTopicName(SCHEDULED_JOB_TOPIC, tenantName);
+  }
+
+  @Override
+  protected String getResourceName() {
+    return SCHEDULED_JOB_RESOURCE_NAME;
   }
 }

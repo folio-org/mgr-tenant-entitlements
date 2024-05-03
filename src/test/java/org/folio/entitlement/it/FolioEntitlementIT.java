@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEvents;
+import static org.folio.entitlement.support.KafkaEventAssertions.assertScheduledJobEvents;
 import static org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient.ALL_HTTP_METHODS;
 import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.COMMON_KONG_INTEGRATION_BEAN_TYPES;
@@ -16,7 +17,9 @@ import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.entitlementTopic;
+import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
+import static org.folio.entitlement.support.TestUtils.readScheduledJobEvent;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementEvent;
@@ -45,6 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
+import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
@@ -106,6 +110,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     MODULES.forEach(moduleId -> kongAdminClient.upsertService(moduleId, new Service().name(moduleId).url(wiremockUrl)));
 
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
+    fakeKafkaConsumer.registerTopic(scheduledJobsTenantTopic(), ResourceEvent.class);
   }
 
   @AfterEach
@@ -568,7 +573,7 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
 
-    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_ID, null)).hasSize(3);
+    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_ID, null)).hasSize(5);
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null))
       .map(Route::getExpression)
       .containsExactlyInAnyOrder(
@@ -577,7 +582,10 @@ class FolioEntitlementIT extends BaseIntegrationTest {
         exactRouteExpression("/folio-module2/events", "GET"),
         exactRouteExpression("/folio-module1/events", "POST"),
         exactRouteExpression("/folio-module2/events", "POST"),
-        exactRouteExpression("/folio-module1/events", "GET"));
+        exactRouteExpression("/folio-module1/events", "GET"),
+        exactRouteExpression("/folio-module1/v1/scheduled-timer", "POST"),
+        exactRouteExpression("/folio-module2/v1/scheduled-timer1", "POST"),
+        exactRouteExpression("/folio-module2/v1/scheduled-timer2", "POST"));
 
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
@@ -586,13 +594,17 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       authResource("/folio-module2/events", "GET", "POST"),
       authResource("/folio-module2/events/{id}", "GET"));
 
+    assertScheduledJobEvents(
+      readScheduledJobEvent("json/events/folio-app6/folio-module1/scheduled-job-event.json"),
+      readScheduledJobEvent("json/events/folio-app6/folio-module2/v1-scheduled-job-event.json"));
+
     var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V1_ID, emptyEntitlements());
 
     assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_ID, null)).isEmpty();
-    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_V2_ID, null)).hasSize(4);
+    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_V2_ID, null)).hasSize(6);
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null))
       .map(Route::getExpression)
       .containsExactlyInAnyOrder(
@@ -602,7 +614,10 @@ class FolioEntitlementIT extends BaseIntegrationTest {
         exactRouteExpression("/folio-module2/events", "PUT"),
         exactRouteExpression("/folio-module1/events", "GET"),
         exactRouteExpression("/folio-module1/events", "POST"),
-        exactRouteExpression("/folio-module2/events", "GET"));
+        exactRouteExpression("/folio-module2/events", "GET"),
+        exactRouteExpression("/folio-module1/v1/scheduled-timer", "POST"),
+        exactRouteExpression("/folio-module2/v2/scheduled-timer1", "POST"),
+        exactRouteExpression("/folio-module2/v1/scheduled-timer2", "POST"));
 
     assertThat(keycloakTestClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(keycloakTestClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
@@ -611,6 +626,9 @@ class FolioEntitlementIT extends BaseIntegrationTest {
       authResource("/folio-module2/events", "GET", "PUT"),
       authResource("/folio-module2/events/{id}", "GET"),
       authResource("/folio-module2/v2/events", "POST"));
+
+    assertScheduledJobEvents(
+      readScheduledJobEvent("json/events/folio-app6/folio-module2/v2-scheduled-job-update-event.json"));
   }
 
   @Test
@@ -656,18 +674,5 @@ class FolioEntitlementIT extends BaseIntegrationTest {
     checkMissingBeans(appContext, OKAPI_KONG_INTEGRATION_BEAN_TYPES);
     checkMissingBeans(appContext, OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES);
     checkMissingBeans(appContext, OKAPI_MODULE_INSTALLER_BEAN_TYPES);
-  }
-
-  private static String exactRouteExpression(String path, String method) {
-    return "(http.path == \"" + path + "\""
-      + " && http.method == \"" + method + "\""
-      + " && http.headers.x_okapi_tenant == \"test\")";
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private static String regexRouteExpression(String expression, String method) {
-    return "(http.path ~ \"" + expression + "\""
-      + " && http.method == \"" + method + "\""
-      + " && http.headers.x_okapi_tenant == \"test\")";
   }
 }

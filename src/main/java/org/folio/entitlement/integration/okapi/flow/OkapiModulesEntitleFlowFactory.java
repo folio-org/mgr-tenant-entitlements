@@ -3,6 +3,7 @@ package org.folio.entitlement.integration.okapi.flow;
 import static java.util.Arrays.asList;
 import static org.folio.entitlement.utils.FlowUtils.combineStages;
 
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
@@ -30,7 +31,7 @@ public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
   private KeycloakAuthResourceCreator keycloakAuthResourceCreator;
 
   @Override
-  public Flow createFlow(ApplicationStageContext context) {
+  public Flow createFlow(ApplicationStageContext context, Map<?, ?> additionalFlowParameters) {
     var request = context.getEntitlementRequest();
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesEntitleFlow")
@@ -40,6 +41,7 @@ public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
         systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
       .stage(okapiModulesEventPublisher)
       .executionStrategy(request.getExecutionStrategy())
+      .flowParameters(additionalFlowParameters)
       .build();
   }
 

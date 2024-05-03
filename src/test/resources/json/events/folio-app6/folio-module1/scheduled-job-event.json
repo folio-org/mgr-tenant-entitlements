@@ -1,0 +1,15 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Scheduled Job",
+  "new": {
+    "moduleId": "folio-module1-1.0.0",
+    "applicationId": "folio-app6-6.0.0",
+    "timers": [
+      {
+        "methods": [ "POST" ],
+        "pathPattern": "/folio-module1/v1/scheduled-timer"
+      }
+    ]
+  }
+}

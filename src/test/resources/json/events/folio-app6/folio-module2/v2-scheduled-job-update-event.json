@@ -1,0 +1,33 @@
+{
+  "type": "UPDATE",
+  "tenant": "test",
+  "resourceName": "Scheduled Job",
+  "new": {
+    "moduleId": "folio-module2-2.1.0",
+    "applicationId": "folio-app6-6.1.0",
+    "timers": [
+      {
+        "methods": [ "POST" ],
+        "pathPattern": "/folio-module2/v1/scheduled-timer2"
+      },
+      {
+        "methods": [ "POST" ],
+        "pathPattern": "/folio-module2/v2/scheduled-timer1"
+      }
+    ]
+  },
+  "old": {
+    "moduleId": "folio-module2-2.0.0",
+    "applicationId": "folio-app6-6.0.0",
+    "timers": [
+      {
+        "methods": [ "POST" ],
+        "pathPattern": "/folio-module2/v1/scheduled-timer1"
+      },
+      {
+        "methods": [ "POST" ],
+        "pathPattern": "/folio-module2/v1/scheduled-timer2"
+      }
+    ]
+  }
+}

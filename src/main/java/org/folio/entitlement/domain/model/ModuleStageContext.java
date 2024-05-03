@@ -2,6 +2,7 @@ package org.folio.entitlement.domain.model;
 
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
 
 import java.util.UUID;
 import lombok.ToString;
@@ -55,6 +56,15 @@ public class ModuleStageContext extends IdentifiableStageContext {
    */
   public String getApplicationId() {
     return context.getFlowParameter(PARAM_APPLICATION_ID);
+  }
+
+  /**
+   * Returns current application identifier.
+   *
+   * @return application identifier as {@link String}
+   */
+  public String getEntitledApplicationId() {
+    return context.getFlowParameter(PARAM_ENTITLED_APPLICATION_ID);
   }
 
   /**
