@@ -1,50 +1,33 @@
 package org.folio.entitlement.integration.keycloak;
 
-import static java.util.Optional.ofNullable;
-import static org.folio.entitlement.utils.EntitlementServiceUtils.groupModulesByNames;
-import static org.folio.entitlement.utils.EntitlementServiceUtils.toHashMap;
-
 import lombok.RequiredArgsConstructor;
-import org.folio.common.domain.model.ModuleDescriptor;
-import org.folio.entitlement.domain.model.ApplicationStageContext;
+import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.keycloak.admin.client.Keycloak;
 
 @RequiredArgsConstructor
-public class KeycloakAuthResourceUpdater extends DatabaseLoggingStage<ApplicationStageContext> {
+public class KeycloakAuthResourceUpdater extends DatabaseLoggingStage<OkapiStageContext> {
 
   private final Keycloak keycloakClient;
   private final KeycloakService keycloakService;
 
   @Override
-  public void execute(ApplicationStageContext context) {
+  public void execute(OkapiStageContext context) {
     var tenantName = context.getTenantName();
-    var entitledAppDescriptor = context.getEntitledApplicationDescriptor();
-    var appDescriptor = context.getApplicationDescriptor();
-
-    var installedModulesByName = groupModulesByNames(entitledAppDescriptor.getModules());
-    var modulesByName = groupModulesByNames(appDescriptor.getModules());
-    var descriptorsById = toHashMap(appDescriptor.getModuleDescriptors(), ModuleDescriptor::getId);
-    var installedDescriptorsById = toHashMap(entitledAppDescriptor.getModuleDescriptors(), ModuleDescriptor::getId);
+    var moduleDescriptorHolders = context.getModuleDescriptorHolders();
 
     keycloakClient.tokenManager().grantToken();
-    for (var moduleEntry : modulesByName.entrySet()) {
-      var moduleName = moduleEntry.getKey();
-      var module = moduleEntry.getValue();
-      var entitledModuleDescriptor = ofNullable(installedModulesByName.get(moduleName))
-        .map(entitledModule -> installedDescriptorsById.get(entitledModule.getId()))
-        .orElse(null);
-
-      keycloakService.updateAuthResources(entitledModuleDescriptor, descriptorsById.get(module.getId()), tenantName);
+    for (var moduleDescriptorHolder : moduleDescriptorHolders) {
+      var moduleDescriptor = moduleDescriptorHolder.moduleDescriptor();
+      var installedModuleDescriptor = moduleDescriptorHolder.installedModuleDescriptor();
+      if (moduleDescriptorHolder.isVersionChanged()) {
+        keycloakService.updateAuthResources(installedModuleDescriptor, moduleDescriptor, tenantName);
+      }
     }
 
-    for (var entitledModuleEntry : installedModulesByName.entrySet()) {
-      var moduleName = entitledModuleEntry.getKey();
-      var module = modulesByName.get(moduleName);
-      if (module == null) {
-        var entitledModuleDescriptor = installedDescriptorsById.get(entitledModuleEntry.getValue().getId());
-        keycloakService.updateAuthResources(entitledModuleDescriptor, null, tenantName);
-      }
+    var deprecatedModuleDescriptors = context.getDeprecatedModuleDescriptors();
+    for (var deprecatedModuleDescriptor : deprecatedModuleDescriptors) {
+      keycloakService.updateAuthResources(deprecatedModuleDescriptor, null, tenantName);
     }
   }
 }

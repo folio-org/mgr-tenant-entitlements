@@ -2,13 +2,14 @@ package org.folio.entitlement.integration.kong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
-import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.flowParameters;
+import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -16,9 +17,7 @@ import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.support.TestUtils;
-import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
 import org.folio.tools.kong.service.KongGatewayService;
 import org.junit.jupiter.api.AfterEach;
@@ -43,10 +42,11 @@ class KongRouteCreatorTest {
   @Test
   void execute_positive() {
     var moduleDescriptor = moduleDescriptor();
-    var applicationDescriptor = applicationDescriptor(moduleDescriptor);
-    var flowParameters = flowParameters(entitlementRequest(true), applicationDescriptor);
+    var flowParameters = Map.of(
+      PARAM_REQUEST, entitlementRequest(true),
+      PARAM_MODULE_DESCRIPTORS, List.of(moduleDescriptor));
     var stageParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
+    var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
     kongRouteCreator.execute(stageContext);
 
@@ -56,10 +56,11 @@ class KongRouteCreatorTest {
   @Test
   void cancel_positive() {
     var moduleDescriptor = moduleDescriptor();
-    var applicationDescriptor = applicationDescriptor(moduleDescriptor);
-    var flowParameters = flowParameters(entitlementRequest(true), applicationDescriptor);
+    var flowParameters = Map.of(
+      PARAM_REQUEST, entitlementRequest(true),
+      PARAM_MODULE_DESCRIPTORS, List.of(moduleDescriptor));
     var stageParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
+    var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
     kongRouteCreator.cancel(stageContext);
 
@@ -68,9 +69,11 @@ class KongRouteCreatorTest {
 
   @Test
   void cancel_positive_purgeOnRollbackFalse() {
-    var flowParameters = flowParameters(entitlementRequest(false), applicationDescriptor(moduleDescriptor()));
+    var flowParameters = Map.of(
+      PARAM_REQUEST, entitlementRequest(false),
+      PARAM_MODULE_DESCRIPTORS, List.of(moduleDescriptor()));
     var stageParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
+    var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
     kongRouteCreator.cancel(stageContext);
 
@@ -79,18 +82,15 @@ class KongRouteCreatorTest {
 
   @Test
   void shouldCancelIfFailed_positive() {
-    var moduleDescriptor = moduleDescriptor();
-    var flowParameters = flowParameters(entitlementRequest(false), applicationDescriptor(moduleDescriptor));
+    var flowParameters = Map.of(
+      PARAM_REQUEST, entitlementRequest(false),
+      PARAM_MODULE_DESCRIPTORS, List.of(moduleDescriptor()));
     var stageParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
+    var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
 
     var result = kongRouteCreator.shouldCancelIfFailed(stageContext);
 
     assertThat(result).isTrue();
-  }
-
-  private static ApplicationDescriptor applicationDescriptor(ModuleDescriptor... moduleDescriptors) {
-    return TestValues.applicationDescriptor().moduleDescriptors(List.of(moduleDescriptors));
   }
 
   private static EntitlementRequest entitlementRequest(boolean purgeOnRollback) {

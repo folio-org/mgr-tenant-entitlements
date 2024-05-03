@@ -9,6 +9,7 @@ import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestUtils.verifyNoMoreInteractions;
 import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.applicationDescriptor;
+import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -63,11 +64,11 @@ class OkapiModulesRevokeFlowFactoryTest {
       okapiModulesEventPublisher, okapiModulesInstaller);
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesRevokeFlow";
-    var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, okapiModulesInstaller, expectedStageContext);
-    verifyStageExecution(inOrder, okapiModulesEventPublisher, expectedStageContext);
-    verifyStageExecution(inOrder, kongRouteCleaner, expectedStageContext);
-    verifyStageExecution(inOrder, keycloakAuthResourceCleaner, expectedStageContext);
+    var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
+    verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);
+    verifyStageExecution(inOrder, okapiModulesEventPublisher, okapiStageContext);
+    verifyStageExecution(inOrder, kongRouteCleaner, okapiStageContext);
+    verifyStageExecution(inOrder, keycloakAuthResourceCleaner, okapiStageContext);
   }
 
   @Test
@@ -83,9 +84,9 @@ class OkapiModulesRevokeFlowFactoryTest {
     var inOrder = Mockito.inOrder(okapiModulesEventPublisher, okapiModulesInstaller);
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesRevokeFlow";
-    var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, okapiModulesInstaller, expectedStageContext);
-    verifyStageExecution(inOrder, okapiModulesEventPublisher, expectedStageContext);
+    var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
+    verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);
+    verifyStageExecution(inOrder, okapiModulesEventPublisher, okapiStageContext);
   }
 
   @Test

@@ -1,6 +1,9 @@
 package org.folio.entitlement.integration.okapi.model;
 
+import static org.apache.commons.collections4.ListUtils.emptyIfNull;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
 
 import java.util.List;
@@ -17,8 +20,6 @@ import org.folio.flow.api.StageContext;
 @ToString(callSuper = true)
 public class OkapiStageContext extends IdentifiableStageContext {
 
-  public static final String PARAM_APPLICATION_FLOW_ID = "applicationFlowId";
-  public static final String PARAM_APPLICATION_ID = "applicationId";
   public static final String PARAM_MODULE_DESCRIPTORS = "moduleDescriptors";
   public static final String PARAM_MODULE_DESCRIPTOR_HOLDERS = "moduleDescriptorHolders";
   public static final String PARAM_UI_MODULE_DESCRIPTOR_HOLDERS = "uiModuleDescriptorHolders";
@@ -110,7 +111,7 @@ public class OkapiStageContext extends IdentifiableStageContext {
   }
 
   public List<ModuleDescriptor> getModuleDescriptors() {
-    return context.getFlowParameter(PARAM_MODULE_DESCRIPTORS);
+    return emptyIfNull(context.getFlowParameter(PARAM_MODULE_DESCRIPTORS));
   }
 
   /**
@@ -119,7 +120,7 @@ public class OkapiStageContext extends IdentifiableStageContext {
    * @return {@link List} with {@link ModuleDescriptor} objects
    */
   public List<ModuleDescriptor> getUiModuleDescriptors() {
-    return context.getFlowParameter(PARAM_UI_MODULE_DESCRIPTORS);
+    return emptyIfNull(context.getFlowParameter(PARAM_UI_MODULE_DESCRIPTORS));
   }
 
   /**
@@ -128,7 +129,7 @@ public class OkapiStageContext extends IdentifiableStageContext {
    * @return {@link List} with {@link ModuleDescriptorHolder} objects
    */
   public List<ModuleDescriptorHolder> getModuleDescriptorHolders() {
-    return context.getFlowParameter(PARAM_MODULE_DESCRIPTOR_HOLDERS);
+    return emptyIfNull(context.getFlowParameter(PARAM_MODULE_DESCRIPTOR_HOLDERS));
   }
 
   /**
@@ -137,7 +138,7 @@ public class OkapiStageContext extends IdentifiableStageContext {
    * @return {@link List} with {@link ModuleDescriptorHolder} objects
    */
   public List<ModuleDescriptorHolder> getUiModuleDescriptorHolders() {
-    return context.getFlowParameter(PARAM_UI_MODULE_DESCRIPTOR_HOLDERS);
+    return emptyIfNull(context.getFlowParameter(PARAM_UI_MODULE_DESCRIPTOR_HOLDERS));
   }
 
   /**
@@ -146,7 +147,7 @@ public class OkapiStageContext extends IdentifiableStageContext {
    * @return {@link List} with {@link ModuleDescriptor} objects
    */
   public List<ModuleDescriptor> getDeprecatedModuleDescriptors() {
-    return context.getFlowParameter(PARAM_DEPRECATED_MODULE_DESCRIPTORS);
+    return emptyIfNull(context.getFlowParameter(PARAM_DEPRECATED_MODULE_DESCRIPTORS));
   }
 
   /**
@@ -155,6 +156,6 @@ public class OkapiStageContext extends IdentifiableStageContext {
    * @return {@link List} with {@link ModuleDescriptor} objects
    */
   public List<ModuleDescriptor> getDeprecatedUiModuleDescriptors() {
-    return context.getFlowParameter(PARAM_DEPRECATED_UI_MODULE_DESCRIPTORS);
+    return emptyIfNull(context.getFlowParameter(PARAM_DEPRECATED_UI_MODULE_DESCRIPTORS));
   }
 }

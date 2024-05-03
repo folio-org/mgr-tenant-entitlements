@@ -1,14 +1,15 @@
 package org.folio.entitlement.integration.keycloak;
 
-import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_DEPRECATED_MODULE_DESCRIPTORS;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTOR_HOLDERS;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
-import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.flowParameters;
-import static org.folio.entitlement.support.TestValues.module;
+import static org.folio.entitlement.support.TestValues.moduleDescriptorHolder;
+import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,8 +17,6 @@ import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
@@ -33,9 +32,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class KeycloakAuthResourceUpdaterTest {
 
-  private static final String APP_ID_V1 = "app-foo-1.0.0";
-  private static final String APP_ID_V2 = "app-foo-2.0.0";
-
   @InjectMocks private KeycloakAuthResourceUpdater keycloakAuthResourceUpdater;
   @Mock private Keycloak keycloakClient;
   @Mock private TokenManager tokenManager;
@@ -48,70 +44,71 @@ class KeycloakAuthResourceUpdaterTest {
 
   @Test
   void execute_positive_modulesChanged() {
-    var applicationDesc = applicationDescriptor(APP_ID_V2,
-      module("mod-foo", "2.0.0"), module("mod-bar", "1.0.0"), module("mod-baz", "1.0.0"));
-    var entitledApplicationDesc = applicationDescriptor(APP_ID_V1,
-      module("mod-foo", "1.0.0"), module("mod-bar", "1.0.0"), module("mod-test", "1.0.0"));
+    var modFooV1 = moduleDescriptor("mod-foo", "1.0.0");
+    var modFooV2 = moduleDescriptor("mod-foo", "2.0.0");
+    var modBar = moduleDescriptor("mod-bar", "1.0.0");
+    var modBaz = moduleDescriptor("mod-baz", "1.0.0");
+    var modTest = moduleDescriptor("mod-test", "1.0.0");
 
     when(keycloakClient.tokenManager()).thenReturn(tokenManager);
     when(tokenManager.grantToken()).thenReturn(null);
 
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build();
-    var flowParameters = flowParameters(request, applicationDesc, entitledApplicationDesc);
+    var moduleDescriptorHolders = List.of(
+      moduleDescriptorHolder(modFooV2, modFooV1),
+      moduleDescriptorHolder(modBar, modBar),
+      moduleDescriptorHolder(modBaz, null));
+    var flowParameters = Map.of(
+      PARAM_REQUEST, request,
+      PARAM_MODULE_DESCRIPTOR_HOLDERS, moduleDescriptorHolders,
+      PARAM_DEPRECATED_MODULE_DESCRIPTORS, List.of(modTest));
     var stageData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageData);
+    var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, stageData);
 
     keycloakAuthResourceUpdater.execute(stageContext);
 
-    verify(keycloakService).updateAuthResources(moduleDesc("mod-foo-1.0.0"), moduleDesc("mod-foo-2.0.0"), TENANT_NAME);
-    verify(keycloakService).updateAuthResources(moduleDesc("mod-bar-1.0.0"), moduleDesc("mod-bar-1.0.0"), TENANT_NAME);
-    verify(keycloakService).updateAuthResources(null, moduleDesc("mod-baz-1.0.0"), TENANT_NAME);
-    verify(keycloakService).updateAuthResources(moduleDesc("mod-test-1.0.0"), null, TENANT_NAME);
+    verify(keycloakService).updateAuthResources(modFooV1, modFooV2, TENANT_NAME);
+    verify(keycloakService).updateAuthResources(null, modBaz, TENANT_NAME);
+    verify(keycloakService).updateAuthResources(modTest, null, TENANT_NAME);
   }
 
   @Test
   void execute_positive_updatedModule() {
-    var applicationDesc = applicationDescriptor(APP_ID_V2, module("mod-foo", "2.0.0"));
-    var entitledApplicationDesc = applicationDescriptor(APP_ID_V1, module("mod-foo", "1.0.0"));
+    var modFooV1 = moduleDescriptor("mod-foo", "1.0.0");
+    var modFooV2 = moduleDescriptor("mod-foo", "2.0.0");
 
     when(keycloakClient.tokenManager()).thenReturn(tokenManager);
     when(tokenManager.grantToken()).thenReturn(null);
 
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build();
-    var flowParameters = flowParameters(request, applicationDesc, entitledApplicationDesc);
+    var moduleDescriptorHolders = List.of(moduleDescriptorHolder(modFooV2, modFooV1));
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_DESCRIPTOR_HOLDERS, moduleDescriptorHolders);
     var stageData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageData);
+    var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, stageData);
 
     keycloakAuthResourceUpdater.execute(stageContext);
 
-    verify(keycloakService).updateAuthResources(moduleDesc("mod-foo-1.0.0"), moduleDesc("mod-foo-2.0.0"), TENANT_NAME);
+    verify(keycloakService).updateAuthResources(modFooV1, modFooV2, TENANT_NAME);
   }
 
   @Test
   void execute_positive_deprecatedModule() {
-    var applicationDesc = applicationDescriptor(APP_ID_V2);
-    var entitledApplicationDesc = applicationDescriptor(APP_ID_V1, module("mod-foo", "1.0.0"));
+    var modFooV1 = moduleDescriptor("mod-foo", "1.0.0");
 
     when(keycloakClient.tokenManager()).thenReturn(tokenManager);
     when(tokenManager.grantToken()).thenReturn(null);
 
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build();
-    var flowParameters = flowParameters(request, applicationDesc, entitledApplicationDesc);
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_DEPRECATED_MODULE_DESCRIPTORS, List.of(modFooV1));
     var stageData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageData);
+    var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, stageData);
 
     keycloakAuthResourceUpdater.execute(stageContext);
 
-    verify(keycloakService).updateAuthResources(moduleDesc("mod-foo-1.0.0"), null, TENANT_NAME);
+    verify(keycloakService).updateAuthResources(modFooV1, null, TENANT_NAME);
   }
 
-  private static ModuleDescriptor moduleDesc(String id) {
-    return new ModuleDescriptor().id(id);
-  }
-
-  private static ApplicationDescriptor applicationDescriptor(String id, Module... modules) {
-    return new ApplicationDescriptor().id(id)
-      .modules(List.of(modules))
-      .moduleDescriptors(mapItems(List.of(modules), module -> moduleDesc(module.getId())));
+  private static ModuleDescriptor moduleDescriptor(String name, String version) {
+    return new ModuleDescriptor().id(name + "-" + version);
   }
 }

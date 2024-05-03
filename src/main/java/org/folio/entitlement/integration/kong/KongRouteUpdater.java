@@ -1,34 +1,37 @@
 package org.folio.entitlement.integration.kong;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
-import static org.folio.common.utils.CollectionUtils.toStream;
+import static java.util.Collections.singletonList;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.common.domain.model.ModuleDescriptor;
-import org.folio.entitlement.domain.model.ApplicationStageContext;
+import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
+import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.tools.kong.service.KongGatewayService;
 
 @RequiredArgsConstructor
-public class KongRouteUpdater extends DatabaseLoggingStage<ApplicationStageContext> {
+public class KongRouteUpdater extends DatabaseLoggingStage<OkapiStageContext> {
 
   private final KongGatewayService kongGatewayService;
 
   @Override
-  public void execute(ApplicationStageContext context) {
+  public void execute(OkapiStageContext context) {
     var tenantName = context.getTenantName();
-    var applicationDescriptor = context.getApplicationDescriptor();
-    kongGatewayService.updateRoutes(tenantName, applicationDescriptor.getModuleDescriptors());
+    for (var moduleDescriptorHolder : context.getModuleDescriptorHolders()) {
+      if (moduleDescriptorHolder.isVersionChanged()) {
+        upgradeModuleRoutes(moduleDescriptorHolder, tenantName);
+      }
+    }
 
-    var moduleDescriptors = toStream(applicationDescriptor.getModuleDescriptors())
-      .map(ModuleDescriptor::getId)
-      .collect(toUnmodifiableSet());
+    kongGatewayService.removeRoutes(tenantName, context.getDeprecatedModuleDescriptors());
+  }
 
-    var entitledAppDesc = context.getEntitledApplicationDescriptor();
-    var deprecatedModuleDescriptors = toStream(entitledAppDesc.getModuleDescriptors())
-      .filter(moduleDescriptor -> !moduleDescriptors.contains(moduleDescriptor.getId()))
-      .toList();
+  private void upgradeModuleRoutes(ModuleDescriptorHolder moduleDescriptorHolder, String tenantName) {
+    var moduleDescriptor = moduleDescriptorHolder.moduleDescriptor();
+    kongGatewayService.updateRoutes(tenantName, singletonList(moduleDescriptor));
 
-    kongGatewayService.removeRoutes(tenantName, deprecatedModuleDescriptors);
+    var installedModuleDescriptor = moduleDescriptorHolder.installedModuleDescriptor();
+    if (installedModuleDescriptor != null) {
+      kongGatewayService.removeRoutes(tenantName, singletonList(installedModuleDescriptor));
+    }
   }
 }

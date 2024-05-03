@@ -9,6 +9,7 @@ import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestUtils.verifyNoMoreInteractions;
 import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.applicationDescriptor;
+import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -59,9 +60,9 @@ class OkapiModulesUpgradeFlowFactoryTest {
     var inOrder = Mockito.inOrder(kongRouteUpdater, keycloakAuthResourceUpdater);
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesUpgradeFlow";
-    var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, kongRouteUpdater, expectedStageContext);
-    verifyStageExecution(inOrder, keycloakAuthResourceUpdater, expectedStageContext);
+    var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
+    verifyStageExecution(inOrder, kongRouteUpdater, okapiStageContext);
+    verifyStageExecution(inOrder, keycloakAuthResourceUpdater, okapiStageContext);
   }
 
   @Test
