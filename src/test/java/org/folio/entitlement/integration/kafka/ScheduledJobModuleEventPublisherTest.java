@@ -12,6 +12,7 @@ import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
+import static org.folio.entitlement.integration.kafka.model.ResourceEventType.DELETE;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.UPDATE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
@@ -133,7 +134,7 @@ class ScheduledJobModuleEventPublisherTest {
 
     var expectedOldHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
     var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
-      .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
+      .type(DELETE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .oldValue(ScheduledTimers.of(MODULE_ID, entitledApplicationId, expectedOldHandlers))
       .build();
 

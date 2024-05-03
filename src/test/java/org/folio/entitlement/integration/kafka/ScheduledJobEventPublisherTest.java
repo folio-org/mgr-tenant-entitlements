@@ -7,6 +7,7 @@ import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_E
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
+import static org.folio.entitlement.integration.kafka.model.ResourceEventType.DELETE;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.UPDATE;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_DEPRECATED_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
@@ -41,11 +42,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class ScheduledJobPublisherTest {
+class ScheduledJobEventPublisherTest {
 
-  public static final String FOO_MODULE_ID = "mod-foo-1.0.0";
-  public static final String FOO_MODULE_V2_ID = "mod-foo-2.0.0";
-  public static final String BAR_MODULE_ID = "mod-bar-1.0.0";
+  private static final String FOO_MODULE_ID = "mod-foo-1.0.0";
+  private static final String FOO_MODULE_V2_ID = "mod-foo-2.0.0";
+  private static final String BAR_MODULE_ID = "mod-bar-1.0.0";
+
   @InjectMocks private ScheduledJobEventPublisher publisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
 
@@ -109,7 +111,7 @@ class ScheduledJobPublisherTest {
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
 
     var barTimerEvent = ResourceEvent.<ScheduledTimers>builder()
-      .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
+      .type(DELETE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .oldValue(ScheduledTimers.of(BAR_MODULE_ID, entitledApplicationId, List.of(barTimerRoutingEntry())))
       .build();
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), barTimerEvent);
