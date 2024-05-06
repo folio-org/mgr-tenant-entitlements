@@ -4,6 +4,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
+import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +17,12 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
   @Override
   public void execute(ModuleStageContext ctx) {
     var tenant = ctx.getTenantName();
-    var newPayload = getEventPayload(ctx.getApplicationId(), ctx.getModuleDescriptor()).orElse(null);
-    var oldPayload = getEventPayload(ctx.getEntitledApplicationId(), ctx.getInstalledModuleDescriptor()).orElse(null);
+    var moduleType = ctx.getModuleType();
+    var newPayload = getEventPayload(ctx.getApplicationId(), moduleType, ctx.getModuleDescriptor()).orElse(null);
+
+    var entitledApplicationId = ctx.getEntitledApplicationId();
+    var installedModuleDescriptor = ctx.getInstalledModuleDescriptor();
+    var oldPayload = getEventPayload(entitledApplicationId, moduleType, installedModuleDescriptor).orElse(null);
 
     var topicName = getTopicName(tenant);
     var messageKey = ctx.getTenantId().toString();
@@ -34,10 +39,10 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
    * Creates event payload from application id and module descriptor.
    *
    * @param applicationId - application identifier as {@link String}
-   * @param moduleDescriptor - module descriptor as {@link ModuleDescriptor}
+   * @param descriptor - module descriptor as {@link ModuleDescriptor}
    * @return {@link Optional} of created event payload, empty if event payload not provided
    */
-  protected abstract Optional<T> getEventPayload(String applicationId, ModuleDescriptor moduleDescriptor);
+  protected abstract Optional<T> getEventPayload(String applicationId, ModuleType type, ModuleDescriptor descriptor);
 
   /**
    * Creates topic name using tenant name.

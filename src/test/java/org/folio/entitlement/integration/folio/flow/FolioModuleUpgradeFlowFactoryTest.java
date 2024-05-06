@@ -16,6 +16,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
+import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
+import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
 import org.folio.entitlement.integration.kong.KongModuleRouteUpdater;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -40,6 +42,8 @@ class FolioModuleUpgradeFlowFactoryTest {
   @InjectMocks private FolioModuleUpgradeFlowFactory upgradeFlowFactory;
   @Mock private KongModuleRouteUpdater kongModuleRouteUpdater;
   @Mock private KeycloakModuleResourceUpdater kcModuleResourceUpdater;
+  @Mock private ScheduledJobModuleEventPublisher scheduledJobModuleEventPublisher;
+  @Mock private CapabilitiesModuleEventPublisher capabilitiesModuleEventPublisher;
 
   @AfterEach
   void tearDown() {
@@ -48,7 +52,8 @@ class FolioModuleUpgradeFlowFactoryTest {
 
   @Test
   void createModuleFlow_positive_allConditionalStages() {
-    mockStageNames(kongModuleRouteUpdater, kcModuleResourceUpdater);
+    mockStageNames(kongModuleRouteUpdater, kcModuleResourceUpdater,
+      scheduledJobModuleEventPublisher, capabilitiesModuleEventPublisher);
     upgradeFlowFactory.setKongModuleRouteUpdater(kongModuleRouteUpdater);
     upgradeFlowFactory.setKcModuleResourceUpdater(kcModuleResourceUpdater);
 
@@ -57,29 +62,41 @@ class FolioModuleUpgradeFlowFactoryTest {
     var flow = upgradeFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(kongModuleRouteUpdater, kcModuleResourceUpdater);
+    var inOrder = Mockito.inOrder(kongModuleRouteUpdater, kcModuleResourceUpdater,
+      capabilitiesModuleEventPublisher, scheduledJobModuleEventPublisher);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     verifyStageExecution(inOrder, kongModuleRouteUpdater, stageContext);
     verifyStageExecution(inOrder, kcModuleResourceUpdater, stageContext);
+    verifyStageExecution(inOrder, scheduledJobModuleEventPublisher, stageContext);
+    verifyStageExecution(inOrder, capabilitiesModuleEventPublisher, stageContext);
   }
 
   @Test
   void createModuleFlow_positive_noConditionalStages() {
+    mockStageNames(scheduledJobModuleEventPublisher, capabilitiesModuleEventPublisher);
     var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor());
-    upgradeFlowFactory.setKongModuleRouteUpdater(null);
-    upgradeFlowFactory.setKcModuleResourceUpdater(null);
 
     var flow = upgradeFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
+
+    var inOrder = Mockito.inOrder(capabilitiesModuleEventPublisher, scheduledJobModuleEventPublisher);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+    verifyStageExecution(inOrder, scheduledJobModuleEventPublisher, stageContext);
+    verifyStageExecution(inOrder, capabilitiesModuleEventPublisher, stageContext);
 
     verifyNoInteractions(kongModuleRouteUpdater, kcModuleResourceUpdater);
   }
 
   @Test
   void createUiModuleFlow_positive() {
-    var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor(), UI_MODULE);
+    mockStageNames(capabilitiesModuleEventPublisher);
+    var flowParameters = moduleFlowParameters(entitlementRequest(), UI_MODULE, moduleDescriptor());
     var flow = upgradeFlowFactory.createUiModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
+
+    var inOrder = Mockito.inOrder(capabilitiesModuleEventPublisher, scheduledJobModuleEventPublisher);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+    verifyStageExecution(inOrder, capabilitiesModuleEventPublisher, stageContext);
     verifyNoInteractions(kongModuleRouteUpdater, kcModuleResourceUpdater);
   }
 

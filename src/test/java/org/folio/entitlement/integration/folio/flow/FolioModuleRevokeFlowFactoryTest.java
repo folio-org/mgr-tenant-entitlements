@@ -82,7 +82,7 @@ class FolioModuleRevokeFlowFactoryTest {
 
   @Test
   void createUiModuleFlow_positive_allConditionalStages() {
-    var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor(), UI_MODULE);
+    var flowParameters = moduleFlowParameters(entitlementRequest(), UI_MODULE, moduleDescriptor());
 
     var flow = revokeFlowFactory.createUiModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);

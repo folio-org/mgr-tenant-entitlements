@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
+import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.springframework.stereotype.Component;
 
@@ -22,8 +23,8 @@ import org.springframework.stereotype.Component;
 public class ScheduledJobModuleEventPublisher extends AbstractModuleEventPublisher<ScheduledTimers> {
 
   @Override
-  protected Optional<ScheduledTimers> getEventPayload(String applicationId, ModuleDescriptor moduleDescriptor) {
-    return getScheduledTimers(applicationId, moduleDescriptor);
+  protected Optional<ScheduledTimers> getEventPayload(String appId, ModuleType type, ModuleDescriptor descriptor) {
+    return getScheduledTimers(appId, descriptor);
   }
 
   @Override

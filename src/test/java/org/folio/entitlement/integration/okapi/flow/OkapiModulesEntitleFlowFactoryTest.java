@@ -81,7 +81,7 @@ class OkapiModulesEntitleFlowFactoryTest {
     var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
     verifyStageExecution(inOrder, systemUserEventPublisher, expectedStageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, okapiStageContext);
-    verifyStageExecution(inOrder, capabilitiesEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, capabilitiesEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, okapiModulesEventPublisher, okapiStageContext);
   }
 
@@ -105,7 +105,7 @@ class OkapiModulesEntitleFlowFactoryTest {
     verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, expectedStageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, okapiStageContext);
-    verifyStageExecution(inOrder, capabilitiesEventPublisher, expectedStageContext);
+    verifyStageExecution(inOrder, capabilitiesEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, okapiModulesEventPublisher, okapiStageContext);
   }
 

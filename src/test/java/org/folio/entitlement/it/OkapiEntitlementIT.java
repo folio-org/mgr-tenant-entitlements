@@ -763,8 +763,12 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       authResource("/folio-module2/events/{id}", "GET"));
 
     assertScheduledJobEvents(
-      readScheduledJobEvent("json/events/folio-app6/folio-module1/scheduled-job-event.json"),
-      readScheduledJobEvent("json/events/folio-app6/folio-module2/v1-scheduled-job-event.json"));
+      readScheduledJobEvent("json/events/folio-app6/folio-module1/timer-event.json"),
+      readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-event.json"));
+
+    assertCapabilityEvents(
+      readCapabilityEvent("json/events/folio-app6/folio-module1/capability-event.json"),
+      readCapabilityEvent("json/events/folio-app6/folio-module2/capability-event.json"));
 
     var applicationIdV2 = "folio-app6-6.1.0";
     var upgradeRequest = entitlementRequest(applicationIdV2);
@@ -796,8 +800,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       authResource("/folio-module2/events/{id}", "GET"),
       authResource("/folio-module2/v2/events", "POST"));
 
-    assertScheduledJobEvents(
-      readScheduledJobEvent("json/events/folio-app6/folio-module2/v2-scheduled-job-update-event.json"));
+    assertScheduledJobEvents(readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-update-event.json"));
+    assertCapabilityEvents(readCapabilityEvent("json/events/folio-app6/folio-module2/capability-update-event.json"));
   }
 
   @SneakyThrows

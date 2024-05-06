@@ -11,7 +11,9 @@ public class KafkaEventUtils {
 
   public static final String TOPIC_PREFIX = "mgr-tenant-entitlements.";
   public static final String SCHEDULED_JOB_TOPIC = TOPIC_PREFIX + "scheduled-job";
+  public static final String CAPABILITIES_TOPIC = TOPIC_PREFIX + "capability";
 
+  public static final String CAPABILITY_RESOURCE_NAME = "Capability";
   public static final String SCHEDULED_JOB_RESOURCE_NAME = "Scheduled Job";
 
   /**

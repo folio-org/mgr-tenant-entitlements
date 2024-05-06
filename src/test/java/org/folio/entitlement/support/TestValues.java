@@ -8,6 +8,7 @@ import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_A
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
@@ -20,6 +21,7 @@ import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_VERSION;
+import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_DESC;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
@@ -289,7 +291,7 @@ public class TestValues {
     );
   }
 
-  public static Map<?, ?> moduleFlowParameters(EntitlementRequest request, ModuleDescriptor desc, ModuleType type) {
+  public static Map<?, ?> moduleFlowParameters(EntitlementRequest request, ModuleType type, ModuleDescriptor desc) {
     return Map.of(
       PARAM_REQUEST, request,
       PARAM_MODULE_TYPE, type,
@@ -309,6 +311,7 @@ public class TestValues {
       PARAM_MODULE_DESCRIPTOR, descriptor,
       PARAM_INSTALLED_MODULE_DESCRIPTOR, installedDescriptor,
       PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
     );
   }

@@ -124,7 +124,16 @@ public class ModuleStageContext extends IdentifiableStageContext {
   /**
    * Returns current module descriptor from flow parameters.
    *
-   * <p>This value will be non-null only in module installer stages</p>
+   * @return current module descriptor as {@link ModuleDescriptor}
+   */
+  public ModuleDescriptor getModuleDescriptor() {
+    return context.getFlowParameter(PARAM_MODULE_DESCRIPTOR);
+  }
+
+  /**
+   * Returns installed module descriptor from flow parameters.
+   *
+   * <p>This value will be non-null only in module installer stages related to upgrade operation</p>
    *
    * @return current module descriptor as {@link ModuleDescriptor}
    */
@@ -133,20 +142,7 @@ public class ModuleStageContext extends IdentifiableStageContext {
   }
 
   /**
-   * Returns current module descriptor from flow parameters.
-   *
-   * <p>This value will be non-null only in module installer stages</p>
-   *
-   * @return current module descriptor as {@link ModuleDescriptor}
-   */
-  public ModuleDescriptor getModuleDescriptor() {
-    return context.getFlowParameter(PARAM_MODULE_DESCRIPTOR);
-  }
-
-  /**
    * Return module location URL from flow parameters.
-   *
-   * <p>This value will be non-null only in module installer stages</p>
    *
    * @return module location url as {@link String} object
    */

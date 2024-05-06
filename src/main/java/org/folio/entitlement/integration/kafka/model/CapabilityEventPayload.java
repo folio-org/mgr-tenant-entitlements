@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 @JsonInclude(Include.NON_EMPTY)
 @AllArgsConstructor(staticName = "of")
-public class CapabilityEventBody {
+public class CapabilityEventPayload {
 
   /**
    * Module identifier.
