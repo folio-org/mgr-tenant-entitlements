@@ -31,6 +31,12 @@
           "name": "folio-module2",
           "version": "2.1.0",
           "location": "{{request.baseUrl}}/folio-module21"
+        },
+        {
+          "id": "folio-module4-4.0.0",
+          "name": "folio-module4",
+          "version": "4.0.0",
+          "location": "{{request.baseUrl}}/folio-module4"
         }
       ],
       "totalRecords": 2

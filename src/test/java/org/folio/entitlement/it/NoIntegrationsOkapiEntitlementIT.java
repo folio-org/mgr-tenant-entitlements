@@ -40,6 +40,12 @@ import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
+import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsAfterUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsBeforeUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsAfterUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsBeforeUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsAfterUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsBeforeUpgrade;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -66,6 +72,7 @@ import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
+import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableOkapiSecurity;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
@@ -644,20 +651,19 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
 
     var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
-    assertScheduledJobEvents(
-      readScheduledJobEvent("json/events/folio-app6/folio-module1/timer-event.json"),
-      readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-event.json"));
 
-    assertCapabilityEvents(
-      readCapabilityEvent("json/events/folio-app6/folio-module1/capability-event.json"),
-      readCapabilityEvent("json/events/folio-app6/folio-module2/capability-event.json"));
+    assertScheduledJobEvents(scheduledTimerEventsBeforeUpgrade());
+    assertCapabilityEvents(capabilityEventsBeforeUpgrade());
+    assertSystemUserEvents(systemUserEventsBeforeUpgrade());
+    FakeKafkaConsumer.removeAllEvents();
 
     var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
 
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
-    assertScheduledJobEvents(readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-update-event.json"));
-    assertCapabilityEvents(readCapabilityEvent("json/events/folio-app6/folio-module2/capability-update-event.json"));
+    assertScheduledJobEvents(scheduledTimerEventsAfterUpgrade());
+    assertCapabilityEvents(capabilityEventsAfterUpgrade());
+    assertSystemUserEvents(systemUserEventsAfterUpgrade());
 
     mockMvc.perform(get("/entitlements")
         .contentType(APPLICATION_JSON)

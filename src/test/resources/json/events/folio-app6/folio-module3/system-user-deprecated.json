@@ -1,0 +1,12 @@
+{
+  "type": "DELETE",
+  "tenant": "test",
+  "resourceName": "System user",
+  "old": {
+    "name": "folio-module3",
+    "type": "module",
+    "permissions": [
+      "folio-module1.entity.item.get"
+    ]
+  }
+}

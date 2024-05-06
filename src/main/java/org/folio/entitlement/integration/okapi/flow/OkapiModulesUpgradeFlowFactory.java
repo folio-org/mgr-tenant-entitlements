@@ -10,6 +10,7 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.kafka.CapabilitiesEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobEventPublisher;
+import org.folio.entitlement.integration.kafka.SystemUserEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
 import org.folio.entitlement.integration.kong.KongRouteUpdater;
 import org.folio.flow.api.Flow;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @RequiredArgsConstructor
 public class OkapiModulesUpgradeFlowFactory implements OkapiModulesFlowFactory {
 
+  private final SystemUserEventPublisher systemUserEventPublisher;
   private final ScheduledJobEventPublisher scheduledJobEventPublisher;
   private final CapabilitiesEventPublisher capabilitiesEventPublisher;
 
@@ -31,7 +33,7 @@ public class OkapiModulesUpgradeFlowFactory implements OkapiModulesFlowFactory {
       .id(context.flowId() + "/OkapiModulesUpgradeFlow")
       .stage(combineStages("ParallelResourcesUpdater", asList(kongRouteUpdater, keycloakAuthResourceUpdater)))
       .stage(combineStages("EventPublishingParallelStage",
-        List.of(scheduledJobEventPublisher, capabilitiesEventPublisher)))
+        List.of(systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
       .executionStrategy(request.getExecutionStrategy())
       .flowParameters(additionalFlowParameters)
       .build();

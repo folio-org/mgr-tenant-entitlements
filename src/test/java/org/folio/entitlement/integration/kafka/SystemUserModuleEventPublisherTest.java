@@ -3,8 +3,21 @@ package org.folio.entitlement.integration.kafka;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
+import static org.folio.entitlement.integration.kafka.model.ResourceEventType.DELETE;
+import static org.folio.entitlement.integration.kafka.model.ResourceEventType.UPDATE;
+import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
+import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
+import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_ID;
+import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
@@ -35,6 +48,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class SystemUserModuleEventPublisherTest {
 
+  private static final String MODULE_ID = "mod-foo-1.0.0";
+  private static final String MODULE_ID_V2 = "mod-foo-2.0.0";
+  private static final String MODULE_NAME = "mod-foo";
+  private static final String SYS_USER_TYPE = "system";
+
   @InjectMocks private SystemUserModuleEventPublisher moduleEventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
 
@@ -51,8 +69,7 @@ class SystemUserModuleEventPublisherTest {
 
   @Test
   void execute_positive() {
-    var moduleId = "mod-foo-1.2.3";
-    var moduleDescriptor = moduleDescriptor(moduleId, UserDescriptor.of("system", List.of("foo.entities.post")));
+    var moduleDescriptor = moduleDescriptor(MODULE_ID, userDescriptor("foo.entities.post"));
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
     var flowParameters = moduleFlowParameters(request, moduleDescriptor);
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
@@ -60,8 +77,9 @@ class SystemUserModuleEventPublisherTest {
 
     moduleEventPublisher.execute(stageContext);
 
-    var systemUserEvent = SystemUserEvent.of("mod-foo", "system", List.of("foo.entities.post"));
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), moduleId, resourceEvent(systemUserEvent));
+    var expectedMessageKey = TENANT_ID.toString();
+    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), expectedMessageKey, resourceEvent(systemUserEvent));
   }
 
   @Test
@@ -78,6 +96,48 @@ class SystemUserModuleEventPublisherTest {
   }
 
   @Test
+  void execute_positive_upgradeRequestWithChangedModule() {
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
+      PARAM_MODULE_DESCRIPTOR, moduleDescriptor(MODULE_ID_V2, userDescriptor("foo.v2.entities.post")),
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, moduleDescriptor(MODULE_ID, userDescriptor("foo.entities.post")),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    moduleEventPublisher.execute(stageContext);
+
+    var expectedResourceEvent = ResourceEvent.<SystemUserEvent>builder()
+      .type(UPDATE).tenant(TENANT_NAME).resourceName("System user")
+      .newValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.v2.entities.post")))
+      .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
+      .build();
+
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_ID.toString(), expectedResourceEvent);
+  }
+
+  @Test
+  void execute_positive_upgradeRequestWithDeprecatedModule() {
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build(),
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, moduleDescriptor(MODULE_ID, userDescriptor("foo.entities.post")),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    moduleEventPublisher.execute(stageContext);
+
+    var expectedResourceEvent = ResourceEvent.<SystemUserEvent>builder()
+      .type(DELETE).tenant(TENANT_NAME).resourceName("System user")
+      .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
+      .build();
+
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_ID.toString(), expectedResourceEvent);
+  }
+
+  @Test
   void getStageName_positive() {
     var request = EntitlementRequest.builder().type(ENTITLE).build();
     var moduleDescriptor = new ModuleDescriptor().id("mod-foo-1.0.0");
@@ -91,6 +151,13 @@ class SystemUserModuleEventPublisherTest {
 
   private static ModuleDescriptor moduleDescriptor(String moduleId, UserDescriptor userDescriptor) {
     return new ModuleDescriptor().id(moduleId).user(userDescriptor);
+  }
+
+  private static UserDescriptor userDescriptor(String ... permissions) {
+    var userDescriptor = new UserDescriptor();
+    userDescriptor.setType(SYS_USER_TYPE);
+    userDescriptor.setPermissions(List.of(permissions));
+    return userDescriptor;
   }
 
   private static ResourceEvent<SystemUserEvent> resourceEvent(SystemUserEvent entry) {

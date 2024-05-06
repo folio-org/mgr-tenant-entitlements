@@ -4,6 +4,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
@@ -16,6 +17,7 @@ import static org.folio.entitlement.integration.kafka.model.ResourceEventType.DE
 import static org.folio.entitlement.integration.kafka.model.ResourceEventType.UPDATE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
+import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
@@ -97,13 +99,12 @@ class ScheduledJobModuleEventPublisherTest {
 
   @Test
   void execute_positive_upgradeRequestWithChangedModule() {
-    var entitledApplicationId = "test-app-0.0.9";
     var flowParameters = Map.of(
-      PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build(),
+      PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
       PARAM_MODULE_DESCRIPTOR, fooModuleDescriptorV2(),
       PARAM_INSTALLED_MODULE_DESCRIPTOR, fooModuleDescriptor(),
       PARAM_APPLICATION_ID, APPLICATION_ID,
-      PARAM_ENTITLED_APPLICATION_ID, entitledApplicationId,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
@@ -113,7 +114,7 @@ class ScheduledJobModuleEventPublisherTest {
     var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(MODULE_ID_V2, APPLICATION_ID, List.of(fooTimerRoutingEntryV2())))
-      .oldValue(ScheduledTimers.of(MODULE_ID, entitledApplicationId, expectedOldHandlers))
+      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
       .build();
 
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
@@ -121,12 +122,11 @@ class ScheduledJobModuleEventPublisherTest {
 
   @Test
   void execute_positive_upgradeRequestWithDeprecatedModule() {
-    var entitledApplicationId = "test-app-0.0.9";
     var flowParameters = Map.of(
-      PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build(),
+      PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
       PARAM_INSTALLED_MODULE_DESCRIPTOR, fooModuleDescriptor(),
       PARAM_APPLICATION_ID, APPLICATION_ID,
-      PARAM_ENTITLED_APPLICATION_ID, entitledApplicationId,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
@@ -135,7 +135,7 @@ class ScheduledJobModuleEventPublisherTest {
     var expectedOldHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
     var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("Scheduled Job")
-      .oldValue(ScheduledTimers.of(MODULE_ID, entitledApplicationId, expectedOldHandlers))
+      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
       .build();
 
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);

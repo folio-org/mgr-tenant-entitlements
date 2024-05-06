@@ -5,6 +5,7 @@ import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertCapabilityEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertScheduledJobEvents;
+import static org.folio.entitlement.support.KafkaEventAssertions.assertSystemUserEvents;
 import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.COMMON_KONG_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES;
@@ -18,9 +19,8 @@ import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
 import static org.folio.entitlement.support.TestConstants.entitlementTopic;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
+import static org.folio.entitlement.support.TestConstants.systemUserTenantTopic;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
-import static org.folio.entitlement.support.TestUtils.readCapabilityEvent;
-import static org.folio.entitlement.support.TestUtils.readScheduledJobEvent;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementEvent;
@@ -29,6 +29,12 @@ import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
+import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsAfterUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsBeforeUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsAfterUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsBeforeUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsAfterUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsBeforeUpgrade;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -49,6 +55,7 @@ import java.util.Map;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
+import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
@@ -90,6 +97,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
     fakeKafkaConsumer.registerTopic(scheduledJobsTenantTopic(), ResourceEvent.class);
     fakeKafkaConsumer.registerTopic(capabilitiesTenantTopic(), ResourceEvent.class);
+    fakeKafkaConsumer.registerTopic(systemUserTenantTopic(), ResourceEvent.class);
   }
 
   @Test
@@ -486,27 +494,27 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app6/v1-get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
     "/wiremock/folio-module1/install.json",
-    "/wiremock/folio-module2/install.json"
+    "/wiremock/folio-module2/install.json",
+    "/wiremock/folio-module3/install.json"
   })
   void upgrade_positive_freshInstallation() throws Exception {
     var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
-
     var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
-    assertScheduledJobEvents(
-      readScheduledJobEvent("json/events/folio-app6/folio-module1/timer-event.json"),
-      readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-event.json"));
 
-    assertCapabilityEvents(
-      readCapabilityEvent("json/events/folio-app6/folio-module1/capability-event.json"),
-      readCapabilityEvent("json/events/folio-app6/folio-module2/capability-event.json"));
+    assertScheduledJobEvents(scheduledTimerEventsBeforeUpgrade());
+    assertCapabilityEvents(capabilityEventsBeforeUpgrade());
+    assertSystemUserEvents(systemUserEventsBeforeUpgrade());
+    FakeKafkaConsumer.removeAllEvents();
 
     var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
 
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
-    assertScheduledJobEvents(readScheduledJobEvent("json/events/folio-app6/folio-module2/timer-update-event.json"));
-    assertCapabilityEvents(readCapabilityEvent("json/events/folio-app6/folio-module2/capability-update-event.json"));
+
+    assertScheduledJobEvents(scheduledTimerEventsAfterUpgrade());
+    assertCapabilityEvents(capabilityEventsAfterUpgrade());
+    assertSystemUserEvents(systemUserEventsAfterUpgrade());
 
     mockMvc.perform(get("/entitlements")
         .contentType(APPLICATION_JSON)

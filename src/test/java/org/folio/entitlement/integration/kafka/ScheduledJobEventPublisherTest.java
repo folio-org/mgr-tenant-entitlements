@@ -13,6 +13,7 @@ import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PA
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTOR_HOLDERS;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
+import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
@@ -90,11 +91,10 @@ class ScheduledJobEventPublisherTest {
 
   @Test
   void execute_positive_updateRequest() {
-    var entitledApplicationId = "test-app-0.0.9";
     var flowParameters = Map.of(
       PARAM_REQUEST, request(UPGRADE),
       PARAM_APPLICATION_ID, APPLICATION_ID,
-      PARAM_ENTITLED_APPLICATION_ID, entitledApplicationId,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(fooModuleDescriptorV2(), fooModuleDescriptor())),
       PARAM_DEPRECATED_MODULE_DESCRIPTORS, List.of(barModuleDescriptor()));
 
@@ -106,13 +106,13 @@ class ScheduledJobEventPublisherTest {
     var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(FOO_MODULE_V2_ID, APPLICATION_ID, List.of(fooTimerRoutingEntryV2())))
-      .oldValue(ScheduledTimers.of(FOO_MODULE_ID, entitledApplicationId, List.of(fooTimerRoutingEntry())))
+      .oldValue(ScheduledTimers.of(FOO_MODULE_ID, ENTITLED_APPLICATION_ID, List.of(fooTimerRoutingEntry())))
       .build();
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
 
     var barTimerEvent = ResourceEvent.<ScheduledTimers>builder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("Scheduled Job")
-      .oldValue(ScheduledTimers.of(BAR_MODULE_ID, entitledApplicationId, List.of(barTimerRoutingEntry())))
+      .oldValue(ScheduledTimers.of(BAR_MODULE_ID, ENTITLED_APPLICATION_ID, List.of(barTimerRoutingEntry())))
       .build();
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), barTimerEvent);
   }

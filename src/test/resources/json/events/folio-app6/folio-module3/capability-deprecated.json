@@ -1,0 +1,25 @@
+{
+  "type": "DELETE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "old": {
+    "moduleId": "folio-module3-3.0.0",
+    "moduleType": "module",
+    "applicationId": "folio-app6-6.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "folio-module3.entity.item.get",
+          "displayName": "Test Okapi Module #3 - Get entity by id",
+          "description": "Get a folio-module3 entity by id"
+        },
+        "endpoints": [
+          {
+            "path": "/folio-module3/entities/{id}",
+            "method": "GET"
+          }
+        ]
+      }
+    ]
+  }
+}
