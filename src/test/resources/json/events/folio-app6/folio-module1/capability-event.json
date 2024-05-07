@@ -9,39 +9,39 @@
     "resources": [
       {
         "permission": {
-          "permissionName": "folio-module1.events.item.post",
-          "displayName": "Folio Module #1 - Save an event",
-          "description": "Save folio-module1 event"
+          "permissionName": "folio-module1.entity.item.post",
+          "displayName": "Folio Module #1 - Save an entity",
+          "description": "Save a folio-module1 entity"
         },
         "endpoints": [
           {
-            "path": "/folio-module1/events",
+            "path": "/folio-module1/entities",
             "method": "POST"
           }
         ]
       },
       {
         "permission": {
-          "permissionName": "folio-module1.events.collection.get",
-          "displayName": "Folio Module #1 - Get list of events by query",
-          "description": "Get list of folio-module1 events by query"
+          "permissionName": "folio-module1.entity.collection.get",
+          "displayName": "Folio Module #1 - Get list of entities by query",
+          "description": "Get list of folio-module1 entities by query"
         },
         "endpoints": [
           {
-            "path": "/folio-module1/events",
+            "path": "/folio-module1/entities",
             "method": "GET"
           }
         ]
       },
       {
         "permission": {
-          "permissionName": "folio-module1.events.item.get",
-          "displayName": "Folio Module #1 - Get event by id",
-          "description": "Get folio-module1 event by id"
+          "permissionName": "folio-module1.entity.item.get",
+          "displayName": "Folio Module #1 - Get an entity by id",
+          "description": "Get a folio-module1 entity by id"
         },
         "endpoints": [
           {
-            "path": "/folio-module1/events/{id}",
+            "path": "/folio-module1/entities/{id}",
             "method": "GET"
           }
         ]

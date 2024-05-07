@@ -122,8 +122,8 @@ class FolioModulesFlowProviderTest {
     var fooFlowParams = fooFlowParams();
     var inOrder = inOrder(moduleEntitleFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
-    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     inOrder.verify(moduleEntitleFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParams, emptyMap()));
   }
 
@@ -150,8 +150,8 @@ class FolioModulesFlowProviderTest {
     var fooFlowParams = fooFlowParams();
     var inOrder = inOrder(moduleRevokeFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
-    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     inOrder.verify(moduleRevokeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParams, emptyMap()));
   }
 
@@ -179,8 +179,8 @@ class FolioModulesFlowProviderTest {
 
     var inOrder = inOrder(moduleUpgradeFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
-    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParameters);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParameters, emptyMap()));
   }
 
@@ -224,8 +224,8 @@ class FolioModulesFlowProviderTest {
 
     var inOrder = inOrder(moduleUpgradeFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
-    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParameters);
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     inOrder.verify(moduleUpgradeFlowFactory).createUiModuleFlow(uiFlowId, IGNORE_ON_ERROR, uiFooFlowParameters);
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParameters, emptyMap()));
     inOrder.verify(moduleStage).execute(StageContext.of(uiFlowId, uiFooFlowParameters, emptyMap()));
@@ -298,7 +298,6 @@ class FolioModulesFlowProviderTest {
 
     var inOrder = inOrder(moduleEntitleFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
-    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
 
     var fooFlowId = getEntitleStageFlowId(ENTITLE, 0, MOD_FOO_ID);
     var fooFlowParams = fooFlowParams();
@@ -308,6 +307,7 @@ class FolioModulesFlowProviderTest {
     var barFlowParams = barFlowParams();
     inOrder.verify(moduleEntitleFlowFactory).createModuleFlow(barFlowId, IGNORE_ON_ERROR, barFlowParams);
 
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     var uiFooFlowId = getEntitleStageFlowId(ENTITLE, 2, UI_FOO_ID);
     var uiFooFlowParams = uiFooFlowParams();
     inOrder.verify(moduleEntitleFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
@@ -342,7 +342,6 @@ class FolioModulesFlowProviderTest {
 
     var inOrder = inOrder(moduleRevokeFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
-    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
 
     var barFlowId = getEntitleStageFlowId(REVOKE, 0, MOD_BAR_ID);
     var barFlowParams = barFlowParams();
@@ -352,6 +351,7 @@ class FolioModulesFlowProviderTest {
     var fooFlowParams = fooFlowParams();
     inOrder.verify(moduleRevokeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
 
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     var uiFooFlowId = getEntitleStageFlowId(REVOKE, 2, UI_FOO_ID);
     var uiFooFlowParams = uiFooFlowParams();
     inOrder.verify(moduleRevokeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
@@ -388,12 +388,12 @@ class FolioModulesFlowProviderTest {
 
     var inOrder = inOrder(moduleUpgradeFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
-    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
 
     var fooV2FlowId = getEntitleStageFlowId(UPGRADE, 0, MOD_FOO_V2_ID);
     var fooV2FlowParams = upgradeModFooV2Params();
     inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(fooV2FlowId, IGNORE_ON_ERROR, fooV2FlowParams);
 
+    inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     var uiBarFlowId = getEntitleStageFlowId(UPGRADE, 2, UI_BAR_ID);
     var uiBarFlowParams = uiBarFlowParams();
     inOrder.verify(moduleUpgradeFlowFactory).createUiModuleFlow(uiBarFlowId, IGNORE_ON_ERROR, uiBarFlowParams);

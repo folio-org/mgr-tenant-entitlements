@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
+import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
 import org.folio.entitlement.integration.kong.KongModuleRouteUpdater;
 import org.folio.entitlement.service.flow.ModuleFlowFactory;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @RequiredArgsConstructor
 public class FolioModuleUpgradeFlowFactory implements ModuleFlowFactory {
 
+  private final SystemUserModuleEventPublisher systemUserEventPublisher;
   private final ScheduledJobModuleEventPublisher scheduledJobEventPublisher;
   private final CapabilitiesModuleEventPublisher capabilitiesEventPublisher;
 
@@ -31,7 +33,7 @@ public class FolioModuleUpgradeFlowFactory implements ModuleFlowFactory {
       .executionStrategy(strategy)
       .stage(combineStages("ResourceUpdaterParallelStage", asList(kongModuleRouteUpdater, kcModuleResourceUpdater)))
       .stage(combineStages("EventPublishingParallelStage",
-        asList(scheduledJobEventPublisher, capabilitiesEventPublisher)))
+        asList(systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
       .flowParameters(additionalFlowParameters)
       .build();
   }

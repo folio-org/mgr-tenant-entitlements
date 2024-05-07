@@ -143,9 +143,11 @@ public class FolioConfiguration {
    */
   @Bean
   public FolioModuleUpgradeFlowFactory folioModuleUpgradeFlowFactory(
+    SystemUserModuleEventPublisher systemUserModuleEventPublisher,
     ScheduledJobModuleEventPublisher scheduledJobModuleEventPublisher,
     CapabilitiesModuleEventPublisher capabilitiesModuleEventPublisher) {
-    return new FolioModuleUpgradeFlowFactory(scheduledJobModuleEventPublisher, capabilitiesModuleEventPublisher);
+    return new FolioModuleUpgradeFlowFactory(
+      systemUserModuleEventPublisher, scheduledJobModuleEventPublisher, capabilitiesModuleEventPublisher);
   }
 
   /**

@@ -1,59 +1,51 @@
 package org.folio.entitlement.integration.kafka;
 
-import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SYSTEM_USER_RESOURCE_NAME;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ModuleDescriptor;
-import org.folio.entitlement.domain.model.ModuleStageContext;
-import org.folio.entitlement.integration.kafka.model.ResourceEvent;
+import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
-import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
+import org.folio.entitlement.utils.SemverUtils;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class SystemUserModuleEventPublisher extends ModuleDatabaseLoggingStage {
-
-  private static final String SYS_USER_TOPIC = "mgr-tenant-entitlements.system-user";
-  private static final String SYS_USER_RESOURCE_NAME = "System user";
-
-  private final KafkaEventPublisher kafkaEventPublisher;
+public class SystemUserModuleEventPublisher extends AbstractModuleEventPublisher<SystemUserEvent> {
 
   @Override
-  public void execute(ModuleStageContext context) {
-    var descriptor = context.getModuleDescriptor();
-    var tenantName = context.getTenantName();
+  protected Optional<SystemUserEvent> getEventPayload(String appId, ModuleType type, ModuleDescriptor descriptor) {
+    return getSystemUserEvent(descriptor);
+  }
 
-    if (descriptor.getUser() == null) {
-      return;
-    }
+  @Override
+  protected String getTopicName(String tenantName) {
+    return getTenantTopicName(KafkaEventUtils.SYSTEM_USER_TOPIC, tenantName);
+  }
 
-    var moduleName = context.getModuleName();
-    sendEvent(moduleName, tenantName, descriptor);
+  @Override
+  protected String getResourceName() {
+    return SYSTEM_USER_RESOURCE_NAME;
   }
 
   /**
-   * Sends a system user event for provided {@link ModuleDescriptor} object.
+   * Creates a system user event for provided {@link ModuleDescriptor} object.
    *
    * @param moduleDescriptor - {@link ModuleDescriptor} object
-   * @param moduleName - tenant identifier
-   * @param tenantName - tenant name
+   * @return {@link Optional} of {@link SystemUserEvent}, it will be empty if descriptor does not contain system user
    */
-  public void sendEvent(String moduleName, String tenantName, ModuleDescriptor moduleDescriptor) {
+  public static Optional<SystemUserEvent> getSystemUserEvent(ModuleDescriptor moduleDescriptor) {
+    if (moduleDescriptor == null || moduleDescriptor.getUser() == null) {
+      return Optional.empty();
+    }
+
+    var moduleName = SemverUtils.getName(moduleDescriptor.getId());
     var systemUser = moduleDescriptor.getUser();
-    var moduleId = moduleDescriptor.getId();
     var payload = SystemUserEvent.of(moduleName, systemUser.getType(), systemUser.getPermissions());
-
-    var event = ResourceEvent.<SystemUserEvent>builder()
-      .type(CREATE)
-      .tenant(tenantName)
-      .resourceName(SYS_USER_RESOURCE_NAME)
-      .newValue(payload)
-      .build();
-
-    kafkaEventPublisher.send(getTenantTopicName(SYS_USER_TOPIC, tenantName), moduleId, event);
+    return Optional.of(payload);
   }
 }

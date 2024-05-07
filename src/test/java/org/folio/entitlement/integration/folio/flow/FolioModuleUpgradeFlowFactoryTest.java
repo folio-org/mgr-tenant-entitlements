@@ -11,6 +11,7 @@ import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.folio.flow.model.FlowExecutionStrategy.IGNORE_ON_ERROR;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import org.folio.common.domain.model.ModuleDescriptor;
@@ -18,6 +19,7 @@ import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
+import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
 import org.folio.entitlement.integration.kong.KongModuleRouteUpdater;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -30,7 +32,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
@@ -42,8 +43,10 @@ class FolioModuleUpgradeFlowFactoryTest {
   @InjectMocks private FolioModuleUpgradeFlowFactory upgradeFlowFactory;
   @Mock private KongModuleRouteUpdater kongModuleRouteUpdater;
   @Mock private KeycloakModuleResourceUpdater kcModuleResourceUpdater;
-  @Mock private ScheduledJobModuleEventPublisher scheduledJobModuleEventPublisher;
-  @Mock private CapabilitiesModuleEventPublisher capabilitiesModuleEventPublisher;
+
+  @Mock private SystemUserModuleEventPublisher systemUserEventPublisher;
+  @Mock private ScheduledJobModuleEventPublisher scheduledJobEventPublisher;
+  @Mock private CapabilitiesModuleEventPublisher capabilitiesEventPublisher;
 
   @AfterEach
   void tearDown() {
@@ -52,8 +55,8 @@ class FolioModuleUpgradeFlowFactoryTest {
 
   @Test
   void createModuleFlow_positive_allConditionalStages() {
-    mockStageNames(kongModuleRouteUpdater, kcModuleResourceUpdater,
-      scheduledJobModuleEventPublisher, capabilitiesModuleEventPublisher);
+    mockStageNames(kongModuleRouteUpdater, kcModuleResourceUpdater, systemUserEventPublisher,
+      scheduledJobEventPublisher, capabilitiesEventPublisher);
     upgradeFlowFactory.setKongModuleRouteUpdater(kongModuleRouteUpdater);
     upgradeFlowFactory.setKcModuleResourceUpdater(kcModuleResourceUpdater);
 
@@ -62,41 +65,43 @@ class FolioModuleUpgradeFlowFactoryTest {
     var flow = upgradeFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(kongModuleRouteUpdater, kcModuleResourceUpdater,
-      capabilitiesModuleEventPublisher, scheduledJobModuleEventPublisher);
+    var inOrder = inOrder(kongModuleRouteUpdater, kcModuleResourceUpdater,
+      capabilitiesEventPublisher, scheduledJobEventPublisher, systemUserEventPublisher);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     verifyStageExecution(inOrder, kongModuleRouteUpdater, stageContext);
     verifyStageExecution(inOrder, kcModuleResourceUpdater, stageContext);
-    verifyStageExecution(inOrder, scheduledJobModuleEventPublisher, stageContext);
-    verifyStageExecution(inOrder, capabilitiesModuleEventPublisher, stageContext);
+    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
+    verifyStageExecution(inOrder, scheduledJobEventPublisher, stageContext);
+    verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
   }
 
   @Test
   void createModuleFlow_positive_noConditionalStages() {
-    mockStageNames(scheduledJobModuleEventPublisher, capabilitiesModuleEventPublisher);
+    mockStageNames(scheduledJobEventPublisher, capabilitiesEventPublisher, systemUserEventPublisher);
     var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor());
 
     var flow = upgradeFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(capabilitiesModuleEventPublisher, scheduledJobModuleEventPublisher);
+    var inOrder = inOrder(capabilitiesEventPublisher, scheduledJobEventPublisher, systemUserEventPublisher);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
-    verifyStageExecution(inOrder, scheduledJobModuleEventPublisher, stageContext);
-    verifyStageExecution(inOrder, capabilitiesModuleEventPublisher, stageContext);
+    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
+    verifyStageExecution(inOrder, scheduledJobEventPublisher, stageContext);
+    verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
 
     verifyNoInteractions(kongModuleRouteUpdater, kcModuleResourceUpdater);
   }
 
   @Test
   void createUiModuleFlow_positive() {
-    mockStageNames(capabilitiesModuleEventPublisher);
+    mockStageNames(capabilitiesEventPublisher);
     var flowParameters = moduleFlowParameters(entitlementRequest(), UI_MODULE, moduleDescriptor());
     var flow = upgradeFlowFactory.createUiModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(capabilitiesModuleEventPublisher, scheduledJobModuleEventPublisher);
+    var inOrder = inOrder(capabilitiesEventPublisher);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
-    verifyStageExecution(inOrder, capabilitiesModuleEventPublisher, stageContext);
+    verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
     verifyNoInteractions(kongModuleRouteUpdater, kcModuleResourceUpdater);
   }
 

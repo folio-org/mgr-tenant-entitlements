@@ -1,0 +1,51 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "folio-module2-2.0.0",
+    "moduleType": "module",
+    "applicationId": "folio-app6-6.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "folio-module2.entity.item.post",
+          "displayName": "Test Okapi Module #2 - Save an entity",
+          "description": "Save a folio-module2 entity"
+        },
+        "endpoints": [
+          {
+            "path": "/folio-module2/entities",
+            "method": "POST"
+          }
+        ]
+      },
+      {
+        "permission": {
+          "permissionName": "folio-module2.entity.collection.get",
+          "displayName": "Test Okapi Module #2 - Get list of entities by query",
+          "description": "Get list of folio-module2 entities by query"
+        },
+        "endpoints": [
+          {
+            "path": "/folio-module2/entities",
+            "method": "GET"
+          }
+        ]
+      },
+      {
+        "permission": {
+          "permissionName": "folio-module2.entity.item.get",
+          "displayName": "Test Okapi Module #2 - Get an entity by id",
+          "description": "Get a folio-module2 entity by id"
+        },
+        "endpoints": [
+          {
+            "path": "/folio-module2/entities/{id}",
+            "method": "GET"
+          }
+        ]
+      }
+    ]
+  }
+}

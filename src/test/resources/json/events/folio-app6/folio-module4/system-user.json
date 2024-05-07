@@ -1,0 +1,12 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "System user",
+  "new": {
+    "name": "folio-module4",
+    "type": "module",
+    "permissions": [
+      "folio-module1.entity.item.post"
+    ]
+  }
+}

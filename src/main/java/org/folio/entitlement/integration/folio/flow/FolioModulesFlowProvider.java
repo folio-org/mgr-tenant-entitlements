@@ -58,14 +58,16 @@ public class FolioModulesFlowProvider implements ModulesFlowProvider {
 
     var sequence = Sequence.withPrefix(flowId + "/Level-");
     var moduleSequence = moduleSequenceProvider.getSequence(ctx, MODULE);
-    var uiModuleSequence = moduleSequenceProvider.getSequence(ctx, UI_MODULE);
     getModuleStages(sequence, ctx, MODULE, moduleSequence.moduleDescriptors()).forEach(flowBuilder::stage);
+
+    var uiModuleSequence = moduleSequenceProvider.getSequence(ctx, UI_MODULE);
     getModuleStages(sequence, ctx, UI_MODULE, uiModuleSequence.moduleDescriptors()).forEach(flowBuilder::stage);
 
     var deprecatedSequence = Sequence.withPrefix(flowId + "/Deprecated/Level-");
     var deprecatedDescriptors = moduleSequence.deprecatedModuleDescriptors();
-    var deprecatedUiDescriptors = uiModuleSequence.deprecatedModuleDescriptors();
     getDeprecatedModulesStages(deprecatedSequence, MODULE, ctx, deprecatedDescriptors).forEach(flowBuilder::stage);
+
+    var deprecatedUiDescriptors = uiModuleSequence.deprecatedModuleDescriptors();
     getDeprecatedModulesStages(deprecatedSequence, UI_MODULE, ctx, deprecatedUiDescriptors).forEach(flowBuilder::stage);
 
     return flowBuilder.build();

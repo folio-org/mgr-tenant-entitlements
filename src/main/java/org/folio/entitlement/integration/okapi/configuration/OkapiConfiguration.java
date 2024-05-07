@@ -118,7 +118,10 @@ public class OkapiConfiguration {
    */
   @Bean
   public OkapiModulesUpgradeFlowFactory upgradeOkapiModulesFlowFactory(
-    ScheduledJobEventPublisher scheduledJobEventPublisher, CapabilitiesEventPublisher capabilitiesEventPublisher) {
-    return new OkapiModulesUpgradeFlowFactory(scheduledJobEventPublisher, capabilitiesEventPublisher);
+    SystemUserEventPublisher systemUserEventPublisher,
+    ScheduledJobEventPublisher scheduledJobEventPublisher,
+    CapabilitiesEventPublisher capabilitiesEventPublisher) {
+    return new OkapiModulesUpgradeFlowFactory(
+      systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher);
   }
 }
