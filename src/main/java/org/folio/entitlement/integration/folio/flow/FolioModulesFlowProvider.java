@@ -79,7 +79,6 @@ public class FolioModulesFlowProvider implements ModulesFlowProvider {
     for (var moduleDescriptorHolders : moduleDescriptorsSequence) {
       var stageId = sequence.nextValue();
       var stages = moduleDescriptorHolders.stream()
-        .filter(ModuleDescriptorHolder::isVersionChanged)
         .map(h -> getModuleFlow(stageId, ctx, moduleType, h.moduleDescriptor(), h.installedModuleDescriptor()))
         .toList();
 

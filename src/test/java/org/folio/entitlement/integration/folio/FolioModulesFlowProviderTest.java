@@ -393,6 +393,10 @@ class FolioModulesFlowProviderTest {
     var fooV2FlowParams = upgradeModFooV2Params();
     inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(fooV2FlowId, IGNORE_ON_ERROR, fooV2FlowParams);
 
+    var barFlowId = getEntitleStageFlowId(UPGRADE, 1, MOD_BAR_ID);
+    var barFlowParams = upgradeModBarParams();
+    inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(barFlowId, IGNORE_ON_ERROR, barFlowParams);
+
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     var uiBarFlowId = getEntitleStageFlowId(UPGRADE, 2, UI_BAR_ID);
     var uiBarFlowParams = uiBarFlowParams();
@@ -403,6 +407,7 @@ class FolioModulesFlowProviderTest {
     inOrder.verify(moduleUpgradeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
 
     inOrder.verify(moduleStage).execute(StageContext.of(fooV2FlowId, fooV2FlowParams, emptyMap()));
+    inOrder.verify(moduleStage).execute(StageContext.of(barFlowId, barFlowParams, emptyMap()));
     inOrder.verify(moduleStage).execute(StageContext.of(uiBarFlowId, uiBarFlowParams, emptyMap()));
     inOrder.verify(moduleStage).execute(StageContext.of(uiFooFlowId, uiFooFlowParams, emptyMap()));
   }
@@ -462,7 +467,7 @@ class FolioModulesFlowProviderTest {
     return new ModuleDescriptor()
       .id(MOD_BAR_ID)
       .name("Bar module")
-      .requires(List.of(new InterfaceReference().id("foo-api").version("1.0")))
+      .requires(List.of(new InterfaceReference().id("foo-api").version("1.0 2.0")))
       .provides(List.of(new InterfaceDescriptor().id("bar-api").version("1.0").handlers(List.of(
         new RoutingEntry().methods(List.of("GET")).pathPattern("/bar-api/items")))));
   }
@@ -514,6 +519,17 @@ class FolioModulesFlowProviderTest {
       PARAM_MODULE_DESCRIPTOR, fooModuleDescV2(),
       PARAM_INSTALLED_MODULE_DESCRIPTOR, fooModuleDesc(),
       PARAM_MODULE_DISCOVERY, "https://mod-foo-v2:8443");
+  }
+
+  private static Map<String, Object> upgradeModBarParams() {
+    return Map.of(
+      PARAM_MODULE_TYPE, MODULE,
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
+      PARAM_MODULE_ID, MOD_BAR_ID,
+      PARAM_MODULE_DESCRIPTOR, barModuleDesc(),
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, barModuleDesc(),
+      PARAM_MODULE_DISCOVERY, "https://mod-bar:8443");
   }
 
   private static @NotNull Map<String, Object> uiBarFlowParams() {

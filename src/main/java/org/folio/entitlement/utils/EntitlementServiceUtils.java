@@ -17,6 +17,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
@@ -107,6 +108,12 @@ public class EntitlementServiceUtils {
    */
   public static Map<String, Module> groupModulesByNames(List<Module> modules) {
     return toStream(modules).collect(toLinkedHashMap(Module::getName));
+  }
+
+  public static boolean isModuleVersionChanged(ModuleDescriptor moduleDesc, ModuleDescriptor installedModuleDesc) {
+    return moduleDesc != null
+      ? installedModuleDesc == null || !Objects.equals(moduleDesc.getId(), installedModuleDesc.getId())
+      : installedModuleDesc != null;
   }
 
   private static List<Parameter> getErrors(Throwable throwable) {

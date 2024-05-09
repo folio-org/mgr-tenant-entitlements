@@ -13,6 +13,7 @@ import org.folio.entitlement.integration.folio.flow.FolioModulesFlowProvider;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.folio.stage.FolioModuleInstaller;
 import org.folio.entitlement.integration.folio.stage.FolioModuleUninstaller;
+import org.folio.entitlement.integration.folio.stage.FolioModuleUpdater;
 import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
@@ -75,6 +76,18 @@ public class FolioConfiguration {
   @Bean
   public FolioModuleInstaller folioModuleInstaller(FolioModuleService folioModuleService) {
     return new FolioModuleInstaller(folioModuleService);
+  }
+
+  /**
+   * Creates a {@link FolioModuleInstaller} stage for entitlement flow.
+   *
+   * @param folioModuleService - {@link FolioModuleService} bean from spring context
+   * @return created {@link FolioModuleInstaller} stage
+   */
+  @Bean
+  public FolioModuleUpdater folioModuleUpdater(FolioModuleService folioModuleService,
+    EntitlementModuleService entitlementModuleService) {
+    return new FolioModuleUpdater(folioModuleService, entitlementModuleService);
   }
 
   /**
@@ -143,10 +156,11 @@ public class FolioConfiguration {
    */
   @Bean
   public FolioModuleUpgradeFlowFactory folioModuleUpgradeFlowFactory(
+    FolioModuleUpdater folioModuleUpdater, FolioModuleEventPublisher folioModuleEventPublisher,
     SystemUserModuleEventPublisher systemUserModuleEventPublisher,
     ScheduledJobModuleEventPublisher scheduledJobModuleEventPublisher,
     CapabilitiesModuleEventPublisher capabilitiesModuleEventPublisher) {
-    return new FolioModuleUpgradeFlowFactory(
+    return new FolioModuleUpgradeFlowFactory(folioModuleUpdater, folioModuleEventPublisher,
       systemUserModuleEventPublisher, scheduledJobModuleEventPublisher, capabilitiesModuleEventPublisher);
   }
 

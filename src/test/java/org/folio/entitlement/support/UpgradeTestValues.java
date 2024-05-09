@@ -1,14 +1,24 @@
 package org.folio.entitlement.support;
 
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.support.TestUtils.readCapabilityEvent;
 import static org.folio.entitlement.support.TestUtils.readScheduledJobEvent;
 import static org.folio.entitlement.support.TestUtils.readSystemUserEvent;
+import static org.folio.entitlement.support.TestValues.entitlementEvent;
+import static org.folio.entitlement.support.base.BaseIntegrationTest.FOLIO_MODULE1_ID;
+import static org.folio.entitlement.support.base.BaseIntegrationTest.FOLIO_MODULE2_ID;
+import static org.folio.entitlement.support.base.BaseIntegrationTest.FOLIO_MODULE2_V2_ID;
+import static org.folio.entitlement.support.base.BaseIntegrationTest.FOLIO_MODULE3_ID;
+import static org.folio.entitlement.support.base.BaseIntegrationTest.FOLIO_MODULE4_ID;
 import static org.folio.entitlement.support.model.AuthorizationResource.authResource;
 
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
+import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
@@ -16,6 +26,9 @@ import org.folio.entitlement.support.model.AuthorizationResource;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class UpgradeTestValues {
+
+  public static final String FOLIO_APP6_V1_ID = "folio-app6-6.0.0";
+  public static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
 
   public static List<String> kongRoutesBeforeUpgrade() {
     return List.of(
@@ -126,6 +139,23 @@ public class UpgradeTestValues {
       readCapabilityEvent("json/events/folio-app6/folio-module3/capability-deprecated.json"),
       readCapabilityEvent("json/events/folio-app6/ui-module3/capability-deprecated.json")
     );
+  }
+
+  public static EntitlementEvent[] entitlementEventsBeforeUpgrade() {
+    return new EntitlementEvent[] {
+      entitlementEvent(ENTITLE, FOLIO_MODULE1_ID),
+      entitlementEvent(ENTITLE, FOLIO_MODULE2_ID),
+      entitlementEvent(ENTITLE, FOLIO_MODULE3_ID)
+    };
+  }
+
+  public static EntitlementEvent[] entitlementEventsAfterUpgrade() {
+    return new EntitlementEvent[] {
+      entitlementEvent(UPGRADE, FOLIO_MODULE2_V2_ID),
+      entitlementEvent(UPGRADE, FOLIO_MODULE4_ID),
+      entitlementEvent(REVOKE, FOLIO_MODULE2_ID),
+      entitlementEvent(REVOKE, FOLIO_MODULE3_ID)
+    };
   }
 
   public static String exactRouteExpression(String path, String method) {

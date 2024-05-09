@@ -6,8 +6,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 @UnitTest
 class EntitlementServiceUtilsTest {
@@ -38,5 +41,22 @@ class EntitlementServiceUtilsTest {
     var list = Collections.<Integer>emptyList();
     var result = EntitlementServiceUtils.toUnmodifiableMap(list, Object::toString);
     assertThat(result).isEmpty();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "mod-foo-1.0.0, mod-foo-1.1.0, true",
+    "mod-foo-1.0.0, mod-foo-1.0.0, false",
+    " , mod-foo-1.0.0, true",
+    "mod-foo-1.0.0, , true",
+    " , , false"
+  })
+  void isModuleVersionChanged_parameterized(String id, String installedId, boolean expected) {
+    var result = EntitlementServiceUtils.isModuleVersionChanged(moduleDescriptor(id), moduleDescriptor(installedId));
+    assertThat(result).isEqualTo(expected);
+  }
+
+  private static ModuleDescriptor moduleDescriptor(String id) {
+    return id != null ? new ModuleDescriptor().id(id) : null;
   }
 }

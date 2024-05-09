@@ -118,6 +118,21 @@ class SystemUserModuleEventPublisherTest {
   }
 
   @Test
+  void execute_positive_upgradeRequestWithNotChangedModule() {
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
+      PARAM_MODULE_DESCRIPTOR, moduleDescriptor(MODULE_ID, userDescriptor("foo.entities.post")),
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, moduleDescriptor(MODULE_ID, userDescriptor("foo.entities.post")),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    moduleEventPublisher.execute(stageContext);
+    verifyNoInteractions(kafkaEventPublisher);
+  }
+
+  @Test
   void execute_positive_upgradeRequestWithDeprecatedModule() {
     var flowParameters = Map.of(
       PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build(),

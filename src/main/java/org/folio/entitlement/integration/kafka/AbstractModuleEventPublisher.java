@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.kafka;
 
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
+
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.ModuleDescriptor;
@@ -16,17 +18,20 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
 
   @Override
   public void execute(ModuleStageContext ctx) {
+    var moduleDescriptor = ctx.getModuleDescriptor();
+    var installedModuleDescriptor = ctx.getInstalledModuleDescriptor();
+    if (!isModuleVersionChanged(moduleDescriptor, installedModuleDescriptor)) {
+      return;
+    }
+
     var tenant = ctx.getTenantName();
     var moduleType = ctx.getModuleType();
-    var newPayload = getEventPayload(ctx.getApplicationId(), moduleType, ctx.getModuleDescriptor()).orElse(null);
-
+    var newPayload = getEventPayload(ctx.getApplicationId(), moduleType, moduleDescriptor).orElse(null);
     var entitledApplicationId = ctx.getEntitledApplicationId();
-    var installedModuleDescriptor = ctx.getInstalledModuleDescriptor();
     var oldPayload = getEventPayload(entitledApplicationId, moduleType, installedModuleDescriptor).orElse(null);
 
     var topicName = getTopicName(tenant);
     var messageKey = ctx.getTenantId().toString();
-
     createEvent(tenant, newPayload, oldPayload).ifPresent(evt -> kafkaEventPublisher.send(topicName, messageKey, evt));
   }
 

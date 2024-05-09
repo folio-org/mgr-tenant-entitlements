@@ -3,6 +3,8 @@ package org.folio.entitlement.integration.kafka;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
@@ -12,8 +14,10 @@ import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_TYPE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
+import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_ID;
+import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
@@ -95,6 +99,21 @@ class CapabilitiesModuleEventPublisherTest {
 
     moduleEventPublisher.execute(stageContext);
 
+    verifyNoInteractions(kafkaEventPublisher);
+  }
+
+  @Test
+  void execute_positive_upgradeRequestWithNotChangedModule() {
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
+      PARAM_MODULE_DESCRIPTOR, readModuleDescriptor("json/events/capabilities/be-module-desc.json"),
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, readModuleDescriptor("json/events/capabilities/be-module-desc.json"),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    moduleEventPublisher.execute(stageContext);
     verifyNoInteractions(kafkaEventPublisher);
   }
 

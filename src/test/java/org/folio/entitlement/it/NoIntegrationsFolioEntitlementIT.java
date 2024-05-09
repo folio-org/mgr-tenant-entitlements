@@ -29,8 +29,12 @@ import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
+import static org.folio.entitlement.support.UpgradeTestValues.FOLIO_APP6_V1_ID;
+import static org.folio.entitlement.support.UpgradeTestValues.FOLIO_APP6_V2_ID;
 import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsBeforeUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.entitlementEventsAfterUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.entitlementEventsBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsAfterUpgrade;
@@ -43,7 +47,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -55,7 +58,6 @@ import java.util.Map;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
@@ -85,11 +87,6 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
   private static final String FOLIO_APP2_ID = "folio-app2-2.0.0";
   private static final String FOLIO_APP3_ID = "folio-app3-3.0.0";
   private static final String FOLIO_APP5_ID = "folio-app5-5.0.0";
-  private static final String FOLIO_MODULE1_ID = "folio-module1-1.0.0";
-  private static final String FOLIO_MODULE3_ID = "folio-module3-3.0.0";
-
-  private static final String FOLIO_APP6_V1_ID = "folio-app6-6.0.0";
-  private static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
 
   @BeforeAll
   static void beforeAll(@Autowired ApplicationContext appContext) {
@@ -490,38 +487,45 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/folio-app6/v1-get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/folio-app6/v2-get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app6/v1-get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
     "/wiremock/folio-module1/install.json",
     "/wiremock/folio-module2/install.json",
-    "/wiremock/folio-module3/install.json"
+    "/wiremock/folio-module3/install.json",
+
+    "/wiremock/mgr-applications/folio-app6/v2-get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app6/v2-get-discovery.json",
+    "/wiremock/folio-module2-1/install.json",
+    "/wiremock/folio-module4/install.json",
   })
   void upgrade_positive_freshInstallation() throws Exception {
     var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
     var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
 
+    var modules = List.of(FOLIO_MODULE1_ID, FOLIO_MODULE2_ID, FOLIO_MODULE3_ID);
+    var entitlements = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP6_V1_ID, modules));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP6_V1_ID), entitlements);
+
+    assertEntitlementEvents(entitlementEventsBeforeUpgrade());
     assertScheduledJobEvents(scheduledTimerEventsBeforeUpgrade());
     assertCapabilityEvents(capabilityEventsBeforeUpgrade());
     assertSystemUserEvents(systemUserEventsBeforeUpgrade());
-    FakeKafkaConsumer.removeAllEvents();
 
     var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
 
+    getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V1_ID, emptyEntitlements());
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
 
+    var upgradedModules = List.of(FOLIO_MODULE1_ID, FOLIO_MODULE2_V2_ID, FOLIO_MODULE4_ID);
+    var upgradedEntitlements = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP6_V2_ID, upgradedModules));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP6_V2_ID), upgradedEntitlements);
+
+    assertEntitlementEvents(entitlementEventsAfterUpgrade());
     assertScheduledJobEvents(scheduledTimerEventsAfterUpgrade());
     assertCapabilityEvents(capabilityEventsAfterUpgrade());
     assertSystemUserEvents(systemUserEventsAfterUpgrade());
-
-    mockMvc.perform(get("/entitlements")
-        .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
-        .queryParam("query", "applicationId == " + FOLIO_APP6_V1_ID))
-      .andExpect(status().isOk())
-      .andExpect(content().json(asJsonString(emptyEntitlements())));
   }
 
   @Test

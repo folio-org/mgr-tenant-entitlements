@@ -16,6 +16,7 @@ import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PA
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_UI_MODULE_DESCRIPTOR_HOLDERS;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_ID;
+import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
@@ -59,7 +60,7 @@ class CapabilitiesEventPublisherTest {
 
   private static final String TOPIC_NAME = capabilitiesTenantTopic();
 
-  @InjectMocks private CapabilitiesEventPublisher capabilitiesEventPublisher;
+  @InjectMocks private CapabilitiesEventPublisher eventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
   @Captor private ArgumentCaptor<ResourceEvent<CapabilityEventPayload>> eventCaptor;
   @Captor private ArgumentCaptor<String> messageKeyCaptor;
@@ -81,7 +82,7 @@ class CapabilitiesEventPublisherTest {
 
     doNothing().when(kafkaEventPublisher).send(eq(TOPIC_NAME), messageKeyCaptor.capture(), eventCaptor.capture());
 
-    capabilitiesEventPublisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
     assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
@@ -95,7 +96,7 @@ class CapabilitiesEventPublisherTest {
     var flowParameters = flowParameters(request, descriptor);
     var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
-    capabilitiesEventPublisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     verifyNoInteractions(kafkaEventPublisher);
   }
@@ -117,13 +118,30 @@ class CapabilitiesEventPublisherTest {
     var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     doNothing().when(kafkaEventPublisher).send(eq(TOPIC_NAME), messageKeyCaptor.capture(), eventCaptor.capture());
 
-    capabilitiesEventPublisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     var expectedEvents = List.of(
       readCapabilityEvent("json/events/capabilities/module-upgrade-event.json"),
       readCapabilityEvent("json/events/capabilities/ui-module-upgrade-event.json"));
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
     assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+  }
+
+  @Test
+  void execute_positive_updateRequestModuleNotChanged() {
+    var moduleDesc = readModuleDescriptor("json/events/capabilities/be-module-desc.json");
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).build(),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
+      PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(moduleDesc, moduleDesc)));
+
+    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
+
+    eventPublisher.execute(stageContext);
+
+    verifyNoInteractions(kafkaEventPublisher);
   }
 
   @Test
@@ -141,7 +159,7 @@ class CapabilitiesEventPublisherTest {
     var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     doNothing().when(kafkaEventPublisher).send(eq(TOPIC_NAME), messageKeyCaptor.capture(), eventCaptor.capture());
 
-    capabilitiesEventPublisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     var expectedEvents = List.of(
       readCapabilityEvent("json/events/capabilities/full-app-desc-event-1.json"),
@@ -165,7 +183,7 @@ class CapabilitiesEventPublisherTest {
     var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     doNothing().when(kafkaEventPublisher).send(eq(TOPIC_NAME), messageKeyCaptor.capture(), eventCaptor.capture());
 
-    capabilitiesEventPublisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     var expectedEvents = List.of(
       readCapabilityEvent("json/events/capabilities/deprecated-module-upgrade-event.json"),

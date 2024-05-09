@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.keycloak;
 
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
+
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
@@ -14,11 +16,12 @@ public class KeycloakModuleResourceUpdater extends ModuleDatabaseLoggingStage {
   @Override
   public void execute(ModuleStageContext context) {
     var tenantName = context.getTenantName();
-
-    keycloakClient.tokenManager().grantToken();
-
-    var entitledModuleDescriptor = context.getInstalledModuleDescriptor();
     var moduleDescriptor = context.getModuleDescriptor();
-    keycloakService.updateAuthResources(entitledModuleDescriptor, moduleDescriptor, tenantName);
+    var entitledModuleDescriptor = context.getInstalledModuleDescriptor();
+
+    if (isModuleVersionChanged(moduleDescriptor, entitledModuleDescriptor)) {
+      keycloakClient.tokenManager().grantToken();
+      keycloakService.updateAuthResources(entitledModuleDescriptor, moduleDescriptor, tenantName);
+    }
   }
 }

@@ -50,7 +50,7 @@ class SystemUserEventPublisherTest {
   private static final String MOD_BAR_ID = "mod-bar-1.0.0";
   private static final String SYS_USER_TYPE = "system";
 
-  @InjectMocks private SystemUserEventPublisher publisher;
+  @InjectMocks private SystemUserEventPublisher eventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
 
   @BeforeEach
@@ -76,7 +76,7 @@ class SystemUserEventPublisherTest {
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextData);
 
-    publisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     var expectedMessageKey = TENANT_ID.toString();
     var systemUserEvent = SystemUserEvent.of("mod-foo", SYS_USER_TYPE, List.of("foo.entities.post"));
@@ -97,7 +97,7 @@ class SystemUserEventPublisherTest {
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
 
-    publisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     var expectedResourceEvent = ResourceEvent.<SystemUserEvent>builder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("System user")
@@ -115,6 +115,23 @@ class SystemUserEventPublisherTest {
   }
 
   @Test
+  void execute_positive_updateRequestModuleNotChanged() {
+    var modFooV1 = moduleDescriptor(MOD_FOO_V1_ID, userDescriptor("foo.item.get", "foo.item.post"));
+    var flowParameters = Map.of(
+      PARAM_REQUEST, request(UPGRADE),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
+      PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(modFooV1, modFooV1)));
+
+    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
+
+    eventPublisher.execute(stageContext);
+
+    verifyNoInteractions(kafkaEventPublisher);
+  }
+
+  @Test
   void execute_positive_noSystemUsersDefined() {
     var flowParameters = Map.of(
       PARAM_REQUEST, request(ENTITLE),
@@ -124,7 +141,7 @@ class SystemUserEventPublisherTest {
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextData);
 
-    publisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     verifyNoInteractions(kafkaEventPublisher);
   }

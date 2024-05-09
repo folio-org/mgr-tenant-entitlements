@@ -14,6 +14,7 @@ import static org.folio.flow.model.FlowExecutionStrategy.IGNORE_ON_ERROR;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.service.stage.ApplicationDependencyUpdater;
+import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.entitlement.service.stage.FailedApplicationFlowFinalizer;
@@ -38,6 +39,7 @@ class UpgradeApplicationFlowFactoryTest {
 
   @InjectMocks private UpgradeApplicationFlowFactory flowFactory;
 
+  @Mock private ApplicationDiscoveryLoader applicationDiscoveryLoader;
   @Mock private ApplicationDependencyUpdater applicationDependencyUpdater;
   @Mock private UpgradeRequestDependencyValidator upgradeRequestDependencyValidator;
 
@@ -50,7 +52,7 @@ class UpgradeApplicationFlowFactoryTest {
   @Test
   void prepareFlow() {
     mockStageNames(applicationDependencyUpdater, upgradeRequestDependencyValidator, flowInitializer,
-      failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer);
+      failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer, applicationDiscoveryLoader);
 
     var request = EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).ignoreErrors(true).build();
     var entitledApplicationDescriptor = applicationDescriptor("app-foo-1.0.0");
@@ -62,11 +64,13 @@ class UpgradeApplicationFlowFactoryTest {
     var context = appStageContext(actual.getId(), flowParameters, emptyMap());
 
     var inOrder = Mockito.inOrder(applicationDependencyUpdater, upgradeRequestDependencyValidator,
-      flowInitializer, failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer, modulesFlowProvider);
+      flowInitializer, failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer, modulesFlowProvider,
+      applicationDiscoveryLoader);
 
     inOrder.verify(modulesFlowProvider).getName();
     verifyStageExecution(inOrder, flowInitializer, context);
     verifyStageExecution(inOrder, upgradeRequestDependencyValidator, context);
+    verifyStageExecution(inOrder, applicationDiscoveryLoader, context);
     inOrder.verify(modulesFlowProvider).createFlow(context);
     verifyStageExecution(inOrder, applicationDependencyUpdater, context);
     verifyStageExecution(inOrder, finishedFlowFinalizer, context);
