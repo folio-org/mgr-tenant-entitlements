@@ -32,7 +32,7 @@ public class FolioModuleUpdater extends ModuleDatabaseLoggingStage {
       return;
     }
 
-    if (moduleDescriptor  != null) {
+    if (moduleDescriptor != null) {
       var moduleRequest = ModuleRequest.fromStageContext(context);
       folioModuleService.enable(moduleRequest);
     }
