@@ -66,6 +66,12 @@ import org.springframework.test.web.servlet.ResultMatcher;
 })
 public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
 
+  public static final String FOLIO_MODULE1_ID = "folio-module1-1.0.0";
+  public static final String FOLIO_MODULE2_ID = "folio-module2-2.0.0";
+  public static final String FOLIO_MODULE2_V2_ID = "folio-module2-2.1.0";
+  public static final String FOLIO_MODULE3_ID = "folio-module3-3.0.0";
+  public static final String FOLIO_MODULE4_ID = "folio-module4-4.0.0";
+
   protected static FakeKafkaConsumer fakeKafkaConsumer;
   protected static WireMockAdminClient wmAdminClient;
 
@@ -201,18 +207,5 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
     } else {
       assertThat(responseEntitlements.getFlowId()).isNotNull();
     }
-  }
-
-  public static String exactRouteExpression(String path, String method) {
-    return "(http.path == \"" + path + "\""
-      + " && http.method == \"" + method + "\""
-      + " && http.headers.x_okapi_tenant == \"test\")";
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  public static String regexRouteExpression(String expression, String method) {
-    return "(http.path ~ \"" + expression + "\""
-      + " && http.method == \"" + method + "\""
-      + " && http.headers.x_okapi_tenant == \"test\")";
   }
 }

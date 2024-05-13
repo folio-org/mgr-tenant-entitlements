@@ -4,6 +4,7 @@ import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -92,8 +93,14 @@ public abstract class AbstractEventPublisher<T> extends DatabaseLoggingStage<Oka
   }
 
   private Optional<ResourceEvent<T>> getEvent(ModuleDescriptorHolder mdh, ModuleType type, OkapiStageContext ctx) {
+    var moduleDescriptor = mdh.moduleDescriptor();
+    var installedModuleDescriptor = mdh.installedModuleDescriptor();
+    if (!isModuleVersionChanged(moduleDescriptor, installedModuleDescriptor)) {
+      return Optional.empty();
+    }
+
     var tenantName = ctx.getTenantName();
-    var newEventPayload = getEventPayload(ctx.getApplicationId(), type, mdh.moduleDescriptor());
+    var newEventPayload = getEventPayload(ctx.getApplicationId(), type, moduleDescriptor);
     var oldEventPayload = getEventPayload(ctx.getEntitledApplicationId(), type, mdh.installedModuleDescriptor());
     return createEvent(tenantName, newEventPayload.orElse(null), oldEventPayload.orElse(null));
   }

@@ -1,7 +1,7 @@
 {
   "request": {
     "method": "POST",
-    "url": "/folio-module1/_/tenant",
+    "url": "/folio-module21/_/tenant",
     "headers": {
       "content-type": {
         "equalTo": "application/json"

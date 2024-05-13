@@ -21,6 +21,7 @@ import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTop
 import static org.folio.entitlement.support.TestValues.moduleDescriptorHolder;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.Map;
@@ -49,7 +50,7 @@ class ScheduledJobEventPublisherTest {
   private static final String FOO_MODULE_V2_ID = "mod-foo-2.0.0";
   private static final String BAR_MODULE_ID = "mod-bar-1.0.0";
 
-  @InjectMocks private ScheduledJobEventPublisher publisher;
+  @InjectMocks private ScheduledJobEventPublisher eventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
 
   @BeforeEach
@@ -74,7 +75,7 @@ class ScheduledJobEventPublisherTest {
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
 
-    publisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
       .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
@@ -101,7 +102,7 @@ class ScheduledJobEventPublisherTest {
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
 
-    publisher.execute(stageContext);
+    eventPublisher.execute(stageContext);
 
     var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
@@ -115,6 +116,22 @@ class ScheduledJobEventPublisherTest {
       .oldValue(ScheduledTimers.of(BAR_MODULE_ID, ENTITLED_APPLICATION_ID, List.of(barTimerRoutingEntry())))
       .build();
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), barTimerEvent);
+  }
+
+  @Test
+  void execute_positive_updateRequestModuleNotChanged() {
+    var flowParameters = Map.of(
+      PARAM_REQUEST, request(UPGRADE),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
+      PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(fooModuleDescriptor(), fooModuleDescriptor())));
+
+    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
+
+    eventPublisher.execute(stageContext);
+
+    verifyNoInteractions(kafkaEventPublisher);
   }
 
   private static ModuleDescriptor fooModuleDescriptor() {

@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.kong;
 
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
+
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
@@ -16,6 +18,10 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
     var tenantName = context.getTenantName();
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
+    if (!isModuleVersionChanged(moduleDescriptor, installedModuleDescriptor)) {
+      return;
+    }
+
     if (installedModuleDescriptor != null) {
       kongGatewayService.removeRoutes(tenantName, List.of(installedModuleDescriptor));
     }
@@ -25,4 +31,3 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
     }
   }
 }
-

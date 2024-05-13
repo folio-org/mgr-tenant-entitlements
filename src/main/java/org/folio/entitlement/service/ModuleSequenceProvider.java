@@ -18,7 +18,6 @@ import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.domain.model.ModulesSequence;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Module;
-import org.folio.entitlement.integration.folio.ModuleInstallationGraph;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.utils.EntitlementServiceUtils;
 import org.springframework.stereotype.Component;

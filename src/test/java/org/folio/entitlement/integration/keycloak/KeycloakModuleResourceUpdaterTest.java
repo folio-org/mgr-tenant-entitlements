@@ -16,6 +16,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -78,6 +79,19 @@ class KeycloakModuleResourceUpdaterTest {
     keycloakModuleResourceUpdater.execute(stageContext);
 
     verify(keycloakService).updateAuthResources(installedModuleDescriptor, moduleDescriptor, TENANT_NAME);
+  }
+
+  @Test
+  void execute_positive_upgradeRequestForModuleWithNotChangedVersion() {
+    var moduleDescriptor = moduleDescriptor("mod-foo-1.0.0");
+
+    var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor, moduleDescriptor);
+    var stageData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, stageData);
+
+    keycloakModuleResourceUpdater.execute(stageContext);
+
+    verifyNoInteractions(keycloakService, keycloakClient);
   }
 
   @Test

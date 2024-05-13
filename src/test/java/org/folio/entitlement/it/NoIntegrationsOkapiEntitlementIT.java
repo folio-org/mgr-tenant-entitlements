@@ -40,6 +40,8 @@ import static org.folio.entitlement.support.TestValues.entitlementWithModules;
 import static org.folio.entitlement.support.TestValues.entitlements;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
+import static org.folio.entitlement.support.UpgradeTestValues.FOLIO_APP6_V1_ID;
+import static org.folio.entitlement.support.UpgradeTestValues.FOLIO_APP6_V2_ID;
 import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsAfterUpgrade;
@@ -72,7 +74,6 @@ import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.extensions.EnableOkapiSecurity;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
@@ -105,9 +106,6 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
   private static final String OKAPI_MODULE_3_ID = "okapi-module3-1.0.0";
   private static final String OKAPI_MODULE_4_ID = "okapi-module4-4.0.0";
   private static final String OKAPI_MODULE_5_ID = "okapi-module5-5.0.0";
-
-  private static final String FOLIO_APP6_V1_ID = "folio-app6-6.0.0";
-  private static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
 
   @BeforeAll
   static void beforeAll(@Autowired ApplicationContext appContext) {
@@ -641,10 +639,12 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/folio-app6/v1-get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/folio-app6/v2-get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app6/v1-get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
-    "/wiremock/okapi/_proxy/install-module-for-upgrade-test.json"
+    "/wiremock/okapi/_proxy/install-module-for-upgrade-test.json",
+
+    "/wiremock/mgr-applications/folio-app6/v2-get-discovery.json",
+    "/wiremock/mgr-applications/folio-app6/v2-get-by-ids-query-full.json",
   })
   void upgrade_positive_freshInstallation() throws Exception {
     var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
@@ -655,12 +655,13 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     assertScheduledJobEvents(scheduledTimerEventsBeforeUpgrade());
     assertCapabilityEvents(capabilityEventsBeforeUpgrade());
     assertSystemUserEvents(systemUserEventsBeforeUpgrade());
-    FakeKafkaConsumer.removeAllEvents();
 
     var upgradeRequest = entitlementRequest(FOLIO_APP6_V2_ID);
     upgradeApplications(upgradeRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
 
+    getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V1_ID, emptyEntitlements());
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
+
     assertScheduledJobEvents(scheduledTimerEventsAfterUpgrade());
     assertCapabilityEvents(capabilityEventsAfterUpgrade());
     assertSystemUserEvents(systemUserEventsAfterUpgrade());

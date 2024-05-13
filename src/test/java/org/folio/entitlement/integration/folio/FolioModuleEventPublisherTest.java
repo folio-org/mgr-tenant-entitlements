@@ -6,8 +6,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_ID;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,6 +21,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Map;
 import java.util.UUID;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
@@ -50,7 +54,8 @@ class FolioModuleEventPublisherTest {
     var tenantId = randomUUID();
     var tenantName = "tenantName";
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(tenantId).build();
-    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID);
+    var desc = new ModuleDescriptor().id(MODULE_ID);
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
 
     folioModuleEventPublisher.execute(stageContext);
@@ -60,12 +65,66 @@ class FolioModuleEventPublisherTest {
   }
 
   @Test
+  void execute_positive_moduleNotChanged() {
+    var tenantId = randomUUID();
+    var tenantName = "tenantName";
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(tenantId).build(),
+      PARAM_MODULE_ID, MODULE_ID,
+      PARAM_MODULE_DESCRIPTOR, new ModuleDescriptor().id(MODULE_ID),
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, new ModuleDescriptor().id(MODULE_ID));
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+
+    folioModuleEventPublisher.execute(stageContext);
+
+    verifyNoMoreInteractions(entitlementEventPublisher);
+  }
+
+  @Test
+  void execute_positive_moduleUpdated() {
+    var tenantId = randomUUID();
+    var tenantName = "tenantName";
+    var installedModuleId = "mod-foo-0.0.9";
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(tenantId).build(),
+      PARAM_MODULE_ID, MODULE_ID,
+      PARAM_MODULE_DESCRIPTOR, new ModuleDescriptor().id(MODULE_ID),
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, new ModuleDescriptor().id(installedModuleId));
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+
+    folioModuleEventPublisher.execute(stageContext);
+
+    var expectedEvent = new EntitlementEvent(UPGRADE.name(), MODULE_ID, tenantName, tenantId);
+    verify(entitlementEventPublisher).publish(expectedEvent);
+
+    var expectedRevokeEvent = new EntitlementEvent(REVOKE.name(), installedModuleId, tenantName, tenantId);
+    verify(entitlementEventPublisher).publish(expectedRevokeEvent);
+  }
+
+  @Test
+  void execute_positive_moduleDeprecated() {
+    var tenantId = randomUUID();
+    var tenantName = "tenantName";
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(tenantId).build(),
+      PARAM_MODULE_ID, MODULE_ID,
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, new ModuleDescriptor().id(MODULE_ID));
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+
+    folioModuleEventPublisher.execute(stageContext);
+
+    var expectedEvent = new EntitlementEvent(REVOKE.name(), MODULE_ID, tenantName, tenantId);
+    verify(entitlementEventPublisher).publish(expectedEvent);
+  }
+
+  @Test
   void execute_negative() {
     var message = "exception";
     doThrow(new RuntimeException(message)).when(entitlementEventPublisher).publish(any(EntitlementEvent.class));
 
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(randomUUID()).build();
-    var flowParameters = Map.of(PARAM_MODULE_ID, MODULE_ID, PARAM_REQUEST, request);
+    var desc = new ModuleDescriptor().id(MODULE_ID);
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
     var contextParameters = Map.of(PARAM_TENANT_NAME, PARAM_TENANT_NAME);
     var context = moduleStageContext(FLOW_ID, flowParameters, contextParameters);
 
@@ -79,7 +138,8 @@ class FolioModuleEventPublisherTest {
     var tenantId = randomUUID();
     var tenantName = "tenantName";
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(tenantId).build();
-    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID);
+    var desc = new ModuleDescriptor().id(MODULE_ID);
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
 
     folioModuleEventPublisher.cancel(stageContext);
@@ -92,7 +152,8 @@ class FolioModuleEventPublisherTest {
     var tenantId = randomUUID();
     var tenantName = "tenantName";
     var request = EntitlementRequest.builder().type(REVOKE).tenantId(tenantId).build();
-    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID);
+    var desc = new ModuleDescriptor().id(MODULE_ID);
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
 
     folioModuleEventPublisher.cancel(stageContext);

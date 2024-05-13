@@ -17,6 +17,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,19 @@ class KongModuleRouteUpdaterTest {
 
     verify(kongGatewayService).addRoutes(TENANT_NAME, List.of(moduleDescriptor));
     verify(kongGatewayService).removeRoutes(TENANT_NAME, List.of(installedModuleDescriptor));
+  }
+
+  @Test
+  void execute_positive_updatedModuleNotChangedVersion() {
+    var installedModuleDescriptor = moduleDescriptor("mod-foo-1.0.0");
+    var moduleDescriptor = moduleDescriptor("mod-foo-1.0.0");
+    var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor, installedModuleDescriptor);
+    var stageData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, stageData);
+
+    kongModuleRouteUpdater.execute(stageContext);
+
+    verifyNoInteractions(kongGatewayService);
   }
 
   @Test

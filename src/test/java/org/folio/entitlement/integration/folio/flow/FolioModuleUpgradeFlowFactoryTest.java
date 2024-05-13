@@ -17,6 +17,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
+import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
+import org.folio.entitlement.integration.folio.stage.FolioModuleUpdater;
 import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
@@ -44,6 +46,8 @@ class FolioModuleUpgradeFlowFactoryTest {
   @Mock private KongModuleRouteUpdater kongModuleRouteUpdater;
   @Mock private KeycloakModuleResourceUpdater kcModuleResourceUpdater;
 
+  @Mock private FolioModuleUpdater folioModuleUpdater;
+  @Mock private FolioModuleEventPublisher folioModuleEventPublisher;
   @Mock private SystemUserModuleEventPublisher systemUserEventPublisher;
   @Mock private ScheduledJobModuleEventPublisher scheduledJobEventPublisher;
   @Mock private CapabilitiesModuleEventPublisher capabilitiesEventPublisher;
@@ -56,7 +60,7 @@ class FolioModuleUpgradeFlowFactoryTest {
   @Test
   void createModuleFlow_positive_allConditionalStages() {
     mockStageNames(kongModuleRouteUpdater, kcModuleResourceUpdater, systemUserEventPublisher,
-      scheduledJobEventPublisher, capabilitiesEventPublisher);
+      scheduledJobEventPublisher, capabilitiesEventPublisher, folioModuleUpdater, folioModuleEventPublisher);
     upgradeFlowFactory.setKongModuleRouteUpdater(kongModuleRouteUpdater);
     upgradeFlowFactory.setKcModuleResourceUpdater(kcModuleResourceUpdater);
 
@@ -65,11 +69,13 @@ class FolioModuleUpgradeFlowFactoryTest {
     var flow = upgradeFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = inOrder(kongModuleRouteUpdater, kcModuleResourceUpdater,
-      capabilitiesEventPublisher, scheduledJobEventPublisher, systemUserEventPublisher);
+    var inOrder = inOrder(kongModuleRouteUpdater, kcModuleResourceUpdater, folioModuleUpdater,
+      capabilitiesEventPublisher, scheduledJobEventPublisher, systemUserEventPublisher, folioModuleEventPublisher);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     verifyStageExecution(inOrder, kongModuleRouteUpdater, stageContext);
     verifyStageExecution(inOrder, kcModuleResourceUpdater, stageContext);
+    verifyStageExecution(inOrder, folioModuleUpdater, stageContext);
+    verifyStageExecution(inOrder, folioModuleEventPublisher, stageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, stageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
@@ -77,14 +83,18 @@ class FolioModuleUpgradeFlowFactoryTest {
 
   @Test
   void createModuleFlow_positive_noConditionalStages() {
-    mockStageNames(scheduledJobEventPublisher, capabilitiesEventPublisher, systemUserEventPublisher);
+    mockStageNames(scheduledJobEventPublisher, capabilitiesEventPublisher,
+      systemUserEventPublisher, folioModuleUpdater, folioModuleEventPublisher);
     var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor());
 
     var flow = upgradeFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = inOrder(capabilitiesEventPublisher, scheduledJobEventPublisher, systemUserEventPublisher);
+    var inOrder = inOrder(capabilitiesEventPublisher, scheduledJobEventPublisher,
+      systemUserEventPublisher, folioModuleUpdater, folioModuleEventPublisher);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+    verifyStageExecution(inOrder, folioModuleUpdater, stageContext);
+    verifyStageExecution(inOrder, folioModuleEventPublisher, stageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, stageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);

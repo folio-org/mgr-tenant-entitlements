@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.folio;
+package org.folio.entitlement.service;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableMap;

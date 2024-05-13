@@ -4,6 +4,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.service.stage.ApplicationDependencyUpdater;
+import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
 import org.folio.entitlement.service.stage.FailedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.SkippedApplicationFlowFinalizer;
@@ -22,10 +23,12 @@ public class UpgradeApplicationFlowFactory implements ApplicationFlowFactory {
   private final UpgradeRequestDependencyValidator upgradeRequestDependencyValidator;
 
   private final ModulesFlowProvider modulesFlowProvider;
+  private final ApplicationDiscoveryLoader applicationDiscoveryLoader;
+
   private final ApplicationFlowInitializer flowInitializer;
   private final FailedApplicationFlowFinalizer failedFlowFinalizer;
-  private final UpgradeApplicationFlowFinalizer finishedFlowFinalizer;
   private final SkippedApplicationFlowFinalizer skippedFlowFinalizer;
+  private final UpgradeApplicationFlowFinalizer finishedFlowFinalizer;
 
   @Override
   public Flow createFlow(Object flowId, FlowExecutionStrategy strategy, Map<?, ?> additionalFlowParameter) {
@@ -33,6 +36,7 @@ public class UpgradeApplicationFlowFactory implements ApplicationFlowFactory {
       .id(flowId)
       .stage(flowInitializer)
       .stage(upgradeRequestDependencyValidator)
+      .stage(applicationDiscoveryLoader)
       .stage(DynamicStage.of(modulesFlowProvider.getName(), modulesFlowProvider::createFlow))
       .stage(applicationDependencyUpdater)
       .stage(finishedFlowFinalizer)

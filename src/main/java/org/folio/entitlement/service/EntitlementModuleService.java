@@ -57,6 +57,11 @@ public class EntitlementModuleService {
     repository.deleteById(key);
   }
 
+  public void deleteModuleEntitlement(String moduleId, UUID tenantId, String applicationId) {
+    var key = EntitlementModuleKey.of(moduleId, tenantId, applicationId);
+    repository.deleteById(key);
+  }
+
   public void deleteAll(UUID tenantId, String applicationId, List<String> modules) {
     var keys = toModuleKeys(tenantId, applicationId, modules);
     repository.deleteAllById(keys);
