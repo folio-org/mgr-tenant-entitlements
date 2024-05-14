@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "tenant", url = "${application.mt.url}")
+@FeignClient(name = "tenant", url = "${application.mt.url}", configuration = TenantManagerClientConfiguration.class)
 public interface TenantManagerClient {
 
   /**
@@ -27,7 +27,7 @@ public interface TenantManagerClient {
   /**
    * Queries tenant by name from mgr-tenants.
    *
-   * @param id - tenant identifier
+   * @param tenantName - tenant name
    * @param token - optional x-okapi-token header value for authorization in Okapi
    * @return found {@link Tenant} object
    */
