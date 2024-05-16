@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import feign.Contract;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
+import okhttp3.OkHttpClient;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class AppManagerClientConfigurationTest {
 
   private final AppManagerClientConfiguration appManagerClientConfiguration = new AppManagerClientConfiguration();
+  @Mock private OkHttpClient okHttpClient;
   @Mock private Contract contract;
   @Mock private Encoder encoder;
   @Mock private Decoder decoder;
@@ -28,7 +30,7 @@ class AppManagerClientConfigurationTest {
 
   @Test
   void name() {
-    var feignClient = appManagerClientConfiguration.applicationManagerClient(contract, encoder, decoder);
+    var feignClient = appManagerClientConfiguration.applicationManagerClient(okHttpClient, contract, encoder, decoder);
     assertThat(feignClient).isNotNull();
   }
 }

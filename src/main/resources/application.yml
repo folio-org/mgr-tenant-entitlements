@@ -67,6 +67,11 @@ application:
     mod-authtoken-url: ${MOD_AUTHTOKEN_URL}
   am:
     url: ${AM_CLIENT_URL:${am.url:}}
+    tls:
+      enabled: ${AM_CLIENT_TLS_ENABLED:false}
+      trust-store-path: ${AM_CLIENT_TLS_TRUSTSTORE_PATH}
+      trust-store-password: ${AM_CLIENT_TLS_TRUSTSTORE_PASSWORD}
+      trust-store-type: ${AM_CLIENT_TLS_TRUSTSTORE_TYPE}
   mt:
     url: ${MT_URL:${tenant.url:}}
     tls:
