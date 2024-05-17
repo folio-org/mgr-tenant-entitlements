@@ -198,6 +198,7 @@ The feature is controlled by two env variables `SECURITY_ENABLED` and `KEYCLOAK_
 | KC_CLIENT_TLS_ENABLED             | false                      |    false    | Enables TLS for keycloak clients.                                                                                                                                |
 | KC_CLIENT_TLS_TRUSTSTORE_PATH     | -                          |    false    | Truststore file path for keycloak clients.                                                                                                                       |
 | KC_CLIENT_TLS_TRUSTSTORE_PASSWORD | -                          |    false    | Truststore password for keycloak clients.                                                                                                                        |
+| KC_CLIENT_TLS_TRUSTSTORE_TYPE     | -                          |    false    | Truststore file type for keycloak clients.                                                                                                                       |
 
 ## Kong Gateway Integration
 
