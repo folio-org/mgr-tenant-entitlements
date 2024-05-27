@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.2.5</version>
+    <version>3.3.0</version>
     <relativePath />
   </parent>
 
@@ -36,7 +36,7 @@
     <spring-cloud-bom.version>2023.0.1</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
     <semver4j.version>5.3.0</semver4j.version>
-    <folio-spring-cql.version>8.1.0</folio-spring-cql.version>
+    <folio-spring-cql.version>8.1.1</folio-spring-cql.version>
     <applications-poc-tools.version>1.5.0</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
     <folio-flow-engine.version>1.1.0</folio-flow-engine.version>
@@ -49,9 +49,9 @@
     <awaitility.version>4.2.1</awaitility.version>
 
     <!-- Plugins versions -->
-    <maven-checkstyle.version>10.16.0</maven-checkstyle.version>
+    <maven-checkstyle.version>10.17.0</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.3.1</maven-checkstyle-plugin.version>
-    <openapi-generator.version>7.5.0</openapi-generator.version>
+    <openapi-generator.version>7.6.0</openapi-generator.version>
 
     <sonar.exclusions>
       <!--
