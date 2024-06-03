@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -27,7 +28,6 @@ import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.Dependency;
 import org.folio.entitlement.repository.EntitlementRepository;
 import org.folio.entitlement.service.ApplicationManagerService;
-import org.folio.entitlement.utils.SemverUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

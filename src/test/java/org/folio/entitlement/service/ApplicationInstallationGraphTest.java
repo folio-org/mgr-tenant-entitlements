@@ -3,8 +3,8 @@ package org.folio.entitlement.service;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.utils.SemverUtils.getName;
-import static org.folio.entitlement.utils.SemverUtils.getVersion;
+import static org.folio.common.utils.SemverUtils.getName;
+import static org.folio.common.utils.SemverUtils.getVersion;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.List;

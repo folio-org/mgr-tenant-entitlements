@@ -10,8 +10,8 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.UUID;
 import lombok.Data;
+import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.entity.key.EntitlementKey;
-import org.folio.entitlement.utils.SemverUtils;
 
 @Data
 @Entity

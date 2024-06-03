@@ -8,11 +8,11 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
+import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.entity.ApplicationDependencyEntity;
 import org.folio.entitlement.integration.am.model.Dependency;
 import org.folio.entitlement.mapper.ApplicationDependencyMapper;
 import org.folio.entitlement.repository.ApplicationDependencyRepository;
-import org.folio.entitlement.utils.SemverUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

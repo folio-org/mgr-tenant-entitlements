@@ -5,9 +5,9 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
+import static org.folio.common.utils.SemverUtils.applicationSatisfies;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
-import static org.folio.entitlement.utils.SemverUtils.applicationSatisfies;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,11 +19,11 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
+import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.am.model.Dependency;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
-import org.folio.entitlement.utils.SemverUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
