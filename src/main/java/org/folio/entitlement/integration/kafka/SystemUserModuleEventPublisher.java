@@ -7,9 +7,9 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
-import org.folio.entitlement.utils.SemverUtils;
 import org.springframework.stereotype.Component;
 
 @Log4j2

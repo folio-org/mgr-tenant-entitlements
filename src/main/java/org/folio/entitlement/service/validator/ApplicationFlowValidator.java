@@ -4,9 +4,9 @@ import static java.lang.String.format;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.apache.commons.lang3.StringUtils.capitalize;
+import static org.folio.common.utils.SemverUtils.getNames;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
-import static org.folio.entitlement.utils.SemverUtils.getNames;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

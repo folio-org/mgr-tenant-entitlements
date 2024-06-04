@@ -4,6 +4,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.awaitility.Durations.ONE_SECOND;
 import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
+import static org.folio.common.utils.SemverUtils.getName;
+import static org.folio.common.utils.SemverUtils.getVersion;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
@@ -25,8 +27,6 @@ import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_I
 import static org.folio.entitlement.support.TestConstants.TENANT_DESC;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
-import static org.folio.entitlement.utils.SemverUtils.getName;
-import static org.folio.entitlement.utils.SemverUtils.getVersion;
 
 import java.util.List;
 import java.util.Map;
@@ -58,7 +58,6 @@ import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.integration.tm.model.Tenant;
-import org.folio.entitlement.utils.SemverUtils;
 import org.folio.flow.api.FlowEngine;
 import org.folio.flow.api.StageContext;
 
@@ -284,7 +283,7 @@ public class TestValues {
       PARAM_REQUEST, request,
       PARAM_MODULE_TYPE, MODULE,
       PARAM_MODULE_ID, descriptor.getId(),
-      PARAM_MODULE_NAME, SemverUtils.getName(descriptor.getId()),
+      PARAM_MODULE_NAME, getName(descriptor.getId()),
       PARAM_MODULE_DESCRIPTOR, descriptor,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
@@ -296,7 +295,7 @@ public class TestValues {
       PARAM_REQUEST, request,
       PARAM_MODULE_TYPE, type,
       PARAM_MODULE_ID, desc.getId(),
-      PARAM_MODULE_NAME, SemverUtils.getName(desc.getId()),
+      PARAM_MODULE_NAME, getName(desc.getId()),
       PARAM_MODULE_DESCRIPTOR, desc,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID

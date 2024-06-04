@@ -9,7 +9,7 @@ import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
-import org.folio.entitlement.utils.SemverUtils;
+import org.folio.common.utils.SemverUtils;
 
 @Data
 @Entity
