@@ -1,9 +1,27 @@
 package org.folio.entitlement.integration.folio.configuration;
 
 import static java.util.Arrays.asList;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.springframework.util.ResourceUtils.getFile;
 
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.http.HttpClient;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.folio.common.configuration.properties.TlsProperties;
+import org.folio.common.utils.exception.SslInitializationException;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.integration.folio.FolioTenantApiClient;
 import org.folio.entitlement.integration.folio.flow.FolioModuleEntitleFlowFactory;
@@ -25,6 +43,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 @ConditionalOnBean(FolioClientConfigurationProperties.class)
@@ -37,9 +56,22 @@ public class FolioConfiguration {
    */
   @Bean
   public HttpClient httpClient(FolioClientConfigurationProperties folioClientConfigurationProperties) {
-    return HttpClient.newBuilder()
-      .connectTimeout(folioClientConfigurationProperties.getConnectTimeout())
-      .build();
+    HttpClient.Builder builder =
+      HttpClient.newBuilder().connectTimeout(folioClientConfigurationProperties.getConnectTimeout());
+
+    TlsProperties tls = folioClientConfigurationProperties.getTls();
+    if (tls != null && tls.isEnabled() && StringUtils.isNotBlank(tls.getTrustStorePath())) {
+      try {
+        var keyStore = initKeyStore(tls);
+        var trustManager = trustManager(keyStore);
+        var sslContext = sslContext(trustManager);
+        builder.sslContext(sslContext);
+      } catch (Exception e) {
+        throw new SslInitializationException("Failed to initialize HttpClient with SSL", e);
+      }
+    }
+
+    return builder.build();
   }
 
   /**
@@ -173,5 +205,38 @@ public class FolioConfiguration {
   @Bean
   public FolioModuleEventPublisher folioModuleEventPublisher(EntitlementEventPublisher publisher) {
     return new FolioModuleEventPublisher(publisher);
+  }
+
+  private static KeyStore initKeyStore(TlsProperties tls)
+    throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException {
+
+    KeyStore trustStore = KeyStore.getInstance(
+      isBlank(tls.getTrustStoreType()) ? KeyStore.getDefaultType() : tls.getTrustStoreType());
+    try (var is = new FileInputStream(getFile(tls.getTrustStorePath()))) {
+      trustStore.load(is, tls.getTrustStorePassword().toCharArray());
+    }
+    log.debug("Keystore initialized from file: keyStoreType = {}, file = {}", trustStore.getType(),
+      tls.getTrustStorePath());
+    return trustStore;
+  }
+
+  private static X509TrustManager trustManager(KeyStore keyStore) throws NoSuchAlgorithmException, KeyStoreException {
+    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    tmf.init(keyStore);
+
+    TrustManager[] trustManagers = tmf.getTrustManagers();
+    if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
+      throw new IllegalStateException("Unexpected default trust managers: " + Arrays.toString(trustManagers));
+    }
+    return (X509TrustManager) trustManagers[0];
+  }
+
+  private static SSLContext sslContext(X509TrustManager trustManager)
+    throws NoSuchAlgorithmException, KeyManagementException {
+
+    var sslContext = SSLContext.getInstance("TLS");
+    sslContext.init(null, new TrustManager[] {trustManager}, null);
+    log.debug("SSL context initialized: protocol = {}", sslContext.getProtocol());
+    return sslContext;
   }
 }
