@@ -177,3 +177,11 @@ feign:
       okapi:
         connectTimeout: 30000
         readTimeout: 300000
+logging:
+  level:
+    org.folio.common.utils: debug
+    apache.tomcat.util.net: debug
+    org.bouncycastle: debug
+    org.bouncycastle.jsse: debug
+    org.bouncycastle.jcajce: debug
+    javax.net.ssl: debug

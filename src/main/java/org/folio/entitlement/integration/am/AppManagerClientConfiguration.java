@@ -30,7 +30,8 @@ public class AppManagerClientConfiguration {
 
   @Bean
   public ApplicationManagerClient applicationManagerClient(OkHttpClient okHttpClient, Contract contract,
-    Encoder encoder, Decoder decoder) {
+                                                           Encoder encoder, Decoder decoder) {
+    log.warn("AppManagerClientConfiguration.TlsProperties: {}", tls);
     return buildTargetFeignClient(okHttpClient, contract, encoder, decoder, tls, url, ApplicationManagerClient.class);
   }
 }
