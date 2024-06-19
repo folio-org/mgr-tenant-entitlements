@@ -73,12 +73,12 @@ application:
       trust-store-password: ${AM_CLIENT_TLS_TRUSTSTORE_PASSWORD}
       trust-store-type: ${AM_CLIENT_TLS_TRUSTSTORE_TYPE}
   mt:
-    url: ${MT_URL:${tenant.url:}}
+    url: ${MT_CLIENT_URL:${tenant.url:}}
     tls:
-      enabled: ${MT_TLS_ENABLED:false}
-      trust-store-path: ${MT_TLS_TRUSTSTORE_PATH:}
-      trust-store-password: ${MT_TLS_TRUSTSTORE_PASSWORD:}
-      trust-store-type: ${MT_TLS_TRUSTSTORE_TYPE:}
+      enabled: ${MT_CLIENT_TLS_ENABLED:false}
+      trust-store-path: ${MT_CLIENT_TLS_TRUSTSTORE_PATH:}
+      trust-store-password: ${MT_CLIENT_TLS_TRUSTSTORE_PASSWORD:}
+      trust-store-type: ${MT_CLIENT_TLS_TRUSTSTORE_TYPE:}
   keycloak:
     enabled: ${KC_INTEGRATION_ENABLED:false}
     url: ${KC_URL:http://keycloak:8080}
