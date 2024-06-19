@@ -119,6 +119,11 @@ application:
     folio:
       connect-timeout: ${FOLIO_CLIENT_CONNECT_TIMEOUT:10s}
       read-timeout: ${FOLIO_CLIENT_READ_TIMEOUT:30s}
+      tls:
+        enabled: ${FOLIO_CLIENT_TLS_ENABLED:false}
+        trust-store-path: ${FOLIO_CLIENT_TLS_TRUSTSTORE_PATH:}
+        trust-store-password: ${FOLIO_CLIENT_TLS_TRUSTSTORE_PASSWORD:}
+        trust-store-type: ${FOLIO_CLIENT_TLS_TRUSTSTORE_TYPE:}
   secret-store:
     type: ${SECRET_STORE_TYPE:}
     aws-ssm:
