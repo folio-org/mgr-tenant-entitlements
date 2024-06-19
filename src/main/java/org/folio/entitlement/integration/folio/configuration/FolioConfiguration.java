@@ -1,6 +1,7 @@
 package org.folio.entitlement.integration.folio.configuration;
 
 import static java.util.Arrays.asList;
+import static org.folio.common.utils.FeignClientTlsUtils.getHttpClientBuilder;
 
 import java.net.http.HttpClient;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class FolioConfiguration {
    */
   @Bean
   public HttpClient httpClient(FolioClientConfigurationProperties folioClientConfigurationProperties) {
-    return HttpClient.newBuilder()
+    return getHttpClientBuilder(folioClientConfigurationProperties.getTls())
       .connectTimeout(folioClientConfigurationProperties.getConnectTimeout())
       .build();
   }

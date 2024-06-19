@@ -2,6 +2,7 @@ package org.folio.entitlement.integration.folio.configuration;
 
 import java.time.Duration;
 import lombok.Data;
+import org.folio.common.configuration.properties.TlsProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -21,4 +22,9 @@ public class FolioClientConfigurationProperties {
    * Read timeout for folio-client.
    */
   private Duration readTimeout = Duration.ofSeconds(60);
+
+  /**
+   * TLS properties for folio-client.
+   */
+  private TlsProperties tls;
 }
