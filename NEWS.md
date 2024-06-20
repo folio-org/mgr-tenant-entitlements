@@ -3,6 +3,16 @@
 * [ISSUE_NUMBER](https://issues.folio.org/browse/ISSUE_NUMBER) Description
 
 ---
+
+## v1.2.1 2024-06-20
+
+* [MODSCHED-8](https://issues.folio.org/browse/MODSCHED-8): extract SemverUtils to folio-common (#96)
+* [RANCHER-1502](https://issues.folio.org/browse/RANCHER-1502): mgr-tenant-entitlements (#99)
+* Configuration parameter names fixed. (#97)
+* Added TLS support for FolioClientConfigurationProperties (#100)
+
+---
+
 ## v1.2.0 2024-05-25
 
 * [MGRENTITLE-54](https://issues.folio.org/browse/MGRENTITLE-54): Keycloak client: support TLS certificates issued by trusted certificate authorities (#88)
