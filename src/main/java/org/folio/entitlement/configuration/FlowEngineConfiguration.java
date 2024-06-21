@@ -1,12 +1,10 @@
 package org.folio.entitlement.configuration;
 
 import static java.lang.Boolean.TRUE;
-import static java.lang.Runtime.getRuntime;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Executors;
 import lombok.extern.log4j.Log4j2;
-import org.folio.entitlement.service.InheritedClassLoaderThreadFactory;
 import org.folio.flow.api.FlowEngine;
 import org.folio.flow.utils.StageReportProvider;
 import org.springframework.context.annotation.Bean;
@@ -40,11 +38,9 @@ public class FlowEngineConfiguration {
   }
 
   private static Executor inheritedClassLoaderPool(int threadsNumber) {
-    var factory = new InheritedClassLoaderThreadFactory();
-    var fjpProcessorsNumber = Math.min(threadsNumber, getRuntime().availableProcessors());
-    log.info("Creating Flow engine Fork-Join Poll with {} threads", fjpProcessorsNumber);
-    var pool = new ForkJoinPool(threadsNumber, factory, null, false);
-    return new DelegatingSecurityContextExecutor(pool, SecurityContextHolder.getContext());
+    log.info("Creating Flow engine fixed pool with {} threads", threadsNumber);
+    var fixedThreadPool = Executors.newFixedThreadPool(threadsNumber);
+    return new DelegatingSecurityContextExecutor(fixedThreadPool, SecurityContextHolder.getContext());
   }
 
   private static String shortenStageId(String stageId) {
