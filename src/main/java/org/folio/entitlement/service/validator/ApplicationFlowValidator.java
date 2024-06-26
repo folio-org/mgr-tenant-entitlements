@@ -5,6 +5,7 @@ import static java.util.Optional.empty;
 import static java.util.Optional.of;
 import static org.apache.commons.lang3.StringUtils.capitalize;
 import static org.folio.common.utils.SemverUtils.getNames;
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 
@@ -81,6 +82,7 @@ public class ApplicationFlowValidator extends DatabaseLoggingStage<CommonStageCo
         case IN_PROGRESS -> of(param.value(format("Another %s flow is in progress", value)));
         case FAILED -> of(param.value(format("Previous %s flow failed", value)));
         case CANCELLED -> of(param.value(format("Previous %s flow canceled", value)));
+        case FINISHED -> checkPreviousFinishedFlow(flow, type);
         default -> empty();
       };
     }
@@ -89,8 +91,17 @@ public class ApplicationFlowValidator extends DatabaseLoggingStage<CommonStageCo
     return switch (flow.getStatus()) {
       case QUEUED -> of(param.value(typeValue + " flow is in queue"));
       case IN_PROGRESS -> of(param.value(typeValue + " flow is in progress"));
-      case FINISHED -> type != UPGRADE ? of(param.value(typeValue + " flow finished")) : Optional.empty();
+      case FINISHED -> type != UPGRADE ? of(param.value(typeValue + " flow finished")) : empty();
       default -> empty();
     };
+  }
+
+  private static Optional<Parameter> checkPreviousFinishedFlow(ApplicationFlow flow, EntitlementType type) {
+    if (type == ENTITLE && flow.getType() == UPGRADE) {
+      var errorMessage = format("%s flow finished", capitalize(flow.getType().getValue()));
+      return of(new Parameter().key(flow.getApplicationId()).value(errorMessage));
+    }
+
+    return empty();
   }
 }

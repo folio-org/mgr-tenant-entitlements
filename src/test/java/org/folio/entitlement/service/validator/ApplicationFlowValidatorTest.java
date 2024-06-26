@@ -35,6 +35,7 @@ import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
 import org.folio.test.types.UnitTest;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -52,14 +53,12 @@ class ApplicationFlowValidatorTest {
   @InjectMocks private ApplicationFlowValidator validator;
   @Mock private ApplicationFlowService applicationFlowService;
 
+  @DisplayName("validate_positive_entitleRequest")
   @MethodSource("positiveEntitlementEntitleFlowsDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
-  void validateEntitlementEntitleRequest_positive(@SuppressWarnings("unused") String name,
+  void validate_positive_entitleRequest(@SuppressWarnings("unused") String name,
     EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
-    var applicationNames = request.getApplications().stream()
-      .map(SemverUtils::getName)
-      .distinct()
-      .toList();
+    var applicationNames = getApplicationNames(request);
     var tenantId = request.getTenantId();
     when(applicationFlowService.findLastFlowsByNames(applicationNames, tenantId)).thenReturn(applicationFlows);
 
@@ -68,9 +67,24 @@ class ApplicationFlowValidatorTest {
     verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
   }
 
+  @DisplayName("validate_positive_upgradeRequest")
+  @MethodSource("positiveEntitlementUpgradeFlowsDataProvider")
+  @ParameterizedTest(name = "[{index}] {0}")
+  void validate_positive_upgradeRequest(@SuppressWarnings("unused") String name,
+    EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
+    var applicationNames = getApplicationNames(request);
+    var tenantId = request.getTenantId();
+    when(applicationFlowService.findLastFlowsByNames(applicationNames, tenantId)).thenReturn(applicationFlows);
+
+    validator.validate(request);
+
+    verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
+  }
+
+  @DisplayName("validate_positive_revokeRequest")
   @MethodSource("positiveEntitlementRevokeFlowsDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
-  void validateEntitlementRevokeRequest_positive(@SuppressWarnings("unused") String name,
+  void validate_positive_revokeRequest(@SuppressWarnings("unused") String name,
     EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
     var applicationId = request.getApplications();
     var tenantId = request.getTenantId();
@@ -81,9 +95,10 @@ class ApplicationFlowValidatorTest {
     verify(applicationFlowService).findLastFlows(applicationId, tenantId);
   }
 
+  @DisplayName("validate_negative_entitleRequest")
   @MethodSource("negativeEntitlementEntitleFlowsDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
-  void validateEntitlementEntitleRequest_negative(@SuppressWarnings("unused") String name,
+  void validate_negative_entitleRequest(@SuppressWarnings("unused") String name,
     EntitlementRequest request, List<ApplicationFlow> applicationFlows, List<Parameter> expectedParams) {
     var applicationNames = request.getApplications().stream()
       .map(SemverUtils::getName)
@@ -100,9 +115,30 @@ class ApplicationFlowValidatorTest {
     verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
   }
 
+  @DisplayName("validate_negative_upgradeRequest")
+  @MethodSource("negativeEntitlementUpgradeFlowsDataProvider")
+  @ParameterizedTest(name = "[{index}] {0}")
+  void validate_negative_upgradeRequest(@SuppressWarnings("unused") String name,
+    EntitlementRequest request, List<ApplicationFlow> applicationFlows, List<Parameter> expectedParams) {
+    var applicationNames = request.getApplications().stream()
+      .map(SemverUtils::getName)
+      .distinct()
+      .collect(Collectors.toList());
+    var tenantId = request.getTenantId();
+    when(applicationFlowService.findLastFlowsByNames(applicationNames, tenantId)).thenReturn(applicationFlows);
+
+    assertThatThrownBy(() -> validator.validate(request))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Found validation errors in entitlement request")
+      .satisfies(err -> assertThat(((RequestValidationException) err).getErrorParameters()).isEqualTo(expectedParams));
+
+    verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
+  }
+
+  @DisplayName("execute_positive_entitleRequest")
   @MethodSource("positiveEntitlementEntitleFlowsDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
-  void execute_positive_parameterizedForEntitleRequest(@SuppressWarnings("unused") String name,
+  void execute_positive_entitleRequest(@SuppressWarnings("unused") String name,
     EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
     var applicationNames = request.getApplications().stream()
       .map(SemverUtils::getName)
@@ -117,9 +153,28 @@ class ApplicationFlowValidatorTest {
     verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
   }
 
+  @DisplayName("execute_positive_upgradeRequest")
+  @MethodSource("positiveEntitlementUpgradeFlowsDataProvider")
+  @ParameterizedTest(name = "[{index}] {0}")
+  void execute_positive_upgradeRequest(@SuppressWarnings("unused") String name,
+    EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
+    var applicationNames = request.getApplications().stream()
+      .map(SemverUtils::getName)
+      .distinct()
+      .collect(Collectors.toList());
+    var tenantId = request.getTenantId();
+    when(applicationFlowService.findLastFlowsByNames(applicationNames, tenantId)).thenReturn(applicationFlows);
+
+    var stageContext = commonStageContext(FLOW_ID, Map.of(PARAM_REQUEST, request), emptyMap());
+    validator.execute(stageContext);
+
+    verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
+  }
+
+  @DisplayName("execute_positive_revokeRequest")
   @MethodSource("positiveEntitlementRevokeFlowsDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
-  void execute_positive_parameterizedForRevokeRequest(@SuppressWarnings("unused") String name,
+  void execute_positive_revokeRequest(@SuppressWarnings("unused") String name,
     EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
     var applicationId = request.getApplications();
     var tenantId = request.getTenantId();
@@ -131,14 +186,12 @@ class ApplicationFlowValidatorTest {
     verify(applicationFlowService).findLastFlows(applicationId, tenantId);
   }
 
+  @DisplayName("execute_negative_entitleRequest")
   @MethodSource("negativeEntitlementEntitleFlowsDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
-  void execute_negative_parameterizedForEntitleFlow(@SuppressWarnings("unused") String name,
+  void execute_negative_entitleRequest(@SuppressWarnings("unused") String name,
     EntitlementRequest request, List<ApplicationFlow> applicationFlows, List<Parameter> expectedParams) {
-    var applicationNames = request.getApplications().stream()
-      .map(SemverUtils::getName)
-      .distinct()
-      .collect(Collectors.toList());
+    var applicationNames = getApplicationNames(request);
     var tenantId = request.getTenantId();
     when(applicationFlowService.findLastFlowsByNames(applicationNames, tenantId)).thenReturn(applicationFlows);
 
@@ -152,9 +205,29 @@ class ApplicationFlowValidatorTest {
     verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
   }
 
+  @DisplayName("execute_negative_upgradeRequest")
+  @MethodSource("negativeEntitlementUpgradeFlowsDataProvider")
+  @ParameterizedTest(name = "[{index}] {0}")
+  void execute_negative_upgradeRequest(@SuppressWarnings("unused") String name,
+    EntitlementRequest request, List<ApplicationFlow> applicationFlows, List<Parameter> expectedParams) {
+    var applicationNames = getApplicationNames(request);
+    var tenantId = request.getTenantId();
+    when(applicationFlowService.findLastFlowsByNames(applicationNames, tenantId)).thenReturn(applicationFlows);
+
+    var stageContext = commonStageContext(FLOW_ID, Map.of(PARAM_REQUEST, request), emptyMap());
+    assertThatThrownBy(() -> validator.execute(stageContext))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Found validation errors in entitlement request")
+      .extracting(err -> ((RequestValidationException) err).getErrorParameters())
+      .satisfies(parameters -> assertThat(parameters).isEqualTo(expectedParams));
+
+    verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
+  }
+
+  @DisplayName("execute_negative_revokeRequest")
   @MethodSource("negativeEntitlementRevokeFlowsDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
-  void validateEntitlementRevokeRequest_negative(@SuppressWarnings("unused") String name,
+  void execute_negative_revokeRequest(@SuppressWarnings("unused") String name,
     EntitlementRequest request, List<ApplicationFlow> applicationFlows, List<Parameter> expectedParams) {
     var applicationId = request.getApplications();
     var tenantId = request.getTenantId();
@@ -201,9 +274,19 @@ class ApplicationFlowValidatorTest {
   private static Stream<Arguments> positiveEntitlementRevokeFlowsDataProvider() {
     return Stream.of(
       arguments("Revoke: no application flows found", request(REVOKE), emptyList()),
-      arguments("Revoke: entitled flow found", request(REVOKE), List.of(flow(ENTITLE, FINISHED))),
+      arguments("Revoke: finished entitle flow found", request(REVOKE), List.of(flow(ENTITLE, FINISHED))),
+      arguments("Revoke: finished upgrade flow found", request(REVOKE), List.of(flow(UPGRADE, FINISHED))),
       arguments("Revoke: failed entitle flow found", request(REVOKE), List.of(flow(REVOKE, FAILED))),
       arguments("Revoke: cancelled entitle flow found", request(REVOKE), List.of(flow(REVOKE, CANCELLED)))
+    );
+  }
+
+  private static Stream<Arguments> positiveEntitlementUpgradeFlowsDataProvider() {
+    return Stream.of(
+      arguments("Revoke: no application flows found", request(UPGRADE), emptyList()),
+      arguments("Revoke: finished entitle flows found", request(UPGRADE), List.of(flow(ENTITLE, FINISHED))),
+      arguments("Revoke: failed upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, FAILED))),
+      arguments("Revoke: cancelled upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, CANCELLED)))
     );
   }
 
@@ -226,27 +309,51 @@ class ApplicationFlowValidatorTest {
       arguments("Entitle: failed upgrade flow found",
         request(ENTITLE), List.of(flow(UPGRADE, FAILED)), List.of(parameter("Previous upgrade flow failed"))),
       arguments("Entitle: cancelled upgrade flow found",
-        request(ENTITLE), List.of(flow(UPGRADE, CANCELLED)), List.of(parameter("Previous upgrade flow canceled")))
+        request(ENTITLE), List.of(flow(UPGRADE, CANCELLED)), List.of(parameter("Previous upgrade flow canceled"))),
+      arguments("Entitle: finished upgrade flow found",
+        request(ENTITLE), List.of(flow(UPGRADE, FINISHED)), List.of(parameter("Upgrade flow finished")))
     );
   }
 
   private static Stream<Arguments> negativeEntitlementRevokeFlowsDataProvider() {
     return Stream.of(
-      arguments("Revoke: entitled flow found",
+      arguments("Revoke: finished revoke flow found",
         request(REVOKE), List.of(flow(REVOKE, FINISHED)), List.of(parameter("Revoke flow finished"))),
-      arguments("Revoke: queued flow found",
-        request(REVOKE), List.of(flow(REVOKE, QUEUED)), List.of(parameter("Revoke flow is in queue"))),
-      arguments("Revoke: in progress flow found",
-        request(REVOKE), List.of(flow(REVOKE, IN_PROGRESS)), List.of(parameter("Revoke flow is in progress"))),
       arguments("Revoke: queued revoke flow found",
-        request(REVOKE), List.of(flow(ENTITLE, QUEUED)), List.of(parameter("Another entitle flow is in queue"))),
+        request(REVOKE), List.of(flow(REVOKE, QUEUED)), List.of(parameter("Revoke flow is in queue"))),
       arguments("Revoke: in progress revoke flow found",
-        request(REVOKE), List.of(flow(ENTITLE, IN_PROGRESS)),
+        request(REVOKE), List.of(flow(REVOKE, IN_PROGRESS)), List.of(parameter("Revoke flow is in progress"))),
+      arguments("Revoke: queued entitle flow found",
+        request(REVOKE), List.of(flow(ENTITLE, QUEUED)), List.of(parameter("Another entitle flow is in queue"))),
+      arguments("Revoke: in progress entitle flow found", request(REVOKE), List.of(flow(ENTITLE, IN_PROGRESS)),
+        List.of(parameter("Another entitle flow is in progress"))),
+      arguments("Revoke: failed entitle flow found",
+        request(REVOKE), List.of(flow(ENTITLE, FAILED)), List.of(parameter("Previous entitle flow failed"))),
+      arguments("Revoke: cancelled entitle flow found",
+        request(REVOKE), List.of(flow(ENTITLE, CANCELLED)), List.of(parameter("Previous entitle flow canceled")))
+    );
+  }
+
+  private static Stream<Arguments> negativeEntitlementUpgradeFlowsDataProvider() {
+    return Stream.of(
+      arguments("Upgrade: queued revoke flow found",
+        request(UPGRADE), List.of(flow(REVOKE, QUEUED)), List.of(parameter("Another revoke flow is in queue"))),
+      arguments("Revoke: in progress revoke flow found",
+        request(UPGRADE), List.of(flow(REVOKE, IN_PROGRESS)), List.of(parameter("Another revoke flow is in progress"))),
+
+      arguments("Revoke: queued upgrade flow found",
+        request(UPGRADE), List.of(flow(UPGRADE, QUEUED)), List.of(parameter("Upgrade flow is in queue"))),
+      arguments("Revoke: in progress upgrade flow found",
+        request(UPGRADE), List.of(flow(UPGRADE, IN_PROGRESS)), List.of(parameter("Upgrade flow is in progress"))),
+
+      arguments("Revoke: queued revoke flow found",
+        request(UPGRADE), List.of(flow(ENTITLE, QUEUED)), List.of(parameter("Another entitle flow is in queue"))),
+      arguments("Revoke: in progress revoke flow found", request(UPGRADE), List.of(flow(ENTITLE, IN_PROGRESS)),
         List.of(parameter("Another entitle flow is in progress"))),
       arguments("Revoke: failed revoke flow found",
-        request(REVOKE), List.of(flow(ENTITLE, FAILED)), List.of(parameter("Previous entitle flow failed"))),
+        request(UPGRADE), List.of(flow(ENTITLE, FAILED)), List.of(parameter("Previous entitle flow failed"))),
       arguments("Revoke: cancelled flow found",
-        request(REVOKE), List.of(flow(ENTITLE, CANCELLED)), List.of(parameter("Previous entitle flow canceled")))
+        request(UPGRADE), List.of(flow(ENTITLE, CANCELLED)), List.of(parameter("Previous entitle flow canceled")))
     );
   }
 
@@ -272,5 +379,12 @@ class ApplicationFlowValidatorTest {
 
   private static ApplicationFlow flow(String applicationId, EntitlementType type, ExecutionStatus status) {
     return new ApplicationFlow().type(type).status(status).applicationId(applicationId).tenantId(TENANT_ID);
+  }
+
+  private static @NotNull List<String> getApplicationNames(EntitlementRequest request) {
+    return request.getApplications().stream()
+      .map(SemverUtils::getName)
+      .distinct()
+      .toList();
   }
 }
