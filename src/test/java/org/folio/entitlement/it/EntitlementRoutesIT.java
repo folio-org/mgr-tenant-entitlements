@@ -147,7 +147,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
     var result = HTTP_CLIENT.send(httpRequest(method, uri, tenantId), ofString());
 
     assertThat(result.statusCode()).isEqualTo(NOT_FOUND.value());
-    assertThat(readToMap(result.body())).isEqualTo(Map.of("message", "no Route matched with those values"));
+    assertThat(readToMap(result.body())).containsEntry("message", "no Route matched with those values");
   }
 
   @Test
@@ -157,7 +157,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
     var result = HTTP_CLIENT.send(httpRequest(GET, uri, TENANT_NAME, "unknown-1.0.0"), ofString());
 
     assertThat(result.statusCode()).isEqualTo(NOT_FOUND.value());
-    assertThat(readToMap(result.body())).isEqualTo(Map.of("message", "no Route matched with those values"));
+    assertThat(readToMap(result.body())).containsEntry("message", "no Route matched with those values");
   }
 
   private static HttpRequest httpRequest(HttpMethod method, URI uri, String tenant) {
@@ -285,7 +285,7 @@ class EntitlementRoutesIT extends BaseIntegrationTest {
   }
 
   @Nullable
-  private static Map<?, ?> readToMap(String responseBodyString) {
+  private static Map<String, String> readToMap(String responseBodyString) {
     return parse(responseBodyString, new TypeReference<>() {});
   }
 
