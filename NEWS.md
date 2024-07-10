@@ -4,6 +4,12 @@
 
 ---
 
+## v1.2.3 2024-07-10
+
+* [KONG-10](https://issues.folio.org/browse/KONG-10): upgrade kong version (#108)
+
+---
+
 ## v1.2.1 2024-06-20
 
 * [MODSCHED-8](https://issues.folio.org/browse/MODSCHED-8): extract SemverUtils to folio-common (#96)
