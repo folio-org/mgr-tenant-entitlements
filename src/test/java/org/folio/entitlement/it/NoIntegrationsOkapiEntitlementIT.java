@@ -674,6 +674,26 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(content().json(asJsonString(emptyEntitlements())));
   }
 
+  @Test
+  @Sql("/sql/okapi-app-upgraded.sql")
+  void install_negative_upgradeIsFinishedForHigherVersion() throws Exception {
+    mockMvc.perform(post("/entitlements")
+        .queryParam("ignoreErrors", "true")
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .content(asJsonString(entitlementRequest(OKAPI_APP_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
+      .andExpect(jsonPath("$.errors[0].code", is("service_error")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("ApplicationFlowValidator")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", is(
+        "FAILED: [RequestValidationException] Found validation errors in entitlement request, "
+          + "parameters: [{key: okapi-app-1.1.0, value: Upgrade flow finished}]")));
+  }
+
   private static void checkApplicationContextBeans(ApplicationContext appContext) {
     checkExistingBeans(appContext, OKAPI_MODULE_INSTALLER_BEAN_TYPES);
 

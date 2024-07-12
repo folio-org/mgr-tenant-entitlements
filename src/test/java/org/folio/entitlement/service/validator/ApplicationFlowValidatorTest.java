@@ -56,21 +56,7 @@ class ApplicationFlowValidatorTest {
   @DisplayName("validate_positive_entitleRequest")
   @MethodSource("positiveEntitlementEntitleFlowsDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
-  void validate_positive_entitleRequest(@SuppressWarnings("unused") String name,
-    EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
-    var applicationNames = getApplicationNames(request);
-    var tenantId = request.getTenantId();
-    when(applicationFlowService.findLastFlowsByNames(applicationNames, tenantId)).thenReturn(applicationFlows);
-
-    validator.validate(request);
-
-    verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
-  }
-
-  @DisplayName("validate_positive_upgradeRequest")
-  @MethodSource("positiveEntitlementUpgradeFlowsDataProvider")
-  @ParameterizedTest(name = "[{index}] {0}")
-  void validate_positive_upgradeRequest(@SuppressWarnings("unused") String name,
+  void validate_positive_entitleOrUpgradeRequest(@SuppressWarnings("unused") String name,
     EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
     var applicationNames = getApplicationNames(request);
     var tenantId = request.getTenantId();
@@ -138,30 +124,12 @@ class ApplicationFlowValidatorTest {
   @DisplayName("execute_positive_entitleRequest")
   @MethodSource("positiveEntitlementEntitleFlowsDataProvider")
   @ParameterizedTest(name = "[{index}] {0}")
-  void execute_positive_entitleRequest(@SuppressWarnings("unused") String name,
+  void execute_positive_entitleOrUpgradeRequest(@SuppressWarnings("unused") String name,
     EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
     var applicationNames = request.getApplications().stream()
       .map(SemverUtils::getName)
       .distinct()
-      .collect(Collectors.toList());
-    var tenantId = request.getTenantId();
-    when(applicationFlowService.findLastFlowsByNames(applicationNames, tenantId)).thenReturn(applicationFlows);
-
-    var stageContext = commonStageContext(FLOW_ID, Map.of(PARAM_REQUEST, request), emptyMap());
-    validator.execute(stageContext);
-
-    verify(applicationFlowService).findLastFlowsByNames(applicationNames, tenantId);
-  }
-
-  @DisplayName("execute_positive_upgradeRequest")
-  @MethodSource("positiveEntitlementUpgradeFlowsDataProvider")
-  @ParameterizedTest(name = "[{index}] {0}")
-  void execute_positive_upgradeRequest(@SuppressWarnings("unused") String name,
-    EntitlementRequest request, List<ApplicationFlow> applicationFlows) {
-    var applicationNames = request.getApplications().stream()
-      .map(SemverUtils::getName)
-      .distinct()
-      .collect(Collectors.toList());
+      .toList();
     var tenantId = request.getTenantId();
     when(applicationFlowService.findLastFlowsByNames(applicationNames, tenantId)).thenReturn(applicationFlows);
 
@@ -267,7 +235,11 @@ class ApplicationFlowValidatorTest {
       arguments("Upgrade: revoked flow found", request(UPGRADE), List.of(flow(REVOKE, FINISHED))),
       arguments("Upgrade: finished upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, FINISHED))),
       arguments("Upgrade: failed upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, FAILED))),
-      arguments("Entitle: cancelled upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, CANCELLED)))
+      arguments("Entitle: cancelled upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, CANCELLED))),
+
+      arguments("Revoke: finished entitle flows found", request(UPGRADE), List.of(flow(ENTITLE, FINISHED))),
+      arguments("Revoke: failed upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, FAILED))),
+      arguments("Revoke: cancelled upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, CANCELLED)))
     );
   }
 
@@ -278,15 +250,6 @@ class ApplicationFlowValidatorTest {
       arguments("Revoke: finished upgrade flow found", request(REVOKE), List.of(flow(UPGRADE, FINISHED))),
       arguments("Revoke: failed entitle flow found", request(REVOKE), List.of(flow(REVOKE, FAILED))),
       arguments("Revoke: cancelled entitle flow found", request(REVOKE), List.of(flow(REVOKE, CANCELLED)))
-    );
-  }
-
-  private static Stream<Arguments> positiveEntitlementUpgradeFlowsDataProvider() {
-    return Stream.of(
-      arguments("Revoke: no application flows found", request(UPGRADE), emptyList()),
-      arguments("Revoke: finished entitle flows found", request(UPGRADE), List.of(flow(ENTITLE, FINISHED))),
-      arguments("Revoke: failed upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, FAILED))),
-      arguments("Revoke: cancelled upgrade flow found", request(UPGRADE), List.of(flow(UPGRADE, CANCELLED)))
     );
   }
 
