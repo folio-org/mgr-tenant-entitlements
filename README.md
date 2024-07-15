@@ -11,6 +11,9 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 * [Compiling](#compiling)
 * [Running It](#running-it)
 * [Environment Variables](#environment-variables)
+* [Kong Gateway Integration](#kong-gateway-integration)
+* [Kafka Integration](#kafka-integration)
+* [FAQ](#faq)
 
 ## Introduction
 
@@ -277,3 +280,42 @@ topic naming convention:`<prefix>_entitlement`
   "applicationId": "application1-1.2.3"
 }
 ```
+
+## FAQ
+
+### How ignoreErrors affects tenant entitlement?
+
+_If `ignoreErrors` is set to `true` then the rollback operation is enabled if 1 or more stages failed.
+Rollback will return the system to initial state:_
+- _All installed tenant modules will be uninstalled_
+- _All created Kong Gateway routes will be deleted for the application_
+- _All created Keycloak resources will be deleted for the application_
+
+### How purgeOnRollback affects tenant entitlement process
+
+_This argument is only applied if tenant entitlement is executed with `ignoreErrors=false` and skips every rollback
+operation for each stage, leading to the state when:_
+- _Tenant routes are not affected_
+- _Keycloak authorization resources and permissions are not affected_
+- _Installed modules are not uninstalled_
+
+_The behaviour is the same as calling `POST /entitlements` with `ignoreErrors=true`_
+
+### How purge flag is working for application uninstalling?
+
+_The `purge` flag defines whether the tenant application data will be deleted. If this flag is set to true -
+`mgr-tenant-entitlement` will delete all resources, including routes, keycloak authorization resources, and module
+database data (using tenant API) from the system. If this flag is set to `false` - only sidecars for this tenant will
+be disabled and module requests will return an error, saying that the tenant is not enabled._
+
+### Is rollbacks are supported for the application uninstalling/upgrades?
+
+_No, rollbacks are not supported, because the folio modules don't support downgrades, and storing the data before
+uninstalling or upgrading is complicated._
+
+### How async flag works?
+
+_The Async flag returns the flow identifier instantly, allowing the user to track the progress of installation,
+uninstallation, or upgrading the application using the `/entitlement-flow/{id}` endpoint. If this flag is set
+to `false` - `mgr-tenant-entitlement` holds the response until the entitlement flow is executed, however, the
+flow execution implementation is the same as calling the entitlement process using `async=true`._
