@@ -1,6 +1,8 @@
 package org.folio.entitlement.integration.kafka;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
@@ -30,14 +32,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.UserDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.entitlement.support.TestUtils;
-import org.folio.entitlement.utils.SystemUserProvider;
+import org.folio.entitlement.utils.SystemUserEventProvider;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +59,7 @@ class SystemUserModuleEventPublisherTest {
 
   @InjectMocks private SystemUserModuleEventPublisher moduleEventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
-  @Mock private SystemUserProvider systemUserProvider;
+  @Mock private SystemUserEventProvider systemUserEventProvider;
 
   @BeforeEach
   void setUp() {
@@ -81,13 +82,13 @@ class SystemUserModuleEventPublisherTest {
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
-    when(systemUserProvider.findSystemUserDescriptor(moduleDescriptor)).thenReturn(Optional.of(userDescriptor));
-    when(systemUserProvider.findSystemUserDescriptor(null)).thenReturn(Optional.empty());
+    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
+    when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
 
     moduleEventPublisher.execute(stageContext);
 
     var expectedMessageKey = TENANT_ID.toString();
-    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
     verify(kafkaEventPublisher).send(systemUserTenantTopic(), expectedMessageKey, resourceEvent(systemUserEvent));
   }
 
@@ -99,8 +100,8 @@ class SystemUserModuleEventPublisherTest {
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
-    when(systemUserProvider.findSystemUserDescriptor(null)).thenReturn(Optional.empty());
-    when(systemUserProvider.findSystemUserDescriptor(moduleDescriptor)).thenReturn(Optional.empty());
+    when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
+    when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(empty());
 
     moduleEventPublisher.execute(stageContext);
 
@@ -109,10 +110,8 @@ class SystemUserModuleEventPublisherTest {
 
   @Test
   void execute_positive_upgradeRequestWithChangedModule() {
-    var v1UserDesc = userDescriptor("foo.entities.post");
-    var v2UserDesc = userDescriptor("foo.v2.entities.post");
-    var v1ModuleDescriptor = moduleDescriptor(MODULE_ID, v1UserDesc);
-    var v2ModuleDescriptor = moduleDescriptor(MODULE_ID_V2, v2UserDesc);
+    var v1ModuleDescriptor = moduleDescriptor(MODULE_ID, userDescriptor("foo.entities.post"));
+    var v2ModuleDescriptor = moduleDescriptor(MODULE_ID_V2, userDescriptor("foo.v2.entities.post"));
     var flowParameters = Map.of(
       PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
       PARAM_MODULE_DESCRIPTOR, v2ModuleDescriptor,
@@ -121,8 +120,11 @@ class SystemUserModuleEventPublisherTest {
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
-    when(systemUserProvider.findSystemUserDescriptor(v1ModuleDescriptor)).thenReturn(Optional.of(v1UserDesc));
-    when(systemUserProvider.findSystemUserDescriptor(v2ModuleDescriptor)).thenReturn(Optional.of(v2UserDesc));
+    var v1UserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    var v2UserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.v2.entities.post"));
+
+    when(systemUserEventProvider.getSystemUserEvent(v1ModuleDescriptor)).thenReturn(of(v1UserEvent));
+    when(systemUserEventProvider.getSystemUserEvent(v2ModuleDescriptor)).thenReturn(of(v2UserEvent));
 
     moduleEventPublisher.execute(stageContext);
 
@@ -162,8 +164,9 @@ class SystemUserModuleEventPublisherTest {
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
-    when(systemUserProvider.findSystemUserDescriptor(moduleDescriptor)).thenReturn(Optional.of(userDescriptor));
-    when(systemUserProvider.findSystemUserDescriptor(null)).thenReturn(Optional.empty());
+    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
+    when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
 
     moduleEventPublisher.execute(stageContext);
 
@@ -188,6 +191,7 @@ class SystemUserModuleEventPublisherTest {
   }
 
   private static ModuleDescriptor moduleDescriptor(String moduleId, UserDescriptor userDescriptor) {
+    //noinspection deprecation
     return new ModuleDescriptor().id(moduleId).user(userDescriptor);
   }
 

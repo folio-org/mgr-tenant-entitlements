@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.UserDescriptor;
+import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,35 +22,35 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class SystemUserProviderTest {
+class SystemUserEventProviderTest {
 
-  @InjectMocks private SystemUserProvider systemUserProvider;
+  @InjectMocks private SystemUserEventProvider systemUserEventProvider;
   @Spy private final ObjectMapper objectMapper = OBJECT_MAPPER;
 
   @Test
   @Deprecated
-  void findSystemUserDescriptor_positive_moduleDescriptorWithoutSystemUser() {
+  void getSystemUserEvent_positive_moduleDescriptorWithoutSystemUser() {
     var moduleDescriptor = new ModuleDescriptor();
 
-    var result = systemUserProvider.findSystemUserDescriptor(moduleDescriptor);
+    var result = systemUserEventProvider.getSystemUserEvent(moduleDescriptor);
     assertThat(result).isEmpty();
     verifyNoInteractions(objectMapper);
   }
 
   @Test
   @Deprecated
-  void findSystemUserDescriptor_positive_userSection() {
+  void getSystemUserEvent_positive_userSection() {
     var userDescriptor = UserDescriptor.of("module", List.of("test.permission"));
-    var moduleDescriptor = new ModuleDescriptor().user(userDescriptor);
+    var moduleDescriptor = new ModuleDescriptor().id("test-module-0.0.1").user(userDescriptor);
 
-    var result = systemUserProvider.findSystemUserDescriptor(moduleDescriptor);
-    assertThat(result).contains(userDescriptor);
+    var result = systemUserEventProvider.getSystemUserEvent(moduleDescriptor);
+    assertThat(result).contains(SystemUserEvent.of("test-module", "module", List.of("test.permission")));
     verifyNoInteractions(objectMapper);
   }
 
   @Test
   @Deprecated
-  void findSystemUserDescriptor_positive_extensionsSection() throws JsonProcessingException {
+  void getSystemUserEvent_positive_extensionsSection() throws JsonProcessingException {
     var moduleDescriptorJson = """
       {
         "id": "test-module-0.0.1",
@@ -60,14 +61,15 @@ class SystemUserProviderTest {
       }""";
 
     var moduleDescriptor = OBJECT_MAPPER.readValue(moduleDescriptorJson, ModuleDescriptor.class);
-    var result = systemUserProvider.findSystemUserDescriptor(moduleDescriptor);
-    assertThat(result).contains(UserDescriptor.of("system", List.of("test.permission")));
+    var result = systemUserEventProvider.getSystemUserEvent(moduleDescriptor);
+
+    assertThat(result).contains(SystemUserEvent.of("test-module", "system", List.of("test.permission")));
     verify(objectMapper).convertValue(anyMap(), eq(UserDescriptor.class));
   }
 
   @Test
   @Deprecated
-  void findSystemUserDescriptor_positive_unknownExtensionKey() throws JsonProcessingException {
+  void getSystemUserEvent_positive_unknownExtensionKey() throws JsonProcessingException {
     var moduleDescriptorJson = """
       {
         "id": "test-module-0.0.1",
@@ -76,7 +78,7 @@ class SystemUserProviderTest {
       }""";
 
     var moduleDescriptor = OBJECT_MAPPER.readValue(moduleDescriptorJson, ModuleDescriptor.class);
-    var result = systemUserProvider.findSystemUserDescriptor(moduleDescriptor);
+    var result = systemUserEventProvider.getSystemUserEvent(moduleDescriptor);
     assertThat(result).isEmpty();
     verify(objectMapper).convertValue(eq(null), eq(UserDescriptor.class));
   }
