@@ -51,7 +51,7 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
     try (var bootstrapMigrations = migrationContainer(command)) {
       bootstrapMigrations.start();
     } catch (Exception e) {
-      throw new RuntimeException("Failed to run kong migrations");
+      throw new RuntimeException("Failed to run kong migrations", e);
     }
   }
 
@@ -61,7 +61,7 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
       .withEnv(kongMigrationEnvironment())
       .withCommand(command)
       .withNetwork(Network.SHARED)
-      .withStartupCheckStrategy(new OneShotStartupCheckStrategy().withTimeout(ofSeconds(5)));
+      .withStartupCheckStrategy(new OneShotStartupCheckStrategy().withTimeout(ofSeconds(30)));
   }
 
   private static Map<String, String> kongMigrationEnvironment() {
