@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.kafka;
 
+import static java.util.Optional.empty;
+import static java.util.Optional.of;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
@@ -22,6 +24,7 @@ import static org.folio.entitlement.support.TestValues.moduleDescriptorHolder;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
@@ -32,6 +35,7 @@ import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.entitlement.support.TestUtils;
+import org.folio.entitlement.utils.SystemUserProvider;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,10 +55,12 @@ class SystemUserEventPublisherTest {
   private static final String SYS_USER_TYPE = "system";
 
   @InjectMocks private SystemUserEventPublisher eventPublisher;
+  @Mock private SystemUserProvider systemUserProvider;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
 
   @BeforeEach
   void setUp() {
+    eventPublisher.setKafkaEventPublisher(kafkaEventPublisher);
     System.setProperty("env", "test-env");
   }
 
@@ -66,7 +72,8 @@ class SystemUserEventPublisherTest {
 
   @Test
   void execute_positive_entitleEvent() {
-    var modFoo = moduleDescriptor(MOD_FOO_V1_ID, userDescriptor("foo.entities.post"));
+    var fooUserDesc = userDescriptor("foo.entities.post");
+    var modFoo = moduleDescriptor(MOD_FOO_V1_ID, fooUserDesc);
     var modBar = moduleDescriptor(MOD_BAR_ID, null);
     var flowParameters = Map.of(
       PARAM_REQUEST, request(ENTITLE),
@@ -75,6 +82,9 @@ class SystemUserEventPublisherTest {
 
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextData);
+
+    when(systemUserProvider.findSystemUserDescriptor(modFoo)).thenReturn(of(fooUserDesc));
+    when(systemUserProvider.findSystemUserDescriptor(modBar)).thenReturn(empty());
 
     eventPublisher.execute(stageContext);
 
@@ -85,14 +95,23 @@ class SystemUserEventPublisherTest {
 
   @Test
   void execute_positive_updateRequest() {
-    var modFooV2 = moduleDescriptor(MOD_FOO_V2_ID, userDescriptor("foo.item.v2.get", "foo.item.v2.post"));
-    var modFooV1 = moduleDescriptor(MOD_FOO_V1_ID, userDescriptor("foo.item.get", "foo.item.post"));
+    var fooUserDescriptorV1 = userDescriptor("foo.item.get", "foo.item.post");
+    var fooUserDescriptorV2 = userDescriptor("foo.item.v2.get", "foo.item.v2.post");
+    var modFooV1 = moduleDescriptor(MOD_FOO_V1_ID, fooUserDescriptorV1);
+    var modFooV2 = moduleDescriptor(MOD_FOO_V2_ID, fooUserDescriptorV2);
+    var barUserDescriptor = userDescriptor("bar.item.get");
+    var modBar = moduleDescriptor(MOD_BAR_ID, barUserDescriptor);
+
     var flowParameters = Map.of(
       PARAM_REQUEST, request(UPGRADE),
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(modFooV2, modFooV1)),
-      PARAM_DEPRECATED_MODULE_DESCRIPTORS, List.of(moduleDescriptor(MOD_BAR_ID, userDescriptor("bar.item.get"))));
+      PARAM_DEPRECATED_MODULE_DESCRIPTORS, List.of(modBar));
+
+    when(systemUserProvider.findSystemUserDescriptor(modBar)).thenReturn(of(barUserDescriptor));
+    when(systemUserProvider.findSystemUserDescriptor(modFooV1)).thenReturn(of(fooUserDescriptorV1));
+    when(systemUserProvider.findSystemUserDescriptor(modFooV2)).thenReturn(of(fooUserDescriptorV2));
 
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
@@ -133,14 +152,16 @@ class SystemUserEventPublisherTest {
 
   @Test
   void execute_positive_noSystemUsersDefined() {
+    var moduleDescriptor = moduleDescriptor(MOD_BAR_ID, null);
     var flowParameters = Map.of(
       PARAM_REQUEST, request(ENTITLE),
-      PARAM_MODULE_DESCRIPTORS, List.of(moduleDescriptor(MOD_BAR_ID, null)),
+      PARAM_MODULE_DESCRIPTORS, List.of(moduleDescriptor),
       PARAM_APPLICATION_ID, APPLICATION_ID);
 
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextData);
 
+    when(systemUserProvider.findSystemUserDescriptor(moduleDescriptor)).thenReturn(empty());
     eventPublisher.execute(stageContext);
 
     verifyNoInteractions(kafkaEventPublisher);

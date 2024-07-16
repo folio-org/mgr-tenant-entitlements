@@ -26,15 +26,18 @@ import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.UserDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.entitlement.support.TestUtils;
+import org.folio.entitlement.utils.SystemUserProvider;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,10 +58,12 @@ class SystemUserModuleEventPublisherTest {
 
   @InjectMocks private SystemUserModuleEventPublisher moduleEventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
+  @Mock private SystemUserProvider systemUserProvider;
 
   @BeforeEach
   void setUp() {
     System.setProperty("env", "test-env");
+    moduleEventPublisher.setKafkaEventPublisher(kafkaEventPublisher);
   }
 
   @AfterEach
@@ -69,11 +74,15 @@ class SystemUserModuleEventPublisherTest {
 
   @Test
   void execute_positive() {
-    var moduleDescriptor = moduleDescriptor(MODULE_ID, userDescriptor("foo.entities.post"));
+    var userDescriptor = userDescriptor("foo.entities.post");
+    var moduleDescriptor = moduleDescriptor(MODULE_ID, userDescriptor);
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
     var flowParameters = moduleFlowParameters(request, moduleDescriptor);
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
+
+    when(systemUserProvider.findSystemUserDescriptor(moduleDescriptor)).thenReturn(Optional.of(userDescriptor));
+    when(systemUserProvider.findSystemUserDescriptor(null)).thenReturn(Optional.empty());
 
     moduleEventPublisher.execute(stageContext);
 
@@ -90,6 +99,9 @@ class SystemUserModuleEventPublisherTest {
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
+    when(systemUserProvider.findSystemUserDescriptor(null)).thenReturn(Optional.empty());
+    when(systemUserProvider.findSystemUserDescriptor(moduleDescriptor)).thenReturn(Optional.empty());
+
     moduleEventPublisher.execute(stageContext);
 
     verifyNoInteractions(kafkaEventPublisher);
@@ -97,14 +109,20 @@ class SystemUserModuleEventPublisherTest {
 
   @Test
   void execute_positive_upgradeRequestWithChangedModule() {
+    var v1UserDesc = userDescriptor("foo.entities.post");
+    var v2UserDesc = userDescriptor("foo.v2.entities.post");
+    var v1ModuleDescriptor = moduleDescriptor(MODULE_ID, v1UserDesc);
+    var v2ModuleDescriptor = moduleDescriptor(MODULE_ID_V2, v2UserDesc);
     var flowParameters = Map.of(
       PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
-      PARAM_MODULE_DESCRIPTOR, moduleDescriptor(MODULE_ID_V2, userDescriptor("foo.v2.entities.post")),
-      PARAM_INSTALLED_MODULE_DESCRIPTOR, moduleDescriptor(MODULE_ID, userDescriptor("foo.entities.post")),
+      PARAM_MODULE_DESCRIPTOR, v2ModuleDescriptor,
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, v1ModuleDescriptor,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+    when(systemUserProvider.findSystemUserDescriptor(v1ModuleDescriptor)).thenReturn(Optional.of(v1UserDesc));
+    when(systemUserProvider.findSystemUserDescriptor(v2ModuleDescriptor)).thenReturn(Optional.of(v2UserDesc));
 
     moduleEventPublisher.execute(stageContext);
 
@@ -134,13 +152,18 @@ class SystemUserModuleEventPublisherTest {
 
   @Test
   void execute_positive_upgradeRequestWithDeprecatedModule() {
+    var userDescriptor = userDescriptor("foo.entities.post");
+    var moduleDescriptor = moduleDescriptor(MODULE_ID, userDescriptor);
     var flowParameters = Map.of(
       PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build(),
-      PARAM_INSTALLED_MODULE_DESCRIPTOR, moduleDescriptor(MODULE_ID, userDescriptor("foo.entities.post")),
+      PARAM_INSTALLED_MODULE_DESCRIPTOR, moduleDescriptor,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    when(systemUserProvider.findSystemUserDescriptor(moduleDescriptor)).thenReturn(Optional.of(userDescriptor));
+    when(systemUserProvider.findSystemUserDescriptor(null)).thenReturn(Optional.empty());
 
     moduleEventPublisher.execute(stageContext);
 

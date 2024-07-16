@@ -218,13 +218,15 @@
                   "description": "Get a folio-module2 entity by id"
                 }
               ],
-              "user": {
-                "type": "module",
-                "permissions": [
-                  "folio-module1.entity.item.post",
-                  "folio-module1.entity.collection.get",
-                  "folio-module1.entity.item.get"
-                ]
+              "extensions": {
+                "user": {
+                  "type": "module",
+                  "permissions": [
+                    "folio-module1.entity.item.post",
+                    "folio-module1.entity.collection.get",
+                    "folio-module1.entity.item.get"
+                  ]
+                }
               }
             },
             {
@@ -282,9 +284,11 @@
                   "description": "Get a folio-module4 entity by id"
                 }
               ],
-              "user": {
-                "type": "module",
-                "permissions": [ "folio-module1.entity.item.post" ]
+              "extensions": {
+                "user": {
+                  "type": "module",
+                  "permissions": [ "folio-module1.entity.item.post" ]
+                }
               }
             }
           ],
