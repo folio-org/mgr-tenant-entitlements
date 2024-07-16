@@ -517,12 +517,12 @@ components:
       name: ignoreErrors
       in: query
       description: |
-        Okapi 4.2.0 and later, it is possible to ignore errors during the
-        install operation. This is done by supplying parameter `ignoreErrors=true`.
-        In this case, Okapi will try to upgrade all modules in the modules list,
-        regardless if one of them fails. However, for individual modules, if they
-        fail, their upgrade will not be committed. This is an experimental parameter
-        which was added to be able to inspect all problem(s) with module upgrade(s).
+        If `ignoreErrors` is set to `false` then the rollback operation is enabled
+        if one or more stages failed. If it set to `true` - stage rollbacks are disabled.
+        Rollback will return the system to initial state:
+          * All installed tenant modules will be uninstalled
+          * All created Kong Gateway routes will be deleted for the application
+          * All created Keycloak resources will be deleted for the application
       required: false
       schema:
         type: boolean

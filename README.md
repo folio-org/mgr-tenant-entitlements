@@ -285,11 +285,20 @@ topic naming convention:`<prefix>_entitlement`
 
 ### How ignoreErrors affects tenant entitlement?
 
-_If `ignoreErrors` is set to `true` then the rollback operation is enabled if 1 or more stages failed.
-Rollback will return the system to initial state:_
+_If `ignoreErrors` is set to `false` (which is default value) then the stage rollback operations will be executed
+if one or more stages failed.
+Stage rollbacks will return the system to initial state:_
 - _All installed tenant modules will be uninstalled_
 - _All created Kong Gateway routes will be deleted for the application_
 - _All created Keycloak resources will be deleted for the application_
+
+_If the `ignoreErrors` is set to `true` - stage rollbacks are disabled for tenant entitlement and if
+one of the stages fail - entitlement process will stop, changes will stay in the system, and user can repeat
+entitlement process until it succeeds._
+
+_The stage fails caused by misconfiguration of the container: networking parameters, database pool size, etc.
+The application checked before entitlement that all interfaces are compatible, and if not - validation error
+will be raised while running the entitlement process._
 
 ### How purgeOnRollback affects tenant entitlement process
 
