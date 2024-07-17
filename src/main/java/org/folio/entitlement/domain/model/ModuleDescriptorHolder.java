@@ -1,6 +1,6 @@
 package org.folio.entitlement.domain.model;
 
-import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 
 import org.folio.common.domain.model.ModuleDescriptor;
 
@@ -12,6 +12,6 @@ public record ModuleDescriptorHolder(ModuleDescriptor moduleDescriptor, ModuleDe
    * @return true if version changed, false - otherwise
    */
   public boolean isVersionChanged() {
-    return isModuleVersionChanged(moduleDescriptor, installedModuleDescriptor);
+    return isModuleUpdated(moduleDescriptor, installedModuleDescriptor);
   }
 }

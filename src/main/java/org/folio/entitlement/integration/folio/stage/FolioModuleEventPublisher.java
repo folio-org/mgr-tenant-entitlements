@@ -2,7 +2,7 @@ package org.folio.entitlement.integration.folio.stage;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -24,7 +24,7 @@ public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
 
-    if (!isModuleVersionChanged(moduleDescriptor, installedModuleDescriptor)) {
+    if (!isModuleUpdated(moduleDescriptor, installedModuleDescriptor)) {
       return;
     }
 

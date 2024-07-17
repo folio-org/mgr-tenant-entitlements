@@ -4,8 +4,8 @@ import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
-import static org.folio.entitlement.utils.EntitlementServiceUtils.isSameModule;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -116,8 +116,8 @@ public abstract class AbstractEventPublisher<T> extends DatabaseLoggingStage<Oka
     var entitledAppId = ctx.getEntitledApplicationId();
     var tenantName = ctx.getTenantName();
 
-    if (!isModuleVersionChanged(descriptor, installedDescriptor)) {
-      if (isSameModule(descriptor, installedDescriptor)) {
+    if (!isModuleUpdated(descriptor, installedDescriptor)) {
+      if (isModuleVersionChanged(descriptor, installedDescriptor)) {
         return getEventPayloadForNotChangedModule(appId, entitledAppId, type, descriptor, installedDescriptor)
           .flatMap(pair -> createEvent(tenantName, pair.getLeft(), pair.getRight()));
       }

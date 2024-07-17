@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.kafka;
 
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
-import static org.folio.entitlement.utils.EntitlementServiceUtils.isSameModule;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +28,8 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
     var entitledApplicationId = ctx.getEntitledApplicationId();
     var messageKey = ctx.getTenantId().toString();
 
-    if (!isModuleVersionChanged(moduleDesc, installedModuleDesc)) {
-      if (isSameModule(moduleDesc, installedModuleDesc)) {
+    if (!isModuleUpdated(moduleDesc, installedModuleDesc)) {
+      if (isModuleVersionChanged(moduleDesc, installedModuleDesc)) {
         getEventPayloadForNotChangedModule(applicationId, entitledApplicationId, type, moduleDesc, installedModuleDesc)
           .flatMap(payload -> createEvent(tenant, payload.getLeft(), payload.getRight()))
           .ifPresent(evt -> kafkaEventPublisher.send(getTopicName(tenant), messageKey, evt));

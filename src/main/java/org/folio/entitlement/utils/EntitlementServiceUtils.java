@@ -117,7 +117,7 @@ public class EntitlementServiceUtils {
    * @param installedModuleDesc - installed {@link ModuleDescriptor} value
    * @return true if module must be upgraded, false otherwise
    */
-  public static boolean isModuleVersionChanged(ModuleDescriptor moduleDesc, ModuleDescriptor installedModuleDesc) {
+  public static boolean isModuleUpdated(ModuleDescriptor moduleDesc, ModuleDescriptor installedModuleDesc) {
     return moduleDesc != null
       ? installedModuleDesc == null || !Objects.equals(moduleDesc.getId(), installedModuleDesc.getId())
       : installedModuleDesc != null;
@@ -130,7 +130,7 @@ public class EntitlementServiceUtils {
    * @param installedModuleDesc - installed {@link ModuleDescriptor} value
    * @return true if module must be upgraded, false otherwise
    */
-  public static boolean isSameModule(ModuleDescriptor moduleDesc, ModuleDescriptor installedModuleDesc) {
+  public static boolean isModuleVersionChanged(ModuleDescriptor moduleDesc, ModuleDescriptor installedModuleDesc) {
     return moduleDesc != null
       && installedModuleDesc != null
       && Objects.equals(moduleDesc.getId(), installedModuleDesc.getId());

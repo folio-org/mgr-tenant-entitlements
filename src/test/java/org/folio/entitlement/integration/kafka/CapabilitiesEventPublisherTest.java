@@ -136,8 +136,7 @@ class CapabilitiesEventPublisherTest {
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(moduleDesc, moduleDesc)));
 
-    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
+    var stageContext = okapiStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     doNothing().when(kafkaEventPublisher).send(eq(TOPIC_NAME), messageKeyCaptor.capture(), eventCaptor.capture());
 
     eventPublisher.execute(stageContext);
@@ -145,6 +144,20 @@ class CapabilitiesEventPublisherTest {
     var expectedEvents = List.of(readCapabilityEvent("json/events/capabilities/unchanged-module-event.json"));
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
     assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+  }
+
+  @Test
+  void execute_positive_moduleDescriptorHolderContainNullsForNewAndOldDescriptors() {
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).build(),
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
+      PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(null, null)));
+    var stageContext = okapiStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    eventPublisher.execute(stageContext);
+
+    verifyNoInteractions(kafkaEventPublisher);
   }
 
   @Test
