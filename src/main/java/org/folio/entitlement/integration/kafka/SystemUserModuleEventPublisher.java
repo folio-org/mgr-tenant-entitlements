@@ -7,9 +7,9 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ModuleDescriptor;
-import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
+import org.folio.entitlement.utils.SystemUserEventProvider;
 import org.springframework.stereotype.Component;
 
 @Log4j2
@@ -17,9 +17,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class SystemUserModuleEventPublisher extends AbstractModuleEventPublisher<SystemUserEvent> {
 
+  private final SystemUserEventProvider systemUserEventProvider;
+
   @Override
   protected Optional<SystemUserEvent> getEventPayload(String appId, ModuleType type, ModuleDescriptor descriptor) {
-    return getSystemUserEvent(descriptor);
+    return systemUserEventProvider.getSystemUserEvent(descriptor);
   }
 
   @Override
@@ -30,22 +32,5 @@ public class SystemUserModuleEventPublisher extends AbstractModuleEventPublisher
   @Override
   protected String getResourceName() {
     return SYSTEM_USER_RESOURCE_NAME;
-  }
-
-  /**
-   * Creates a system user event for provided {@link ModuleDescriptor} object.
-   *
-   * @param moduleDescriptor - {@link ModuleDescriptor} object
-   * @return {@link Optional} of {@link SystemUserEvent}, it will be empty if descriptor does not contain system user
-   */
-  public static Optional<SystemUserEvent> getSystemUserEvent(ModuleDescriptor moduleDescriptor) {
-    if (moduleDescriptor == null || moduleDescriptor.getUser() == null) {
-      return Optional.empty();
-    }
-
-    var moduleName = SemverUtils.getName(moduleDescriptor.getId());
-    var systemUser = moduleDescriptor.getUser();
-    var payload = SystemUserEvent.of(moduleName, systemUser.getType(), systemUser.getPermissions());
-    return Optional.of(payload);
   }
 }

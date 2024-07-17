@@ -9,6 +9,7 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
+import org.folio.entitlement.utils.SystemUserEventProvider;
 import org.springframework.stereotype.Component;
 
 @Log4j2
@@ -16,9 +17,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class SystemUserEventPublisher extends AbstractEventPublisher<SystemUserEvent> {
 
+  private final SystemUserEventProvider systemUserEventProvider;
+
   @Override
   protected Optional<SystemUserEvent> getEventPayload(String appId, ModuleType type, ModuleDescriptor descriptor) {
-    return SystemUserModuleEventPublisher.getSystemUserEvent(descriptor);
+    return systemUserEventProvider.getSystemUserEvent(descriptor);
   }
 
   @Override
