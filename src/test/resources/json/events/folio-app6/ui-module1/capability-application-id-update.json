@@ -1,0 +1,15 @@
+{
+  "type": "UPDATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "ui-module1-1.0.0",
+    "moduleType": "ui-module",
+    "applicationId": "folio-app6-6.1.0"
+  },
+  "old": {
+    "moduleId": "ui-module1-1.0.0",
+    "moduleType": "ui-module",
+    "applicationId": "folio-app6-6.0.0"
+  }
+}

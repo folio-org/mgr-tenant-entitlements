@@ -132,8 +132,10 @@ public class UpgradeTestValues {
 
   public static List<ResourceEvent<CapabilityEventPayload>> capabilityEventsAfterUpgrade() {
     return List.of(
+      readCapabilityEvent("json/events/folio-app6/folio-module1/capability-application-id-update.json"),
       readCapabilityEvent("json/events/folio-app6/folio-module2/capability-update.json"),
       readCapabilityEvent("json/events/folio-app6/folio-module4/capability.json"),
+      readCapabilityEvent("json/events/folio-app6/ui-module1/capability-application-id-update.json"),
       readCapabilityEvent("json/events/folio-app6/ui-module2/capability-update.json"),
       readCapabilityEvent("json/events/folio-app6/ui-module4/capability.json"),
       readCapabilityEvent("json/events/folio-app6/folio-module3/capability-deprecated.json"),

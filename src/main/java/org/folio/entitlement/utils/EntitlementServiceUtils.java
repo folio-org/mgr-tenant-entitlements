@@ -110,10 +110,30 @@ public class EntitlementServiceUtils {
     return toStream(modules).collect(toLinkedHashMap(Module::getName));
   }
 
+  /**
+   * Checks if upgrade logic must be applied.
+   *
+   * @param moduleDesc - new {@link ModuleDescriptor} value
+   * @param installedModuleDesc - installed {@link ModuleDescriptor} value
+   * @return true if module must be upgraded, false otherwise
+   */
   public static boolean isModuleVersionChanged(ModuleDescriptor moduleDesc, ModuleDescriptor installedModuleDesc) {
     return moduleDesc != null
       ? installedModuleDesc == null || !Objects.equals(moduleDesc.getId(), installedModuleDesc.getId())
       : installedModuleDesc != null;
+  }
+
+  /**
+   * Checks if provided module for upgrade has the same version as installed (excludes deprecated modules).
+   *
+   * @param moduleDesc - new {@link ModuleDescriptor} value
+   * @param installedModuleDesc - installed {@link ModuleDescriptor} value
+   * @return true if module must be upgraded, false otherwise
+   */
+  public static boolean isSameModule(ModuleDescriptor moduleDesc, ModuleDescriptor installedModuleDesc) {
+    return moduleDesc != null
+      && installedModuleDesc != null
+      && Objects.equals(moduleDesc.getId(), installedModuleDesc.getId());
   }
 
   private static List<Parameter> getErrors(Throwable throwable) {

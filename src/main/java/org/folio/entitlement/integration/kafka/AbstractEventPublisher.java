@@ -5,9 +5,11 @@ import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isSameModule;
 
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
@@ -71,6 +73,21 @@ public abstract class AbstractEventPublisher<T> extends DatabaseLoggingStage<Oka
     return false;
   }
 
+  /**
+   * Provides a capability send event if module is not changed during upgrade process.
+   *
+   * @param applicationId - application identifier as {@link String}
+   * @param entitledApplicationId - entitled application identifier as {@link String}
+   * @param type - module type as {@link ModuleType} enum value
+   * @param descriptor - new module descriptor as {@link ModuleDescriptor}
+   * @param installedModuleDescriptor - installed module descriptor as {@link ModuleDescriptor}
+   * @return {@link Optional} of {@link T} event payload, empty if event payload not provided
+   */
+  protected Optional<Pair<T, T>> getEventPayloadForNotChangedModule(String applicationId, String entitledApplicationId,
+    ModuleType type, ModuleDescriptor descriptor, ModuleDescriptor installedModuleDescriptor) {
+    return Optional.empty();
+  }
+
   private Stream<ResourceEvent<T>> getModuleEventStream(OkapiStageContext ctx, ModuleType moduleType) {
     var moduleEvents = getEventsStream(ctx, moduleType);
     var deprecatedEvents = getDeprecatedEventsStream(ctx, moduleType);
@@ -93,15 +110,23 @@ public abstract class AbstractEventPublisher<T> extends DatabaseLoggingStage<Oka
   }
 
   private Optional<ResourceEvent<T>> getEvent(ModuleDescriptorHolder mdh, ModuleType type, OkapiStageContext ctx) {
-    var moduleDescriptor = mdh.moduleDescriptor();
-    var installedModuleDescriptor = mdh.installedModuleDescriptor();
-    if (!isModuleVersionChanged(moduleDescriptor, installedModuleDescriptor)) {
+    var descriptor = mdh.moduleDescriptor();
+    var installedDescriptor = mdh.installedModuleDescriptor();
+    var appId = ctx.getApplicationId();
+    var entitledAppId = ctx.getEntitledApplicationId();
+    var tenantName = ctx.getTenantName();
+
+    if (!isModuleVersionChanged(descriptor, installedDescriptor)) {
+      if (isSameModule(descriptor, installedDescriptor)) {
+        return getEventPayloadForNotChangedModule(appId, entitledAppId, type, descriptor, installedDescriptor)
+          .flatMap(pair -> createEvent(tenantName, pair.getLeft(), pair.getRight()));
+      }
+
       return Optional.empty();
     }
 
-    var tenantName = ctx.getTenantName();
-    var newEventPayload = getEventPayload(ctx.getApplicationId(), type, moduleDescriptor);
-    var oldEventPayload = getEventPayload(ctx.getEntitledApplicationId(), type, mdh.installedModuleDescriptor());
+    var newEventPayload = getEventPayload(appId, type, descriptor);
+    var oldEventPayload = getEventPayload(entitledAppId, type, mdh.installedModuleDescriptor());
     return createEvent(tenantName, newEventPayload.orElse(null), oldEventPayload.orElse(null));
   }
 

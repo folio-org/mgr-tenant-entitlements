@@ -138,10 +138,13 @@ class CapabilitiesEventPublisherTest {
 
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var stageContext = okapiStageContext(FLOW_ID, flowParameters, contextParameters);
+    doNothing().when(kafkaEventPublisher).send(eq(TOPIC_NAME), messageKeyCaptor.capture(), eventCaptor.capture());
 
     eventPublisher.execute(stageContext);
 
-    verifyNoInteractions(kafkaEventPublisher);
+    var expectedEvents = List.of(readCapabilityEvent("json/events/capabilities/unchanged-module-event.json"));
+    assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
   }
 
   @Test
