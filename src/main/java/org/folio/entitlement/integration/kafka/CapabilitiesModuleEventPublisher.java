@@ -1,5 +1,6 @@
 package org.folio.entitlement.integration.kafka;
 
+import static java.util.Collections.emptyList;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.flatMapping;
 import static java.util.stream.Collectors.groupingBy;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.Pair;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.Permission;
@@ -58,6 +60,38 @@ public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublish
     return CAPABILITY_RESOURCE_NAME;
   }
 
+  @Override
+  protected Optional<Pair<CapabilityEventPayload, CapabilityEventPayload>> getEventPayloadForNotChangedModule(
+    String appId, String entitledAppId, ModuleType type, ModuleDescriptor desc, ModuleDescriptor installedDesc) {
+    return getEventPayloadForUnchangedModule(appId, entitledAppId, type, desc, installedDesc);
+  }
+
+  /**
+   * Provides a capability send event if module is not changed during upgrade process.
+   *
+   * @param applicationId - application identifier as {@link String}
+   * @param entitledApplicationId - entitled application identifier as {@link String}
+   * @param type - module type as {@link ModuleType} enum value
+   * @param descriptor - new module descriptor as {@link ModuleDescriptor}
+   * @param installedDescriptor - installed module descriptor as {@link ModuleDescriptor}
+   * @return {@link Optional} of {@link Pair} with old and new payloads, empty if event payload not provided
+   */
+  public static Optional<Pair<CapabilityEventPayload, CapabilityEventPayload>> getEventPayloadForUnchangedModule(
+    String applicationId, String entitledApplicationId, ModuleType type, ModuleDescriptor descriptor,
+    ModuleDescriptor installedDescriptor) {
+    var oldValue = CapabilityEventPayload.of(installedDescriptor.getId(), type, entitledApplicationId, emptyList());
+    var newValue = CapabilityEventPayload.of(descriptor.getId(), type, applicationId, emptyList());
+    return Optional.of(Pair.of(newValue, oldValue));
+  }
+
+  /**
+   * Creates {@link Optional} of {@link CapabilityEventPayload} from given parameters.
+   *
+   * @param applicationId - application identifier
+   * @param moduleType - module type
+   * @param descriptor - {@link ModuleDescriptor} object, nullable.
+   * @return {@link Optional} of {@link CapabilityEventPayload}
+   */
   public static Optional<CapabilityEventPayload> getCapabilityEventPayload(String applicationId,
     ModuleType moduleType, ModuleDescriptor descriptor) {
     if (descriptor == null) {

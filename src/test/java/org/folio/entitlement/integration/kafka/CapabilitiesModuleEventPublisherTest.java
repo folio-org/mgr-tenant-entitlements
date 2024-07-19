@@ -108,12 +108,34 @@ class CapabilitiesModuleEventPublisherTest {
       PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
       PARAM_MODULE_DESCRIPTOR, readModuleDescriptor("json/events/capabilities/be-module-desc.json"),
       PARAM_INSTALLED_MODULE_DESCRIPTOR, readModuleDescriptor("json/events/capabilities/be-module-desc.json"),
+      PARAM_MODULE_TYPE, MODULE,
+      PARAM_APPLICATION_ID, APPLICATION_ID,
+      PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
+      PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    var topicName = capabilitiesTenantTopic();
+    doNothing().when(kafkaEventPublisher).send(eq(topicName), messageKeyCaptor.capture(), eventCaptor.capture());
+
+    moduleEventPublisher.execute(stageContext);
+
+    var expectedEvents = List.of(readCapabilityEvent("json/events/capabilities/unchanged-module-event.json"));
+    assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+  }
+
+  @Test
+  void execute_positive_installedAndNewModuleDescriptorsAreNull() {
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
+      PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
     moduleEventPublisher.execute(stageContext);
+
     verifyNoInteractions(kafkaEventPublisher);
   }
 

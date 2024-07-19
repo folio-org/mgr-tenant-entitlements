@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.folio.stage;
 
 import static java.util.Collections.singletonList;
-import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -25,7 +25,7 @@ public class FolioModuleUpdater extends ModuleDatabaseLoggingStage {
     var tenantId = context.getTenantId();
     var entitledApplicationId = context.getEntitledApplicationId();
 
-    if (!isModuleVersionChanged(moduleDescriptor, installedModuleDescriptor)) {
+    if (!isModuleUpdated(moduleDescriptor, installedModuleDescriptor)) {
       var installedModuleDescriptorId = installedModuleDescriptor.getId();
       moduleService.deleteModuleEntitlement(installedModuleDescriptorId, tenantId, entitledApplicationId);
       moduleService.saveAll(tenantId, context.getApplicationId(), singletonList(moduleDescriptor.getId()));

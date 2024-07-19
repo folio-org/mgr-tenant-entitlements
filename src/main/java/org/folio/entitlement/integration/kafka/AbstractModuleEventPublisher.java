@@ -1,9 +1,11 @@
 package org.folio.entitlement.integration.kafka;
 
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
@@ -18,20 +20,28 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
 
   @Override
   public void execute(ModuleStageContext ctx) {
-    var moduleDescriptor = ctx.getModuleDescriptor();
-    var installedModuleDescriptor = ctx.getInstalledModuleDescriptor();
-    if (!isModuleVersionChanged(moduleDescriptor, installedModuleDescriptor)) {
+    var tenant = ctx.getTenantName();
+    var type = ctx.getModuleType();
+    var moduleDesc = ctx.getModuleDescriptor();
+    var installedModuleDesc = ctx.getInstalledModuleDescriptor();
+    var applicationId = ctx.getApplicationId();
+    var entitledApplicationId = ctx.getEntitledApplicationId();
+    var messageKey = ctx.getTenantId().toString();
+
+    if (!isModuleUpdated(moduleDesc, installedModuleDesc)) {
+      if (isModuleVersionChanged(moduleDesc, installedModuleDesc)) {
+        getEventPayloadForNotChangedModule(applicationId, entitledApplicationId, type, moduleDesc, installedModuleDesc)
+          .flatMap(payload -> createEvent(tenant, payload.getLeft(), payload.getRight()))
+          .ifPresent(evt -> kafkaEventPublisher.send(getTopicName(tenant), messageKey, evt));
+      }
+
       return;
     }
 
-    var tenant = ctx.getTenantName();
-    var moduleType = ctx.getModuleType();
-    var newPayload = getEventPayload(ctx.getApplicationId(), moduleType, moduleDescriptor).orElse(null);
-    var entitledApplicationId = ctx.getEntitledApplicationId();
-    var oldPayload = getEventPayload(entitledApplicationId, moduleType, installedModuleDescriptor).orElse(null);
+    var newPayload = getEventPayload(applicationId, type, moduleDesc).orElse(null);
+    var oldPayload = getEventPayload(entitledApplicationId, type, installedModuleDesc).orElse(null);
 
     var topicName = getTopicName(tenant);
-    var messageKey = ctx.getTenantId().toString();
     createEvent(tenant, newPayload, oldPayload).ifPresent(evt -> kafkaEventPublisher.send(topicName, messageKey, evt));
   }
 
@@ -63,6 +73,21 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
    * @return resource name
    */
   protected abstract String getResourceName();
+
+  /**
+   * Provides a capability send event if module is not changed during upgrade process.
+   *
+   * @param applicationId - application identifier as {@link String}
+   * @param entitledApplicationId - entitled application identifier as {@link String}
+   * @param type - module type as {@link ModuleType} enum value
+   * @param descriptor - new module descriptor as {@link ModuleDescriptor}
+   * @param installedModuleDescriptor - installed module descriptor as {@link ModuleDescriptor}
+   * @return {@link Optional} of {@link T} event payload, empty if event payload not provided
+   */
+  protected Optional<Pair<T, T>> getEventPayloadForNotChangedModule(String applicationId, String entitledApplicationId,
+    ModuleType type, ModuleDescriptor descriptor, ModuleDescriptor installedModuleDescriptor) {
+    return Optional.empty();
+  }
 
   /**
    * Creates {@link ResourceEvent} object for given tenant nane, new and old event bodies.

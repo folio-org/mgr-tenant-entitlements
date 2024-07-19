@@ -51,6 +51,19 @@ class EntitlementServiceUtilsTest {
     "mod-foo-1.0.0, , true",
     " , , false"
   })
+  void isModuleUpdated_parameterized(String id, String installedId, boolean expected) {
+    var result = EntitlementServiceUtils.isModuleUpdated(moduleDescriptor(id), moduleDescriptor(installedId));
+    assertThat(result).isEqualTo(expected);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "mod-foo-1.0.0, mod-foo-1.1.0, false",
+    "mod-foo-1.0.0, mod-foo-1.0.0, true",
+    " , mod-foo-1.0.0, false",
+    "mod-foo-1.0.0, , false",
+    " , , false"
+  })
   void isModuleVersionChanged_parameterized(String id, String installedId, boolean expected) {
     var result = EntitlementServiceUtils.isModuleVersionChanged(moduleDescriptor(id), moduleDescriptor(installedId));
     assertThat(result).isEqualTo(expected);

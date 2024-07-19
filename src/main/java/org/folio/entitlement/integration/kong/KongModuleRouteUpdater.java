@@ -1,6 +1,6 @@
 package org.folio.entitlement.integration.kong;
 
-import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
     var tenantName = context.getTenantName();
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
-    if (!isModuleVersionChanged(moduleDescriptor, installedModuleDescriptor)) {
+    if (!isModuleUpdated(moduleDescriptor, installedModuleDescriptor)) {
       return;
     }
 
