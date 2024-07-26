@@ -50,12 +50,12 @@ class SystemUserEventProviderTest {
 
   @Test
   @Deprecated
-  void getSystemUserEvent_positive_extensionsSection() throws JsonProcessingException {
+  void getSystemUserEvent_positive_metadataSection() throws JsonProcessingException {
     var moduleDescriptorJson = """
       {
         "id": "test-module-0.0.1",
         "name": "Test Module",
-        "extensions": {
+        "metadata": {
           "user": { "type": "system", "permissions": [ "test.permission" ] }
         }
       }""";
@@ -69,12 +69,12 @@ class SystemUserEventProviderTest {
 
   @Test
   @Deprecated
-  void getSystemUserEvent_positive_unknownExtensionKey() throws JsonProcessingException {
+  void getSystemUserEvent_positive_unknownMetadataKey() throws JsonProcessingException {
     var moduleDescriptorJson = """
       {
         "id": "test-module-0.0.1",
         "name": "Test Module",
-        "extensions": { "unknown": { "key": "value" } }
+        "metadata": { "unknown": { "key": "value" } }
       }""";
 
     var moduleDescriptor = OBJECT_MAPPER.readValue(moduleDescriptorJson, ModuleDescriptor.class);
