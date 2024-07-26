@@ -211,7 +211,10 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
+      authResource("/okapi-module/entities", "GET"),
+      authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module/timer-api", "POST")
+    );
 
     // entitle dependent application
     var request = entitlementRequest(OKAPI_APP_5_ID);
@@ -222,6 +225,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module/timer-api", "POST"),
       authResource("/okapi-module5/entities", "GET"));
 
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
@@ -257,6 +261,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module/timer-api", "POST"),
       authResource("/okapi-module5/entities", "GET"));
 
     assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID));
@@ -292,7 +297,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertEntitlementEvents(entitlementEvent(ENTITLE, "okapi-module-1.0.0"));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
+      authResource("/okapi-module/entities", "GET"),
+      authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module/timer-api", "POST"));
 
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
     assertScheduledJobEvents(readScheduledJobEvent("json/events/okapi-it/okapi-module1/scheduled-job-event.json"));
@@ -398,7 +405,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
+      authResource("/okapi-module/entities", "GET"),
+      authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module/timer-api", "POST"));
     assertEntitlementEvents(entitlementEvent(ENTITLE, OKAPI_MODULE_ID));
 
     // entitle application
@@ -408,6 +417,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module/timer-api", "POST"),
       authResource("/okapi-module5/entities", "GET"));
 
     // revoke entitlement for test application
@@ -416,7 +426,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_5_ID), emptyEntitlements());
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
+      authResource("/okapi-module/entities", "GET"),
+      authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module/timer-api", "POST"));
 
     // entitle test application again
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
@@ -429,6 +441,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module/timer-api", "POST"),
       authResource("/okapi-module5/entities", "GET"));
   }
 
@@ -629,7 +642,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
     assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
-      authResource("/okapi-module/entities", "GET"), authResource("/okapi-module/entities/{id}", "PUT"));
+      authResource("/okapi-module/entities", "GET"),
+      authResource("/okapi-module/entities/{id}", "PUT"),
+      authResource("/okapi-module/timer-api", "POST"));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
 
