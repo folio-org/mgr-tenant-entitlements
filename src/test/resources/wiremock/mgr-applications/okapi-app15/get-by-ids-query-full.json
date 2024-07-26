@@ -74,7 +74,7 @@
                   "handlers": [
                     {
                       "methods": [ "POST" ],
-                      "pathPattern": "/okapi_module/timer-api"
+                      "pathPattern": "/okapi-module/timer-api"
                     }
                   ]
                 }
