@@ -71,9 +71,13 @@ public class UpgradeTestValues {
     return List.of(
       authResource("/folio-module1/entities", "GET", "POST"),
       authResource("/folio-module1/entities/{id}", "GET"),
+      authResource("/folio-module1/v1/scheduled-timer", "POST"),
       authResource("/folio-module2/entities", "GET", "POST"),
       authResource("/folio-module2/entities/{id}", "GET"),
-      authResource("/folio-module3/entities/{id}", "GET")
+      authResource("/folio-module2/v1/scheduled-timer1", "POST"),
+      authResource("/folio-module2/v1/scheduled-timer2", "POST"),
+      authResource("/folio-module3/entities/{id}", "GET"),
+      authResource("/folio-module3/scheduled-timer", "POST")
     );
   }
 
@@ -81,10 +85,14 @@ public class UpgradeTestValues {
     return List.of(
       authResource("/folio-module1/entities", "GET", "POST"),
       authResource("/folio-module1/entities/{id}", "GET"),
+      authResource("/folio-module1/v1/scheduled-timer", "POST"),
       authResource("/folio-module2/entities", "GET", "PUT"),
       authResource("/folio-module2/entities/{id}", "GET"),
+      authResource("/folio-module2/v1/scheduled-timer2", "POST"),
       authResource("/folio-module2/v2/entities", "POST"),
-      authResource("/folio-module4/entities/{id}", "GET")
+      authResource("/folio-module2/v2/scheduled-timer1", "POST"),
+      authResource("/folio-module4/entities/{id}", "GET"),
+      authResource("/folio-module4/scheduled-timer", "POST")
     );
   }
 
