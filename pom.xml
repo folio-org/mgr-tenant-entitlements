@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.1</version>
+    <version>3.3.2</version>
     <relativePath />
   </parent>
 
@@ -28,9 +28,9 @@
     <lombok.version>1.18.34</lombok.version>
     <cqlparser.version>1.13</cqlparser.version>
     <mapstruct.version>1.5.5.Final</mapstruct.version>
-    <hypersistence-utils-hibernate-63.version>3.8.1</hypersistence-utils-hibernate-63.version>
+    <hypersistence-utils-hibernate-63.version>3.8.2</hypersistence-utils-hibernate-63.version>
     <swagger-annotations.version>2.2.22</swagger-annotations.version>
-    <apache-commons-lang3.version>3.14.0</apache-commons-lang3.version>
+    <apache-commons-lang3.version>3.15.0</apache-commons-lang3.version>
     <apache-commons-collections4.version>4.4</apache-commons-collections4.version>
     <cql2pgjson.version>35.2.2</cql2pgjson.version>
     <spring-cloud-bom.version>2023.0.3</spring-cloud-bom.version>
@@ -44,7 +44,7 @@
     </mgr-tenant-entitlements.yaml-file>
 
     <!-- Test dependencies versions -->
-    <testcontainer.version>1.19.8</testcontainer.version>
+    <testcontainer.version>1.20.0</testcontainer.version>
     <awaitility.version>4.2.1</awaitility.version>
 
     <!-- Plugins versions -->
