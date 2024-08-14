@@ -4,6 +4,17 @@
 
 ---
 
+## v1.2.4 2024-08-14
+
+[MGRENTITLE-63](https://issues.folio.org/browse/MGRENTITLE-63) Use metadata field instead of removed extensions (#119)
+[APPPOCTOOL-25](https://issues.folio.org/browse/APPPOCTOOL-25) Adjust test after resource creation filter updated (#118)
+[MODROLESKC-200](https://issues.folio.org/browse/MODROLESKC-200) Implement application version upgrades for capability events (#116)
+[MGRENTITLE-38](https://issues.folio.org/browse/MGRENTITLE-38) Improve documentation for entitlement query parameters (#114)
+[MGRAPPS-23](https://issues.folio.org/browse/MGRAPPS-23) Use extensions field to generate system user events (#115)
+[MGRENTITLE-62](https://issues.folio.org/browse/MGRENTITLE-62) Fix ApplicationFlowValidator to forbid installing lower versions (#112)
+
+---
+
 ## v1.2.3 2024-07-10
 
 * [KONG-10](https://issues.folio.org/browse/KONG-10): upgrade kong version (#108)
