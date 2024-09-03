@@ -1,6 +1,6 @@
 package org.folio.entitlement.integration.am;
 
-import static org.folio.common.utils.FeignClientTlsUtils.buildTargetFeignClient;
+import static org.folio.common.utils.tls.FeignClientTlsUtils.buildTargetFeignClient;
 
 import feign.Contract;
 import feign.codec.Decoder;
