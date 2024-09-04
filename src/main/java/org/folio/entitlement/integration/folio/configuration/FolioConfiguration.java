@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.folio.configuration;
 
 import static java.util.Arrays.asList;
-import static org.folio.common.utils.FeignClientTlsUtils.getHttpClientBuilder;
+import static org.folio.common.utils.tls.FeignClientTlsUtils.getHttpClientBuilder;
 
 import java.net.http.HttpClient;
 import lombok.RequiredArgsConstructor;

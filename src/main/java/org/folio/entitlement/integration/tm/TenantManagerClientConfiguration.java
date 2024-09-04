@@ -1,6 +1,6 @@
 package org.folio.entitlement.integration.tm;
 
-import static org.folio.common.utils.FeignClientTlsUtils.getOkHttpClient;
+import static org.folio.common.utils.tls.FeignClientTlsUtils.getOkHttpClient;
 
 import feign.okhttp.OkHttpClient;
 import org.springframework.context.annotation.Bean;
