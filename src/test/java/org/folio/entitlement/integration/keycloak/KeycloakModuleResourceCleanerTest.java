@@ -81,6 +81,6 @@ class KeycloakModuleResourceCleanerTest {
   }
 
   private static ModuleDescriptor moduleDescriptor() {
-    return new ModuleDescriptor().id("mod-foo-1.0.0").name("Foo module");
+    return new ModuleDescriptor().id("mod-foo-1.0.0").description("Foo module");
   }
 }

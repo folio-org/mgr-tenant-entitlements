@@ -151,7 +151,7 @@ class ModuleSequenceProviderTest {
   private static ModuleDescriptor fooModuleDesc() {
     return new ModuleDescriptor()
       .id(MOD_FOO_ID)
-      .name("Foo module")
+      .description("Foo module")
       .provides(List.of(new InterfaceDescriptor().id("foo-api").version("1.0").handlers(List.of(
         new RoutingEntry().methods(List.of("GET")).pathPattern("/foo-api/items")))));
   }
@@ -159,21 +159,21 @@ class ModuleSequenceProviderTest {
   private static ModuleDescriptor uiFooModuleDesc() {
     return new ModuleDescriptor()
       .id(UI_FOO_ID)
-      .name("UI foo module")
+      .description("UI foo module")
       .requires(List.of(new InterfaceReference().id("foo-api").version("1.0")));
   }
 
   private static ModuleDescriptor uiBarModuleDesc() {
     return new ModuleDescriptor()
       .id(UI_BAR_ID)
-      .name("UI bar module")
+      .description("UI bar module")
       .requires(List.of(new InterfaceReference().id("foo-api").version("2.0")));
   }
 
   private static ModuleDescriptor fooModuleDescV2() {
     return new ModuleDescriptor()
       .id(MOD_FOO_V2_ID)
-      .name("Foo module name")
+      .description("Foo module name")
       .provides(List.of(new InterfaceDescriptor().id("foo-api").version("2.0").handlers(List.of(
         new RoutingEntry().methods(List.of("GET")).pathPattern("/foo-api/v2/items")))));
   }
@@ -181,7 +181,7 @@ class ModuleSequenceProviderTest {
   private static ModuleDescriptor barModuleDesc() {
     return new ModuleDescriptor()
       .id(MOD_BAR_ID)
-      .name("Bar module")
+      .description("Bar module")
       .requires(List.of(new InterfaceReference().id("foo-api").version("1.0")))
       .provides(List.of(new InterfaceDescriptor().id("bar-api").version("1.0").handlers(List.of(
         new RoutingEntry().methods(List.of("GET")).pathPattern("/bar-api/items")))));

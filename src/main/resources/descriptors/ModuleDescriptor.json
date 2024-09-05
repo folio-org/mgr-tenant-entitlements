@@ -43,8 +43,7 @@
           "type": "internal",
           "methods": [ "GET" ],
           "pathPattern": "/entitlements/{tenantName}/applications",
-          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.applications.collection.get" ],
-          "permissionsRequiredTenant": [ ]
+          "permissionsRequired": [ ]
         },
         {
           "type": "internal",

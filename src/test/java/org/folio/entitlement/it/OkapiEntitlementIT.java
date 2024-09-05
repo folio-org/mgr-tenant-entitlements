@@ -47,8 +47,8 @@ import static org.folio.entitlement.support.UpgradeTestValues.FOLIO_APP6_V1_ID;
 import static org.folio.entitlement.support.UpgradeTestValues.FOLIO_APP6_V2_ID;
 import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsBeforeUpgrade;
-import static org.folio.entitlement.support.UpgradeTestValues.kcResourceBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.kcResourcesAfterUpgrade;
+import static org.folio.entitlement.support.UpgradeTestValues.kcResourcesBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.kongRoutesAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.kongRoutesBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsAfterUpgrade;
@@ -122,8 +122,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @TestPropertySource(properties = {
   "application.okapi.enabled=true",
   "application.kong.enabled=true",
-  "application.keycloak.enabled=true",
-  "application.security.enabled=false",
+  "application.keycloak.enabled=true"
 })
 @Import(KeycloakTestClientConfiguration.class)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "/sql/truncate-tables.sql")
@@ -771,7 +770,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .containsExactlyInAnyOrderElementsOf(kongRoutesBeforeUpgrade());
 
     assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
-    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactlyElementsOf(kcResourceBeforeUpgrade());
+    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactlyElementsOf(kcResourcesBeforeUpgrade());
 
     assertScheduledJobEvents(scheduledTimerEventsBeforeUpgrade());
     assertCapabilityEvents(capabilityEventsBeforeUpgrade());

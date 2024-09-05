@@ -67,7 +67,7 @@ public class UpgradeTestValues {
     );
   }
 
-  public static List<AuthorizationResource> kcResourceBeforeUpgrade() {
+  public static List<AuthorizationResource> kcResourcesBeforeUpgrade() {
     return List.of(
       authResource("/folio-module1/entities", "GET", "POST"),
       authResource("/folio-module1/entities/{id}", "GET"),

@@ -38,9 +38,9 @@ public class SystemUserEventProvider {
       return Optional.empty();
     }
 
-    var extensions = moduleDescriptor.getMetadata();
-    if (extensions != null && MapUtils.isNotEmpty(extensions.properties())) {
-      var extensionsUserDescriptor = extensions.properties().get(EXTENSIONS_USER_FIELD);
+    var metadata = moduleDescriptor.getMetadata();
+    if (metadata != null && MapUtils.isNotEmpty(metadata.properties())) {
+      var extensionsUserDescriptor = metadata.properties().get(EXTENSIONS_USER_FIELD);
       return Optional.ofNullable(objectMapper.convertValue(extensionsUserDescriptor, UserDescriptor.class));
     }
 
