@@ -48,7 +48,6 @@ import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEven
 import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsBeforeUpgrade;
-import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
@@ -126,7 +125,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     var expectedModuleEntitlements = entitlements(entitlement(TENANT_ID, OKAPI_APP_ID));
     mockMvc.perform(get("/entitlements/modules/{moduleId}", OKAPI_MODULE_ID)
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .queryParam("includeModules", "true"))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -211,7 +210,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     await().pollInterval(ofMillis(100)).atMost(FIVE_SECONDS).untilAsserted(() ->
       mockMvc.perform(get("/entitlement-flows/{flowId}", resultFlowId)
           .contentType(APPLICATION_JSON)
-          .header(TOKEN, OKAPI_AUTH_TOKEN))
+          .header(TOKEN, getSystemAccessToken()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status", is("finished"))));
 
@@ -279,7 +278,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     mockMvc.perform(delete("/entitlements")
         .queryParam("purge", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest())))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -349,7 +348,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .queryParam("tenantParameters", TENANT_PARAMETERS)
         .queryParam("ignoreErrors", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -371,7 +370,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .queryParam("purge", String.valueOf(PURGE))
         .queryParam("ignoreErrors", String.valueOf(IGNORE_ERRORS))
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -389,7 +388,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .queryParam("tenantParameters", TENANT_PARAMETERS)
         .queryParam("ignoreErrors", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -407,7 +406,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .queryParam("tenantParameters", TENANT_PARAMETERS)
         .queryParam("ignoreErrors", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(new EntitlementRequestBody().tenantId(TENANT_ID))))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -435,7 +434,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .queryParam("tenantParameters", TENANT_PARAMETERS)
         .queryParam("purge", "false")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -465,7 +464,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .queryParam("ignoreErrors", "false")
         .queryParam("purgeOnRollback", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest(OKAPI_APP_ID))))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -493,7 +492,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     mockMvc.perform(post("/entitlements")
         .queryParam("ignoreErrors", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest(OKAPI_APP_ID))))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -521,7 +520,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     mockMvc.perform(delete("/entitlements")
         .queryParam("purge", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest(OKAPI_APP_ID))))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -542,7 +541,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     mockMvc.perform(delete("/entitlements")
         .queryParam("purge", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -557,7 +556,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     mockMvc.perform(delete("/entitlements")
         .queryParam("purge", TRUE.toString())
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -575,7 +574,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .queryParam("tenantParameters", TENANT_PARAMETERS)
         .queryParam("ignoreErrors", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isUnauthorized());
   }
@@ -589,7 +588,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .queryParam("tenantParameters", TENANT_PARAMETERS)
         .queryParam("ignoreErrors", String.valueOf(IGNORE_ERRORS))
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isForbidden());
   }
@@ -606,7 +605,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     mockMvc.perform(post("/entitlements")
         .queryParam("ignoreErrors", "false")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest(TENANT_ID, OKAPI_APP_ID, OKAPI_APP_5_ID))))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
@@ -623,7 +622,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
 
     var mvcResult = mockMvc.perform(get("/application-flows")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN))
+        .header(TOKEN, getSystemAccessToken()))
       .andExpect(status().isOk())
       .andReturn();
 
@@ -668,7 +667,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
 
     mockMvc.perform(get("/entitlements")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .queryParam("query", "applicationId == " + FOLIO_APP6_V1_ID))
       .andExpect(status().isOk())
       .andExpect(content().json(asJsonString(emptyEntitlements())));
@@ -680,7 +679,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
     mockMvc.perform(post("/entitlements")
         .queryParam("ignoreErrors", "true")
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest(OKAPI_APP_ID))))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))

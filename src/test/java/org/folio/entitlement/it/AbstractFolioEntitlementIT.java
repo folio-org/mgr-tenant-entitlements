@@ -86,8 +86,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
 
-@EnableKeycloakTlsMode
 @SqlMergeMode(MERGE)
+@EnableKeycloakTlsMode
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 @TestPropertySource(properties = {
   "application.kong.enabled=true",
@@ -141,6 +141,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
     "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app1/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json",
@@ -168,6 +169,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
     "/wiremock/mgr-applications/folio-app4/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app4/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json"
@@ -678,7 +680,13 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.applicationDescriptors[0].id", is(applicationId)));
   }
 
-  protected abstract String getUserAccessToken();
+  protected String getUserAccessToken() {
+    return "";
+  }
+
+  protected String getKeycloakSystemAccessToken() {
+    return "";
+  }
 
   private static void checkApplicationContextBeans(ApplicationContext appContext) {
     checkExistingBeans(appContext, FOLIO_MODULE_INSTALLER_BEAN_TYPES);

@@ -1,7 +1,6 @@
 package org.folio.entitlement.it;
 
 import org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient;
-import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -10,8 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
 @IntegrationTest
-@EnableKeycloakSecurity
 @TestPropertySource(properties = {
+  "application.security.enabled=true",
   "application.keycloak.import.enabled=true",
   "application.kong.module-self-url=http://mgr-tenant-entitlements:8000"
 })
@@ -21,7 +20,8 @@ class FolioEntitlementWithSecurityIT extends FolioEntitlementIT {
 
   @BeforeAll
   static void beforeAll(@Autowired Keycloak keycloak) {
-    var accessTokenString = keycloak.tokenManager().getAccessTokenString();
+    var accessTokenResponse = keycloak.tokenManager().grantToken();
+    var accessTokenString = accessTokenResponse.getToken();
     System.setProperty(SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY, accessTokenString);
   }
 

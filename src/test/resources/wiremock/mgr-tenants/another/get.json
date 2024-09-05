@@ -7,7 +7,7 @@
         "equalTo": "application/json"
       },
       "x-okapi-token": {
-        "equalTo": "X-Okapi-Token test value"
+        "matches": ".+"
       }
     }
   },

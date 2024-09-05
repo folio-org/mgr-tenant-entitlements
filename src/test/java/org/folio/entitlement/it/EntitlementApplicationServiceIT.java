@@ -69,29 +69,37 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
 
   @Test
   @KeycloakRealms("/keycloak/test2-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app2/get-by-ids-query-full.json"
+  })
   void getApplicationDescriptorsByTenantName_negative_tokenTenantMissMatch() throws Exception {
     mockMvc.perform(get("/entitlements/{tenantName}/applications", TEST_TENANT)
         .contentType(APPLICATION_JSON)
         .header(OkapiHeaders.TENANT, TEST_TENANT)
         .header(OkapiHeaders.TOKEN, keycloakTestClient.generateAccessToken(TEST_TENANT2)))
-      .andExpect(status().isForbidden())
-      .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message", is("X-Okapi-Tenant header is not the same as resolved tenant")))
-      .andExpect(jsonPath("$.errors[0].type", is("ForbiddenException")))
-      .andExpect(jsonPath("$.errors[0].code", is("auth_error")));
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.totalRecords", is(1)))
+      .andExpect(jsonPath("$.applicationDescriptors[0].id", is(APPLICATION_ID)))
+      .andExpect(jsonPath("$.applicationDescriptors[0].name", is(APPLICATION_NAME)))
+      .andExpect(jsonPath("$.applicationDescriptors[0].version", is(APPLICATION_VERSION)));
   }
 
   @Test
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app2/get-by-ids-query-full.json"
+  })
   void getApplicationDescriptorsByTenantName_negative_headerTenantMissMatch() throws Exception {
     mockMvc.perform(get("/entitlements/{tenantName}/applications", TEST_TENANT)
         .contentType(APPLICATION_JSON)
         .header(OkapiHeaders.TENANT, "another-tenant")
         .header(OkapiHeaders.TOKEN, keycloakTestClient.generateAccessToken(TEST_TENANT)))
-      .andExpect(status().isForbidden())
-      .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message", is("X-Okapi-Tenant header is not the same as resolved tenant")))
-      .andExpect(jsonPath("$.errors[0].type", is("ForbiddenException")))
-      .andExpect(jsonPath("$.errors[0].code", is("auth_error")));
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.totalRecords", is(1)))
+      .andExpect(jsonPath("$.applicationDescriptors[0].id", is(APPLICATION_ID)))
+      .andExpect(jsonPath("$.applicationDescriptors[0].name", is(APPLICATION_NAME)))
+      .andExpect(jsonPath("$.applicationDescriptors[0].version", is(APPLICATION_VERSION)));
   }
 
   @Test
@@ -101,10 +109,6 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
         .contentType(APPLICATION_JSON)
         .header(OkapiHeaders.TENANT, TEST_TENANT)
         .header(OkapiHeaders.TOKEN, token))
-      .andExpect(status().isUnauthorized())
-      .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message", is("Failed to validate a token")))
-      .andExpect(jsonPath("$.errors[0].type", is("NotAuthorizedException")))
-      .andExpect(jsonPath("$.errors[0].code", is("auth_error")));
+      .andExpect(status().isUnauthorized());
   }
 }

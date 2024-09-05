@@ -10,8 +10,10 @@ import org.springframework.test.context.TestPropertySource;
 
 @IntegrationTest
 @TestPropertySource(properties = {
-  "application.router.path-prefix=mgr-tenant-entitlements",
-  "application.kong.module-self-url=http://mgr-tenant-entitlements:8000/mgr-tenant-entitlements"
+  "application.security.enabled=true",
+  "application.router.path-prefix=mte",
+  "application.keycloak.import.enabled=true",
+  "application.kong.module-self-url=http://mgr-tenant-entitlements:8000/mte"
 })
 class FolioEntitlementSecuredPathPrefixIT extends AbstractFolioEntitlementIT {
 
@@ -19,8 +21,9 @@ class FolioEntitlementSecuredPathPrefixIT extends AbstractFolioEntitlementIT {
 
   @BeforeAll
   static void beforeAll(@Autowired Keycloak keycloak) {
-    var accessTokenString = keycloak.tokenManager().getAccessTokenString();
-    System.setProperty(ROUTER_PATH_PREFIX_SYSTEM_PROPERTY_KEY, "mgr-tenant-entitlements");
+    var accessTokenResponse = keycloak.tokenManager().grantToken();
+    var accessTokenString = accessTokenResponse.getToken();
+    System.setProperty(ROUTER_PATH_PREFIX_SYSTEM_PROPERTY_KEY, "mte");
     System.setProperty(SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY, accessTokenString);
   }
 

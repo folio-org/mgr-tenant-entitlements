@@ -33,6 +33,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
+import java.util.UUID;
 import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
@@ -42,9 +43,11 @@ import org.folio.entitlement.service.EntitlementService;
 import org.folio.entitlement.service.FlowStageService;
 import org.folio.security.exception.NotAuthorizedException;
 import org.folio.security.integration.keycloak.client.KeycloakAuthClient;
+import org.folio.security.integration.keycloak.service.KeycloakTokenValidator;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
+import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -63,12 +66,14 @@ class EntitlementControllerTest {
   @Autowired private MockMvc mockMvc;
   @MockBean private EntitlementService entitlementService;
   @MockBean private KeycloakAuthClient authClient;
+  @MockBean private KeycloakTokenValidator keycloakTokenValidator;
 
   @Test
   void create_positive() throws Exception {
     var requestBody = new EntitlementRequestBody().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
     var expectedEntitlements = entitlements();
     when(entitlementService.performRequest(entitlementRequest())).thenReturn(expectedEntitlements);
+    when(keycloakTokenValidator.validateAndDecodeToken(OKAPI_TOKEN)).thenReturn(accessToken());
 
     var mvcResult = mockMvc.perform(post("/entitlements")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
@@ -125,6 +130,7 @@ class EntitlementControllerTest {
     var request = new EntitlementRequestBody().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
     var expectedEntitlements = entitlements();
     when(entitlementService.performRequest(revokeRequest())).thenReturn(expectedEntitlements);
+    when(keycloakTokenValidator.validateAndDecodeToken(OKAPI_TOKEN)).thenReturn(accessToken());
 
     var mvcResult = mockMvc.perform(delete("/entitlements")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
@@ -142,6 +148,7 @@ class EntitlementControllerTest {
 
   @Test
   void delete_negative_requestWithoutBody() throws Exception {
+    when(keycloakTokenValidator.validateAndDecodeToken(OKAPI_TOKEN)).thenReturn(accessToken());
     mockMvc.perform(delete("/entitlements", TENANT_ID)
         .queryParam("tenantParameters", TENANT_PARAMETERS)
         .queryParam("purge", String.valueOf(PURGE))
@@ -157,6 +164,7 @@ class EntitlementControllerTest {
 
   @Test
   void delete_negative_unsupportedContentType() throws Exception {
+    when(keycloakTokenValidator.validateAndDecodeToken(OKAPI_TOKEN)).thenReturn(accessToken());
     mockMvc.perform(delete("/entitlements", TENANT_ID)
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
         .contentType(APPLICATION_XML))
@@ -192,6 +200,7 @@ class EntitlementControllerTest {
     var requestBody = new EntitlementRequestBody().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
     var expectedEntitlements = entitlements();
     when(entitlementService.performRequest(upgradeRequest())).thenReturn(expectedEntitlements);
+    when(keycloakTokenValidator.validateAndDecodeToken(OKAPI_TOKEN)).thenReturn(accessToken());
 
     mockMvc.perform(put("/entitlements")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
@@ -254,5 +263,12 @@ class EntitlementControllerTest {
   private static ExtendedEntitlements entitlements() {
     return new ExtendedEntitlements().totalRecords(1).flowId(FLOW_ID).addEntitlementsItem(
       new Entitlement().applicationId(APPLICATION_ID).tenantId(TENANT_ID));
+  }
+
+  private static TokenMetadataRepresentation accessToken() {
+    var tokenMetadataRepresentation = new TokenMetadataRepresentation();
+    tokenMetadataRepresentation.issuer("https://keycloak/realms/test");
+    tokenMetadataRepresentation.setSubject(UUID.randomUUID().toString());
+    return tokenMetadataRepresentation;
   }
 }

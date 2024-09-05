@@ -19,7 +19,9 @@ class FolioEntitlementPathPrefixIT extends AbstractFolioEntitlementIT {
 
   @BeforeAll
   static void beforeAll(@Autowired Keycloak keycloak) {
-    var accessTokenString = keycloak.tokenManager().getAccessTokenString();
+    var tokenManager = keycloak.tokenManager();
+    tokenManager.grantToken();
+    var accessTokenString = tokenManager.getAccessTokenString();
     System.setProperty(ROUTER_PATH_PREFIX_SYSTEM_PROPERTY_KEY, "mgr-tenant-entitlements");
     System.setProperty(SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY, accessTokenString);
   }
@@ -28,10 +30,5 @@ class FolioEntitlementPathPrefixIT extends AbstractFolioEntitlementIT {
   static void afterAll() {
     System.clearProperty(ROUTER_PATH_PREFIX_SYSTEM_PROPERTY_KEY);
     System.clearProperty(SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY);
-  }
-
-  @Override
-  protected String getUserAccessToken() {
-    return null;
   }
 }

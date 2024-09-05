@@ -1,9 +1,9 @@
 package org.folio.entitlement.support.base;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
-import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
@@ -68,7 +68,6 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
 
   public static final String ROUTER_PATH_PREFIX_SYSTEM_PROPERTY_KEY = "it.router.path-prefix";
   public static final String SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY = "it.system.access-token";
-  public static final String USER_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY = "it.user.access-token";
   public static final String FOLIO_MODULE1_ID = "folio-module1-1.0.0";
   public static final String FOLIO_MODULE2_ID = "folio-module2-2.0.0";
   public static final String FOLIO_MODULE2_V2_ID = "folio-module2-2.1.0";
@@ -220,6 +219,6 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
 
   public static String getSystemAccessToken() {
     var accessToken = System.getProperty(SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY);
-    return accessToken != null ? accessToken : OKAPI_AUTH_TOKEN;
+    return accessToken != null ? accessToken : OKAPI_TOKEN;
   }
 }
