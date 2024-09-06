@@ -49,7 +49,6 @@ class SystemUserEventProviderTest {
   }
 
   @Test
-  @Deprecated
   void getSystemUserEvent_positive_metadataSection() throws JsonProcessingException {
     var moduleDescriptorJson = """
       {
@@ -68,7 +67,14 @@ class SystemUserEventProviderTest {
   }
 
   @Test
-  @Deprecated
+  void getSystemUserEvent_positive_metadataIsNull() {
+    var moduleDescriptor = new ModuleDescriptor().id("test-module-0.0.1").metadata(null);
+
+    var result = systemUserEventProvider.getSystemUserEvent(moduleDescriptor);
+    assertThat(result).isEmpty();
+  }
+
+  @Test
   void getSystemUserEvent_positive_unknownMetadataKey() throws JsonProcessingException {
     var moduleDescriptorJson = """
       {
