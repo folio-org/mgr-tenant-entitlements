@@ -49,7 +49,13 @@ public class TestConstants {
   public static final String APPLICATION_ID = APPLICATION_NAME + "-" + APPLICATION_VERSION;
   public static final String ENTITLED_APPLICATION_ID = APPLICATION_NAME + "-0.0.9";
 
-  public static final String OKAPI_TOKEN = "X-Okapi-Token test value";
+  /**
+   * Sample JWT that will expire in 2030 year for test_tenant with randomly generated user id.
+   */
+  public static final String OKAPI_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmb2xpbyIsInVzZXJfaWQiOiJlNmQyODVlOS03MmVkLT"
+    + "QxYTQtOGIzYi01Y2VlNGNiYzg0MjUiLCJ0eXBlIjoiYWNjZXNzIiwiZXhwIjoxODkzNTAyODAwLCJpYXQiOjE3MjUzMDM2ODgsInRlbmFudCI6In"
+    + "Rlc3RfdGVuYW50In0.SdtIQTrn7_XPnyi75Ai9bBkCWa8eQ69U6VAidCCRFFQ";
+
   public static final String TENANT_PARAMETERS = "loadSample=true";
   public static final Boolean PURGE = false;
   public static final Boolean IGNORE_ERRORS = false;

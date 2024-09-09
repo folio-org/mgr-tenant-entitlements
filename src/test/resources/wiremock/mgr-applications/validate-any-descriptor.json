@@ -5,6 +5,9 @@
     "headers": {
       "content-type": {
         "equalTo": "application/json"
+      },
+      "x-okapi-token": {
+        "matches": ".+"
       }
     }
   },

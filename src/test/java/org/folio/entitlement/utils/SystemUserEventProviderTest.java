@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import org.folio.common.domain.model.AnyDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.UserDescriptor;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
@@ -49,7 +50,6 @@ class SystemUserEventProviderTest {
   }
 
   @Test
-  @Deprecated
   void getSystemUserEvent_positive_metadataSection() throws JsonProcessingException {
     var moduleDescriptorJson = """
       {
@@ -68,7 +68,21 @@ class SystemUserEventProviderTest {
   }
 
   @Test
-  @Deprecated
+  void getSystemUserEvent_positive_metadataIsNull() {
+    var moduleDescriptor = new ModuleDescriptor().id("test-module-0.0.1").metadata(null);
+
+    var result = systemUserEventProvider.getSystemUserEvent(moduleDescriptor);
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void getSystemUserEvent_positive_metadataHasEmptyProperties() {
+    var moduleDescriptor = new ModuleDescriptor().id("test-module-0.0.1").metadata(new AnyDescriptor());
+    var result = systemUserEventProvider.getSystemUserEvent(moduleDescriptor);
+    assertThat(result).isEmpty();
+  }
+
+  @Test
   void getSystemUserEvent_positive_unknownMetadataKey() throws JsonProcessingException {
     var moduleDescriptorJson = """
       {

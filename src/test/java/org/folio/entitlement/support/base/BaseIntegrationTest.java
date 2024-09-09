@@ -1,9 +1,9 @@
 package org.folio.entitlement.support.base;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
-import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
@@ -66,6 +66,8 @@ import org.springframework.test.web.servlet.ResultMatcher;
 })
 public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
 
+  public static final String ROUTER_PATH_PREFIX_SYSTEM_PROPERTY_KEY = "it.router.path-prefix";
+  public static final String SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY = "it.system.access-token";
   public static final String FOLIO_MODULE1_ID = "folio-module1-1.0.0";
   public static final String FOLIO_MODULE2_ID = "folio-module2-2.0.0";
   public static final String FOLIO_MODULE2_V2_ID = "folio-module2-2.1.0";
@@ -82,9 +84,10 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
 
   protected static MvcResult entitleApplications(EntitlementRequestBody entitlementRequest,
     Map<String, String> queryParams, ExtendedEntitlements expectedEntitlements) throws Exception {
-    var request = post("/entitlements")
+
+    var request = post(updatePathWithPrefix("/entitlements"))
       .contentType(APPLICATION_JSON)
-      .header(TOKEN, OKAPI_AUTH_TOKEN)
+      .header(TOKEN, getSystemAccessToken())
       .content(asJsonString(entitlementRequest));
     queryParams.forEach(request::queryParam);
 
@@ -101,9 +104,9 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
 
   protected static MvcResult upgradeApplications(EntitlementRequestBody entitlementRequest,
     Map<String, String> queryParams, ExtendedEntitlements expectedEntitlements) throws Exception {
-    var request = put("/entitlements")
+    var request = put(updatePathWithPrefix("/entitlements"))
       .contentType(APPLICATION_JSON)
-      .header(TOKEN, OKAPI_AUTH_TOKEN)
+      .header(TOKEN, getSystemAccessToken())
       .content(asJsonString(entitlementRequest));
     queryParams.forEach(request::queryParam);
 
@@ -120,9 +123,9 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
 
   protected static void revokeEntitlements(EntitlementRequestBody entitlementRequest,
     Map<String, String> queryParams, ExtendedEntitlements expectedEntitlements) throws Exception {
-    var request = delete("/entitlements")
+    var request = delete(updatePathWithPrefix("/entitlements"))
       .contentType(APPLICATION_JSON)
-      .header(TOKEN, OKAPI_AUTH_TOKEN)
+      .header(TOKEN, getSystemAccessToken())
       .content(asJsonString(entitlementRequest));
     queryParams.forEach(request::queryParam);
 
@@ -136,9 +139,9 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
   }
 
   protected static void getEntitlementsByQuery(String cqlQuery, Entitlements expected) throws Exception {
-    var mvcResult = mockMvc.perform(get("/entitlements")
+    var mvcResult = mockMvc.perform(get(updatePathWithPrefix("/entitlements"))
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .queryParam("query", cqlQuery))
       .andExpect(status().isOk())
       .andReturn();
@@ -148,9 +151,9 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
   }
 
   protected static void assertEntitlementsWithModules(String cqlQuery, Entitlements expected) throws Exception {
-    mockMvc.perform(get("/entitlements")
+    mockMvc.perform(get(updatePathWithPrefix("/entitlements"))
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .queryParam("includeModules", "true")
         .queryParam("query", cqlQuery))
       .andExpect(status().isOk())
@@ -158,9 +161,9 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
   }
 
   protected static void assertModuleEntitlements(String moduleId, Entitlements expected) throws Exception {
-    mockMvc.perform(get("/entitlements/modules/{moduleId}", moduleId)
+    mockMvc.perform(get(updatePathWithPrefix("/entitlements/modules/{moduleId}"), moduleId)
         .contentType(APPLICATION_JSON)
-        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .header(TOKEN, getSystemAccessToken())
         .queryParam("includeModules", "true"))
       .andExpect(status().isOk())
       .andExpect(content().json(asJsonString(expected), true));
@@ -207,5 +210,15 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
     } else {
       assertThat(responseEntitlements.getFlowId()).isNotNull();
     }
+  }
+
+  public static String updatePathWithPrefix(String path) {
+    var pathPrefix = System.getProperty(ROUTER_PATH_PREFIX_SYSTEM_PROPERTY_KEY);
+    return pathPrefix == null ? path : "/" + pathPrefix + path;
+  }
+
+  public static String getSystemAccessToken() {
+    var accessToken = System.getProperty(SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY);
+    return accessToken != null ? accessToken : OKAPI_TOKEN;
   }
 }

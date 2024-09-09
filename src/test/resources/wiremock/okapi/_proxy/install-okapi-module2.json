@@ -11,8 +11,8 @@
       }
     },
     "headers": {
-      "X-Okapi-Token": {
-        "equalTo": "X-Okapi-Token test value"
+      "x-okapi-token": {
+        "matches": ".+"
       },
       "Content-Type": {
         "equalTo": "application/json"

@@ -1,7 +1,6 @@
 package org.folio.entitlement.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -28,6 +27,10 @@ import org.springframework.test.context.jdbc.Sql;
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 class EntitlementApplicationServiceOkapiIT extends BaseIntegrationTest {
 
+  private static final String ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmb2xpbyIsInVzZXJfaWQiOiJlNmQyODVlOS03MmVk"
+    + "LTQxYTQtOGIzYi01Y2VlNGNiYzg0MjUiLCJ0eXBlIjoiYWNjZXNzIiwiZXhwIjoxODkzNTAyODAwLCJpYXQiOjE3MjUzMDM2ODgsInRlbmFudCI6"
+    + "InRlc3RfdGVuYW50In0.SdtIQTrn7_XPnyi75Ai9bBkCWa8eQ69U6VAidCCRFFQ";
+
   private static final String APPLICATION_ID = "folio-app2-2.0.0";
   private static final String APPLICATION_NAME = "folio-app2";
   private static final String APPLICATION_VERSION = "2.0.0";
@@ -45,10 +48,10 @@ class EntitlementApplicationServiceOkapiIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app2/get-by-ids-query-full.json"
   })
   void getApplicationDescriptorsByTenantName_positive() throws Exception {
-    mockMvc.perform(get("/entitlements/{tenantName}/applications", TEST_TENANT)
+    mockMvc.perform(get(updatePathWithPrefix("/entitlements/{tenantName}/applications"), TEST_TENANT)
         .contentType(APPLICATION_JSON)
         .header(OkapiHeaders.TENANT, TEST_TENANT)
-        .header(TOKEN, OKAPI_AUTH_TOKEN))
+        .header(TOKEN, ACCESS_TOKEN))
       .andExpect(status().isOk())
       .andExpect(jsonPath("$.totalRecords", is(1)))
       .andExpect(jsonPath("$.applicationDescriptors[0].id", is(APPLICATION_ID)))
@@ -59,10 +62,19 @@ class EntitlementApplicationServiceOkapiIT extends BaseIntegrationTest {
   @Test
   @WireMockStub("/wiremock/mgr-tenants/test/get-query-by-name-test2.json")
   void getApplicationDescriptorsByTenantNamePathTenantMissMatch_positive() throws Exception {
-    mockMvc.perform(get("/entitlements/{tenantName}/applications", TEST_TENANT2)
+    mockMvc.perform(get(updatePathWithPrefix("/entitlements/{tenantName}/applications"), TEST_TENANT2)
         .contentType(APPLICATION_JSON)
         .header(OkapiHeaders.TENANT, TEST_TENANT)
-        .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
+        .header(OkapiHeaders.TOKEN, ACCESS_TOKEN))
       .andExpect(status().isOk());
+  }
+
+  @Test
+  void getApplicationDescriptorsByTenantName_negative_invalidToken() throws Exception {
+    mockMvc.perform(get(updatePathWithPrefix("/entitlements/{tenantName}/applications"), TEST_TENANT)
+        .contentType(APPLICATION_JSON)
+        .header(OkapiHeaders.TENANT, TEST_TENANT)
+        .header(TOKEN, "Invalid token"))
+      .andExpect(status().isUnauthorized());
   }
 }

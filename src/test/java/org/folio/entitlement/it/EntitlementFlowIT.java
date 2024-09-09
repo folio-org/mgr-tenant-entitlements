@@ -28,7 +28,11 @@ import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.types.IntegrationTest;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.keycloak.admin.client.Keycloak;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.jdbc.Sql;
 
 @EnableKeycloakTlsMode
@@ -45,11 +49,22 @@ class EntitlementFlowIT extends BaseIntegrationTest {
   private static final UUID FLOW_ID_1 = UUID.fromString("def173a0-7b4c-4f45-b66c-5fe4aa7c8f98");
   private static final UUID FLOW_ID_2 = UUID.fromString("3d94cd49-0ede-4426-81dc-416ff7deb187");
 
+  @BeforeAll
+  static void beforeAll(@Autowired Keycloak keycloak) {
+    var accessTokenString = keycloak.tokenManager().getAccessTokenString();
+    System.setProperty(SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY, accessTokenString);
+  }
+
+  @AfterAll
+  static void afterAll() {
+    System.clearProperty(SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY);
+  }
+
   @Test
   void getEntitlementFlowById_positive() throws Exception {
     var entitlementFlowResponse = mockMvc.perform(get("/entitlement-flows/{flowId}", FLOW_ID_1)
         .contentType(APPLICATION_JSON)
-        .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
+        .header(OkapiHeaders.TOKEN, getSystemAccessToken()))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
@@ -67,7 +82,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
     var entitlementFlowResponse = mockMvc.perform(get("/entitlement-flows/{flowId}", FLOW_ID_1)
         .queryParam("includeStages", "true")
         .contentType(APPLICATION_JSON)
-        .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
+        .header(OkapiHeaders.TOKEN, getSystemAccessToken()))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
@@ -124,7 +139,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
   void getApplicationFlowById_positive() throws Exception {
     var mvcResult = mockMvc.perform(get("/application-flows/{applicationFlowId}", APP_FLOW_ID_1)
         .contentType(APPLICATION_JSON)
-        .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
+        .header(OkapiHeaders.TOKEN, getSystemAccessToken()))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
@@ -138,7 +153,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
     var mvcResult = mockMvc.perform(get("/application-flows/{applicationFlowId}", APP_FLOW_ID_1)
         .queryParam("includeStages", "true")
         .contentType(APPLICATION_JSON)
-        .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
+        .header(OkapiHeaders.TOKEN, getSystemAccessToken()))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
@@ -152,7 +167,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
     var entitlementStagesResponse = mockMvc.perform(
         get("/application-flows/{applicationFlowId}/stages", APP_FLOW_ID_1)
           .contentType(APPLICATION_JSON)
-          .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
+          .header(OkapiHeaders.TOKEN, getSystemAccessToken()))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();
@@ -167,7 +182,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
     var applicationFlowStageResponse = mockMvc.perform(
         get("/application-flows/{applicationFlowId}/stages/{name}", APP_FLOW_ID_1, "KongRouteCreator")
           .contentType(APPLICATION_JSON)
-          .header(OkapiHeaders.TOKEN, OKAPI_AUTH_TOKEN))
+          .header(OkapiHeaders.TOKEN, getSystemAccessToken()))
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
       .andReturn();

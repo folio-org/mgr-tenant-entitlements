@@ -6,8 +6,8 @@
       "X-Okapi-Permissions-Required": {
         "equalTo": "mgr-tenant-entitlements.entitlements.item.post"
       },
-      "X-Okapi-Token": {
-        "equalTo": "X-Okapi-Token test value"
+      "x-okapi-token": {
+        "matches": ".+"
       },
       "X-Okapi-Tenant": {
         "equalTo": "supertenant"
