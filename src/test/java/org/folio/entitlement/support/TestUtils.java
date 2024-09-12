@@ -1,5 +1,7 @@
 package org.folio.entitlement.support;
 
+import static javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier;
+import static javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory;
 import static javax.net.ssl.SSLContext.getInstance;
 import static org.folio.common.utils.ExceptionHandlerUtils.buildValidationError;
 import static org.mockito.Mockito.when;
@@ -26,8 +28,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509ExtendedTrustManager;
 import lombok.AccessLevel;
@@ -171,6 +175,22 @@ public class TestUtils {
       .build();
 
     return (BadRequest) FeignException.errorStatus("someMethod", response);
+  }
+
+  public static void disableSslVerification() {
+    try {
+      var sc = dummySslContext();
+      setDefaultSSLSocketFactory(sc.getSocketFactory());
+      var allHostsValid = new HostnameVerifier() {
+        public boolean verify(String hostname, SSLSession session) {
+          return true;
+        }
+      };
+
+      setDefaultHostnameVerifier(allHostsValid);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to disable SSL verification", e);
+    }
   }
 
   public static HttpClient httpClientWithDummySslContext() {
