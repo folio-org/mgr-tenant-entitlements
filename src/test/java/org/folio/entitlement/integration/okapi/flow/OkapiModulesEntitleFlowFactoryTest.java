@@ -76,10 +76,10 @@ class OkapiModulesEntitleFlowFactoryTest {
     var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
     verifyStageExecution(inOrder, kongRouteCreator, okapiStageContext);
     verifyStageExecution(inOrder, keycloakAuthResourceCreator, okapiStageContext);
+    verifyStageExecution(inOrder, systemUserEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);
 
     var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, systemUserEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, okapiModulesEventPublisher, okapiStageContext);
@@ -102,8 +102,8 @@ class OkapiModulesEntitleFlowFactoryTest {
     var flowId = FLOW_STAGE_ID + "/OkapiModulesEntitleFlow";
     var expectedStageContext = appStageContext(flowId, emptyMap(), emptyMap());
     var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, okapiStageContext);
+    verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, okapiModulesEventPublisher, okapiStageContext);

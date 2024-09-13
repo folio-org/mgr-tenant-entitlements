@@ -74,9 +74,9 @@ class FolioModuleUpgradeFlowFactoryTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     verifyStageExecution(inOrder, kongModuleRouteUpdater, stageContext);
     verifyStageExecution(inOrder, kcModuleResourceUpdater, stageContext);
+    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, folioModuleUpdater, stageContext);
     verifyStageExecution(inOrder, folioModuleEventPublisher, stageContext);
-    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, stageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
   }
@@ -93,9 +93,9 @@ class FolioModuleUpgradeFlowFactoryTest {
     var inOrder = inOrder(capabilitiesEventPublisher, scheduledJobEventPublisher,
       systemUserEventPublisher, folioModuleUpdater, folioModuleEventPublisher);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, folioModuleUpdater, stageContext);
     verifyStageExecution(inOrder, folioModuleEventPublisher, stageContext);
-    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, stageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
 

@@ -38,8 +38,8 @@ public class FolioModuleEntitleFlowFactory implements ModuleFlowFactory {
       .stage(systemUserEventPublisher)
       .stage(folioModuleInstaller)
       .stage(folioModuleEventPublisher)
-      .stage(combineStages("EventPublishingParallelStage", asList(
-        scheduledJobEventPublisher, capabilitiesEventPublisher)))
+      .stage(combineStages("EventPublishingParallelStage",
+        asList(scheduledJobEventPublisher, capabilitiesEventPublisher)))
       .executionStrategy(strategy)
       .flowParameters(additionalFlowParameters)
       .build();

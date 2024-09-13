@@ -36,10 +36,11 @@ public class FolioModuleUpgradeFlowFactory implements ModuleFlowFactory {
       .id(flowId)
       .executionStrategy(strategy)
       .stage(combineStages("ResourceUpdaterParallelStage", asList(kongModuleRouteUpdater, kcModuleResourceUpdater)))
+      .stage(systemUserEventPublisher)
       .stage(folioModuleUpdater)
       .stage(folioModuleEventPublisher)
       .stage(combineStages("EventPublishingParallelStage",
-        asList(systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
+        asList(scheduledJobEventPublisher, capabilitiesEventPublisher)))
       .flowParameters(additionalFlowParameters)
       .build();
   }
