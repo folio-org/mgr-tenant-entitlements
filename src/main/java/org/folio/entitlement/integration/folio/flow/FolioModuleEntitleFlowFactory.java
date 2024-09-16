@@ -35,10 +35,11 @@ public class FolioModuleEntitleFlowFactory implements ModuleFlowFactory {
     return Flow.builder()
       .id(flowId)
       .stage(combineStages("ResourceCreatorParallelStage", asList(kongModuleRouteCreator, kcModuleResourceCreator)))
+      .stage(systemUserEventPublisher)
       .stage(folioModuleInstaller)
       .stage(folioModuleEventPublisher)
-      .stage(combineStages("EventPublishingParallelStage", asList(
-        systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
+      .stage(combineStages("EventPublishingParallelStage",
+        asList(scheduledJobEventPublisher, capabilitiesEventPublisher)))
       .executionStrategy(strategy)
       .flowParameters(additionalFlowParameters)
       .build();

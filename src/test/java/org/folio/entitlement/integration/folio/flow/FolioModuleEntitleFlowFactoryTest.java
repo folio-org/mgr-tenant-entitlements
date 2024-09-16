@@ -74,9 +74,9 @@ class FolioModuleEntitleFlowFactoryTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     verifyStageExecution(inOrder, kongModuleRouteCreator, stageContext);
     verifyStageExecution(inOrder, kcModuleResourceCreator, stageContext);
+    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, folioModuleInstaller, stageContext);
     verifyStageExecution(inOrder, folioModuleEventPublisher, stageContext);
-    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, stageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
   }
@@ -95,9 +95,9 @@ class FolioModuleEntitleFlowFactoryTest {
       scheduledJobEventPublisher, capabilitiesEventPublisher, folioModuleInstaller);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
+    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, folioModuleInstaller, stageContext);
     verifyStageExecution(inOrder, folioModuleEventPublisher, stageContext);
-    verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, stageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
   }
