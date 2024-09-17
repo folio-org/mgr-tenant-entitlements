@@ -36,9 +36,10 @@ public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesEntitleFlow")
       .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCreator, keycloakAuthResourceCreator)))
+      .stage(systemUserEventPublisher)
       .stage(okapiModulesInstaller)
-      .stage(combineStages("EventPublishingParallelStage", asList(
-        systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
+      .stage(combineStages("EventPublishingParallelStage",
+        asList(scheduledJobEventPublisher, capabilitiesEventPublisher)))
       .stage(okapiModulesEventPublisher)
       .executionStrategy(request.getExecutionStrategy())
       .flowParameters(additionalFlowParameters)
