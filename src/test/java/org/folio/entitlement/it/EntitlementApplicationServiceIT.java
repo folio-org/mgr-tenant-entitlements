@@ -13,11 +13,13 @@ import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
+import org.folio.jwt.openid.OpenidJwtParserProvider;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -39,6 +41,15 @@ class EntitlementApplicationServiceIT extends BaseIntegrationTest {
   private static final String TEST_TENANT2 = "test2";
 
   @Autowired private KeycloakTestClient keycloakTestClient;
+
+  /**
+   * Invalidates cache before each test because keycloak realm is always recreates, so it prevents old keys to work for
+   * newly issued tokens.
+   */
+  @BeforeEach
+  void setUp(@Autowired OpenidJwtParserProvider openidJwtParserProvider) {
+    openidJwtParserProvider.invalidateCache();
+  }
 
   @Test
   @WireMockStub(scripts = {
