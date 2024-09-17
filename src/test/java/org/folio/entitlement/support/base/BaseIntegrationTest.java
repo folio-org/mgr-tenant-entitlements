@@ -22,6 +22,7 @@ import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.exception.RequestValidationException;
+import org.folio.entitlement.support.TestUtils;
 import org.folio.entitlement.support.extensions.EnableKongGateway;
 import org.folio.entitlement.support.extensions.EnablePostgres;
 import org.folio.test.FakeKafkaConsumer;
@@ -76,6 +77,10 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
 
   protected static FakeKafkaConsumer fakeKafkaConsumer;
   protected static WireMockAdminClient wmAdminClient;
+
+  static {
+    TestUtils.disableSslVerification();
+  }
 
   @BeforeAll
   static void setUp(@Autowired FakeKafkaConsumer consumer) {
