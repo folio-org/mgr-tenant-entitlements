@@ -3,11 +3,13 @@ package org.folio.entitlement.integration.keycloak;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
+import org.folio.entitlement.retry.KeycloakCallsRetryable;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.keycloak.admin.client.Keycloak;
 
 @Log4j2
 @RequiredArgsConstructor
+@KeycloakCallsRetryable
 public class KeycloakModuleResourceCleaner extends ModuleDatabaseLoggingStage {
 
   private final Keycloak keycloakClient;

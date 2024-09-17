@@ -8,11 +8,13 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
+import org.folio.entitlement.retry.FolioModuleCallsRetryable;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 
 @Log4j2
 @RequiredArgsConstructor
+@FolioModuleCallsRetryable
 public class FolioModuleUpdater extends ModuleDatabaseLoggingStage {
 
   private final FolioModuleService folioModuleService;

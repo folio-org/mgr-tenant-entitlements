@@ -3,11 +3,13 @@ package org.folio.entitlement.integration.kong;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
+import org.folio.entitlement.retry.KongCallsRetryable;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.tools.kong.service.KongGatewayService;
 
 @Log4j2
 @RequiredArgsConstructor
+@KongCallsRetryable
 public class KongRouteCreator extends DatabaseLoggingStage<OkapiStageContext> {
 
   private final KongGatewayService kongGatewayService;
