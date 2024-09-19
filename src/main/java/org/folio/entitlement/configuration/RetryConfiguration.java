@@ -6,12 +6,16 @@ import java.util.function.Predicate;
 import org.folio.entitlement.integration.IntegrationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.RetryContext;
+import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.backoff.BackOffPolicyBuilder;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
+@EnableRetry
+@Configuration
 public class RetryConfiguration {
 
   @Value("${retries.module.max:3}") private int maxRetriesForFolioModuleCalls = 3;
@@ -35,15 +39,15 @@ public class RetryConfiguration {
   @Bean
   public RetryOperationsInterceptor folioModuleCallsRetryInterceptor() {
     return createRetryInterceptor(IntegrationException.class,
-      integrationException -> integrationException.getCauseHttpStatus() >= 500, maxRetriesForFolioModuleCalls,
+      integrationException -> integrationException.getCauseHttpStatus() != null
+        && integrationException.getCauseHttpStatus() >= 500, maxRetriesForFolioModuleCalls,
       backOffDelayForFolioModuleCalls, backOffMaxDelayForFolioModuleCalls, backOffMultiplierForFolioModuleCalls);
   }
 
   @Bean
   public RetryOperationsInterceptor kongCallsRetryInterceptor() {
-    return createRetryInterceptor(FeignException.class,
-      feignException -> feignException.status() >= 500, maxRetriesForKongCalls,
-      backOffDelayForKongCalls, backOffMaxDelayForKongCalls, backOffMultiplierForKongCalls);
+    return createRetryInterceptor(FeignException.class, feignException -> feignException.status() >= 500,
+      maxRetriesForKongCalls, backOffDelayForKongCalls, backOffMaxDelayForKongCalls, backOffMultiplierForKongCalls);
   }
 
   @Bean
@@ -62,7 +66,11 @@ public class RetryConfiguration {
       @SuppressWarnings("unchecked")
       public boolean canRetry(RetryContext context) {
         var error = context.getLastThrowable();
-        return error != null && exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error);
+        if (context.getRetryCount() >= numberOfRetries) {
+          return false;
+        }
+        // If there was no error so far (first attempt) or error is what we allow to retry - retun true
+        return error == null || exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error);
       }
     };
     retryPolicy.setMaxAttempts(numberOfRetries);
