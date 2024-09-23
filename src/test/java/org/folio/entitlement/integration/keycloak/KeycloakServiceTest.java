@@ -21,9 +21,11 @@ import static org.folio.entitlement.integration.keycloak.KeycloakServiceTest.Key
 import static org.folio.entitlement.integration.keycloak.KeycloakServiceTest.KeycloakServiceTestUtils.scopeWithId;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.mockito.Answers.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,10 +47,12 @@ import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties.Login;
 import org.folio.entitlement.support.TestUtils;
+import org.folio.entitlement.utils.SafeCallable;
 import org.folio.security.integration.keycloak.model.KeycloakMappings;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -73,11 +77,23 @@ class KeycloakServiceTest {
   @Mock private KeycloakModuleDescriptorMapper keycloakModuleDescriptorMapper;
   @Spy private final KeycloakConfigurationProperties kcConfiguration = keycloakConfigurationProperties(CLIENT_SUFFIX);
 
+  @Mock private KeycloakRetrySupportService retrySupportService;
   @Mock(answer = RETURNS_DEEP_STUBS) private Keycloak keycloak;
   @Mock(answer = RETURNS_DEEP_STUBS) private AuthorizationResource authorizationResource;
 
+  @BeforeEach
+  void setUp() {
+    lenient().when(retrySupportService.callWithRetry(any()))
+      .thenAnswer(invocation -> invocation.getArgument(0, SafeCallable.class).call());
+    lenient().doAnswer(invocation -> {
+      invocation.getArgument(0, Runnable.class).run();
+      return null;
+    }).when(retrySupportService).runWithRetry(any());
+  }
+
   @AfterEach
   void tearDown() {
+    clearInvocations(retrySupportService);
     TestUtils.verifyNoMoreInteractions(this);
   }
 
@@ -94,7 +110,6 @@ class KeycloakServiceTest {
     when(authorizationResource.scopes().create(scope)).thenReturn(scopeCreationResponse);
     when(scopeCreationResponse.getStatus()).thenReturn(status);
     responseCustomizer.accept(scopeCreationResponse);
-    doNothing().when(scopeCreationResponse).close();
   }
 
   private void mockResourceCreation(ResourceRepresentation resourceRepresentation) {
@@ -107,7 +122,6 @@ class KeycloakServiceTest {
     when(authorizationResource.resources().create(resource)).thenReturn(resourceCreationResponse);
     when(resourceCreationResponse.getStatus()).thenReturn(status);
     responseCustomizer.accept(resourceCreationResponse);
-    doNothing().when(resourceCreationResponse).close();
   }
 
   @Nested
@@ -330,11 +344,11 @@ class KeycloakServiceTest {
 
       var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var prevDescriptor = moduleDescriptor("mod-foo-1.1.0");
-      assertThatThrownBy(() -> keycloakService.updateAuthResources(prevDescriptor, currentDescriptor, TENANT_NAME))
-        .isInstanceOf(IntegrationException.class)
-        .hasMessage("Failed to update authorization scopes in Keycloak")
-        .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
-          parameter("scope", "Failed to create scope GET (status: 502, info: Bad Gateway)")));
+      assertThatThrownBy(
+        () -> keycloakService.updateAuthResources(prevDescriptor, currentDescriptor, TENANT_NAME)).isInstanceOf(
+        IntegrationException.class).hasMessage("Failed to update authorization scopes in Keycloak").satisfies(
+          error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(parameter("scope",
+            "Failed to create scope GET (cause: WebApplicationException, causeMessage: HTTP 502 Bad Gateway)")));
 
       verify(kcConfiguration, atLeastOnce()).getLogin();
       verify(kcConfiguration, atLeastOnce()).getUrl();
@@ -355,11 +369,10 @@ class KeycloakServiceTest {
       var resource = resource(null, "/r1", scopeWithId("GET"));
       mockResourceCreation(resource, 502, resp -> when(resp.getStatusInfo()).thenReturn(BAD_GATEWAY));
 
-      assertThatThrownBy(() -> keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME))
-        .isInstanceOf(IntegrationException.class)
-        .hasMessage("Failed to update authorization resources in Keycloak")
-        .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
-          parameter("resource", "Failed to create resource: /r1 (status: 502, info: Bad Gateway)")));
+      assertThatThrownBy(() -> keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME)).isInstanceOf(
+        IntegrationException.class).hasMessage("Failed to update authorization resources in Keycloak").satisfies(
+          error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(parameter("resource",
+            "Failed to create resource: /r1 (cause: WebApplicationException, causeMessage: HTTP 502 Bad Gateway)")));
 
       verify(kcConfiguration, atLeastOnce()).getLogin();
       verify(kcConfiguration, atLeastOnce()).getUrl();

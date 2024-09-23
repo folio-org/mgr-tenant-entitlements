@@ -4,6 +4,7 @@ import feign.FeignException;
 import jakarta.ws.rs.WebApplicationException;
 import java.util.function.Predicate;
 import org.folio.entitlement.integration.IntegrationException;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,9 +20,7 @@ import org.springframework.retry.support.RetryTemplate;
 public class RetryConfiguration {
 
   @Value("${retries.module.max:3}") private int maxRetriesForFolioModuleCalls = 3;
-
   @Value("${retries.kong.max:3}") private int maxRetriesForKongCalls = 3;
-
   @Value("${retries.keycloak.max:3}") private int maxRetriesForKeycloakCalls = 3;
 
   @Value("${retries.module.backoff.delay:1000}") private int backOffDelayForFolioModuleCalls = 1000;
@@ -61,6 +60,18 @@ public class RetryConfiguration {
   protected static <T extends Exception> RetryOperationsInterceptor createRetryInterceptor(Class<T> exceptionClass,
     Predicate<T> shouldRetry, int numberOfRetries, int backOffDelay, int backOffMaxDelay, int backOffMultiplier) {
     var retryTemplate = new RetryTemplate();
+    var retryPolicy = createRetryPolicy(exceptionClass, shouldRetry, numberOfRetries);
+    retryTemplate.setRetryPolicy(retryPolicy);
+    retryTemplate.setBackOffPolicy(
+      BackOffPolicyBuilder.newBuilder().delay(backOffDelay).maxDelay(backOffMaxDelay).multiplier(backOffMultiplier)
+        .build());
+    var result = new RetryOperationsInterceptor();
+    result.setRetryOperations(retryTemplate);
+    return result;
+  }
+
+  private static <T extends Exception> @NotNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
+    Predicate<T> shouldRetry, int numberOfRetries) {
     var retryPolicy = new SimpleRetryPolicy() {
       @Override
       @SuppressWarnings("unchecked")
@@ -74,12 +85,6 @@ public class RetryConfiguration {
       }
     };
     retryPolicy.setMaxAttempts(numberOfRetries);
-    retryTemplate.setRetryPolicy(retryPolicy);
-    retryTemplate.setBackOffPolicy(
-      BackOffPolicyBuilder.newBuilder().delay(backOffDelay).maxDelay(backOffMaxDelay).multiplier(backOffMultiplier)
-        .build());
-    var result = new RetryOperationsInterceptor();
-    result.setRetryOperations(retryTemplate);
-    return result;
+    return retryPolicy;
   }
 }

@@ -10,6 +10,7 @@ import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCleaner;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCreator;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
+import org.folio.entitlement.integration.keycloak.KeycloakRetrySupportService;
 import org.folio.entitlement.integration.keycloak.KeycloakService;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
@@ -50,8 +51,8 @@ public class KeycloakConfiguration {
 
   @Bean
   public KeycloakService keycloakService(Keycloak client, KeycloakModuleDescriptorMapper mapper,
-    KeycloakConfigurationProperties properties) {
-    return new KeycloakService(client, mapper, properties);
+    KeycloakConfigurationProperties properties, KeycloakRetrySupportService keycloakRetrySupportService) {
+    return new KeycloakService(client, mapper, properties, keycloakRetrySupportService);
   }
 
   @Bean
