@@ -1,4 +1,4 @@
-package org.folio.entitlement.retry;
+package org.folio.entitlement.retry.annotations;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
@@ -13,8 +13,8 @@ import org.springframework.retry.annotation.Retryable;
 @Retention(RUNTIME)
 @Target({METHOD, TYPE})
 @Retryable(
-  interceptor = "keycloakCallsRetryInterceptor"
+  interceptor = "folioModuleCallsRetryInterceptor"
 )
-public @interface KeycloakCallsRetryable {
+public @interface FolioModuleCallsRetryable {
 
 }

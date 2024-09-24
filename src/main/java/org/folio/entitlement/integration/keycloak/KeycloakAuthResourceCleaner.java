@@ -2,7 +2,7 @@ package org.folio.entitlement.integration.keycloak;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
-import org.folio.entitlement.retry.KeycloakCallsRetryable;
+import org.folio.entitlement.retry.annotations.KeycloakCallsRetryable;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.keycloak.admin.client.Keycloak;
 

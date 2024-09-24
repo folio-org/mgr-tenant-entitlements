@@ -1,6 +1,6 @@
-package org.folio.entitlement.integration.keycloak;
+package org.folio.entitlement.retry.keycloak;
 
-import org.folio.entitlement.retry.KeycloakCallsRetryable;
+import org.folio.entitlement.retry.annotations.KeycloakCallsRetryable;
 import org.folio.entitlement.utils.SafeCallable;
 import org.springframework.stereotype.Service;
 

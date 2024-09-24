@@ -1,6 +1,5 @@
 package org.folio.entitlement.configuration;
 
-import feign.FeignException;
 import jakarta.ws.rs.WebApplicationException;
 import java.util.function.Predicate;
 import org.folio.entitlement.integration.IntegrationException;
@@ -20,16 +19,11 @@ import org.springframework.retry.support.RetryTemplate;
 public class RetryConfiguration {
 
   @Value("${retries.module.max:3}") private int maxRetriesForFolioModuleCalls = 3;
-  @Value("${retries.kong.max:3}") private int maxRetriesForKongCalls = 3;
   @Value("${retries.keycloak.max:3}") private int maxRetriesForKeycloakCalls = 3;
 
   @Value("${retries.module.backoff.delay:1000}") private int backOffDelayForFolioModuleCalls = 1000;
   @Value("${retries.module.backoff.maxdelay:30000}") private int backOffMaxDelayForFolioModuleCalls = 30000;
   @Value("${retries.module.backoff.multiplier:5}") private int backOffMultiplierForFolioModuleCalls = 5;
-
-  @Value("${retries.kong.backoff.delay:1000}") private int backOffDelayForKongCalls = 1000;
-  @Value("${retries.kong.backoff.maxdelay:30000}") private int backOffMaxDelayForKongCalls = 30000;
-  @Value("${retries.kong.backoff.multiplier:5}") private int backOffMultiplierForKongCalls = 5;
 
   @Value("${retries.keycloak.backoff.delay:1000}") private int backOffDelayForKeycloakCalls = 1000;
   @Value("${retries.keycloak.backoff.maxdelay:30000}") private int backOffMaxDelayForKeycloakCalls = 30000;
@@ -41,12 +35,6 @@ public class RetryConfiguration {
       integrationException -> integrationException.getCauseHttpStatus() != null
         && integrationException.getCauseHttpStatus() >= 500, maxRetriesForFolioModuleCalls,
       backOffDelayForFolioModuleCalls, backOffMaxDelayForFolioModuleCalls, backOffMultiplierForFolioModuleCalls);
-  }
-
-  @Bean
-  public RetryOperationsInterceptor kongCallsRetryInterceptor() {
-    return createRetryInterceptor(FeignException.class, feignException -> feignException.status() >= 500,
-      maxRetriesForKongCalls, backOffDelayForKongCalls, backOffMaxDelayForKongCalls, backOffMultiplierForKongCalls);
   }
 
   @Bean

@@ -4,7 +4,7 @@ import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdate
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
-import org.folio.entitlement.retry.KeycloakCallsRetryable;
+import org.folio.entitlement.retry.annotations.KeycloakCallsRetryable;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.keycloak.admin.client.Keycloak;
 

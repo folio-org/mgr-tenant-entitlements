@@ -46,6 +46,7 @@ import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties.Login;
+import org.folio.entitlement.retry.keycloak.KeycloakRetrySupportService;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.entitlement.utils.SafeCallable;
 import org.folio.security.integration.keycloak.model.KeycloakMappings;

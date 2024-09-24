@@ -5,13 +5,11 @@ import static java.util.Collections.singletonList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
-import org.folio.entitlement.retry.KongCallsRetryable;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.folio.tools.kong.service.KongGatewayService;
 
 @Log4j2
 @RequiredArgsConstructor
-@KongCallsRetryable
 public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
 
   private final KongGatewayService kongGatewayService;
