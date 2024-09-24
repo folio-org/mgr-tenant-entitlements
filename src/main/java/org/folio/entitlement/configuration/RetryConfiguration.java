@@ -30,7 +30,7 @@ public class RetryConfiguration {
   @Value("${retries.keycloak.backoff.multiplier:5}") private int backOffMultiplierForKeycloakCalls = 5;
 
   /**
-   * Create a RetryOperationsInterceptor that will intercept error during calls to folio modules
+   * Create a RetryOperationsInterceptor that will intercept error during calls to folio modules.
    *
    * @return RetryOperationsInterceptor for folio modules calls
    */
@@ -43,7 +43,7 @@ public class RetryConfiguration {
   }
 
   /**
-   * Create a RetryOperationsInterceptor that will intercept error during calls to Keycloak
+   * Create a RetryOperationsInterceptor that will intercept error during calls to Keycloak.
    *
    * @return RetryOperationsInterceptor for Keycloak calls
    */
