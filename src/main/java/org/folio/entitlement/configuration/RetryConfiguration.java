@@ -29,6 +29,11 @@ public class RetryConfiguration {
   @Value("${retries.keycloak.backoff.maxdelay:30000}") private int backOffMaxDelayForKeycloakCalls = 30000;
   @Value("${retries.keycloak.backoff.multiplier:5}") private int backOffMultiplierForKeycloakCalls = 5;
 
+  /**
+   * Create a RetryOperationsInterceptor that will intercept error during calls to folio modules
+   *
+   * @return RetryOperationsInterceptor for folio modules calls
+   */
   @Bean
   public RetryOperationsInterceptor folioModuleCallsRetryInterceptor() {
     return createRetryInterceptor(IntegrationException.class,
@@ -37,6 +42,11 @@ public class RetryConfiguration {
       backOffDelayForFolioModuleCalls, backOffMaxDelayForFolioModuleCalls, backOffMultiplierForFolioModuleCalls);
   }
 
+  /**
+   * Create a RetryOperationsInterceptor that will intercept error during calls to Keycloak
+   *
+   * @return RetryOperationsInterceptor for Keycloak calls
+   */
   @Bean
   public RetryOperationsInterceptor keycloakCallsRetryInterceptor() {
     return createRetryInterceptor(WebApplicationException.class,
@@ -45,7 +55,7 @@ public class RetryConfiguration {
       backOffMultiplierForKeycloakCalls);
   }
 
-  protected static <T extends Exception> RetryOperationsInterceptor createRetryInterceptor(Class<T> exceptionClass,
+  private static <T extends Exception> RetryOperationsInterceptor createRetryInterceptor(Class<T> exceptionClass,
     Predicate<T> shouldRetry, int numberOfRetries, int backOffDelay, int backOffMaxDelay, int backOffMultiplier) {
     var retryTemplate = new RetryTemplate();
     var retryPolicy = createRetryPolicy(exceptionClass, shouldRetry, numberOfRetries);
