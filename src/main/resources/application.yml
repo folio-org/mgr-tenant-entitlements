@@ -184,5 +184,5 @@ feign:
   client:
     config:
       okapi:
-        connectTimeout: 60000
-        readTimeout: 600000
+        connectTimeout: 30000
+        readTimeout: 300000
