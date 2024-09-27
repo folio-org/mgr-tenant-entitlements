@@ -43,6 +43,7 @@ import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
@@ -53,6 +54,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
@@ -117,6 +120,54 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP1_ID), expected);
     assertModuleEntitlements(FOLIO_MODULE1_ID, expectedModuleEntitlements);
     assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID));
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install500.json"})
+  void install_negative_httpStatus500FromModule() throws Exception {
+    var entitlementRequest = entitlementRequest(FOLIO_APP1_ID);
+    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+    var request =
+      post(updatePathWithPrefix("/entitlements")).contentType(APPLICATION_JSON).header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest));
+    queryParams.forEach(request::queryParam);
+
+    mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
+
+    var wireMockClient =
+      new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
+    List<String> endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
+      .map(e -> e.getRequest().getUrl()).toList();
+    assertEquals(3, endpointsCalled.size());
+    endpointsCalled.forEach(endpoint-> assertEquals("/folio-module1/_/tenant", endpoint));
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install.json"})
+  void install_negative_httpStatus500FromKong() throws Exception {
+    var entitlementRequest = entitlementRequest(FOLIO_APP1_ID);
+    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+    var request =
+      post(updatePathWithPrefix("/entitlements")).contentType(APPLICATION_JSON).header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest));
+    queryParams.forEach(request::queryParam);
+
+    mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
+
+    var wireMockClient =
+      new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
+    List<String> endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
+      .map(e -> e.getRequest().getUrl()).toList();
+    assertEquals(3, endpointsCalled.size());
+    endpointsCalled.forEach(endpoint-> assertEquals("/folio-module1/_/tenant", endpoint));
   }
 
   @Test
