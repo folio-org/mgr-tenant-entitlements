@@ -140,10 +140,11 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
 
     var wireMockClient =
       new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
-    List<String> endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
-      .map(e -> e.getRequest().getUrl()).toList();
+    List<String> endpointsCalled =
+      wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
+        .map(e -> e.getRequest().getUrl()).toList();
     assertEquals(3, endpointsCalled.size());
-    endpointsCalled.forEach(endpoint-> assertEquals("/folio-module1/_/tenant", endpoint));
+    endpointsCalled.forEach(endpoint -> assertEquals("/folio-module1/_/tenant", endpoint));
   }
 
   @Test
@@ -164,10 +165,11 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
 
     var wireMockClient =
       new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
-    List<String> endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
-      .map(e -> e.getRequest().getUrl()).toList();
+    List<String> endpointsCalled =
+      wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
+        .map(e -> e.getRequest().getUrl()).toList();
     assertEquals(3, endpointsCalled.size());
-    endpointsCalled.forEach(endpoint-> assertEquals("/folio-module1/_/tenant", endpoint));
+    endpointsCalled.forEach(endpoint -> assertEquals("/folio-module1/_/tenant", endpoint));
   }
 
   @Test
