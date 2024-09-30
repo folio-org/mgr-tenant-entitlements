@@ -1,6 +1,11 @@
-## v1.3.0 In progress
-
+## v1.3.1 in progress
 * [ISSUE_NUMBER](https://issues.folio.org/browse/ISSUE_NUMBER) Description
+
+## v1.3.0 2024-09-30
+
+* [APPPOCTOOL-27](https://issues.folio.org/browse/APPPOCTOOL-27) Disable tenant matching validation (#135)
+* [MODCONSKC-7](https://issues.folio.org/browse/MODCONSKC-7) Move system user publisher stage before module installer… (#136)
+* [APPPOCTOOL-28](https://issues.folio.org/browse/APPPOCTOOL-28) Use folio-auth-openid library for JWT validation (#137)
 
 ---
 
