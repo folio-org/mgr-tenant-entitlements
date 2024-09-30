@@ -14,12 +14,13 @@ import org.folio.entitlement.support.extensions.EnableKongGateway;
 import org.folio.test.extensions.impl.WireMockExtension;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
 
-public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback {
+public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
 
   public static final String KONG_GATEWAY_URL_PROPERTY = "kong.gateway.url";
   public static final String KONG_DOCKER_IMAGE = "kong:3.7.1-ubuntu";
@@ -33,6 +34,8 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
     .withAccessToHost(true)
     .withNetworkAliases("kong");
 
+  private static WireMock wireMockClient;
+
   @Override
   public void beforeAll(ExtensionContext extensionContext) {
     if (!CONTAINER.isRunning()) {
@@ -41,8 +44,7 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
       CONTAINER.start();
     }
 
-    var enableWiremock = extensionContext.getElement().map(element -> element.getAnnotation(EnableKongGateway.class))
-      .map(EnableKongGateway::enableWiremock).orElse(false);
+    var enableWiremock = isWireMockEnabled(extensionContext);
 
     String kongUrl = getUrlForExposedPort(8001);
     if (enableWiremock) {
@@ -53,11 +55,8 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
         var getUrlForExposedPort = WireMockExtension.class.getDeclaredMethod("getUrlForExposedPort");
         getUrlForExposedPort.setAccessible(true);
         String wireMockUrl = getUrlForExposedPort.invoke(null).toString();
-        var wireMockClient =
+        wireMockClient =
           new WireMock(new URI(wireMockUrl).getHost(), new URI(wireMockUrl).getPort());
-        wireMockClient.register(
-          any(urlMatching("(/services|/routes).*")).atPriority(1000)
-            .willReturn(aResponse().proxiedFrom("http://kong:8001")));
         kongUrl = wireMockUrl;
       } catch (Exception e) {
         throw new RuntimeException("Failed to start Wiremock", e);
@@ -66,6 +65,17 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
 
     System.setProperty(KONG_URL_PROPERTY, kongUrl);
     System.setProperty(KONG_GATEWAY_URL_PROPERTY, getUrlForExposedPort(8000));
+  }
+
+  @Override
+  public void beforeEach(ExtensionContext extensionContext) throws Exception {
+    var enableWiremock = isWireMockEnabled(extensionContext);
+    if (enableWiremock) {
+      wireMockClient.removeMappings();
+      wireMockClient.register(
+        any(urlMatching("(/services|/routes).*")).atPriority(1000)
+          .willReturn(aResponse().proxiedFrom("http://kong:8001")));
+    }
   }
 
   @Override
@@ -123,5 +133,10 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
     environment.put("KONG_WORKER_STATE_UPDATE_FREQUENCY", "2");
 
     return environment;
+  }
+
+  private static boolean isWireMockEnabled(ExtensionContext extensionContext) {
+    return extensionContext.getElement().map(element -> element.getAnnotation(EnableKongGateway.class))
+      .map(EnableKongGateway::enableWiremock).orElse(false);
   }
 }

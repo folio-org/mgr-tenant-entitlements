@@ -14,6 +14,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import junit.framework.AssertionFailedError;
@@ -225,5 +227,9 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
   public static String getSystemAccessToken() {
     var accessToken = System.getProperty(SYSTEM_ACCESS_TOKEN_SYSTEM_PROPERTY_KEY);
     return accessToken != null ? accessToken : OKAPI_TOKEN;
+  }
+
+  protected WireMock getWireMockClient() throws Exception {
+    return new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
   }
 }
