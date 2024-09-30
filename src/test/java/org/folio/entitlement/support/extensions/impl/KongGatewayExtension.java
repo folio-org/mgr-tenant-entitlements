@@ -2,18 +2,16 @@ package org.folio.entitlement.support.extensions.impl;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.any;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static java.time.Duration.ofSeconds;
 import static org.folio.entitlement.support.extensions.impl.PostgresContainerExtension.POSTGRES_NETWORK_ALIAS;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.stubbing.StubMapping;
-import org.folio.test.extensions.impl.WireMockExtension;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.folio.entitlement.support.extensions.EnableKongGateway;
+import org.folio.test.extensions.impl.WireMockExtension;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
