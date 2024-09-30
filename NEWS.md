@@ -1,3 +1,6 @@
+## v1.3.1 in progress
+* [ISSUE_NUMBER](https://issues.folio.org/browse/ISSUE_NUMBER) Description
+
 ## v1.3.0 2024-09-30
 
 * [APPPOCTOOL-27](https://issues.folio.org/browse/APPPOCTOOL-27) Disable tenant matching validation (#135)
