@@ -82,7 +82,9 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
   "application.okapi.enabled=false",
   "application.kong.enabled=false",
   "application.clients.folio.connect-timeout=250ms",
-  "application.clients.folio.read-timeout=250ms"
+  "application.clients.folio.read-timeout=250ms",
+  "retries.module.backoff.delay=1",
+  "retries.module.backoff.multiplier=1"
 })
 class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
 
@@ -129,31 +131,6 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app1/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install500.json"})
   void install_negative_httpStatus500FromModule() throws Exception {
-    var entitlementRequest = entitlementRequest(FOLIO_APP1_ID);
-    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
-    var request =
-      post(updatePathWithPrefix("/entitlements")).contentType(APPLICATION_JSON).header(TOKEN, getSystemAccessToken())
-        .content(asJsonString(entitlementRequest));
-    queryParams.forEach(request::queryParam);
-
-    mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
-
-    var wireMockClient =
-      new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
-    List<String> endpointsCalled =
-      wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
-        .map(e -> e.getRequest().getUrl()).toList();
-    assertEquals(3, endpointsCalled.size());
-    endpointsCalled.forEach(endpoint -> assertEquals("/folio-module1/_/tenant", endpoint));
-  }
-
-  @Test
-  @KeycloakRealms("/keycloak/test-realm.json")
-  @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
-    "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
-    "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install.json"})
-  void install_negative_httpStatus500FromKong() throws Exception {
     var entitlementRequest = entitlementRequest(FOLIO_APP1_ID);
     var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
     var request =

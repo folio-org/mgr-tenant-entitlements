@@ -1,10 +1,19 @@
 package org.folio.entitlement.support.extensions.impl;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.any;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static java.time.Duration.ofSeconds;
 import static org.folio.entitlement.support.extensions.impl.PostgresContainerExtension.POSTGRES_NETWORK_ALIAS;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.stubbing.StubMapping;
+import org.folio.test.extensions.impl.WireMockExtension;
+import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.folio.entitlement.support.extensions.EnableKongGateway;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -23,7 +32,8 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
     .withEnv(kongEnvironment())
     .withNetwork(Network.SHARED)
     .withExposedPorts(8000, 8001)
-    .withAccessToHost(true);
+    .withAccessToHost(true)
+    .withNetworkAliases("kong");
 
   @Override
   public void beforeAll(ExtensionContext extensionContext) {
@@ -33,7 +43,30 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
       CONTAINER.start();
     }
 
-    System.setProperty(KONG_URL_PROPERTY, getUrlForExposedPort(8001));
+    var enableWiremock = extensionContext.getElement().map(element -> element.getAnnotation(EnableKongGateway.class))
+      .map(EnableKongGateway::enableWiremock).orElse(false);
+
+    String kongUrl = getUrlForExposedPort(8001);
+    if (enableWiremock) {
+      try {
+        var runContainer = WireMockExtension.class.getDeclaredMethod("runContainer");
+        runContainer.setAccessible(true);
+        runContainer.invoke(null);
+        var getUrlForExposedPort = WireMockExtension.class.getDeclaredMethod("getUrlForExposedPort");
+        getUrlForExposedPort.setAccessible(true);
+        String wireMockUrl = getUrlForExposedPort.invoke(null).toString();
+        var wireMockClient =
+          new WireMock(new URI(wireMockUrl).getHost(), new URI(wireMockUrl).getPort());
+        wireMockClient.register(
+          any(urlMatching("(/services|/routes).*")).atPriority(1000)
+            .willReturn(aResponse().proxiedFrom("http://kong:8001")));
+        kongUrl = wireMockUrl;
+      } catch (Exception e) {
+        throw new RuntimeException("Failed to start Wiremock", e);
+      }
+    }
+
+    System.setProperty(KONG_URL_PROPERTY, kongUrl);
     System.setProperty(KONG_GATEWAY_URL_PROPERTY, getUrlForExposedPort(8000));
   }
 
