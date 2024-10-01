@@ -1,11 +1,11 @@
 package org.folio.entitlement.it;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.any;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
+import static org.folio.entitlement.utils.WireMockUtil.stubAnyHttpMethod;
+import static org.folio.entitlement.utils.WireMockUtil.stubDelete;
+import static org.folio.entitlement.utils.WireMockUtil.stubGet;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -17,8 +17,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
@@ -31,7 +29,6 @@ import org.folio.tools.kong.client.KongAdminClient.KongResultList;
 import org.folio.tools.kong.model.Route;
 import org.folio.tools.kong.model.Service;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
@@ -55,8 +52,6 @@ public class KongRetriesIT extends BaseIntegrationTest {
   private static final String FOLIO_APP1_ID = "folio-app1-1.0.0";
   private static final String FOLIO_APP2_ID = "folio-app2-2.0.0";
 
-  @Autowired private ObjectMapper objectMapper;
-
   @Test
   @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
@@ -72,14 +67,12 @@ public class KongRetriesIT extends BaseIntegrationTest {
     queryParams.forEach(request::queryParam);
 
     var wireMockClient = getWireMockClient();
-    wireMockClient.register(
-      any(urlMatching("/services/folio-module1-1.0.0")).atPriority(1).willReturn(aResponse().withStatus(500)));
+    stubAnyHttpMethod(wireMockClient, 1, urlMatching("/services/folio-module1-1.0.0"), null, 500);
 
     mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
 
-    List<String> endpointsCalled =
-      wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
-        .map(e -> e.getRequest().getUrl()).toList();
+    var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
+      .map(e -> e.getRequest().getUrl()).toList();
     assertEquals(3, endpointsCalled.size());
     endpointsCalled.forEach(endpoint -> assertEquals("/services/folio-module1-1.0.0", endpoint));
   }
@@ -96,20 +89,15 @@ public class KongRetriesIT extends BaseIntegrationTest {
     var wireMockClient = getWireMockClient();
     var mockServiceInfo = new Service();
     mockServiceInfo.setId(moduleId);
-    wireMockClient.register(get(urlMatching("/services/" + moduleId)).atPriority(1).willReturn(
-      aResponse().withStatus(200).withBody(objectMapper.writeValueAsBytes(mockServiceInfo))
-        .withHeader("Content-Type", "application/json")));
+    stubGet(wireMockClient, 1, urlMatching("/services/" + moduleId), mockServiceInfo);
 
     var routesResponseMock = new KongResultList<Route>();
     var route = new Route();
     route.setId(routeId);
     routesResponseMock.setData(List.of(route));
-    wireMockClient.register(get(urlMatching("/routes\\?tags=test%2C" + moduleId + "(&offset=0)?")).atPriority(1)
-      .willReturn(aResponse().withStatus(200).withBody(objectMapper.writeValueAsBytes(routesResponseMock))
-        .withHeader("Content-Type", "application/json")));
+    stubGet(wireMockClient, 1, urlMatching("/routes\\?tags=test%2C" + moduleId + "(&offset=0)?"), routesResponseMock);
 
-    wireMockClient.register(WireMock.delete(urlMatching("/services/" + moduleId + "/routes/" + routeId)).atPriority(1)
-      .willReturn(aResponse().withStatus(500)));
+    stubDelete(wireMockClient, 1, urlMatching("/services/" + moduleId + "/routes/" + routeId), null, 500);
 
     var entitlementRequest = entitlementRequest(FOLIO_APP2_ID);
     var queryParams = Map.of("purge", "true", "ignoreErrors", "true");
@@ -122,9 +110,8 @@ public class KongRetriesIT extends BaseIntegrationTest {
     mockMvc.perform(request).andExpect(status().isBadRequest())
       .andExpect(jsonPath("$.errors[0].parameters[0].value").value(containsString("Failed to remove routes")));
 
-    List<String> endpointsCalled =
-      wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
-        .map(e -> e.getRequest().getUrl()).toList();
+    var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
+      .map(e -> e.getRequest().getUrl()).toList();
     assertEquals(3, endpointsCalled.size());
     endpointsCalled.forEach(endpoint -> assertEquals("/services/" + moduleId + "/routes/" + routeId, endpoint));
   }
