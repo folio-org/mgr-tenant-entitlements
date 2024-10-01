@@ -5,6 +5,7 @@ import static java.util.Collections.emptyList;
 import java.io.Serial;
 import java.util.List;
 import lombok.Getter;
+import lombok.Setter;
 import org.folio.common.domain.model.error.Parameter;
 
 @Getter
@@ -14,6 +15,7 @@ public class IntegrationException extends RuntimeException {
 
   private final transient List<Parameter> errors;
 
+  @Setter
   private Integer causeHttpStatus;
 
   /**

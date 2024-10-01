@@ -26,9 +26,4 @@ public class FeignRetryer extends Retryer.Default {
     }
     super.continueOrPropagate(e);
   }
-
-  @Override
-  public Retryer clone() {
-    return new FeignRetryer(period, maxPeriod, maxAttempts, shouldRetry);
-  }
 }

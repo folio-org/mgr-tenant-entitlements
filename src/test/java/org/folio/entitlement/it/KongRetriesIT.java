@@ -47,7 +47,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
   "retries.module.backoff.multiplier=1"
 })
 @EnableKongGateway(enableWiremock = true)
-public class KongRetriesIT extends BaseIntegrationTest {
+class KongRetriesIT extends BaseIntegrationTest {
 
   private static final String FOLIO_APP1_ID = "folio-app1-1.0.0";
   private static final String FOLIO_APP2_ID = "folio-app2-2.0.0";

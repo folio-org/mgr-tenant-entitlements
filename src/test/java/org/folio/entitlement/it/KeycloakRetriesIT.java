@@ -61,7 +61,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
   "application.keycloak.admin.clientId=mgr-component-app"
 })
 @Import(KeycloakRetriesIT.TestConfiguration.class)
-public class KeycloakRetriesIT extends BaseIntegrationTest {
+class KeycloakRetriesIT extends BaseIntegrationTest {
 
   private static final String FOLIO_APP1_ID = "folio-app1-1.0.0";
   private static final String FOLIO_APP2_ID = "folio-app2-2.0.0";
