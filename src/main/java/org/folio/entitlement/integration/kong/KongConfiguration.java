@@ -24,7 +24,6 @@ public class KongConfiguration {
   @Value("${retries.kong.backoff.delay:1000}") private long backOffDelayForKongCalls = 1000;
   @Value("${retries.kong.backoff.maxdelay:30000}") private long backOffMaxDelayForKongCalls = 30000;
 
-
   /**
    * Creates {@link KongRouteCreator} bean as a flow stage to populate routes in Kong per application.
    *
