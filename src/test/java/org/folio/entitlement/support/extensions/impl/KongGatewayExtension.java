@@ -48,19 +48,7 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
 
     String kongUrl = getUrlForExposedPort(8001);
     if (enableWiremock) {
-      try {
-        var runContainer = WireMockExtension.class.getDeclaredMethod("runContainer");
-        runContainer.setAccessible(true);
-        runContainer.invoke(null);
-        var getUrlForExposedPort = WireMockExtension.class.getDeclaredMethod("getUrlForExposedPort");
-        getUrlForExposedPort.setAccessible(true);
-        String wireMockUrl = getUrlForExposedPort.invoke(null).toString();
-        wireMockClient =
-          new WireMock(new URI(wireMockUrl).getHost(), new URI(wireMockUrl).getPort());
-        kongUrl = wireMockUrl;
-      } catch (Exception e) {
-        throw new RuntimeException("Failed to start Wiremock", e);
-      }
+      kongUrl = prepareAndRunWiremock();
     }
 
     System.setProperty(KONG_URL_PROPERTY, kongUrl);
@@ -138,5 +126,23 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
   private static boolean isWireMockEnabled(ExtensionContext extensionContext) {
     return extensionContext.getElement().map(element -> element.getAnnotation(EnableKongGateway.class))
       .map(EnableKongGateway::enableWiremock).orElse(false);
+  }
+
+  /**
+   * @return returns WireMock URL
+   */
+  private String prepareAndRunWiremock() {
+    try {
+      var runContainer = WireMockExtension.class.getDeclaredMethod("runContainer");
+      runContainer.setAccessible(true);
+      runContainer.invoke(null);
+      var getUrlForExposedPort = WireMockExtension.class.getDeclaredMethod("getUrlForExposedPort");
+      getUrlForExposedPort.setAccessible(true);
+      String wireMockUrl = getUrlForExposedPort.invoke(null).toString();
+      wireMockClient = new WireMock(new URI(wireMockUrl).getHost(), new URI(wireMockUrl).getPort());
+      return wireMockUrl;
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to start Wiremock", e);
+    }
   }
 }
