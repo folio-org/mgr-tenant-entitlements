@@ -55,7 +55,7 @@ application:
     connect-timeout: ${KONG_CONNECT_TIMEOUT:}
     read-timeout: ${KONG_READ_TIMEOUT:360000}
     write-timeout: ${KONG_WRITE_TIMEOUT:}
-    retries: ${KONG_RETRIES:3}
+    retries: ${KONG_RETRIES:}
     tls:
       enabled: ${KONG_TLS_ENABLED:false}
       trust-store-path: ${KONG_TLS_TRUSTSTORE_PATH:}
@@ -201,6 +201,7 @@ retries:
       maxdelay: ${RETRIES_KEYCLOAK_BACKOFF_MAXDELAY:30000}
       multiplier: ${RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER:5}
   kong:
+    max: ${RETRIES_KONG_MAX:3}
     backoff:
       delay: ${RETRIES_KONG_BACKOFF_DELAY:1000}
       maxdelay: ${RETRIES_KONG_BACKOFF_MAXDELAY:30000}

@@ -111,10 +111,9 @@ public class KongConfiguration {
       new FeignRetrySupportingErrorDecoder(new ErrorDecoder.Default(),
         methodKeyAndResponse -> methodKeyAndResponse.getRight().status() == 500));
 
-    var numberOfRetries = properties.getRetries() != null ? properties.getRetries() : 3;
     feignClientBuilder = feignClientBuilder.client(getOkHttpClient(okHttpClient, properties.getTls())).retryer(
       new FeignRetryer(retryConfig.getKong().getBackoff().getDelay(), retryConfig.getKong().getBackoff().getMaxdelay(),
-        numberOfRetries, retryableException -> retryableException.status() >= 500));
+        retryConfig.getKong().getMax(), retryableException -> retryableException.status() >= 500));
 
     return feignClientBuilder.target(KongAdminClient.class, properties.getUrl());
   }

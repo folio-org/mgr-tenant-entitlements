@@ -136,10 +136,10 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       .map(e -> e.getRequest().getUrl()).toList();
     assertThat(endpointsCalled).hasSize(6);
     assertThat(endpointsCalled.stream().filter(
-        v -> v.equals("/admin/realms/test/clients/null/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents"))
+        v -> v.equals("/admin/realms/test/clients/test/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents"))
       .count()).isEqualTo(3);
     assertThat(endpointsCalled.stream().filter(v -> v.equals(
-        "/admin/realms/test/clients/null/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents%2F%7Bid%7D"))
+        "/admin/realms/test/clients/test/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents%2F%7Bid%7D"))
       .count()).isEqualTo(3);
   }
 
@@ -157,6 +157,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     stubGet(wireMockClient, 1, urlMatching("/routes\\?tags=test%2C" + moduleId + "(&offset=0)?"), routesResponseMock);
 
     var clientRepMock = new ClientRepresentation();
+    clientRepMock.setId("test");
     clientRepMock.setClientId("test");
     clientRepMock.setName("test");
     stubGet(wireMockClient, 1, urlEqualTo("/admin/realms/test/clients?clientId=test"), List.of(clientRepMock));
