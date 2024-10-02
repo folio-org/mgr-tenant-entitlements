@@ -228,19 +228,19 @@ The feature is controlled by two env variables `SECURITY_ENABLED` and `KEYCLOAK_
 
 ### Retry configuration
 
-| Name                                | Default value |  Required   | Description                                      |
-|:------------------------------------|:--------------|:-----------:|:-------------------------------------------------|
-| RETRIES_MODULE_MAX                  | 3             |    false    | Maximum number of retries for FOLIO module calls |
-| RETRIES_KEYCLOAK_MAX                | 3             |    false    | Maximum number of retries for Keycloak calls     |
-| APPLICATION_KONG_RETRIES            | 3             |    false    | Maximum number of retries for Kong calls         |
-| RETRIES.MODULE.BACKOFF.DELAY        | 1000          |    false    | FOLIO module calls retries initial delay         |
-| RETRIES.MODULE.BACKOFF.MAXDELAY     | 30000         |    false    | FOLIO module calls retries maximum delay         |
-| RETRIES.MODULE.BACKOFF.MULTIPLIER   | 5             |    false    | FOLIO module calls retries delay multiplier      |
-| RETRIES.KEYCLOAK.BACKOFF.DELAY      | 1000          |    false    | Keycloak calls retries initial delay             |
-| RETRIES.KEYCLOAK.BACKOFF.MAXDELAY   | 30000         |    false    | Keycloak calls retries maximum delay             |
-| RETRIES.KEYCLOAK.BACKOFF.MULTIPLIER | 5             |    false    | Keycloak calls retries delay multiplier          |
-| RETRIES.KONG.BACKOFF.DELAY          | 1000          |    false    | Kong calls retries initial delay                 |
-| RETRIES.KONG.BACKOFF.MAXDELAY       | 30000         |    false    | Kong calls retries maximum delay                 |
+| Name                                | Default value |  Required   | Description                                       |
+|:------------------------------------|:--------------|:-----------:|:--------------------------------------------------|
+| RETRIES_MODULE_MAX                  | 3             |    false    | Maximum number of retries for FOLIO module calls  |
+| RETRIES_KEYCLOAK_MAX                | 3             |    false    | Maximum number of retries for Keycloak calls      |
+| APPLICATION_KONG_RETRIES            | 3             |    false    | Maximum number of retries for Kong calls          |
+| RETRIES_MODULE_BACKOFF_DELAY        | 1000          |    false    | FOLIO module calls retries initial delay millisec |
+| RETRIES_MODULE_BACKOFF_MAXDELAY     | 30000         |    false    | FOLIO module calls retries maximum delay millisec |
+| RETRIES_MODULE_BACKOFF_MULTIPLIER   | 5             |    false    | FOLIO module calls retries delay multiplier       |
+| RETRIES_KEYCLOAK_BACKOFF_DELAY      | 1000          |    false    | Keycloak calls retries initial delay millisec     |
+| RETRIES_KEYCLOAK_BACKOFF_MAXDELAY   | 30000         |    false    | Keycloak calls retries maximum delay millisec     |
+| RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER | 5             |    false    | Keycloak calls retries delay multiplier           |
+| RETRIES_KONG_BACKOFF_DELAY          | 1000          |    false    | Kong calls retries initial delay millisec         |
+| RETRIES_KONG_BACKOFF_MAXDELAY       | 30000         |    false    | Kong calls retries maximum delay millisec         |
 
 ## Kong Gateway Integration
 
