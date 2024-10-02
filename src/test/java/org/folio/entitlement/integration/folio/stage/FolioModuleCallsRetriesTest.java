@@ -26,8 +26,6 @@ import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.flow.impl.StageContextImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
@@ -40,7 +38,6 @@ import org.springframework.test.context.ContextConfiguration;
 
 @SpringBootTest
 @EnableRetry
-@ExtendWith(MockitoExtension.class)
 @Import(RetryConfiguration.class)
 @ContextConfiguration(classes = FolioModuleCallsRetriesTest.TestConfig.class)
 class FolioModuleCallsRetriesTest {
@@ -61,9 +58,7 @@ class FolioModuleCallsRetriesTest {
   @Test
   void testRetryOnInstallerExecute() {
     doThrow(new IntegrationException("Test", List.of(), 400)).when(folioModuleService).enable(any());
-    var moduleStageContext = new ModuleStageContext(new StageContextImpl("test",
-      Map.of(PARAM_REQUEST, EntitlementRequest.builder().build(), PARAM_MODULE_DESCRIPTOR, new ModuleDescriptor()),
-      Map.of()));
+    var moduleStageContext = createModuleStageContext();
     assertThatThrownBy(() -> folioModuleInstaller.execute(moduleStageContext)).isInstanceOf(IntegrationException.class);
     verify(folioModuleService, times(3)).enable(any());
   }
@@ -71,9 +66,7 @@ class FolioModuleCallsRetriesTest {
   @Test
   void testRetryOnInstallerCancel() {
     doThrow(new IntegrationException("Test", List.of(), 400)).when(folioModuleService).disable(any());
-    var moduleStageContext = new ModuleStageContext(new StageContextImpl("test",
-      Map.of(PARAM_REQUEST, EntitlementRequest.builder().build(), PARAM_MODULE_DESCRIPTOR, new ModuleDescriptor()),
-      Map.of()));
+    var moduleStageContext = createModuleStageContext();
     assertThatThrownBy(() -> folioModuleInstaller.cancel(moduleStageContext)).isInstanceOf(IntegrationException.class);
     verify(folioModuleService, times(3)).disable(any());
   }
@@ -81,9 +74,7 @@ class FolioModuleCallsRetriesTest {
   @Test
   void testRetryOnUpdaterExecute() {
     doThrow(new IntegrationException("Test", List.of(), 400)).when(folioModuleService).enable(any());
-    var moduleStageContext = new ModuleStageContext(new StageContextImpl("test",
-      Map.of(PARAM_REQUEST, EntitlementRequest.builder().build(), PARAM_MODULE_DESCRIPTOR, new ModuleDescriptor()),
-      Map.of()));
+    var moduleStageContext = createModuleStageContext();
     assertThatThrownBy(() -> folioModuleUpdater.execute(moduleStageContext)).isInstanceOf(IntegrationException.class);
     verify(folioModuleService, times(3)).enable(any());
   }
@@ -91,12 +82,16 @@ class FolioModuleCallsRetriesTest {
   @Test
   void testRetryOnUninstallerExecute() {
     doThrow(new IntegrationException("Test", List.of(), 400)).when(folioModuleService).disable(any());
-    var moduleStageContext = new ModuleStageContext(new StageContextImpl("test",
-      Map.of(PARAM_REQUEST, EntitlementRequest.builder().build(), PARAM_MODULE_DESCRIPTOR, new ModuleDescriptor()),
-      Map.of()));
+    var moduleStageContext = createModuleStageContext();
     assertThatThrownBy(() -> folioModuleUninstaller.execute(moduleStageContext)).isInstanceOf(
       IntegrationException.class);
     verify(folioModuleService, times(3)).disable(any());
+  }
+
+  private static ModuleStageContext createModuleStageContext() {
+    return new ModuleStageContext(new StageContextImpl("test",
+      Map.of(PARAM_REQUEST, EntitlementRequest.builder().build(), PARAM_MODULE_DESCRIPTOR, new ModuleDescriptor()),
+      Map.of()));
   }
 
   @Configuration
