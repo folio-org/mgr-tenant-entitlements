@@ -50,42 +50,48 @@ class KeycloakRetriesTest {
   @Test
   void testRetryOnModuleResourceCreate() {
     doThrow(new WebApplicationException("test", 500)).when(keycloakService).updateAuthResources(any(), any(), any());
-    assertThatThrownBy(() -> keycloakModuleResourceCreator.execute(createModuleStageContext())).isInstanceOf(
+    var context = createModuleStageContext();
+    assertThatThrownBy(() -> keycloakModuleResourceCreator.execute(context)).isInstanceOf(
       WebApplicationException.class);
   }
 
   @Test
   void testRetryOnModuleResourceUpdate() {
     doThrow(new WebApplicationException("test", 500)).when(keycloakService).updateAuthResources(any(), any(), any());
-    assertThatThrownBy(() -> keycloakModuleResourceUpdater.execute(createModuleStageContext())).isInstanceOf(
+    var context = createModuleStageContext();
+    assertThatThrownBy(() -> keycloakModuleResourceUpdater.execute(context)).isInstanceOf(
       WebApplicationException.class);
   }
 
   @Test
   void testRetryOnModuleResourceCleanup() {
     doThrow(new WebApplicationException("test", 500)).when(keycloakService).removeAuthResources(any(), any());
-    assertThatThrownBy(() -> keycloakModuleResourceCleaner.execute(createModuleStageContext())).isInstanceOf(
+    var context = createModuleStageContext();
+    assertThatThrownBy(() -> keycloakModuleResourceCleaner.execute(context)).isInstanceOf(
       WebApplicationException.class);
   }
 
   @Test
   void testRetryOnAuthResourceCreate() {
     doThrow(new WebApplicationException("test", 500)).when(keycloakService).updateAuthResources(any(), any(), any());
-    assertThatThrownBy(() -> keycloakAuthResourceCreator.execute(createOkapiStageContext())).isInstanceOf(
+    var context = createOkapiStageContext();
+    assertThatThrownBy(() -> keycloakAuthResourceCreator.execute(context)).isInstanceOf(
       WebApplicationException.class);
   }
 
   @Test
   void testRetryOnAuthResourceUpdate() {
     doThrow(new WebApplicationException("test", 500)).when(keycloakService).updateAuthResources(any(), any(), any());
-    assertThatThrownBy(() -> keycloakAuthResourceUpdater.execute(createOkapiStageContext())).isInstanceOf(
+    var context = createOkapiStageContext();
+    assertThatThrownBy(() -> keycloakAuthResourceUpdater.execute(context)).isInstanceOf(
       WebApplicationException.class);
   }
 
   @Test
   void testRetryOnAuthResourceCleanup() {
     doThrow(new WebApplicationException("test", 500)).when(keycloakService).removeAuthResources(any(), any());
-    assertThatThrownBy(() -> keycloakAuthResourceCleaner.execute(createOkapiStageContext())).isInstanceOf(
+    var context = createOkapiStageContext();
+    assertThatThrownBy(() -> keycloakAuthResourceCleaner.execute(context)).isInstanceOf(
       WebApplicationException.class);
   }
 
