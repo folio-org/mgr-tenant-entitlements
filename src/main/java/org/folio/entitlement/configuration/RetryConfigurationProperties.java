@@ -13,6 +13,7 @@ public class RetryConfigurationProperties {
 
   private RetryConfigProps module;
   private RetryConfigProps keycloak;
+  private RetryConfigProps kong;
 
   @Data
   public static class RetryConfigProps {

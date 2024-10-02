@@ -7,12 +7,12 @@ import feign.Feign;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
 import feign.codec.ErrorDecoder;
+import org.folio.entitlement.configuration.RetryConfigurationProperties;
 import org.folio.entitlement.retry.feign.FeignRetrySupportingErrorDecoder;
 import org.folio.entitlement.retry.feign.FeignRetryer;
 import org.folio.tools.kong.client.KongAdminClient;
 import org.folio.tools.kong.configuration.KongConfigurationProperties;
 import org.folio.tools.kong.service.KongGatewayService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,10 +20,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(prefix = "application.kong", name = "enabled")
 public class KongConfiguration {
-
-  @Value("${retries.kong.backoff.delay:1000}") private long backOffDelayForKongCalls = 1000;
-  @Value("${retries.kong.backoff.maxdelay:30000}") private long backOffMaxDelayForKongCalls = 30000;
-
   /**
    * Creates {@link KongRouteCreator} bean as a flow stage to populate routes in Kong per application.
    *
@@ -108,7 +104,8 @@ public class KongConfiguration {
    */
   @Bean(name = "folioKongAdminClient")
   public KongAdminClient folioKongIntegrationClient(okhttp3.OkHttpClient okHttpClient,
-    KongConfigurationProperties properties, Contract contract, Encoder encoder, Decoder decoder) {
+    KongConfigurationProperties properties, Contract contract, Encoder encoder, Decoder decoder,
+    RetryConfigurationProperties retryConfig) {
 
     var feignClientBuilder = Feign.builder().contract(contract).encoder(encoder).decoder(decoder).errorDecoder(
       new FeignRetrySupportingErrorDecoder(new ErrorDecoder.Default(),
@@ -116,8 +113,8 @@ public class KongConfiguration {
 
     var numberOfRetries = properties.getRetries() != null ? properties.getRetries() : 3;
     feignClientBuilder = feignClientBuilder.client(getOkHttpClient(okHttpClient, properties.getTls())).retryer(
-      new FeignRetryer(backOffDelayForKongCalls * 1000, backOffMaxDelayForKongCalls * 1000, numberOfRetries,
-        retryableException -> retryableException.status() >= 500));
+      new FeignRetryer(retryConfig.getKong().getBackoff().getDelay(), retryConfig.getKong().getBackoff().getMaxdelay(),
+        numberOfRetries, retryableException -> retryableException.status() >= 500));
 
     return feignClientBuilder.target(KongAdminClient.class, properties.getUrl());
   }
