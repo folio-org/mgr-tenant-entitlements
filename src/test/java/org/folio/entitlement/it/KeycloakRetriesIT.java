@@ -90,9 +90,9 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest));
     queryParams.forEach(request::queryParam);
 
-    stubPost(wireMockClient, 1, urlEqualTo("/admin/realms/test/clients/null/authz/resource-server/scope"), null, 201);
+    stubPost(wireMockClient, 1, urlEqualTo("/admin/realms/test/clients/test/authz/resource-server/scope"), null, 201);
     stubAnyHttpMethod(wireMockClient, 1,
-      urlMatching("/admin/realms/test/clients/null/authz/resource-server/resource.*"), null, 500);
+      urlMatching("/admin/realms/test/clients/test/authz/resource-server/resource.*"), null, 500);
 
     mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
       jsonPath("$.errors[0].parameters[0].value").value(
@@ -101,10 +101,10 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     var endpointsCalled =
       wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500).toList();
     assertThat(endpointsCalled.stream().filter(
-      e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/null/authz/resource-server/resource")
+      e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/test/authz/resource-server/resource")
         && e.getRequest().getBodyAsString().contains("GET#folio-module1.events.item.get")).count()).isEqualTo(3);
     assertThat(endpointsCalled.stream().filter(
-      e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/null/authz/resource-server/resource")
+      e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/test/authz/resource-server/resource")
         && e.getRequest().getBodyAsString().contains("POST#folio-module1.events.item.post")).count()).isEqualTo(3);
   }
 
@@ -118,7 +118,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     var routeId = "mockroute1";
 
     var wireMockClient = mockBaseDependencies(moduleId, routeId);
-    stubGet(wireMockClient, 1, urlMatching("/admin/realms/test/clients/null/authz/resource-server/resource.*"), null,
+    stubGet(wireMockClient, 1, urlMatching("/admin/realms/test/clients/test/authz/resource-server/resource.*"), null,
       500);
 
     var entitlementRequest = entitlementRequest(FOLIO_APP2_ID);
