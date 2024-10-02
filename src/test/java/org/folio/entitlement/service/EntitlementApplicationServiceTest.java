@@ -5,7 +5,6 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestValues.entitlementEntity;
 import static org.folio.entitlement.support.TestValues.tenant;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -83,7 +82,7 @@ class EntitlementApplicationServiceTest {
     var actualAppDescriptors =
       service.getApplicationDescriptorsByTenantName(TEST_TENANT_NAME, OKAPI_TOKEN, 0, limit);
 
-    assertEquals(totalRecords, actualAppDescriptors.getTotalRecords());
+    assertThat(actualAppDescriptors.getTotalRecords()).isEqualTo(totalRecords);
     assertThat(actualAppDescriptors.getApplicationDescriptors())
       .containsExactlyElementsOf(appDescriptors.subList(0, limit));
 

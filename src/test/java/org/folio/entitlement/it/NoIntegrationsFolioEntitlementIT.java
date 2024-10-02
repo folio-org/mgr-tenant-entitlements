@@ -1,5 +1,6 @@
 package org.folio.entitlement.it;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertCapabilityEvents;
@@ -43,7 +44,6 @@ import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
@@ -145,8 +145,8 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     List<String> endpointsCalled =
       wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
         .map(e -> e.getRequest().getUrl()).toList();
-    assertEquals(3, endpointsCalled.size());
-    endpointsCalled.forEach(endpoint -> assertEquals("/folio-module1/_/tenant", endpoint));
+    assertThat(endpointsCalled.size()).isEqualTo(3);
+    endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/folio-module1/_/tenant"));
   }
 
   @Test

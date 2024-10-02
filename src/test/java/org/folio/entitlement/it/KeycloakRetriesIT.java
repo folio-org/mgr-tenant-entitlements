@@ -2,6 +2,7 @@ package org.folio.entitlement.it;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.utils.WireMockUtil.stubAnyHttpMethod;
@@ -9,7 +10,6 @@ import static org.folio.entitlement.utils.WireMockUtil.stubGet;
 import static org.folio.entitlement.utils.WireMockUtil.stubPost;
 import static org.folio.security.integration.keycloak.utils.ClientBuildUtils.buildKeycloakAdminClient;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
@@ -100,12 +100,12 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
 
     var endpointsCalled =
       wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500).toList();
-    assertEquals(3, endpointsCalled.stream().filter(
+    assertThat(endpointsCalled.stream().filter(
       e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/null/authz/resource-server/resource")
-        && e.getRequest().getBodyAsString().contains("GET#folio-module1.events.item.get")).count());
-    assertEquals(3, endpointsCalled.stream().filter(
+        && e.getRequest().getBodyAsString().contains("GET#folio-module1.events.item.get")).count()).isEqualTo(3);
+    assertThat(endpointsCalled.stream().filter(
       e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/null/authz/resource-server/resource")
-        && e.getRequest().getBodyAsString().contains("POST#folio-module1.events.item.post")).count());
+        && e.getRequest().getBodyAsString().contains("POST#folio-module1.events.item.post")).count()).isEqualTo(3);
   }
 
   @Test
@@ -134,13 +134,13 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
 
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
-    assertEquals(6, endpointsCalled.size());
-    assertEquals(3, endpointsCalled.stream().filter(
+    assertThat(endpointsCalled.size()).isEqualTo(6);
+    assertThat(endpointsCalled.stream().filter(
         v -> v.equals("/admin/realms/test/clients/null/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents"))
-      .count());
-    assertEquals(3, endpointsCalled.stream().filter(v -> v.equals(
+      .count()).isEqualTo(3);
+    assertThat(endpointsCalled.stream().filter(v -> v.equals(
         "/admin/realms/test/clients/null/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents%2F%7Bid%7D"))
-      .count());
+      .count()).isEqualTo(3);
   }
 
   protected WireMock mockBaseDependencies(String moduleId, String routeId) throws Exception {

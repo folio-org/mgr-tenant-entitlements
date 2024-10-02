@@ -1,13 +1,13 @@
 package org.folio.entitlement.it;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.utils.WireMockUtil.stubAnyHttpMethod;
 import static org.folio.entitlement.utils.WireMockUtil.stubDelete;
 import static org.folio.entitlement.utils.WireMockUtil.stubGet;
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
@@ -73,8 +73,8 @@ class KongRetriesIT extends BaseIntegrationTest {
 
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
-    assertEquals(3, endpointsCalled.size());
-    endpointsCalled.forEach(endpoint -> assertEquals("/services/folio-module1-1.0.0", endpoint));
+    assertThat(endpointsCalled.size()).isEqualTo(3);
+    endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/services/folio-module1-1.0.0"));
   }
 
   @Test
@@ -112,7 +112,7 @@ class KongRetriesIT extends BaseIntegrationTest {
 
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
-    assertEquals(3, endpointsCalled.size());
-    endpointsCalled.forEach(endpoint -> assertEquals("/services/" + moduleId + "/routes/" + routeId, endpoint));
+    assertThat(endpointsCalled.size()).isEqualTo(3);
+    endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/services/" + moduleId + "/routes/" + routeId));
   }
 }
