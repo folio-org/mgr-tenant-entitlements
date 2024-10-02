@@ -134,7 +134,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
 
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
-    assertThat(endpointsCalled.size()).isEqualTo(6);
+    assertThat(endpointsCalled).hasSize(6);
     assertThat(endpointsCalled.stream().filter(
         v -> v.equals("/admin/realms/test/clients/null/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents"))
       .count()).isEqualTo(3);

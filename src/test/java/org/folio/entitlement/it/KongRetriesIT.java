@@ -73,7 +73,7 @@ class KongRetriesIT extends BaseIntegrationTest {
 
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
-    assertThat(endpointsCalled.size()).isEqualTo(3);
+    assertThat(endpointsCalled).hasSize(3);
     endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/services/folio-module1-1.0.0"));
   }
 
@@ -112,7 +112,7 @@ class KongRetriesIT extends BaseIntegrationTest {
 
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
-    assertThat(endpointsCalled.size()).isEqualTo(3);
+    assertThat(endpointsCalled).hasSize(3);
     endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/services/" + moduleId + "/routes/" + routeId));
   }
 }

@@ -159,7 +159,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     List<String> endpointsCalled =
       wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == expectedHttpStatus)
         .map(e -> e.getRequest().getUrl()).toList();
-    assertThat(endpointsCalled.size()).isEqualTo(3);
+    assertThat(endpointsCalled).hasSize(3);
     endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/folio-module1/_/tenant"));
   }
 

@@ -4,7 +4,6 @@ import jakarta.ws.rs.WebApplicationException;
 import java.util.function.Predicate;
 import org.folio.entitlement.integration.IntegrationException;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.RetryContext;
@@ -18,16 +17,13 @@ import org.springframework.retry.support.RetryTemplate;
 @Configuration
 public class RetryConfiguration {
 
-  @Autowired
-  private RetryConfigurationProperties configProps;
-
   /**
    * Create a RetryOperationsInterceptor that will intercept error during calls to folio modules.
    *
    * @return RetryOperationsInterceptor for folio modules calls
    */
   @Bean
-  public RetryOperationsInterceptor folioModuleCallsRetryInterceptor() {
+  public RetryOperationsInterceptor folioModuleCallsRetryInterceptor(RetryConfigurationProperties configProps) {
     return createRetryInterceptor(IntegrationException.class,
       integrationException -> integrationException.getCauseHttpStatus() != null && (
         integrationException.getCauseHttpStatus() >= 500 || integrationException.getCauseHttpStatus() >= 400),
@@ -41,7 +37,7 @@ public class RetryConfiguration {
    * @return RetryOperationsInterceptor for Keycloak calls
    */
   @Bean
-  public RetryOperationsInterceptor keycloakCallsRetryInterceptor() {
+  public RetryOperationsInterceptor keycloakCallsRetryInterceptor(RetryConfigurationProperties configProps) {
     return createRetryInterceptor(WebApplicationException.class,
       webAppException -> webAppException.getResponse() != null && webAppException.getResponse().getStatus() >= 500,
       configProps.getKeycloak().getMax(), configProps.getKeycloak().getBackoff().getDelay(),
