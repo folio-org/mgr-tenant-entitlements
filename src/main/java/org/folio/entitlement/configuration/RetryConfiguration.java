@@ -29,10 +29,10 @@ public class RetryConfiguration {
   @Bean
   public RetryOperationsInterceptor folioModuleCallsRetryInterceptor() {
     return createRetryInterceptor(IntegrationException.class,
-      integrationException -> integrationException.getCauseHttpStatus() != null
-        && integrationException.getCauseHttpStatus() >= 500, configProps.getModule().getMax(),
-      configProps.getModule().getBackoff().getDelay(), configProps.getModule().getBackoff().getMaxdelay(),
-      configProps.getModule().getBackoff().getMultiplier());
+      integrationException -> integrationException.getCauseHttpStatus() != null && (
+        integrationException.getCauseHttpStatus() >= 500 || integrationException.getCauseHttpStatus() >= 400),
+      configProps.getModule().getMax(), configProps.getModule().getBackoff().getDelay(),
+      configProps.getModule().getBackoff().getMaxdelay(), configProps.getModule().getBackoff().getMultiplier());
   }
 
   /**

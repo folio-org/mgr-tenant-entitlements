@@ -131,6 +131,20 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app1/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install500.json"})
   void install_negative_httpStatus500FromModule() throws Exception {
+    install_negative_httpStatusRetryableErrorFromModule(500);
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install400.json"})
+  void install_negative_httpStatus400FromModule() throws Exception {
+    install_negative_httpStatusRetryableErrorFromModule(400);
+  }
+
+  void install_negative_httpStatusRetryableErrorFromModule(int expectedHttpStatus) throws Exception {
     var entitlementRequest = entitlementRequest(FOLIO_APP1_ID);
     var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
     var request =
@@ -143,7 +157,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     var wireMockClient =
       new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
     List<String> endpointsCalled =
-      wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
+      wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == expectedHttpStatus)
         .map(e -> e.getRequest().getUrl()).toList();
     assertThat(endpointsCalled.size()).isEqualTo(3);
     endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/folio-module1/_/tenant"));
