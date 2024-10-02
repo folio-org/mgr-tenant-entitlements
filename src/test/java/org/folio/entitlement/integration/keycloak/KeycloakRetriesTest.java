@@ -16,6 +16,7 @@ import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryBac
 import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryConfigProps;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ModuleStageContext;
+import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.repository.FlowStageRepository;
 import org.folio.flow.impl.StageContextImpl;
 import org.junit.jupiter.api.Test;
@@ -64,8 +65,32 @@ public class KeycloakRetriesTest {
     assertThatThrownBy(() -> keycloakModuleResourceCleaner.execute(createModuleStageContext()));
   }
 
+  @Test
+  void testRetryOnAuthResourceCreate() {
+    doThrow(new WebApplicationException("test", 500)).when(keycloakService).updateAuthResources(any(), any(), any());
+    assertThatThrownBy(() -> keycloakAuthResourceCreator.execute(createOkapiStageContext()));
+  }
+
+  @Test
+  void testRetryOnAuthResourceUpdate() {
+    doThrow(new WebApplicationException("test", 500)).when(keycloakService).updateAuthResources(any(), any(), any());
+    assertThatThrownBy(() -> keycloakAuthResourceUpdater.execute(createOkapiStageContext()));
+  }
+
+  @Test
+  void testRetryOnAuthResourceCleanup() {
+    doThrow(new WebApplicationException("test", 500)).when(keycloakService).removeAuthResources(any(), any());
+    assertThatThrownBy(() -> keycloakAuthResourceCleaner.execute(createOkapiStageContext()));
+  }
+
   private static ModuleStageContext createModuleStageContext() {
     return new ModuleStageContext(new StageContextImpl("test",
+      Map.of(PARAM_REQUEST, EntitlementRequest.builder().purge(true).build(), PARAM_MODULE_DESCRIPTOR,
+        new ModuleDescriptor()), Map.of()));
+  }
+
+  private static OkapiStageContext createOkapiStageContext() {
+    return new OkapiStageContext(new StageContextImpl("test",
       Map.of(PARAM_REQUEST, EntitlementRequest.builder().purge(true).build(), PARAM_MODULE_DESCRIPTOR,
         new ModuleDescriptor()), Map.of()));
   }
