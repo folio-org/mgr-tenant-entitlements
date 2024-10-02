@@ -4,7 +4,7 @@ import jakarta.ws.rs.WebApplicationException;
 import java.util.function.Predicate;
 import org.folio.entitlement.integration.IntegrationException;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.RetryContext;
@@ -18,16 +18,8 @@ import org.springframework.retry.support.RetryTemplate;
 @Configuration
 public class RetryConfiguration {
 
-  @Value("${retries.module.max:3}") private int maxRetriesForFolioModuleCalls = 3;
-  @Value("${retries.keycloak.max:3}") private int maxRetriesForKeycloakCalls = 3;
-
-  @Value("${retries.module.backoff.delay:1000}") private int backOffDelayForFolioModuleCalls = 1000;
-  @Value("${retries.module.backoff.maxdelay:30000}") private int backOffMaxDelayForFolioModuleCalls = 30000;
-  @Value("${retries.module.backoff.multiplier:5}") private int backOffMultiplierForFolioModuleCalls = 5;
-
-  @Value("${retries.keycloak.backoff.delay:1000}") private int backOffDelayForKeycloakCalls = 1000;
-  @Value("${retries.keycloak.backoff.maxdelay:30000}") private int backOffMaxDelayForKeycloakCalls = 30000;
-  @Value("${retries.keycloak.backoff.multiplier:5}") private int backOffMultiplierForKeycloakCalls = 5;
+  @Autowired
+  private RetryConfigurationProperties configProps;
 
   /**
    * Create a RetryOperationsInterceptor that will intercept error during calls to folio modules.
@@ -38,8 +30,9 @@ public class RetryConfiguration {
   public RetryOperationsInterceptor folioModuleCallsRetryInterceptor() {
     return createRetryInterceptor(IntegrationException.class,
       integrationException -> integrationException.getCauseHttpStatus() != null
-        && integrationException.getCauseHttpStatus() >= 500, maxRetriesForFolioModuleCalls,
-      backOffDelayForFolioModuleCalls, backOffMaxDelayForFolioModuleCalls, backOffMultiplierForFolioModuleCalls);
+        && integrationException.getCauseHttpStatus() >= 500, configProps.getModule().getMax(),
+      configProps.getModule().getBackoff().getDelay(), configProps.getModule().getBackoff().getMaxdelay(),
+      configProps.getModule().getBackoff().getMultiplier());
   }
 
   /**
@@ -51,8 +44,8 @@ public class RetryConfiguration {
   public RetryOperationsInterceptor keycloakCallsRetryInterceptor() {
     return createRetryInterceptor(WebApplicationException.class,
       webAppException -> webAppException.getResponse() != null && webAppException.getResponse().getStatus() >= 500,
-      maxRetriesForKeycloakCalls, backOffDelayForKeycloakCalls, backOffMaxDelayForKeycloakCalls,
-      backOffMultiplierForKeycloakCalls);
+      configProps.getKeycloak().getMax(), configProps.getKeycloak().getBackoff().getDelay(),
+      configProps.getKeycloak().getBackoff().getMaxdelay(), configProps.getKeycloak().getBackoff().getMultiplier());
   }
 
   private static <T extends Exception> RetryOperationsInterceptor createRetryInterceptor(Class<T> exceptionClass,

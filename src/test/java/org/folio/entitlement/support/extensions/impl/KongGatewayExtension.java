@@ -129,6 +129,8 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
   }
 
   /**
+   * Prepare and start WireMock server.
+   *
    * @return returns WireMock URL
    */
   private String prepareAndRunWiremock() {

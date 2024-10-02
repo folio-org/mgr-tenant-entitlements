@@ -186,3 +186,17 @@ feign:
       okapi:
         connectTimeout: 30000
         readTimeout: 300000
+
+retries:
+  module:
+    max: 3
+    backoff:
+      delay: 1000
+      maxdelay: 30000
+      multiplier: 5
+  keycloak:
+    max: 3
+    backoff:
+      delay: 1000
+      maxdelay: 30000
+      multiplier: 5
