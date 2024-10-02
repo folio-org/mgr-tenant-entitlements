@@ -165,7 +165,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     var scopeRepMock = new ScopeRepresentation();
     scopeRepMock.setId("test");
     scopeRepMock.setName("test");
-    stubGet(wireMockClient, 1, urlEqualTo("/admin/realms/test/clients/null/authz/resource-server/scope"),
+    stubGet(wireMockClient, 1, urlEqualTo("/admin/realms/test/clients/test/authz/resource-server/scope"),
       List.of(scopeRepMock));
     return wireMockClient;
   }
