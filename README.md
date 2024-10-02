@@ -232,7 +232,7 @@ The feature is controlled by two env variables `SECURITY_ENABLED` and `KEYCLOAK_
 |:------------------------------------|:--------------|:-----------:|:--------------------------------------------------|
 | RETRIES_MODULE_MAX                  | 3             |    false    | Maximum number of retries for FOLIO module calls  |
 | RETRIES_KEYCLOAK_MAX                | 3             |    false    | Maximum number of retries for Keycloak calls      |
-| APPLICATION_KONG_RETRIES            | 3             |    false    | Maximum number of retries for Kong calls          |
+| KONG_RETRIES                        | 3             |    false    | Maximum number of retries for Kong calls          |
 | RETRIES_MODULE_BACKOFF_DELAY        | 1000          |    false    | FOLIO module calls retries initial delay millisec |
 | RETRIES_MODULE_BACKOFF_MAXDELAY     | 30000         |    false    | FOLIO module calls retries maximum delay millisec |
 | RETRIES_MODULE_BACKOFF_MULTIPLIER   | 5             |    false    | FOLIO module calls retries delay multiplier       |
