@@ -13,11 +13,6 @@ public class KongModuleRouteCleaner extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
-    var request = context.getEntitlementRequest();
-    if (!request.isPurge()) {
-      return;
-    }
-
     var moduleDescriptor = context.getModuleDescriptor();
     kongGatewayService.removeRoutes(context.getTenantName(), List.of(moduleDescriptor));
   }

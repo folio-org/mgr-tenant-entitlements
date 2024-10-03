@@ -7,7 +7,6 @@ import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.Map;
@@ -56,7 +55,7 @@ class KongModuleRouteCleanerTest {
 
     kongModuleRouteCleaner.execute(stageContext);
 
-    verifyNoInteractions(kongGatewayService);
+    verify(kongGatewayService).removeRoutes(TENANT_NAME, List.of(moduleDescriptor));
   }
 
   @Test

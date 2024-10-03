@@ -12,11 +12,6 @@ public class KongRouteCleaner extends DatabaseLoggingStage<OkapiStageContext> {
 
   @Override
   public void execute(OkapiStageContext context) {
-    var request = context.getEntitlementRequest();
-    if (!request.isPurge()) {
-      return;
-    }
-
     kongGatewayService.removeRoutes(context.getTenantName(), context.getModuleDescriptors());
   }
 }
