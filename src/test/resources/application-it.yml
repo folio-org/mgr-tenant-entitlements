@@ -14,6 +14,7 @@ application:
   kong:
     enabled: true
     register-module: false
+    retries: 3
   okapi:
     enabled: true
   environment: it
@@ -38,3 +39,22 @@ logging:
     folio-flow-engine: info
     org.springframework.web: debug
     org.springframework.test.context.jdbc.SqlScriptsTestExecutionListener: debug
+
+retries:
+  module:
+    max: 3
+    backoff:
+      delay: 1
+      maxdelay: 1
+      multiplier: 1
+  keycloak:
+    max: 3
+    backoff:
+      delay: 1
+      maxdelay: 1
+      multiplier: 1
+  kong:
+    max: 3
+    backoff:
+      delay: 1
+      maxdelay: 1

@@ -100,7 +100,8 @@ class FolioTenantApiClientTest {
     var moduleRequest = moduleRequest(parameters);
     assertThatThrownBy(() -> folioTenantApiClient.install(moduleRequest))
       .isInstanceOf(IntegrationException.class)
-      .hasMessage("Failed to perform doPostTenant call");
+      .hasMessage("Failed to perform doPostTenant call")
+      .extracting(e -> ((IntegrationException) e).getCauseHttpStatus()).isEqualTo(500);
 
     verifyHttpRequest(installRequest(), httpRequestCaptor.getValue(), 82);
     verify(jsonConverter).toJson(tenantAttributesForInstall());
@@ -183,7 +184,8 @@ class FolioTenantApiClientTest {
     var moduleRequest = moduleRequest(true);
     assertThatThrownBy(() -> folioTenantApiClient.uninstall(moduleRequest))
       .isInstanceOf(IntegrationException.class)
-      .hasMessage("Failed to perform doPostTenant call");
+      .hasMessage("Failed to perform doPostTenant call")
+      .extracting(e -> ((IntegrationException) e).getCauseHttpStatus()).isEqualTo(500);
 
     verifyHttpRequest(uninstallRequest(), httpRequestCaptor.getValue(), 43);
     verify(jsonConverter).toJson(tenantAttributesForUninstall());

@@ -11,4 +11,5 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @Retention(RetentionPolicy.RUNTIME)
 @ExtendWith(KongGatewayExtension.class)
 public @interface EnableKongGateway {
+  boolean enableWiremock() default false;
 }

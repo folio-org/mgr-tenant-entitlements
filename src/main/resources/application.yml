@@ -186,3 +186,22 @@ feign:
       okapi:
         connectTimeout: 30000
         readTimeout: 300000
+
+retries:
+  module:
+    max: ${RETRIES_MODULE_MAX:3}
+    backoff:
+      delay: ${RETRIES_MODULE_BACKOFF_DELAY:1000}
+      maxdelay: ${RETRIES_MODULE_BACKOFF_MAXDELAY:30000}
+      multiplier: ${RETRIES_MODULE_BACKOFF_MULTIPLIER:5}
+  keycloak:
+    max: ${RETRIES_KEYCLOAK_MAX:3}
+    backoff:
+      delay: ${RETRIES_KEYCLOAK_BACKOFF_DELAY:1000}
+      maxdelay: ${RETRIES_KEYCLOAK_BACKOFF_MAXDELAY:30000}
+      multiplier: ${RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER:5}
+  kong:
+    max: ${RETRIES_KONG_MAX:3}
+    backoff:
+      delay: ${RETRIES_KONG_BACKOFF_DELAY:1000}
+      maxdelay: ${RETRIES_KONG_BACKOFF_MAXDELAY:30000}

@@ -15,6 +15,7 @@ import static org.folio.common.utils.Collectors.toLinkedHashMap;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +31,7 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
+import org.folio.entitlement.retry.keycloak.KeycloakRetrySupportService;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.AuthorizationResource;
@@ -44,6 +46,7 @@ public class KeycloakService {
   private final Keycloak keycloakClient;
   private final KeycloakModuleDescriptorMapper moduleDescriptorMapper;
   private final KeycloakConfigurationProperties properties;
+  private final KeycloakRetrySupportService retrySupport;
 
   /**
    * Registers authorization resources and scopes in Keycloak.
@@ -124,7 +127,8 @@ public class KeycloakService {
 
   private AuthorizationResource getAuthorizationClient(String realmName) {
     var name = realmName + properties.getLogin().getClientNameSuffix();
-    var loginClients = keycloakClient.realm(realmName).clients().findByClientId(name);
+    var loginClients =
+      retrySupport.callWithRetry(() -> keycloakClient.realm(realmName).clients().findByClientId(name));
     var loginClientId = loginClients.stream()
       .filter(cl -> cl.getClientId().equals(name))
       .findFirst()
@@ -154,7 +158,7 @@ public class KeycloakService {
 
   private Optional<Parameter> createScopeIgnoreConflict(AuthorizationResource client, ScopeRepresentation scope) {
     var scopeName = scope.getName();
-    try (var response = client.scopes().create(scope)) {
+    try (var response = retrySupport.callWithRetry(() -> failOnInternalServerError(client.scopes().create(scope)))) {
       var status = response.getStatus();
       if (status >= SC_BAD_REQUEST && status != SC_CONFLICT) {
         return Optional.of(getScopeError(format(
@@ -170,7 +174,7 @@ public class KeycloakService {
     return Optional.empty();
   }
 
-  private static List<Parameter> createResources(AuthorizationResource client,
+  private List<Parameter> createResources(AuthorizationResource client,
     Collection<ResourceRepresentation> resources) {
     var scopes = getAuthorizationScopes(client);
 
@@ -181,14 +185,15 @@ public class KeycloakService {
       .toList();
   }
 
-  private static Map<String, String> getAuthorizationScopes(AuthorizationResource authResourceClient) {
-    return toStream(authResourceClient.scopes().scopes())
+  private Map<String, String> getAuthorizationScopes(AuthorizationResource authResourceClient) {
+    return toStream(retrySupport.callWithRetry(() -> authResourceClient.scopes().scopes()))
       .collect(toMap(ScopeRepresentation::getName, ScopeRepresentation::getId, (o1, o2) -> o1));
   }
 
-  private static Optional<Parameter> createResourceSafe(AuthorizationResource client, ResourceRepresentation resource) {
+  private Optional<Parameter> createResourceSafe(AuthorizationResource client, ResourceRepresentation resource) {
     var name = resource.getName();
-    try (var response = client.resources().create(resource)) {
+    try (
+      var response = retrySupport.callWithRetry(() -> failOnInternalServerError(client.resources().create(resource)))) {
       var status = response.getStatus();
       if (status == SC_CONFLICT) {
         return updateResource(client, resource);
@@ -209,7 +214,7 @@ public class KeycloakService {
     return Optional.empty();
   }
 
-  private static Optional<Parameter> updateResource(AuthorizationResource client, ResourceRepresentation resource) {
+  private Optional<Parameter> updateResource(AuthorizationResource client, ResourceRepresentation resource) {
     var name = resource.getName();
     var resourceByName = findResourceByName(client, name);
     if (resourceByName.isEmpty()) {
@@ -221,7 +226,7 @@ public class KeycloakService {
     resourceRepresentation.setScopes(resource.getScopes());
 
     try {
-      client.resources().resource(resourceId).update(resourceRepresentation);
+      retrySupport.runWithRetry(() -> client.resources().resource(resourceId).update(resourceRepresentation));
       log.debug("Authorization scopes are updated for resource: name = {}", name);
       return Optional.empty();
     } catch (WebApplicationException exception) {
@@ -236,7 +241,7 @@ public class KeycloakService {
     return resource;
   }
 
-  private static List<Parameter> removeResources(AuthorizationResource authResourceClient,
+  private List<Parameter> removeResources(AuthorizationResource authResourceClient,
     List<ResourceRepresentation> resources) {
     return resources.stream()
       .map(resource -> removeResourceIfExist(authResourceClient, resource))
@@ -244,7 +249,7 @@ public class KeycloakService {
       .toList();
   }
 
-  private static Optional<Parameter> removeResourceIfExist(AuthorizationResource client,
+  private Optional<Parameter> removeResourceIfExist(AuthorizationResource client,
     ResourceRepresentation resource) {
     var resourceName = resource.getName();
     try {
@@ -252,7 +257,7 @@ public class KeycloakService {
       if (existingResource.isPresent()) {
         var id = existingResource.get().getId();
         log.debug("Keycloak resource removed: id = {}, name = {}", id, resourceName);
-        client.resources().resource(id).remove();
+        retrySupport.runWithRetry(() -> client.resources().resource(id).remove());
       }
     } catch (WebApplicationException exception) {
       var response = exception.getResponse();
@@ -266,15 +271,16 @@ public class KeycloakService {
     return Optional.empty();
   }
 
-  private static Optional<ResourceRepresentation> findResourceByName(AuthorizationResource client, String name) {
-    var searchResourcesResult = client.resources().findByName(name);
+  private Optional<ResourceRepresentation> findResourceByName(AuthorizationResource client, String name) {
+    var searchResourcesResult = retrySupport.callWithRetry(() -> client.resources().findByName(name));
     return searchResourcesResult.stream()
       .filter(res -> res.getName().equals(name))
       .findFirst();
   }
 
   private AuthorizationResource getAuthorizationResourceClient(String clientId, String realmName) {
-    return keycloakClient.proxy(AuthorizationResource.class, authorizationResourceUri(clientId, realmName));
+    return retrySupport.callWithRetry(
+      () -> keycloakClient.proxy(AuthorizationResource.class, authorizationResourceUri(clientId, realmName)));
   }
 
   private URI authorizationResourceUri(String clientId, String realmName) {
@@ -289,6 +295,12 @@ public class KeycloakService {
   private static Parameter getScopeError(String message) {
     return new Parameter().key("scope").value(message);
   }
+
+  private static Response failOnInternalServerError(Response response) {
+    if (response.getStatus() >= 500) {
+      response.close(); // Release HTTP connection
+      throw new WebApplicationException(response);
+    }
+    return response;
+  }
 }
-
-

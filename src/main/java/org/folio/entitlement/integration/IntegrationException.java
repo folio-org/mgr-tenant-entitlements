@@ -14,6 +14,8 @@ public class IntegrationException extends RuntimeException {
 
   private final transient List<Parameter> errors;
 
+  private final Integer causeHttpStatus;
+
   /**
    * Creates a new {@link IntegrationException} with corresponding error message.
    *
@@ -23,6 +25,7 @@ public class IntegrationException extends RuntimeException {
   public IntegrationException(String message, List<Parameter> errors) {
     super(message);
     this.errors = errors;
+    this.causeHttpStatus = null;
   }
 
   /**
@@ -35,6 +38,7 @@ public class IntegrationException extends RuntimeException {
   public IntegrationException(String message, List<Parameter> errors, Throwable cause) {
     super(message, cause);
     this.errors = errors;
+    this.causeHttpStatus = null;
   }
 
   /**
@@ -46,5 +50,18 @@ public class IntegrationException extends RuntimeException {
   public IntegrationException(String message, Throwable cause) {
     super(message, cause);
     this.errors = emptyList();
+    this.causeHttpStatus = null;
+  }
+
+  /**
+   * Creates a new {@link IntegrationException} with corresponding error message.
+   *
+   * @param message - error message as {@link String} object
+   * @param errors - {@link List} with error {@link Parameter} objects
+   */
+  public IntegrationException(String message, List<Parameter> errors, Integer causeHttpStatus) {
+    super(message);
+    this.errors = errors;
+    this.causeHttpStatus = causeHttpStatus;
   }
 }

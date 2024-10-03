@@ -1,5 +1,6 @@
 package org.folio.entitlement.it;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertCapabilityEvents;
@@ -53,6 +54,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
@@ -79,7 +82,9 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
   "application.okapi.enabled=false",
   "application.kong.enabled=false",
   "application.clients.folio.connect-timeout=250ms",
-  "application.clients.folio.read-timeout=250ms"
+  "application.clients.folio.read-timeout=250ms",
+  "retries.module.backoff.delay=1",
+  "retries.module.backoff.multiplier=1"
 })
 class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
 
@@ -117,6 +122,45 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP1_ID), expected);
     assertModuleEntitlements(FOLIO_MODULE1_ID, expectedModuleEntitlements);
     assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID));
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install500.json"})
+  void install_negative_httpStatus500FromModule() throws Exception {
+    install_negative_httpStatusRetryableErrorFromModule(500);
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install400.json"})
+  void install_negative_httpStatus400FromModule() throws Exception {
+    install_negative_httpStatusRetryableErrorFromModule(400);
+  }
+
+  void install_negative_httpStatusRetryableErrorFromModule(int expectedHttpStatus) throws Exception {
+    var entitlementRequest = entitlementRequest(FOLIO_APP1_ID);
+    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+    var request =
+      post(updatePathWithPrefix("/entitlements")).contentType(APPLICATION_JSON).header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest));
+    queryParams.forEach(request::queryParam);
+
+    mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
+
+    var wireMockClient =
+      new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
+    List<String> endpointsCalled =
+      wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == expectedHttpStatus)
+        .map(e -> e.getRequest().getUrl()).toList();
+    assertThat(endpointsCalled).hasSize(3);
+    endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/folio-module1/_/tenant"));
   }
 
   @Test

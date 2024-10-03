@@ -21,8 +21,10 @@ import static org.folio.entitlement.integration.keycloak.KeycloakServiceTest.Key
 import static org.folio.entitlement.integration.keycloak.KeycloakServiceTest.KeycloakServiceTestUtils.scopeWithId;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.mockito.Answers.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -44,7 +46,9 @@ import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties.Login;
+import org.folio.entitlement.retry.keycloak.KeycloakRetrySupportService;
 import org.folio.entitlement.support.TestUtils;
+import org.folio.entitlement.utils.SafeCallable;
 import org.folio.security.integration.keycloak.model.KeycloakMappings;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
 import org.folio.test.types.UnitTest;
@@ -73,11 +77,13 @@ class KeycloakServiceTest {
   @Mock private KeycloakModuleDescriptorMapper keycloakModuleDescriptorMapper;
   @Spy private final KeycloakConfigurationProperties kcConfiguration = keycloakConfigurationProperties(CLIENT_SUFFIX);
 
+  @Mock private KeycloakRetrySupportService retrySupportService;
   @Mock(answer = RETURNS_DEEP_STUBS) private Keycloak keycloak;
   @Mock(answer = RETURNS_DEEP_STUBS) private AuthorizationResource authorizationResource;
 
   @AfterEach
   void tearDown() {
+    clearInvocations(retrySupportService);
     TestUtils.verifyNoMoreInteractions(this);
   }
 
@@ -94,7 +100,6 @@ class KeycloakServiceTest {
     when(authorizationResource.scopes().create(scope)).thenReturn(scopeCreationResponse);
     when(scopeCreationResponse.getStatus()).thenReturn(status);
     responseCustomizer.accept(scopeCreationResponse);
-    doNothing().when(scopeCreationResponse).close();
   }
 
   private void mockResourceCreation(ResourceRepresentation resourceRepresentation) {
@@ -107,7 +112,18 @@ class KeycloakServiceTest {
     when(authorizationResource.resources().create(resource)).thenReturn(resourceCreationResponse);
     when(resourceCreationResponse.getStatus()).thenReturn(status);
     responseCustomizer.accept(resourceCreationResponse);
-    doNothing().when(resourceCreationResponse).close();
+  }
+
+  private void setupCallWithRetryMock() {
+    when(retrySupportService.callWithRetry(any()))
+      .thenAnswer(invocation -> invocation.getArgument(0, SafeCallable.class).call());
+  }
+
+  private void setupRunWithRetryMock() {
+    doAnswer(invocation -> {
+      invocation.getArgument(0, Runnable.class).run();
+      return null;
+    }).when(retrySupportService).runWithRetry(any());
   }
 
   @Nested
@@ -116,6 +132,9 @@ class KeycloakServiceTest {
 
     @Test
     void positive() {
+      setupCallWithRetryMock();
+      setupRunWithRetryMock();
+
       var currModuleDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var currMappings = keycloakMappings(resource("/r1", "POST"), resource("/r2", "GET"));
 
@@ -146,6 +165,9 @@ class KeycloakServiceTest {
 
     @Test
     void positive_scopeChangedForResource() {
+      setupCallWithRetryMock();
+      setupRunWithRetryMock();
+
       var currModuleDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var currMappings = keycloakMappings(resource("/r1", "POST", "GET"));
 
@@ -178,6 +200,8 @@ class KeycloakServiceTest {
 
     @Test
     void positive_resourcesUnchangedAndScopesExists() {
+      setupCallWithRetryMock();
+
       var currModuleDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var currMappings = keycloakMappings(resource("/r1", "POST"), resource("/r2", "GET"));
 
@@ -200,6 +224,8 @@ class KeycloakServiceTest {
 
     @Test
     void positive_prevDescriptorIsNull() {
+      setupCallWithRetryMock();
+
       var currModuleDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var currMappings = keycloakMappings(resource("/r1", "POST"), resource("/r2", "GET"));
 
@@ -221,6 +247,8 @@ class KeycloakServiceTest {
 
     @Test
     void positive_prevDescriptorIsNullAndScopeConflict() {
+      setupCallWithRetryMock();
+
       var currModuleDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var currMappings = keycloakMappings(resource("/r1", "POST"), resource("/r2", "GET"));
 
@@ -244,6 +272,9 @@ class KeycloakServiceTest {
 
     @Test
     void positive_currentDescriptorIsNull() {
+      setupCallWithRetryMock();
+      setupRunWithRetryMock();
+
       var prevModuleDescriptor = moduleDescriptor("mod-foo-1.1.0");
       var prevMappings = keycloakMappings(resource("/r1", "POST"), resource("/r2", "GET"));
 
@@ -270,6 +301,8 @@ class KeycloakServiceTest {
 
     @Test
     void negative_clientNotFound() {
+      setupCallWithRetryMock();
+
       var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var prevDescriptor = moduleDescriptor("mod-foo-1.1.0");
 
@@ -285,6 +318,8 @@ class KeycloakServiceTest {
 
     @Test
     void negative_clientFoundByPrefix() {
+      setupCallWithRetryMock();
+
       var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var prevDescriptor = moduleDescriptor("mod-foo-1.1.0");
       var client = KeycloakServiceTestUtils.client(randomUUID().toString(), CLIENT_NAME + "-test-prefix");
@@ -301,6 +336,8 @@ class KeycloakServiceTest {
 
     @Test
     void negative_failedToCreateScopeOnTryCatchClause() {
+      setupCallWithRetryMock();
+
       when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
       when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
       when(authorizationResource.scopes().scopes()).thenReturn(emptyList());
@@ -322,6 +359,8 @@ class KeycloakServiceTest {
 
     @Test
     void negative_failedToCreateScopeWithWebApplicationError() {
+      setupCallWithRetryMock();
+
       when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
       when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
       when(authorizationResource.scopes().scopes()).thenReturn(emptyList());
@@ -330,11 +369,11 @@ class KeycloakServiceTest {
 
       var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var prevDescriptor = moduleDescriptor("mod-foo-1.1.0");
-      assertThatThrownBy(() -> keycloakService.updateAuthResources(prevDescriptor, currentDescriptor, TENANT_NAME))
-        .isInstanceOf(IntegrationException.class)
-        .hasMessage("Failed to update authorization scopes in Keycloak")
-        .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
-          parameter("scope", "Failed to create scope GET (status: 502, info: Bad Gateway)")));
+      assertThatThrownBy(
+        () -> keycloakService.updateAuthResources(prevDescriptor, currentDescriptor, TENANT_NAME)).isInstanceOf(
+        IntegrationException.class).hasMessage("Failed to update authorization scopes in Keycloak").satisfies(
+          error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(parameter("scope",
+            "Failed to create scope GET (cause: WebApplicationException, causeMessage: HTTP 502 Bad Gateway)")));
 
       verify(kcConfiguration, atLeastOnce()).getLogin();
       verify(kcConfiguration, atLeastOnce()).getUrl();
@@ -344,6 +383,8 @@ class KeycloakServiceTest {
 
     @Test
     void negative_failedToCreateResource() {
+      setupCallWithRetryMock();
+
       var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var currentMappings = keycloakMappings(resource("/r1", "GET"));
 
@@ -355,11 +396,10 @@ class KeycloakServiceTest {
       var resource = resource(null, "/r1", scopeWithId("GET"));
       mockResourceCreation(resource, 502, resp -> when(resp.getStatusInfo()).thenReturn(BAD_GATEWAY));
 
-      assertThatThrownBy(() -> keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME))
-        .isInstanceOf(IntegrationException.class)
-        .hasMessage("Failed to update authorization resources in Keycloak")
-        .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
-          parameter("resource", "Failed to create resource: /r1 (status: 502, info: Bad Gateway)")));
+      assertThatThrownBy(() -> keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME)).isInstanceOf(
+        IntegrationException.class).hasMessage("Failed to update authorization resources in Keycloak").satisfies(
+          error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(parameter("resource",
+            "Failed to create resource: /r1 (cause: WebApplicationException, causeMessage: HTTP 502 Bad Gateway)")));
 
       verify(kcConfiguration, atLeastOnce()).getLogin();
       verify(kcConfiguration, atLeastOnce()).getUrl();
@@ -370,6 +410,8 @@ class KeycloakServiceTest {
 
     @Test
     void negative_failedToCreateResourceOnTryCatchClause() {
+      setupCallWithRetryMock();
+
       var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var currentMappings = keycloakMappings(resource("/r1", "GET"));
 
@@ -396,6 +438,9 @@ class KeycloakServiceTest {
 
     @Test
     void negative_failedToUpdateResource() {
+      setupCallWithRetryMock();
+      setupRunWithRetryMock();
+
       var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var currentMappings = keycloakMappings(resource("/r1", "GET"));
 
@@ -431,6 +476,8 @@ class KeycloakServiceTest {
 
     @Test
     void negative_failedToUpdateResourceWhenNotFound() {
+      setupCallWithRetryMock();
+
       var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
       var currentMappings = keycloakMappings(resource("/r1", "GET"));
 
@@ -463,6 +510,9 @@ class KeycloakServiceTest {
 
     @Test
     void positive() {
+      setupCallWithRetryMock();
+      setupRunWithRetryMock();
+
       var moduleDescriptor = moduleDescriptor("mod-foo-1.1.0");
       var mappings = keycloakMappings(resource("/r1", "POST"));
       var r1Resource = resource(randomUUID(), "/r1", scopeWithId("POST"));
@@ -485,6 +535,9 @@ class KeycloakServiceTest {
 
     @Test
     void positive_resourceNotFond() {
+      setupCallWithRetryMock();
+      setupRunWithRetryMock();
+
       var moduleDescriptor = moduleDescriptor("mod-foo-1.1.0");
       var mappings = keycloakMappings(resource("/r1", "POST"));
       var r1Resource = resource(randomUUID(), "/r1", scopeWithId("POST"));
@@ -512,6 +565,8 @@ class KeycloakServiceTest {
 
     @Test
     void positive_resourceNotFound() {
+      setupCallWithRetryMock();
+
       var moduleDescriptor = moduleDescriptor("mod-foo-1.1.0");
       var mappings = keycloakMappings(resource("/r1", "POST"));
 
@@ -532,6 +587,8 @@ class KeycloakServiceTest {
 
     @Test
     void negative_clientNotFound() {
+      setupCallWithRetryMock();
+
       var moduleDescriptor = moduleDescriptor("mod-foo-1.1.0");
 
       when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(emptyList());
@@ -546,6 +603,8 @@ class KeycloakServiceTest {
 
     @Test
     void negative_clientFoundByPrefix() {
+      setupCallWithRetryMock();
+
       var moduleDescriptor = moduleDescriptor("mod-foo-1.1.0");
       var client = KeycloakServiceTestUtils.client(randomUUID().toString(), CLIENT_NAME + "-test-prefix");
 
@@ -561,6 +620,9 @@ class KeycloakServiceTest {
 
     @Test
     void negative_failedToDeleteResource() {
+      setupCallWithRetryMock();
+      setupRunWithRetryMock();
+
       var moduleDescriptor = moduleDescriptor("mod-foo-1.1.0");
       var mappings = keycloakMappings(resource("/r1", "POST"));
       var r1Resource = resource(randomUUID(), "/r1", scopeWithId("POST"));
