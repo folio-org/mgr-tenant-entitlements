@@ -9,7 +9,6 @@ import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.Map;
@@ -60,7 +59,7 @@ class KongRouteCleanerTest {
 
     kongRouteCleaner.execute(stageContext);
 
-    verifyNoInteractions(kongGatewayService);
+    verify(kongGatewayService).removeRoutes(TENANT_NAME, moduleDescriptors);
   }
 
   private static OkapiStageContext stageContext(EntitlementRequest request, ApplicationDescriptor desc) {

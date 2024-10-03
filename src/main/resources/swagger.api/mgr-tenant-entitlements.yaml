@@ -499,8 +499,8 @@ components:
       description: |
         Defines if create by entitlement process resources must be purged, including:
           - Keycloak authorization resources (if integration is enabled)
-          - Kong routes (if integration is enabled)
           - Folio modules data (_tenant API request will be performed with parameter: purge=true)
+        Kong routes will be removed in any case.
       required: false
       schema:
         type: boolean

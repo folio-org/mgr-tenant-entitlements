@@ -333,8 +333,9 @@ _The behaviour is the same as calling `POST /entitlements` with `ignoreErrors=tr
 
 _The `purge` flag defines whether the tenant application data will be deleted. If this flag is set to true -
 `mgr-tenant-entitlement` will delete all resources, including routes, keycloak authorization resources, and module
-database data (using tenant API) from the system. If this flag is set to `false` - only sidecars for this tenant will
-be disabled and module requests will return an error, saying that the tenant is not enabled._
+database data (using tenant API) from the system. If this flag is set to `false` - sidecars for this tenant will
+be disabled and module requests will return an error, saying that the tenant is not enabled. Also routes in Kong will
+be deleted._
 
 ### Is rollbacks are supported for the application uninstalling/upgrades?
 
