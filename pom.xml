@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.4</version>
+    <version>3.3.5</version>
     <relativePath />
   </parent>
 
@@ -35,7 +35,7 @@
     <cql2pgjson.version>35.3.0</cql2pgjson.version>
     <spring-cloud-bom.version>2023.0.3</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
-    <folio-spring-cql.version>8.2.0</folio-spring-cql.version>
+    <folio-spring-cql.version>8.2.1</folio-spring-cql.version>
     <applications-poc-tools.version>2.1.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
     <folio-flow-engine.version>2.0.0</folio-flow-engine.version>
@@ -44,13 +44,13 @@
     </mgr-tenant-entitlements.yaml-file>
 
     <!-- Test dependencies versions -->
-    <testcontainer.version>1.20.2</testcontainer.version>
+    <testcontainer.version>1.20.3</testcontainer.version>
     <awaitility.version>4.2.2</awaitility.version>
     <wiremock.version>2.35.2</wiremock.version>
 
     <!-- Plugins versions -->
-    <maven-checkstyle.version>10.18.2</maven-checkstyle.version>
-    <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
+    <maven-checkstyle.version>10.20.0</maven-checkstyle.version>
+    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <openapi-generator.version>7.9.0</openapi-generator.version>
 
     <sonar.exclusions>
