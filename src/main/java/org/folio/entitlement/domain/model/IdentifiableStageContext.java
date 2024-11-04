@@ -17,7 +17,10 @@ public class IdentifiableStageContext extends AbstractStageContextWrapper {
 
   /**
    * Returns current flow identifier.
+   *
+   * <p>
    * For global flow it returns root flow id, for application flow it should return application flow id.
+   * </p>
    *
    * @return flow identifier as {@link UUID} object
    */
