@@ -5,6 +5,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
+import static org.folio.entitlement.utils.LogTestUtil.captureLog4J2Logs;
+import static org.folio.entitlement.utils.LogTestUtil.stopCaptureLog4J2Logs;
 import static org.folio.entitlement.utils.WireMockUtil.stubAnyHttpMethod;
 import static org.folio.entitlement.utils.WireMockUtil.stubGet;
 import static org.folio.entitlement.utils.WireMockUtil.stubPost;
@@ -26,7 +28,6 @@ import org.folio.entitlement.integration.keycloak.configuration.properties.Keycl
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties.Login;
 import org.folio.entitlement.retry.keycloak.KeycloakRetrySupportService;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.entitlement.utils.LogTestUtil;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakAdminProperties;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
@@ -78,7 +79,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
 
   @AfterAll
   public static void resetLogCapture() {
-    LogTestUtil.stopCaptureLog4J2Logs();
+    stopCaptureLog4J2Logs();
   }
 
   @Test
@@ -101,7 +102,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     stubAnyHttpMethod(wireMockClient, 1,
       urlMatching("/admin/realms/test/clients/test/authz/resource-server/resource.*"), null, 500);
 
-    var logs = LogTestUtil.captureLog4J2Logs();
+    var logs = captureLog4J2Logs();
     mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
       jsonPath("$.errors[0].parameters[0].value").value(
         containsString("Failed to update authorization resources in Keycloak")));
@@ -120,8 +121,8 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error"))).hasSize(8);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "Flow stage KeycloakModuleResourceCreator folio-module1-1.0.0-keycloakModuleResourceCreator execution error"))).hasSize(
-      1);
+      "Flow stage KeycloakModuleResourceCreator folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
+      .hasSize(1);
   }
 
   @Test
@@ -144,7 +145,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest));
     queryParams.forEach(request::queryParam);
 
-    var logs = LogTestUtil.captureLog4J2Logs();
+    var logs = captureLog4J2Logs();
     mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
       jsonPath("$.errors[0].parameters[0].value").value(
         containsString("Failed to remove authorization resources in Keycloak")));
@@ -164,8 +165,8 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(8);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error"))).hasSize(
-      1);
+      "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
+      .hasSize(1);
   }
 
   protected WireMock mockBaseDependencies(String moduleId, String routeId) throws Exception {

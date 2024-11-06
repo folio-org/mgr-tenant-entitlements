@@ -40,6 +40,8 @@ import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEven
 import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsBeforeUpgrade;
+import static org.folio.entitlement.utils.LogTestUtil.captureLog4J2Logs;
+import static org.folio.entitlement.utils.LogTestUtil.stopCaptureLog4J2Logs;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
@@ -65,6 +67,7 @@ import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,6 +105,11 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     fakeKafkaConsumer.registerTopic(systemUserTenantTopic(), ResourceEvent.class);
   }
 
+  @AfterAll
+  public static void resetLogCapture() {
+    stopCaptureLog4J2Logs();
+  }
+
   @Test
   @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {
@@ -131,7 +139,15 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app1/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install500.json"})
   void install_negative_httpStatus500FromModule() throws Exception {
-    install_negative_httpStatusRetryableErrorFromModule(500);
+    var logs = install_negative_httpStatusRetryableErrorFromModule(500);
+    logs.forEach(System.err::println);
+    assertThat(logs.stream().filter(
+      logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(4);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "Flow stage FolioModuleInstaller folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(
+      5);
   }
 
   @Test
@@ -141,10 +157,17 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app1/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install400.json"})
   void install_negative_httpStatus400FromModule() throws Exception {
-    install_negative_httpStatusRetryableErrorFromModule(400);
+    var logs = install_negative_httpStatusRetryableErrorFromModule(400);
+    assertThat(logs.stream().filter(
+      logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(4);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "Flow stage FolioModuleInstaller folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(
+      5);
   }
 
-  void install_negative_httpStatusRetryableErrorFromModule(int expectedHttpStatus) throws Exception {
+  List<String> install_negative_httpStatusRetryableErrorFromModule(int expectedHttpStatus) throws Exception {
     var entitlementRequest = entitlementRequest(FOLIO_APP1_ID);
     var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
     var request =
@@ -152,7 +175,9 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest));
     queryParams.forEach(request::queryParam);
 
+    var logs = captureLog4J2Logs();
     mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
+    assertThat(logs).isNotEmpty();
 
     var wireMockClient =
       new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
@@ -161,6 +186,8 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
         .map(e -> e.getRequest().getUrl()).toList();
     assertThat(endpointsCalled).hasSize(3);
     endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/folio-module1/_/tenant"));
+
+    return logs;
   }
 
   @Test
@@ -242,6 +269,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json"
   })
   void install_negative_tenantIsNotFound() throws Exception {
+    var logs = captureLog4J2Logs();
     mockMvc.perform(post("/entitlements")
         .queryParam("tenantParameters", "loadReference=true")
         .queryParam("ignoreErrors", "true")
@@ -258,6 +286,11 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
         "FAILED: [EntityNotFoundException] Tenant is not found: 6ad28dae-7c02-4f89-9320-153c55bf1914")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP1_ID), emptyEntitlements());
+    assertThat(logs.stream().filter(
+      logLine -> logLine.contains("Flow stage TenantLoader TenantLoader execution error"))).hasSize(1);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "jakarta.persistence.EntityNotFoundException: Tenant is not found: 6ad28dae-7c02-4f89-9320-153c55bf1914")))
+      .hasSize(1);
   }
 
   @Test
