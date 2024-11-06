@@ -109,11 +109,13 @@ public class KongConfiguration {
 
     var feignClientBuilder = Feign.builder().contract(contract).encoder(encoder).decoder(decoder).errorDecoder(
       new FeignRetrySupportingErrorDecoder(new ErrorDecoder.Default(),
-        methodKeyAndResponse -> methodKeyAndResponse.getRight().status() == 500));
+        methodKeyAndResponse -> methodKeyAndResponse.getRight().status() == 500, "Kong HTTP request",
+        "Internal Server Error"));
 
     feignClientBuilder = feignClientBuilder.client(getOkHttpClient(okHttpClient, properties.getTls())).retryer(
       new FeignRetryer(retryConfig.getKong().getBackoff().getDelay(), retryConfig.getKong().getBackoff().getMaxdelay(),
-        retryConfig.getKong().getMax(), retryableException -> retryableException.status() >= 500));
+        retryConfig.getKong().getMax(), retryableException -> retryableException.status() >= 500,
+        "Kong HTTP request", "HTTP status 500 (Internal Server Error)"));
 
     return feignClientBuilder.target(KongAdminClient.class, properties.getUrl());
   }

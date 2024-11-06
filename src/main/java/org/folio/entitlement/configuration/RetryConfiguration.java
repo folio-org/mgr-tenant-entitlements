@@ -2,6 +2,7 @@ package org.folio.entitlement.configuration;
 
 import jakarta.ws.rs.WebApplicationException;
 import java.util.function.Predicate;
+import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.integration.IntegrationException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.Bean;
@@ -15,6 +16,7 @@ import org.springframework.retry.support.RetryTemplate;
 
 @EnableRetry
 @Configuration
+@Log4j2
 public class RetryConfiguration {
 
   /**
@@ -28,7 +30,8 @@ public class RetryConfiguration {
       integrationException -> integrationException.getCauseHttpStatus() != null && (
         integrationException.getCauseHttpStatus() >= 500 || integrationException.getCauseHttpStatus() >= 400),
       configProps.getModule().getMax(), configProps.getModule().getBackoff().getDelay(),
-      configProps.getModule().getBackoff().getMaxdelay(), configProps.getModule().getBackoff().getMultiplier());
+      configProps.getModule().getBackoff().getMaxdelay(), configProps.getModule().getBackoff().getMultiplier(),
+      "Folio Module call");
   }
 
   /**
@@ -41,13 +44,15 @@ public class RetryConfiguration {
     return createRetryInterceptor(WebApplicationException.class,
       webAppException -> webAppException.getResponse() != null && webAppException.getResponse().getStatus() >= 500,
       configProps.getKeycloak().getMax(), configProps.getKeycloak().getBackoff().getDelay(),
-      configProps.getKeycloak().getBackoff().getMaxdelay(), configProps.getKeycloak().getBackoff().getMultiplier());
+      configProps.getKeycloak().getBackoff().getMaxdelay(), configProps.getKeycloak().getBackoff().getMultiplier(),
+      "Keycloak access");
   }
 
   private static <T extends Exception> RetryOperationsInterceptor createRetryInterceptor(Class<T> exceptionClass,
-    Predicate<T> shouldRetry, int numberOfRetries, int backOffDelay, int backOffMaxDelay, int backOffMultiplier) {
+    Predicate<T> shouldRetry, int numberOfRetries, int backOffDelay, int backOffMaxDelay, int backOffMultiplier,
+    String operationDescription) {
     var retryTemplate = new RetryTemplate();
-    var retryPolicy = createRetryPolicy(exceptionClass, shouldRetry, numberOfRetries);
+    var retryPolicy = createRetryPolicy(exceptionClass, shouldRetry, numberOfRetries, operationDescription);
     retryTemplate.setRetryPolicy(retryPolicy);
     retryTemplate.setBackOffPolicy(
       BackOffPolicyBuilder.newBuilder().delay(backOffDelay).maxDelay(backOffMaxDelay).multiplier(backOffMultiplier)
@@ -58,7 +63,7 @@ public class RetryConfiguration {
   }
 
   private static <T extends Exception> @NotNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
-    Predicate<T> shouldRetry, int numberOfRetries) {
+    Predicate<T> shouldRetry, int numberOfRetries, String operationDescription) {
     var retryPolicy = new SimpleRetryPolicy() {
       @Override
       @SuppressWarnings("unchecked")
@@ -67,8 +72,16 @@ public class RetryConfiguration {
         if (context.getRetryCount() >= numberOfRetries) {
           return false;
         }
+        if (error == null) {
+          // If there was no error so far (first attempt) - return true
+          return true;
+        }
         // If there was no error so far (first attempt) or error is what we allow to retry - retun true
-        return error == null || exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error);
+        if (exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error)) {
+          log.error(String.format("Error occurred for %s - retrying", operationDescription), error);
+          return true;
+        }
+        return false;
       }
     };
     retryPolicy.setMaxAttempts(numberOfRetries);

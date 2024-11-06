@@ -26,6 +26,7 @@ import org.folio.entitlement.integration.keycloak.configuration.properties.Keycl
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties.Login;
 import org.folio.entitlement.retry.keycloak.KeycloakRetrySupportService;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
+import org.folio.entitlement.utils.LogTestUtil;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakAdminProperties;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
@@ -34,6 +35,7 @@ import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient.KongResultList;
 import org.folio.tools.kong.model.Route;
 import org.folio.tools.kong.model.Service;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -74,6 +76,11 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     stubPost(getWireMockClient(), 1, urlEqualTo("/realms/master/protocol/openid-connect/token"), tokenResponse, 200);
   }
 
+  @AfterAll
+  public static void resetLogCapture() {
+    LogTestUtil.stopCaptureLog4J2Logs();
+  }
+
   @Test
   @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
@@ -94,6 +101,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     stubAnyHttpMethod(wireMockClient, 1,
       urlMatching("/admin/realms/test/clients/test/authz/resource-server/resource.*"), null, 500);
 
+    var logs = LogTestUtil.captureLog4J2Logs();
     mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
       jsonPath("$.errors[0].parameters[0].value").value(
         containsString("Failed to update authorization resources in Keycloak")));
@@ -106,6 +114,14 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     assertThat(endpointsCalled.stream().filter(
       e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/test/authz/resource-server/resource")
         && e.getRequest().getBodyAsString().contains("POST#folio-module1.events.item.post")).count()).isEqualTo(3);
+
+    assertThat(logs.stream().filter(
+      logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(8);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error"))).hasSize(8);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "Flow stage KeycloakModuleResourceCreator folio-module1-1.0.0-keycloakModuleResourceCreator execution error"))).hasSize(
+      1);
   }
 
   @Test
@@ -128,6 +144,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest));
     queryParams.forEach(request::queryParam);
 
+    var logs = LogTestUtil.captureLog4J2Logs();
     mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
       jsonPath("$.errors[0].parameters[0].value").value(
         containsString("Failed to remove authorization resources in Keycloak")));
@@ -141,6 +158,14 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     assertThat(endpointsCalled.stream().filter(v -> v.equals(
         "/admin/realms/test/clients/test/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents%2F%7Bid%7D"))
       .count()).isEqualTo(3);
+
+    assertThat(logs.stream().filter(
+      logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(8);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(8);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error"))).hasSize(
+      1);
   }
 
   protected WireMock mockBaseDependencies(String moduleId, String routeId) throws Exception {

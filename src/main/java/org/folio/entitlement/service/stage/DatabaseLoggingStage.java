@@ -1,5 +1,6 @@
 package org.folio.entitlement.service.stage;
 
+import static java.lang.String.format;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.CANCELLATION_FAILED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.CANCELLED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
@@ -85,6 +86,8 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
     if (error != null) {
       stageExecutionEntity.setErrorType(error.getClass().getSimpleName());
       stageExecutionEntity.setErrorMessage(getErrorMessage(error));
+
+      log.error(format("Flow stage %s %s execution error", getId(), getStageName(context)), error);
     }
 
     stageRepository.save(stageExecutionEntity);

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.entitlement.support.extensions.EnableKongGateway;
+import org.folio.entitlement.utils.LogTestUtil;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
@@ -28,6 +29,7 @@ import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient.KongResultList;
 import org.folio.tools.kong.model.Route;
 import org.folio.tools.kong.model.Service;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
@@ -52,6 +54,11 @@ class KongRetriesIT extends BaseIntegrationTest {
   private static final String FOLIO_APP1_ID = "folio-app1-1.0.0";
   private static final String FOLIO_APP2_ID = "folio-app2-2.0.0";
 
+  @AfterAll
+  public static void resetLogCapture() {
+    LogTestUtil.stopCaptureLog4J2Logs();
+  }
+
   @Test
   @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
@@ -69,12 +76,21 @@ class KongRetriesIT extends BaseIntegrationTest {
     var wireMockClient = getWireMockClient();
     stubAnyHttpMethod(wireMockClient, 1, urlMatching("/services/folio-module1-1.0.0"), null, 500);
 
+    var logs = LogTestUtil.captureLog4J2Logs();
     mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
 
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
     assertThat(endpointsCalled).hasSize(3);
     endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/services/folio-module1-1.0.0"));
+
+    assertThat(logs.stream().filter(
+      logLine -> logLine.contains("Error Internal Server Error occurred for Kong HTTP request - retrying"))).hasSize(3);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "Flow stage KongModuleRouteCreator folio-module1-1.0.0-kongModuleRouteCreator execution error"))).hasSize(1);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "org.folio.tools.kong.exception.KongIntegrationException: Failed to find Kong service for module: folio-module1-1.0.0"))).hasSize(
+      1);
   }
 
   @Test
@@ -107,6 +123,7 @@ class KongRetriesIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest));
     queryParams.forEach(request::queryParam);
 
+    var logs = LogTestUtil.captureLog4J2Logs();
     mockMvc.perform(request).andExpect(status().isBadRequest())
       .andExpect(jsonPath("$.errors[0].parameters[0].value").value(containsString("Failed to remove routes")));
 
@@ -114,5 +131,13 @@ class KongRetriesIT extends BaseIntegrationTest {
       .map(e -> e.getRequest().getUrl()).toList();
     assertThat(endpointsCalled).hasSize(3);
     endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/services/" + moduleId + "/routes/" + routeId));
+
+    assertThat(logs.stream().filter(
+      logLine -> logLine.contains("Error Internal Server Error occurred for Kong HTTP request - retrying"))).hasSize(3);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "Flow stage KongModuleRouteCleaner folio-module2-2.0.0-kongModuleRouteCleaner execution error"))).hasSize(1);
+    assertThat(logs.stream().filter(logLine -> logLine.contains(
+      "org.folio.tools.kong.exception.KongIntegrationException: Failed to remove routes"))).hasSize(
+      1);
   }
 }
