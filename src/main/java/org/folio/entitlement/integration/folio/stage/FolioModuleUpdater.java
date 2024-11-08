@@ -47,5 +47,7 @@ public class FolioModuleUpdater extends ModuleDatabaseLoggingStage {
       var moduleId = installedModuleDescriptor.getId();
       moduleService.deleteModuleEntitlement(moduleId, tenantId, entitledApplicationId);
     }
+
+    threadLocalModuleStageContext.clear();
   }
 }

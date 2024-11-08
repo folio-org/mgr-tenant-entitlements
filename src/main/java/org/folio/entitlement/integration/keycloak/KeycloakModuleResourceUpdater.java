@@ -29,5 +29,7 @@ public class KeycloakModuleResourceUpdater extends ModuleDatabaseLoggingStage {
       keycloakClient.tokenManager().grantToken();
       keycloakService.updateAuthResources(entitledModuleDescriptor, moduleDescriptor, tenantName);
     }
+
+    threadLocalModuleStageContext.clear();
   }
 }

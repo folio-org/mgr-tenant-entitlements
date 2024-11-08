@@ -19,5 +19,6 @@ public class KongModuleRouteCleaner extends ModuleDatabaseLoggingStage {
 
     var moduleDescriptor = context.getModuleDescriptor();
     kongGatewayService.removeRoutes(context.getTenantName(), List.of(moduleDescriptor));
+    threadLocalModuleStageContext.clear();
   }
 }

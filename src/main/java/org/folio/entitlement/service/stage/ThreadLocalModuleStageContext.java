@@ -20,4 +20,8 @@ public class ThreadLocalModuleStageContext {
     moduleStageContext.put(ATTR_STAGE_NAME, stageName);
     THREAD_LOCAL_MODULE_STAGE_CONTEXT.set(moduleStageContext);
   }
+
+  public void clear() {
+    THREAD_LOCAL_MODULE_STAGE_CONTEXT.remove();
+  }
 }

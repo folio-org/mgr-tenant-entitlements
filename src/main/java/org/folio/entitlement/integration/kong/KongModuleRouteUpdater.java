@@ -33,5 +33,6 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
     if (moduleDescriptor != null) {
       kongGatewayService.addRoutes(tenantName, List.of(moduleDescriptor));
     }
+    threadLocalModuleStageContext.clear();
   }
 }

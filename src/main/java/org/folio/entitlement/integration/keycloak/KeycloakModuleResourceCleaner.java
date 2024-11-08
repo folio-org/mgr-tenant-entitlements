@@ -31,5 +31,7 @@ public class KeycloakModuleResourceCleaner extends ModuleDatabaseLoggingStage {
     var tenantName = context.getTenantName();
     keycloakClient.tokenManager().grantToken();
     keycloakService.removeAuthResources(moduleDescriptor, tenantName);
+
+    threadLocalModuleStageContext.clear();
   }
 }

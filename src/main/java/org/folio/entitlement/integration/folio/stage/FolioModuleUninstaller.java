@@ -23,5 +23,7 @@ public class FolioModuleUninstaller extends ModuleDatabaseLoggingStage {
 
     var moduleRequest = ModuleRequest.fromStageContext(context);
     folioModuleService.disable(moduleRequest);
+
+    threadLocalModuleStageContext.clear();
   }
 }

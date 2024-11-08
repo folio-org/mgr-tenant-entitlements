@@ -101,7 +101,6 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
     var retryInfoKey = getFlowStageKey(context, getStageName(context));
     var retryInfo = retryInformationService.get(retryInfoKey);
     if (retryInfo != null) {
-      System.err.println(retryInfo);
       stageExecutionEntity.setRetriesCount(retryInfo.getRetriesCount());
       stageExecutionEntity.setRetriesInfo(String.join("\n\n", retryInfo.getErrors()));
     }

@@ -22,6 +22,7 @@ public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
 
     var tenantName = context.getTenantName();
     kongGatewayService.addRoutes(tenantName, singletonList(context.getModuleDescriptor()));
+    threadLocalModuleStageContext.clear();
   }
 
   @Override
