@@ -1,10 +1,16 @@
 package org.folio.entitlement.configuration;
 
+import static org.apache.commons.lang3.exception.ExceptionUtils.getStackTrace;
+import static org.folio.entitlement.utils.FlowUtils.addErrorInformation;
+
 import jakarta.ws.rs.WebApplicationException;
 import java.util.function.Predicate;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.integration.IntegrationException;
+import org.folio.entitlement.service.RetryInformationService;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.RetryContext;
@@ -18,6 +24,11 @@ import org.springframework.retry.support.RetryTemplate;
 @Configuration
 @Log4j2
 public class RetryConfiguration {
+
+  @Autowired
+  private ThreadLocalModuleStageContext threadLocalModuleStageContext;
+  @Autowired
+  private RetryInformationService retryInformationService;
 
   /**
    * Create a RetryOperationsInterceptor that will intercept error during calls to folio modules.
@@ -48,7 +59,7 @@ public class RetryConfiguration {
       "Keycloak access");
   }
 
-  private static <T extends Exception> RetryOperationsInterceptor createRetryInterceptor(Class<T> exceptionClass,
+  private <T extends Exception> RetryOperationsInterceptor createRetryInterceptor(Class<T> exceptionClass,
     Predicate<T> shouldRetry, int numberOfRetries, int backOffDelay, int backOffMaxDelay, int backOffMultiplier,
     String operationDescription) {
     var retryTemplate = new RetryTemplate();
@@ -62,7 +73,7 @@ public class RetryConfiguration {
     return result;
   }
 
-  private static <T extends Exception> @NotNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
+  private <T extends Exception> @NotNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
     Predicate<T> shouldRetry, int numberOfRetries, String operationDescription) {
     var retryPolicy = new SimpleRetryPolicy() {
       @Override
@@ -76,9 +87,10 @@ public class RetryConfiguration {
           // If there was no error so far (first attempt) - return true
           return true;
         }
-        // If there was no error so far (first attempt) or error is what we allow to retry - retun true
+        // If there was no error so far (first attempt) or error is what we allow to retry - return true
         if (exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error)) {
           log.error(String.format("Error occurred for %s - retrying", operationDescription), error);
+          addErrorInformation(getStackTrace(error), threadLocalModuleStageContext, retryInformationService);
           return true;
         }
         return false;

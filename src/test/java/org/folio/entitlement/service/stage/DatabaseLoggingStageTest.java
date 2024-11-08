@@ -20,6 +20,7 @@ import org.folio.entitlement.domain.entity.key.FlowStageKey;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.repository.FlowStageRepository;
+import org.folio.entitlement.service.RetryInformationService;
 import org.folio.test.types.UnitTest;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -38,6 +39,7 @@ class DatabaseLoggingStageTest {
 
   @InjectMocks private TestStage testStage;
   @Mock private FlowStageRepository stageRepository;
+  @Mock private RetryInformationService retryInformationService;
   @Captor private ArgumentCaptor<FlowStageEntity> entitlementStageCaptor;
 
   @Test

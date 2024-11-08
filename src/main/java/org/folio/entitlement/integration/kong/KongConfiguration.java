@@ -10,9 +10,12 @@ import feign.codec.ErrorDecoder;
 import org.folio.entitlement.configuration.RetryConfigurationProperties;
 import org.folio.entitlement.retry.feign.FeignRetrySupportingErrorDecoder;
 import org.folio.entitlement.retry.feign.FeignRetryer;
+import org.folio.entitlement.service.RetryInformationService;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.tools.kong.client.KongAdminClient;
 import org.folio.tools.kong.configuration.KongConfigurationProperties;
 import org.folio.tools.kong.service.KongGatewayService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +23,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(prefix = "application.kong", name = "enabled")
 public class KongConfiguration {
+
+  @Autowired
+  private ThreadLocalModuleStageContext threadLocalModuleStageContext;
+
   /**
    * Creates {@link KongRouteCreator} bean as a flow stage to populate routes in Kong per application.
    *
@@ -65,7 +72,7 @@ public class KongConfiguration {
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteCreator kongModuleRouteCreator(KongGatewayService kongGatewayService) {
-    return new KongModuleRouteCreator(kongGatewayService);
+    return new KongModuleRouteCreator(kongGatewayService, threadLocalModuleStageContext);
   }
 
   /**
@@ -77,7 +84,7 @@ public class KongConfiguration {
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteUpdater kongModuleRouteUpdater(KongGatewayService kongGatewayService) {
-    return new KongModuleRouteUpdater(kongGatewayService);
+    return new KongModuleRouteUpdater(kongGatewayService, threadLocalModuleStageContext);
   }
 
   /**
@@ -89,7 +96,7 @@ public class KongConfiguration {
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteCleaner kongModuleRouteCleaner(KongGatewayService kongGatewayService) {
-    return new KongModuleRouteCleaner(kongGatewayService);
+    return new KongModuleRouteCleaner(kongGatewayService, threadLocalModuleStageContext);
   }
 
 
@@ -105,17 +112,18 @@ public class KongConfiguration {
   @Bean(name = "folioKongAdminClient")
   public KongAdminClient folioKongIntegrationClient(okhttp3.OkHttpClient okHttpClient,
     KongConfigurationProperties properties, Contract contract, Encoder encoder, Decoder decoder,
-    RetryConfigurationProperties retryConfig) {
+    RetryConfigurationProperties retryConfig, RetryInformationService retryInformationService) {
 
     var feignClientBuilder = Feign.builder().contract(contract).encoder(encoder).decoder(decoder).errorDecoder(
       new FeignRetrySupportingErrorDecoder(new ErrorDecoder.Default(),
         methodKeyAndResponse -> methodKeyAndResponse.getRight().status() == 500, "Kong HTTP request",
-        "Internal Server Error"));
+        "Internal Server Error", threadLocalModuleStageContext, retryInformationService));
 
     feignClientBuilder = feignClientBuilder.client(getOkHttpClient(okHttpClient, properties.getTls())).retryer(
       new FeignRetryer(retryConfig.getKong().getBackoff().getDelay(), retryConfig.getKong().getBackoff().getMaxdelay(),
         retryConfig.getKong().getMax(), retryableException -> retryableException.status() >= 500,
-        "Kong HTTP request", "HTTP status 500 (Internal Server Error)"));
+        "Kong HTTP request", "HTTP status 500 (Internal Server Error)",
+        threadLocalModuleStageContext, retryInformationService));
 
     return feignClientBuilder.target(KongAdminClient.class, properties.getUrl());
   }

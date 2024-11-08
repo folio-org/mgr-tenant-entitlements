@@ -23,6 +23,7 @@ import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.repository.FlowStageRepository;
 import org.folio.entitlement.service.EntitlementModuleService;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.flow.impl.StageContextImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -125,20 +126,20 @@ class FolioModuleCallsRetriesTest {
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public FolioModuleInstaller folioModuleInstaller(FolioModuleService folioModuleService) {
-      return new FolioModuleInstaller(folioModuleService);
+      return new FolioModuleInstaller(folioModuleService, mock(ThreadLocalModuleStageContext.class));
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public FolioModuleUninstaller folioModuleUninstaller(FolioModuleService folioModuleService) {
-      return new FolioModuleUninstaller(folioModuleService);
+      return new FolioModuleUninstaller(folioModuleService, mock(ThreadLocalModuleStageContext.class));
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public FolioModuleUpdater folioModuleUpdater(FolioModuleService folioModuleService,
       EntitlementModuleService moduleService) {
-      return new FolioModuleUpdater(folioModuleService, moduleService);
+      return new FolioModuleUpdater(folioModuleService, moduleService, mock(ThreadLocalModuleStageContext.class));
     }
   }
 }

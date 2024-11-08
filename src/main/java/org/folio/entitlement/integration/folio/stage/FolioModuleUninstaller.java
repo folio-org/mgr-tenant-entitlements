@@ -7,6 +7,7 @@ import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
 import org.folio.entitlement.retry.annotations.FolioModuleCallsRetryable;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -14,9 +15,12 @@ import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 public class FolioModuleUninstaller extends ModuleDatabaseLoggingStage {
 
   private final FolioModuleService folioModuleService;
+  private final ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   @Override
   public void execute(ModuleStageContext context) {
+    threadLocalModuleStageContext.set(context, getStageName(context));
+
     var moduleRequest = ModuleRequest.fromStageContext(context);
     folioModuleService.disable(moduleRequest);
   }

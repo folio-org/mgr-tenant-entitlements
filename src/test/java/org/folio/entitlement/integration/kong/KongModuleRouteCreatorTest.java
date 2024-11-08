@@ -10,6 +10,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.folio.tools.kong.service.KongGatewayService;
@@ -33,9 +35,11 @@ class KongModuleRouteCreatorTest {
 
   @InjectMocks private KongModuleRouteCreator kongModuleRouteCreator;
   @Mock private KongGatewayService kongGatewayService;
+  @Mock private ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   @AfterEach
   void tearDown() {
+    reset(threadLocalModuleStageContext);
     TestUtils.verifyNoMoreInteractions(this);
   }
 

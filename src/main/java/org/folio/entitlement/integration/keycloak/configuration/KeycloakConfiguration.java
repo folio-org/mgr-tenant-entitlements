@@ -13,6 +13,7 @@ import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
 import org.folio.entitlement.integration.keycloak.KeycloakService;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.retry.keycloak.KeycloakRetrySupportService;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
 import org.folio.security.integration.keycloak.utils.KeycloakSecretUtils;
@@ -34,6 +35,7 @@ public class KeycloakConfiguration {
 
   private final KeycloakProperties properties;
   private final SecureStore secureStore;
+  private final ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   @Bean
   @ConditionalOnProperty(name = "application.keycloak.import.enabled", havingValue = "false", matchIfMissing = true)
@@ -76,19 +78,19 @@ public class KeycloakConfiguration {
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KeycloakModuleResourceCreator keycloakModuleResourceCreator(Keycloak keycloak, KeycloakService kcService) {
-    return new KeycloakModuleResourceCreator(keycloak, kcService);
+    return new KeycloakModuleResourceCreator(keycloak, kcService, threadLocalModuleStageContext);
   }
 
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KeycloakModuleResourceUpdater keycloakModuleResourceUpdater(Keycloak keycloak, KeycloakService kcService) {
-    return new KeycloakModuleResourceUpdater(keycloak, kcService);
+    return new KeycloakModuleResourceUpdater(keycloak, kcService, threadLocalModuleStageContext);
   }
 
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KeycloakModuleResourceCleaner keycloakModuleResourceCleaner(Keycloak keycloak, KeycloakService kcService) {
-    return new KeycloakModuleResourceCleaner(keycloak, kcService);
+    return new KeycloakModuleResourceCleaner(keycloak, kcService, threadLocalModuleStageContext);
   }
 
   private String getKeycloakClientSecret(String clientId) {

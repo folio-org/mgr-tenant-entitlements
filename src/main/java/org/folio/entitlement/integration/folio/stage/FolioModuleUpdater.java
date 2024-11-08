@@ -11,6 +11,7 @@ import org.folio.entitlement.integration.folio.model.ModuleRequest;
 import org.folio.entitlement.retry.annotations.FolioModuleCallsRetryable;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -19,9 +20,12 @@ public class FolioModuleUpdater extends ModuleDatabaseLoggingStage {
 
   private final FolioModuleService folioModuleService;
   private final EntitlementModuleService moduleService;
+  private final ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   @Override
   public void execute(ModuleStageContext context) {
+    threadLocalModuleStageContext.set(context, getStageName(context));
+
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
     var tenantId = context.getTenantId();

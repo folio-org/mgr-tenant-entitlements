@@ -14,6 +14,7 @@ import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 
 import java.util.Arrays;
@@ -26,6 +27,7 @@ import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
 import org.folio.entitlement.integration.folio.stage.FolioModuleUninstaller;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
@@ -44,9 +46,11 @@ class FolioModuleUninstallerTest {
 
   @InjectMocks private FolioModuleUninstaller folioModuleUninstaller;
   @Mock private FolioModuleService folioModuleService;
+  @Mock private ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   @AfterEach
   void tearDown() {
+    reset(threadLocalModuleStageContext);
     TestUtils.verifyNoMoreInteractions(this);
   }
 

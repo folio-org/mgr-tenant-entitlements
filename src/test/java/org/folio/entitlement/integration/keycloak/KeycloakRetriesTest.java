@@ -18,6 +18,7 @@ import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.repository.FlowStageRepository;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.flow.impl.StageContextImpl;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -138,22 +139,22 @@ class KeycloakRetriesTest {
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public KeycloakModuleResourceCreator keycloakModuleResourceCreator(Keycloak keycloak,
-      KeycloakService keycloakService) {
-      return new KeycloakModuleResourceCreator(keycloak, keycloakService);
+      KeycloakService keycloakService, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
+      return new KeycloakModuleResourceCreator(keycloak, keycloakService, threadLocalModuleStageContext);
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public KeycloakModuleResourceUpdater keycloakModuleResourceUpdater(Keycloak keycloak,
-      KeycloakService keycloakService) {
-      return new KeycloakModuleResourceUpdater(keycloak, keycloakService);
+      KeycloakService keycloakService, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
+      return new KeycloakModuleResourceUpdater(keycloak, keycloakService, threadLocalModuleStageContext);
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public KeycloakModuleResourceCleaner keycloakModuleResourceCleaner(Keycloak keycloak,
-      KeycloakService keycloakService) {
-      return new KeycloakModuleResourceCleaner(keycloak, keycloakService);
+      KeycloakService keycloakService, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
+      return new KeycloakModuleResourceCleaner(keycloak, keycloakService, threadLocalModuleStageContext);
     }
 
     @Bean

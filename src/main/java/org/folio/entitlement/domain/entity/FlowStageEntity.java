@@ -76,4 +76,10 @@ public class FlowStageEntity {
   @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "finished_at")
   private ZonedDateTime finishedAt;
+
+  @Column(name = "retries_count")
+  private Integer retriesCount;
+
+  @Column(name = "retries_info")
+  private String retriesInfo;
 }

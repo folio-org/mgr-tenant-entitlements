@@ -6,15 +6,19 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.tools.kong.service.KongGatewayService;
 
 @RequiredArgsConstructor
 public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
 
   private final KongGatewayService kongGatewayService;
+  private final ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   @Override
   public void execute(ModuleStageContext context) {
+    threadLocalModuleStageContext.set(context, getStageName(context));
+
     var tenantName = context.getTenantName();
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
