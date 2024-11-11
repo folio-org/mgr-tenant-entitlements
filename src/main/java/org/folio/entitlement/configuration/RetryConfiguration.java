@@ -24,22 +24,20 @@ import org.springframework.retry.support.RetryTemplate;
 @Log4j2
 public class RetryConfiguration {
 
-  @Autowired
-  private ThreadLocalModuleStageContext threadLocalModuleStageContext;
-
   /**
    * Create a RetryOperationsInterceptor that will intercept error during calls to folio modules.
    *
    * @return RetryOperationsInterceptor for folio modules calls
    */
   @Bean
-  public RetryOperationsInterceptor folioModuleCallsRetryInterceptor(RetryConfigurationProperties configProps) {
+  public RetryOperationsInterceptor folioModuleCallsRetryInterceptor(RetryConfigurationProperties configProps,
+    ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     return createRetryInterceptor(IntegrationException.class,
       integrationException -> integrationException.getCauseHttpStatus() != null && (
         integrationException.getCauseHttpStatus() >= 500 || integrationException.getCauseHttpStatus() >= 400),
       configProps.getModule().getMax(), configProps.getModule().getBackoff().getDelay(),
       configProps.getModule().getBackoff().getMaxdelay(), configProps.getModule().getBackoff().getMultiplier(),
-      "Folio Module call");
+      "Folio Module call", threadLocalModuleStageContext);
   }
 
   /**
@@ -48,19 +46,21 @@ public class RetryConfiguration {
    * @return RetryOperationsInterceptor for Keycloak calls
    */
   @Bean
-  public RetryOperationsInterceptor keycloakCallsRetryInterceptor(RetryConfigurationProperties configProps) {
+  public RetryOperationsInterceptor keycloakCallsRetryInterceptor(RetryConfigurationProperties configProps,
+    ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     return createRetryInterceptor(WebApplicationException.class,
       webAppException -> webAppException.getResponse() != null && webAppException.getResponse().getStatus() >= 500,
       configProps.getKeycloak().getMax(), configProps.getKeycloak().getBackoff().getDelay(),
       configProps.getKeycloak().getBackoff().getMaxdelay(), configProps.getKeycloak().getBackoff().getMultiplier(),
-      "Keycloak access");
+      "Keycloak access", threadLocalModuleStageContext);
   }
 
   private <T extends Exception> RetryOperationsInterceptor createRetryInterceptor(Class<T> exceptionClass,
     Predicate<T> shouldRetry, int numberOfRetries, int backOffDelay, int backOffMaxDelay, int backOffMultiplier,
-    String operationDescription) {
+    String operationDescription, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     var retryTemplate = new RetryTemplate();
-    var retryPolicy = createRetryPolicy(exceptionClass, shouldRetry, numberOfRetries, operationDescription);
+    var retryPolicy = createRetryPolicy(exceptionClass, shouldRetry, numberOfRetries, operationDescription,
+      threadLocalModuleStageContext);
     retryTemplate.setRetryPolicy(retryPolicy);
     retryTemplate.setBackOffPolicy(
       BackOffPolicyBuilder.newBuilder().delay(backOffDelay).maxDelay(backOffMaxDelay).multiplier(backOffMultiplier)
@@ -71,7 +71,8 @@ public class RetryConfiguration {
   }
 
   private <T extends Exception> @NotNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
-    Predicate<T> shouldRetry, int numberOfRetries, String operationDescription) {
+    Predicate<T> shouldRetry, int numberOfRetries, String operationDescription,
+    ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     var retryPolicy = new SimpleRetryPolicy() {
       @Override
       @SuppressWarnings("unchecked")

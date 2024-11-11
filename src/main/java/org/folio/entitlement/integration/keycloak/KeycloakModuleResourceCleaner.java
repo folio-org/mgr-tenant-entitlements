@@ -5,7 +5,6 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.retry.annotations.KeycloakCallsRetryable;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
-import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.keycloak.admin.client.Keycloak;
 
 @Log4j2
@@ -15,7 +14,6 @@ public class KeycloakModuleResourceCleaner extends ModuleDatabaseLoggingStage {
 
   private final Keycloak keycloakClient;
   private final KeycloakService keycloakService;
-  private final ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   @Override
   public void execute(ModuleStageContext context) {

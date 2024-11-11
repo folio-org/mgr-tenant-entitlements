@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
-import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.tools.kong.service.KongGatewayService;
 
 @Log4j2
@@ -14,7 +13,6 @@ import org.folio.tools.kong.service.KongGatewayService;
 public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
 
   private final KongGatewayService kongGatewayService;
-  private final ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   @Override
   public void execute(ModuleStageContext context) {
