@@ -5,6 +5,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
+import static org.folio.entitlement.utils.IntegrationTestUtil.extractFlowIdFromFailedEntitlementResponse;
+import static org.folio.entitlement.utils.IntegrationTestUtil.getFlowStage;
 import static org.folio.entitlement.utils.LogTestUtil.captureLog4J2Logs;
 import static org.folio.entitlement.utils.LogTestUtil.stopCaptureLog4J2Logs;
 import static org.folio.entitlement.utils.WireMockUtil.stubAnyHttpMethod;
@@ -53,16 +55,10 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @IntegrationTest
 @SqlMergeMode(MERGE)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
-@TestPropertySource(properties = {
-  "application.keycloak.enabled=true",
-  "application.okapi.enabled=false",
-  "application.kong.enabled=false",
-  "application.clients.folio.connect-timeout=250ms",
-  "application.clients.folio.read-timeout=250ms",
-  "retries.module.backoff.delay=1",
-  "retries.module.backoff.multiplier=1",
-  "application.keycloak.admin.clientId=mgr-component-app"
-})
+@TestPropertySource(properties = {"application.keycloak.enabled=true", "application.okapi.enabled=false",
+  "application.kong.enabled=false", "application.clients.folio.connect-timeout=250ms",
+  "application.clients.folio.read-timeout=250ms", "retries.module.backoff.delay=1",
+  "retries.module.backoff.multiplier=1", "application.keycloak.admin.clientId=mgr-component-app"})
 @Import(KeycloakRetriesIT.TestConfiguration.class)
 class KeycloakRetriesIT extends BaseIntegrationTest {
 
@@ -103,9 +99,9 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       urlMatching("/admin/realms/test/clients/test/authz/resource-server/resource.*"), null, 500);
 
     var logs = captureLog4J2Logs();
-    mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
+    var response = mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
       jsonPath("$.errors[0].parameters[0].value").value(
-        containsString("Failed to update authorization resources in Keycloak")));
+        containsString("Failed to update authorization resources in Keycloak"))).andReturn();
 
     var endpointsCalled =
       wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500).toList();
@@ -116,13 +112,18 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/test/authz/resource-server/resource")
         && e.getRequest().getBodyAsString().contains("POST#folio-module1.events.item.post")).count()).isEqualTo(3);
 
+    assertThat(
+      logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(8);
     assertThat(logs.stream().filter(
-      logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(8);
-    assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error"))).hasSize(8);
+      logLine -> logLine.contains("jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error"))).hasSize(8);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "Flow stage KeycloakModuleResourceCreator folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
       .hasSize(1);
+
+    var flowStageData =
+      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "FailedFlowFinalizer", mockMvc);
+    assertThat(flowStageData.getRetriesCount()).isEqualTo(8);
+    assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
   }
 
   @Test
@@ -146,9 +147,9 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     queryParams.forEach(request::queryParam);
 
     var logs = captureLog4J2Logs();
-    mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
+    var response = mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
       jsonPath("$.errors[0].parameters[0].value").value(
-        containsString("Failed to remove authorization resources in Keycloak")));
+        containsString("Failed to remove authorization resources in Keycloak"))).andReturn();
 
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
@@ -160,13 +161,18 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
         "/admin/realms/test/clients/test/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents%2F%7Bid%7D"))
       .count()).isEqualTo(3);
 
-    assertThat(logs.stream().filter(
-      logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(8);
+    assertThat(
+      logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(8);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(8);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
       .hasSize(1);
+
+    var flowStageData =
+      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "FailedFlowFinalizer", mockMvc);
+    assertThat(flowStageData.getRetriesCount()).isEqualTo(8);
+    assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
   }
 
   protected WireMock mockBaseDependencies(String moduleId, String routeId) throws Exception {

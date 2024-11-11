@@ -4,6 +4,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
+import static org.folio.entitlement.utils.IntegrationTestUtil.extractFlowIdFromFailedEntitlementResponse;
+import static org.folio.entitlement.utils.IntegrationTestUtil.getFlowStage;
 import static org.folio.entitlement.utils.LogTestUtil.captureLog4J2Logs;
 import static org.folio.entitlement.utils.LogTestUtil.stopCaptureLog4J2Logs;
 import static org.folio.entitlement.utils.WireMockUtil.stubAnyHttpMethod;
@@ -40,15 +42,10 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @IntegrationTest
 @SqlMergeMode(MERGE)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
-@TestPropertySource(properties = {
-  "application.keycloak.enabled=false",
-  "application.okapi.enabled=false",
-  "application.kong.enabled=true",
-  "application.clients.folio.connect-timeout=250ms",
-  "application.clients.folio.read-timeout=250ms",
-  "retries.module.backoff.delay=1",
-  "retries.module.backoff.multiplier=1"
-})
+@TestPropertySource(properties = {"application.keycloak.enabled=false", "application.okapi.enabled=false",
+  "application.kong.enabled=true", "application.clients.folio.connect-timeout=250ms",
+  "application.clients.folio.read-timeout=250ms", "retries.module.backoff.delay=1",
+  "retries.module.backoff.multiplier=1"})
 @EnableKongGateway(enableWiremock = true)
 class KongRetriesIT extends BaseIntegrationTest {
 
@@ -78,9 +75,13 @@ class KongRetriesIT extends BaseIntegrationTest {
     stubAnyHttpMethod(wireMockClient, 1, urlMatching("/services/folio-module1-1.0.0"), null, 500);
 
     var logs = captureLog4J2Logs();
-    mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
-    assertThat(logs).isNotEmpty();
+    var response = mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
+    var flowStageData =
+      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "FailedFlowFinalizer", mockMvc);
+    assertThat(flowStageData.getRetriesCount()).isEqualTo(3);
+    assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
 
+    assertThat(logs).isNotEmpty();
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
     assertThat(endpointsCalled).hasSize(3);
@@ -126,22 +127,26 @@ class KongRetriesIT extends BaseIntegrationTest {
     queryParams.forEach(request::queryParam);
 
     var logs = captureLog4J2Logs();
-    mockMvc.perform(request).andExpect(status().isBadRequest())
-      .andExpect(jsonPath("$.errors[0].parameters[0].value").value(containsString("Failed to remove routes")));
+    var response = mockMvc.perform(request).andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.errors[0].parameters[0].value").value(containsString("Failed to remove routes")))
+      .andReturn();
     assertThat(logs).isNotEmpty();
+
+    var flowStageData =
+      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "FailedFlowFinalizer", mockMvc);
+    assertThat(flowStageData.getRetriesCount()).isEqualTo(3);
+    assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
 
     var endpointsCalled = wireMockClient.getServeEvents().stream().filter(e -> e.getResponse().getStatus() == 500)
       .map(e -> e.getRequest().getUrl()).toList();
     assertThat(endpointsCalled).hasSize(3);
-    endpointsCalled.forEach(endpoint -> assertThat(endpoint)
-      .isEqualTo("/services/" + moduleId + "/routes/" + routeId));
+    endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/services/" + moduleId + "/routes/" + routeId));
 
     assertThat(logs.stream().filter(
       logLine -> logLine.contains("Error Internal Server Error occurred for Kong HTTP request - retrying"))).hasSize(3);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "Flow stage KongModuleRouteCleaner folio-module2-2.0.0-kongModuleRouteCleaner execution error"))).hasSize(1);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "org.folio.tools.kong.exception.KongIntegrationException: Failed to remove routes"))).hasSize(
-      1);
+      "org.folio.tools.kong.exception.KongIntegrationException: Failed to remove routes"))).hasSize(1);
   }
 }

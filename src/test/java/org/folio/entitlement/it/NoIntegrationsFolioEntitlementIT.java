@@ -40,6 +40,8 @@ import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEven
 import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsBeforeUpgrade;
+import static org.folio.entitlement.utils.IntegrationTestUtil.extractFlowIdFromFailedEntitlementResponse;
+import static org.folio.entitlement.utils.IntegrationTestUtil.getFlowStage;
 import static org.folio.entitlement.utils.LogTestUtil.captureLog4J2Logs;
 import static org.folio.entitlement.utils.LogTestUtil.stopCaptureLog4J2Logs;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
@@ -60,6 +62,8 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.tuple.Pair;
+import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
@@ -139,15 +143,20 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app1/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install500.json"})
   void install_negative_httpStatus500FromModule() throws Exception {
-    var logs = install_negative_httpStatusRetryableErrorFromModule(500);
+    var result = install_negative_httpStatusRetryableErrorFromModule(500);
+
+    var logs = result.getRight();
     logs.forEach(System.err::println);
-    assertThat(logs.stream().filter(
-      logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(4);
+    assertThat(
+      logs.stream().filter(logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(4);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "Flow stage FolioModuleInstaller folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(
-      5);
+      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(5);
+
+    var stageData = result.getLeft();
+    assertThat(stageData.getRetriesCount()).isEqualTo(4);
+    assertThat(stageData.getRetriesInfo()).isNotEmpty();
   }
 
   @Test
@@ -157,17 +166,22 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/folio-app1/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install400.json"})
   void install_negative_httpStatus400FromModule() throws Exception {
-    var logs = install_negative_httpStatusRetryableErrorFromModule(400);
-    assertThat(logs.stream().filter(
-      logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(4);
+    var result = install_negative_httpStatusRetryableErrorFromModule(400);
+    var logs = result.getRight();
+    assertThat(
+      logs.stream().filter(logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(4);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "Flow stage FolioModuleInstaller folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(
-      5);
+      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(5);
+
+    var stageData = result.getLeft();
+    assertThat(stageData.getRetriesCount()).isEqualTo(4);
+    assertThat(stageData.getRetriesInfo()).isNotEmpty();
   }
 
-  List<String> install_negative_httpStatusRetryableErrorFromModule(int expectedHttpStatus) throws Exception {
+  Pair<FlowStage, List<String>> install_negative_httpStatusRetryableErrorFromModule(int expectedHttpStatus)
+    throws Exception {
     var entitlementRequest = entitlementRequest(FOLIO_APP1_ID);
     var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
     var request =
@@ -176,8 +190,12 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     queryParams.forEach(request::queryParam);
 
     var logs = captureLog4J2Logs();
-    mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
+    var response =
+      mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn().getResponse();
     assertThat(logs).isNotEmpty();
+
+    var flowId = extractFlowIdFromFailedEntitlementResponse(response);
+    var flowStageData = getFlowStage(flowId, "FailedFlowFinalizer", mockMvc);
 
     var wireMockClient =
       new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());
@@ -187,7 +205,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     assertThat(endpointsCalled).hasSize(3);
     endpointsCalled.forEach(endpoint -> assertThat(endpoint).isEqualTo("/folio-module1/_/tenant"));
 
-    return logs;
+    return Pair.of(flowStageData, logs);
   }
 
   @Test
