@@ -21,7 +21,6 @@ import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.ModuleSequenceProvider;
-import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.entitlement.utils.JsonConverter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
@@ -76,9 +75,8 @@ public class FolioConfiguration {
    * @return created {@link FolioModuleInstaller} stage
    */
   @Bean
-  public FolioModuleInstaller folioModuleInstaller(FolioModuleService folioModuleService,
-    ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-    return new FolioModuleInstaller(folioModuleService, threadLocalModuleStageContext);
+  public FolioModuleInstaller folioModuleInstaller(FolioModuleService folioModuleService) {
+    return new FolioModuleInstaller(folioModuleService);
   }
 
   /**
@@ -89,8 +87,8 @@ public class FolioConfiguration {
    */
   @Bean
   public FolioModuleUpdater folioModuleUpdater(FolioModuleService folioModuleService,
-    EntitlementModuleService entitlementModuleService, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-    return new FolioModuleUpdater(folioModuleService, entitlementModuleService, threadLocalModuleStageContext);
+    EntitlementModuleService entitlementModuleService) {
+    return new FolioModuleUpdater(folioModuleService, entitlementModuleService);
   }
 
   /**
@@ -100,9 +98,8 @@ public class FolioConfiguration {
    * @return created {@link FolioModuleInstaller} stage
    */
   @Bean
-  public FolioModuleUninstaller folioModuleUninstaller(FolioModuleService folioModuleService,
-    ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-    return new FolioModuleUninstaller(folioModuleService, threadLocalModuleStageContext);
+  public FolioModuleUninstaller folioModuleUninstaller(FolioModuleService folioModuleService) {
+    return new FolioModuleUninstaller(folioModuleService);
   }
 
   /**

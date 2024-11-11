@@ -153,22 +153,22 @@ class KeycloakRetriesTest {
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public KeycloakModuleResourceCreator keycloakModuleResourceCreator(Keycloak keycloak,
-      KeycloakService keycloakService, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-      return new KeycloakModuleResourceCreator(keycloak, keycloakService, threadLocalModuleStageContext);
+      KeycloakService keycloakService) {
+      return new KeycloakModuleResourceCreator(keycloak, keycloakService);
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public KeycloakModuleResourceUpdater keycloakModuleResourceUpdater(Keycloak keycloak,
-      KeycloakService keycloakService, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-      return new KeycloakModuleResourceUpdater(keycloak, keycloakService, threadLocalModuleStageContext);
+      KeycloakService keycloakService) {
+      return new KeycloakModuleResourceUpdater(keycloak, keycloakService);
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public KeycloakModuleResourceCleaner keycloakModuleResourceCleaner(Keycloak keycloak,
-      KeycloakService keycloakService, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-      return new KeycloakModuleResourceCleaner(keycloak, keycloakService, threadLocalModuleStageContext);
+      KeycloakService keycloakService) {
+      return new KeycloakModuleResourceCleaner(keycloak, keycloakService);
     }
 
     @Bean

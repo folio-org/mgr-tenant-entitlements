@@ -71,7 +71,7 @@ public class KongConfiguration {
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteCreator kongModuleRouteCreator(KongGatewayService kongGatewayService) {
-    return new KongModuleRouteCreator(kongGatewayService, threadLocalModuleStageContext);
+    return new KongModuleRouteCreator(kongGatewayService);
   }
 
   /**
@@ -83,7 +83,7 @@ public class KongConfiguration {
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteUpdater kongModuleRouteUpdater(KongGatewayService kongGatewayService) {
-    return new KongModuleRouteUpdater(kongGatewayService, threadLocalModuleStageContext);
+    return new KongModuleRouteUpdater(kongGatewayService);
   }
 
   /**
@@ -95,7 +95,7 @@ public class KongConfiguration {
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteCleaner kongModuleRouteCleaner(KongGatewayService kongGatewayService) {
-    return new KongModuleRouteCleaner(kongGatewayService, threadLocalModuleStageContext);
+    return new KongModuleRouteCleaner(kongGatewayService);
   }
 
 

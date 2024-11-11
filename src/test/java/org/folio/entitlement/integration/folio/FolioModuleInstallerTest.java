@@ -31,6 +31,7 @@ import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -47,6 +48,11 @@ class FolioModuleInstallerTest {
   @InjectMocks private FolioModuleInstaller moduleInstaller;
   @Mock private FolioModuleService folioModuleService;
   @Mock private ThreadLocalModuleStageContext threadLocalModuleStageContext;
+
+  @BeforeEach
+  void setup() {
+    moduleInstaller.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
+  }
 
   @AfterEach
   void tearDown() {

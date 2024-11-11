@@ -29,6 +29,7 @@ import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.folio.tools.kong.service.KongGatewayService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -42,6 +43,11 @@ class KongModuleRouteUpdaterTest {
   @InjectMocks private KongModuleRouteUpdater kongModuleRouteUpdater;
   @Mock private KongGatewayService kongGatewayService;
   @Mock private ThreadLocalModuleStageContext threadLocalModuleStageContext;
+
+  @BeforeEach
+  void setup() {
+    kongModuleRouteUpdater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
+  }
 
   @AfterEach
   void tearDown() {

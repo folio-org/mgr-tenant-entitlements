@@ -28,6 +28,7 @@ import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
@@ -45,6 +46,11 @@ class KeycloakModuleResourceUpdaterTest {
   @Mock private TokenManager tokenManager;
   @Mock private KeycloakService keycloakService;
   @Mock private ThreadLocalModuleStageContext threadLocalModuleStageContext;
+
+  @BeforeEach
+  void setup() {
+    keycloakModuleResourceUpdater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
+  }
 
   @AfterEach
   void tearDown() {

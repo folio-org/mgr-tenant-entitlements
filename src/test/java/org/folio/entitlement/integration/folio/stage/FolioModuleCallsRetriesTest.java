@@ -125,23 +125,21 @@ class FolioModuleCallsRetriesTest {
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
-    public FolioModuleInstaller folioModuleInstaller(FolioModuleService folioModuleService,
-      ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-      return new FolioModuleInstaller(folioModuleService, threadLocalModuleStageContext);
+    public FolioModuleInstaller folioModuleInstaller(FolioModuleService folioModuleService) {
+      return new FolioModuleInstaller(folioModuleService);
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
-    public FolioModuleUninstaller folioModuleUninstaller(FolioModuleService folioModuleService,
-      ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-      return new FolioModuleUninstaller(folioModuleService, threadLocalModuleStageContext);
+    public FolioModuleUninstaller folioModuleUninstaller(FolioModuleService folioModuleService) {
+      return new FolioModuleUninstaller(folioModuleService);
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public FolioModuleUpdater folioModuleUpdater(FolioModuleService folioModuleService,
-      EntitlementModuleService moduleService, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-      return new FolioModuleUpdater(folioModuleService, moduleService, threadLocalModuleStageContext);
+      EntitlementModuleService moduleService) {
+      return new FolioModuleUpdater(folioModuleService, moduleService);
     }
 
     @Bean
