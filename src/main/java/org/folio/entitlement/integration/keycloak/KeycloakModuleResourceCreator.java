@@ -17,7 +17,7 @@ public class KeycloakModuleResourceCreator extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
-    threadLocalModuleStageContext.set(context, getStageName(context));
+    threadLocalModuleStageContext.set(context);
 
     var realm = context.getTenantName();
     keycloakClient.tokenManager().grantToken();

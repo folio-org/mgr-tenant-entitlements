@@ -14,7 +14,7 @@ public class ThreadLocalModuleStageContext {
     return THREAD_LOCAL_MODULE_STAGE_CONTEXT.get();
   }
 
-  public void set(ModuleStageContext moduleStageContext, String stageName) {
+  public void set(ModuleStageContext moduleStageContext) {
     THREAD_LOCAL_MODULE_STAGE_CONTEXT.set(moduleStageContext);
   }
 

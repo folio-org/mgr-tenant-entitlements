@@ -17,7 +17,7 @@ public class KeycloakModuleResourceUpdater extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
-    threadLocalModuleStageContext.set(context, getStageName(context));
+    threadLocalModuleStageContext.set(context);
 
     var tenantName = context.getTenantName();
     var moduleDescriptor = context.getModuleDescriptor();

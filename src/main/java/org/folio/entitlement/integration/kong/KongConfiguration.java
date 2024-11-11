@@ -14,7 +14,6 @@ import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.tools.kong.client.KongAdminClient;
 import org.folio.tools.kong.configuration.KongConfigurationProperties;
 import org.folio.tools.kong.service.KongGatewayService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,9 +21,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(prefix = "application.kong", name = "enabled")
 public class KongConfiguration {
-
-  @Autowired
-  private ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   /**
    * Creates {@link KongRouteCreator} bean as a flow stage to populate routes in Kong per application.
@@ -111,7 +107,7 @@ public class KongConfiguration {
   @Bean(name = "folioKongAdminClient")
   public KongAdminClient folioKongIntegrationClient(okhttp3.OkHttpClient okHttpClient,
     KongConfigurationProperties properties, Contract contract, Encoder encoder, Decoder decoder,
-    RetryConfigurationProperties retryConfig) {
+    RetryConfigurationProperties retryConfig, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
 
     var feignClientBuilder = Feign.builder().contract(contract).encoder(encoder).decoder(decoder).errorDecoder(
       new FeignRetrySupportingErrorDecoder(new ErrorDecoder.Default(),
