@@ -9,7 +9,6 @@ import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
-import org.folio.entitlement.service.RetryInformationService;
 import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 
 @RequiredArgsConstructor
@@ -21,7 +20,6 @@ public class FeignRetrySupportingErrorDecoder implements ErrorDecoder {
   private final String operationDescription;
   private final String errorDescription;
   private final ThreadLocalModuleStageContext threadLocalModuleStageContext;
-  private final RetryInformationService retryInformationService;
 
   @Override
   public Exception decode(String methodKey, Response response) {
@@ -29,7 +27,7 @@ public class FeignRetrySupportingErrorDecoder implements ErrorDecoder {
       var errorInformation =
         String.format("Error %s occurred for %s - retrying", errorDescription, operationDescription);
       log.error(errorInformation);
-      addErrorInformation(errorInformation, threadLocalModuleStageContext, retryInformationService);
+      addErrorInformation(errorInformation, threadLocalModuleStageContext);
       return new RetryableException(response.status(), errorDescription, response.request().httpMethod(),
         System.currentTimeMillis(), response.request());
     }

@@ -3,11 +3,15 @@ package org.folio.entitlement.integration.keycloak;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTOR_HOLDERS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import jakarta.ws.rs.WebApplicationException;
+import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.configuration.RetryConfiguration;
@@ -15,6 +19,7 @@ import org.folio.entitlement.configuration.RetryConfigurationProperties;
 import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryBackoffConfigProps;
 import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryConfigProps;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.repository.FlowStageRepository;
@@ -22,6 +27,7 @@ import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.flow.impl.StageContextImpl;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.token.TokenManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
@@ -103,9 +109,15 @@ class KeycloakRetriesTest {
   }
 
   private static OkapiStageContext createOkapiStageContext() {
+    var moduleDescriptorOld = new ModuleDescriptor();
+    moduleDescriptorOld.setId("123");
+    var moduleDescriptorNew = new ModuleDescriptor();
+    moduleDescriptorNew.setId("456");
     return new OkapiStageContext(new StageContextImpl("test",
       Map.of(PARAM_REQUEST, EntitlementRequest.builder().purge(true).build(), PARAM_MODULE_DESCRIPTOR,
-        new ModuleDescriptor()), Map.of()));
+        new ModuleDescriptor(), PARAM_MODULE_DESCRIPTORS, List.of(new ModuleDescriptor()),
+        PARAM_MODULE_DESCRIPTOR_HOLDERS,
+        List.of(new ModuleDescriptorHolder(moduleDescriptorOld, moduleDescriptorNew))), Map.of()));
   }
 
   @Configuration
@@ -128,7 +140,9 @@ class KeycloakRetriesTest {
 
     @Bean
     public Keycloak keycloak() {
-      return mock(Keycloak.class);
+      var keycloak = mock(Keycloak.class);
+      when(keycloak.tokenManager()).thenReturn(mock(TokenManager.class));
+      return keycloak;
     }
 
     @Bean
@@ -173,6 +187,11 @@ class KeycloakRetriesTest {
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public KeycloakAuthResourceCleaner keycloakAuthResourceCleaner(Keycloak keycloak, KeycloakService keycloakService) {
       return new KeycloakAuthResourceCleaner(keycloak, keycloakService);
+    }
+
+    @Bean
+    public ThreadLocalModuleStageContext threadLocalModuleStageContext() {
+      return new ThreadLocalModuleStageContext();
     }
   }
 }

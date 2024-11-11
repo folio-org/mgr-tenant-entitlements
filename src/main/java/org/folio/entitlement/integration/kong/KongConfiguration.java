@@ -10,7 +10,6 @@ import feign.codec.ErrorDecoder;
 import org.folio.entitlement.configuration.RetryConfigurationProperties;
 import org.folio.entitlement.retry.feign.FeignRetrySupportingErrorDecoder;
 import org.folio.entitlement.retry.feign.FeignRetryer;
-import org.folio.entitlement.service.RetryInformationService;
 import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.tools.kong.client.KongAdminClient;
 import org.folio.tools.kong.configuration.KongConfigurationProperties;
@@ -112,18 +111,18 @@ public class KongConfiguration {
   @Bean(name = "folioKongAdminClient")
   public KongAdminClient folioKongIntegrationClient(okhttp3.OkHttpClient okHttpClient,
     KongConfigurationProperties properties, Contract contract, Encoder encoder, Decoder decoder,
-    RetryConfigurationProperties retryConfig, RetryInformationService retryInformationService) {
+    RetryConfigurationProperties retryConfig) {
 
     var feignClientBuilder = Feign.builder().contract(contract).encoder(encoder).decoder(decoder).errorDecoder(
       new FeignRetrySupportingErrorDecoder(new ErrorDecoder.Default(),
         methodKeyAndResponse -> methodKeyAndResponse.getRight().status() == 500, "Kong HTTP request",
-        "Internal Server Error", threadLocalModuleStageContext, retryInformationService));
+        "Internal Server Error", threadLocalModuleStageContext));
 
     feignClientBuilder = feignClientBuilder.client(getOkHttpClient(okHttpClient, properties.getTls())).retryer(
       new FeignRetryer(retryConfig.getKong().getBackoff().getDelay(), retryConfig.getKong().getBackoff().getMaxdelay(),
         retryConfig.getKong().getMax(), retryableException -> retryableException.status() >= 500,
         "Kong HTTP request", "HTTP status 500 (Internal Server Error)",
-        threadLocalModuleStageContext, retryInformationService));
+        threadLocalModuleStageContext));
 
     return feignClientBuilder.target(KongAdminClient.class, properties.getUrl());
   }

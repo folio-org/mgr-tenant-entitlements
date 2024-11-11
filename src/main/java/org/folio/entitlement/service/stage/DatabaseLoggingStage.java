@@ -6,16 +6,16 @@ import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.CAN
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
+import static org.folio.entitlement.domain.model.ModuleStageContext.ATTR_RETRY_INFO;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.getErrorMessage;
-import static org.folio.entitlement.utils.FlowUtils.getFlowStageKey;
 
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.entity.FlowStageEntity;
 import org.folio.entitlement.domain.entity.key.FlowStageKey;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
+import org.folio.entitlement.domain.model.RetryInformation;
 import org.folio.entitlement.repository.FlowStageRepository;
-import org.folio.entitlement.service.RetryInformationService;
 import org.folio.flow.api.Stage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> implements Stage<C> {
 
   protected FlowStageRepository stageRepository;
-  protected RetryInformationService retryInformationService;
+  protected ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   @Override
   @Transactional
@@ -66,8 +66,8 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
   }
 
   @Autowired
-  public void setRetryInformationService(RetryInformationService retryInformationService) {
-    this.retryInformationService = retryInformationService;
+  public void setThreadLocalModuleStageContext(ThreadLocalModuleStageContext threadLocalModuleStageContext) {
+    this.threadLocalModuleStageContext = threadLocalModuleStageContext;
   }
 
   @Override
@@ -98,13 +98,12 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
       log.error(format("Flow stage %s %s execution error", getId(), getStageName(context)), error);
     }
 
-    var retryInfoKey = getFlowStageKey(context, getStageName(context));
-    var retryInfo = retryInformationService.get(retryInfoKey);
+    var retryInfo = (RetryInformation) context.get(ATTR_RETRY_INFO);
     if (retryInfo != null) {
       stageExecutionEntity.setRetriesCount(retryInfo.getRetriesCount());
       stageExecutionEntity.setRetriesInfo(String.join("\n\n", retryInfo.getErrors()));
     }
-    retryInformationService.clear(retryInfoKey);
+    threadLocalModuleStageContext.clear();
 
     stageRepository.save(stageExecutionEntity);
   }

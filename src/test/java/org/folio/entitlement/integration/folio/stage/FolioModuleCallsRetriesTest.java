@@ -125,21 +125,28 @@ class FolioModuleCallsRetriesTest {
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
-    public FolioModuleInstaller folioModuleInstaller(FolioModuleService folioModuleService) {
-      return new FolioModuleInstaller(folioModuleService, mock(ThreadLocalModuleStageContext.class));
+    public FolioModuleInstaller folioModuleInstaller(FolioModuleService folioModuleService,
+      ThreadLocalModuleStageContext threadLocalModuleStageContext) {
+      return new FolioModuleInstaller(folioModuleService, threadLocalModuleStageContext);
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
-    public FolioModuleUninstaller folioModuleUninstaller(FolioModuleService folioModuleService) {
-      return new FolioModuleUninstaller(folioModuleService, mock(ThreadLocalModuleStageContext.class));
+    public FolioModuleUninstaller folioModuleUninstaller(FolioModuleService folioModuleService,
+      ThreadLocalModuleStageContext threadLocalModuleStageContext) {
+      return new FolioModuleUninstaller(folioModuleService, threadLocalModuleStageContext);
     }
 
     @Bean
     @Scope(proxyMode = ScopedProxyMode.TARGET_CLASS)
     public FolioModuleUpdater folioModuleUpdater(FolioModuleService folioModuleService,
-      EntitlementModuleService moduleService) {
-      return new FolioModuleUpdater(folioModuleService, moduleService, mock(ThreadLocalModuleStageContext.class));
+      EntitlementModuleService moduleService, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
+      return new FolioModuleUpdater(folioModuleService, moduleService, threadLocalModuleStageContext);
+    }
+
+    @Bean
+    public ThreadLocalModuleStageContext threadLocalModuleStageContext() {
+      return new ThreadLocalModuleStageContext();
     }
   }
 }

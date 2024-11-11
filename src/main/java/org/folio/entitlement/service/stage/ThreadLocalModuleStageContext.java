@@ -1,7 +1,5 @@
 package org.folio.entitlement.service.stage;
 
-import static org.folio.entitlement.domain.model.ModuleStageContext.ATTR_STAGE_NAME;
-
 import lombok.extern.slf4j.Slf4j;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.springframework.stereotype.Component;
@@ -17,7 +15,6 @@ public class ThreadLocalModuleStageContext {
   }
 
   public void set(ModuleStageContext moduleStageContext, String stageName) {
-    moduleStageContext.put(ATTR_STAGE_NAME, stageName);
     THREAD_LOCAL_MODULE_STAGE_CONTEXT.set(moduleStageContext);
   }
 

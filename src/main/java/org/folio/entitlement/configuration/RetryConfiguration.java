@@ -7,7 +7,6 @@ import jakarta.ws.rs.WebApplicationException;
 import java.util.function.Predicate;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.integration.IntegrationException;
-import org.folio.entitlement.service.RetryInformationService;
 import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +26,6 @@ public class RetryConfiguration {
 
   @Autowired
   private ThreadLocalModuleStageContext threadLocalModuleStageContext;
-  @Autowired
-  private RetryInformationService retryInformationService;
 
   /**
    * Create a RetryOperationsInterceptor that will intercept error during calls to folio modules.
@@ -90,7 +87,7 @@ public class RetryConfiguration {
         // If there was no error so far (first attempt) or error is what we allow to retry - return true
         if (exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error)) {
           log.error(String.format("Error occurred for %s - retrying", operationDescription), error);
-          addErrorInformation(getStackTrace(error), threadLocalModuleStageContext, retryInformationService);
+          addErrorInformation(getStackTrace(error), threadLocalModuleStageContext);
           return true;
         }
         return false;
