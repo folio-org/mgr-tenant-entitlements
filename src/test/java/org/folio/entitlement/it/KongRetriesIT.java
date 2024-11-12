@@ -49,7 +49,8 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
   "application.clients.folio.connect-timeout=250ms",
   "application.clients.folio.read-timeout=250ms",
   "retries.module.backoff.delay=1",
-  "retries.module.backoff.multiplier=1"})
+  "retries.module.backoff.multiplier=1"
+})
 @EnableKongGateway(enableWiremock = true)
 class KongRetriesIT extends BaseIntegrationTest {
 
