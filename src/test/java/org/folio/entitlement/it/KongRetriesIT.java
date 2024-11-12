@@ -42,9 +42,13 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @IntegrationTest
 @SqlMergeMode(MERGE)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
-@TestPropertySource(properties = {"application.keycloak.enabled=false", "application.okapi.enabled=false",
-  "application.kong.enabled=true", "application.clients.folio.connect-timeout=250ms",
-  "application.clients.folio.read-timeout=250ms", "retries.module.backoff.delay=1",
+@TestPropertySource(properties = {
+  "application.keycloak.enabled=false",
+  "application.okapi.enabled=false",
+  "application.kong.enabled=true",
+  "application.clients.folio.connect-timeout=250ms",
+  "application.clients.folio.read-timeout=250ms",
+  "retries.module.backoff.delay=1",
   "retries.module.backoff.multiplier=1"})
 @EnableKongGateway(enableWiremock = true)
 class KongRetriesIT extends BaseIntegrationTest {
