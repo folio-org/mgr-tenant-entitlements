@@ -19,6 +19,7 @@ public class ModuleStageContext extends IdentifiableStageContext {
   public static final String PARAM_MODULE_DISCOVERY = "moduleDiscovery";
   public static final String PARAM_MODULE_DESCRIPTOR = "moduleDescriptor";
   public static final String PARAM_INSTALLED_MODULE_DESCRIPTOR = "installedModuleDescriptor";
+  public static final String ATTR_RETRY_INFO = "retryInformation";
 
   /**
    * Creates a {@link ModuleStageContext} wrapper from a {@link StageContext} object.

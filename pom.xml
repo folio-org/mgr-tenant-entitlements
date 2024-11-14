@@ -38,7 +38,7 @@
     <folio-spring-cql.version>8.2.1</folio-spring-cql.version>
     <applications-poc-tools.version>2.1.1</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
-    <folio-flow-engine.version>2.0.0</folio-flow-engine.version>
+    <folio-flow-engine.version>2.1.0</folio-flow-engine.version>
     <jackson-bom.version>2.17.2</jackson-bom.version>
     <caffeine.version>3.1.8</caffeine.version>
 

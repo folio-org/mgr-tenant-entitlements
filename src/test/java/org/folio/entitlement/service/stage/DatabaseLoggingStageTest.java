@@ -38,6 +38,7 @@ class DatabaseLoggingStageTest {
 
   @InjectMocks private TestStage testStage;
   @Mock private FlowStageRepository stageRepository;
+  @Mock private ThreadLocalModuleStageContext threadLocalModuleStageContext;
   @Captor private ArgumentCaptor<FlowStageEntity> entitlementStageCaptor;
 
   @Test

@@ -15,6 +15,8 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
+    threadLocalModuleStageContext.set(context);
+
     var tenantName = context.getTenantName();
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
@@ -29,5 +31,6 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
     if (moduleDescriptor != null) {
       kongGatewayService.addRoutes(tenantName, List.of(moduleDescriptor));
     }
+    threadLocalModuleStageContext.clear();
   }
 }

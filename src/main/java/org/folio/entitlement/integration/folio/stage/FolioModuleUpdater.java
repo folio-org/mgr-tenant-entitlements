@@ -22,6 +22,8 @@ public class FolioModuleUpdater extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
+    threadLocalModuleStageContext.set(context);
+
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
     var tenantId = context.getTenantId();
@@ -43,5 +45,7 @@ public class FolioModuleUpdater extends ModuleDatabaseLoggingStage {
       var moduleId = installedModuleDescriptor.getId();
       moduleService.deleteModuleEntitlement(moduleId, tenantId, entitledApplicationId);
     }
+
+    threadLocalModuleStageContext.clear();
   }
 }

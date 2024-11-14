@@ -17,6 +17,8 @@ public class KeycloakModuleResourceCleaner extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
+    threadLocalModuleStageContext.set(context);
+
     var request = context.getEntitlementRequest();
     var moduleDescriptor = context.getModuleDescriptor();
     if (!request.isPurge()) {
@@ -27,5 +29,7 @@ public class KeycloakModuleResourceCleaner extends ModuleDatabaseLoggingStage {
     var tenantName = context.getTenantName();
     keycloakClient.tokenManager().grantToken();
     keycloakService.removeAuthResources(moduleDescriptor, tenantName);
+
+    threadLocalModuleStageContext.clear();
   }
 }
