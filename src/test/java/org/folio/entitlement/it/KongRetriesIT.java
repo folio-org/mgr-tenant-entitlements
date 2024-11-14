@@ -57,11 +57,6 @@ class KongRetriesIT extends BaseIntegrationTest {
   private static final String FOLIO_APP1_ID = "folio-app1-1.0.0";
   private static final String FOLIO_APP2_ID = "folio-app2-2.0.0";
 
-  @AfterAll
-  public static void resetLogCapture() {
-    stopCaptureLog4J2Logs();
-  }
-
   @Test
   @KeycloakRealms("/keycloak/test-realm.json")
   @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
@@ -81,8 +76,8 @@ class KongRetriesIT extends BaseIntegrationTest {
 
     var logs = captureLog4J2Logs();
     var response = mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
-    var flowStageData =
-      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "folio-module1-1.0.0-kongModuleRouteCreator", mockMvc);
+    var flowStageData = getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()),
+      "folio-module1-1.0.0-kongModuleRouteCreator", mockMvc);
     assertThat(flowStageData.getRetriesCount()).isEqualTo(3);
     assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
 
@@ -99,6 +94,11 @@ class KongRetriesIT extends BaseIntegrationTest {
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "org.folio.tools.kong.exception.KongIntegrationException: "
         + "Failed to find Kong service for module: folio-module1-1.0.0"))).hasSize(1);
+  }
+
+  @AfterAll
+  public static void resetLogCapture() {
+    stopCaptureLog4J2Logs();
   }
 
   @Test
@@ -137,8 +137,8 @@ class KongRetriesIT extends BaseIntegrationTest {
       .andReturn();
     assertThat(logs).isNotEmpty();
 
-    var flowStageData =
-      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "folio-module2-2.0.0-kongModuleRouteCleaner", mockMvc);
+    var flowStageData = getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()),
+      "folio-module2-2.0.0-kongModuleRouteCleaner", mockMvc);
     assertThat(flowStageData.getRetriesCount()).isEqualTo(3);
     assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
 

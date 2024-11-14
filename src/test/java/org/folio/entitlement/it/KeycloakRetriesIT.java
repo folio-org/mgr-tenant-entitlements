@@ -120,8 +120,8 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       "Flow stage KeycloakModuleResourceCreator folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
       .hasSize(1);
 
-    var flowStageData =
-      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "folio-module1-1.0.0-keycloakModuleResourceCreator", mockMvc);
+    var flowStageData = getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()),
+      "folio-module1-1.0.0-keycloakModuleResourceCreator", mockMvc);
     assertThat(flowStageData.getRetriesCount()).isEqualTo(7);
     assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
   }
@@ -169,8 +169,8 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
       .hasSize(1);
 
-    var flowStageData =
-      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "folio-module2-2.0.0-keycloakModuleResourceCleaner", mockMvc);
+    var flowStageData = getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()),
+      "folio-module2-2.0.0-keycloakModuleResourceCleaner", mockMvc);
     assertThat(flowStageData.getRetriesCount()).isEqualTo(7);
     assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
   }
