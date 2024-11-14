@@ -38,7 +38,7 @@
     <folio-spring-cql.version>8.2.1</folio-spring-cql.version>
     <applications-poc-tools.version>2.1.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
-    <folio-flow-engine.version>2.0.0</folio-flow-engine.version>
+    <folio-flow-engine.version>2.1.0-SNAPSHOT</folio-flow-engine.version>
 
     <mgr-tenant-entitlements.yaml-file>${project.basedir}/src/main/resources/swagger.api/mgr-tenant-entitlements.yaml
     </mgr-tenant-entitlements.yaml-file>

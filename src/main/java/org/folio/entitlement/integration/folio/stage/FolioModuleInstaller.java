@@ -17,8 +17,12 @@ public class FolioModuleInstaller extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
+    threadLocalModuleStageContext.set(context);
+
     var moduleRequest = ModuleRequest.fromStageContext(context);
     folioModuleService.enable(moduleRequest);
+
+    threadLocalModuleStageContext.clear();
   }
 
   @Override

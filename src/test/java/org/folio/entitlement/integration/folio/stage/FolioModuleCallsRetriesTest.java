@@ -23,6 +23,7 @@ import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.repository.FlowStageRepository;
 import org.folio.entitlement.service.EntitlementModuleService;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.flow.impl.StageContextImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -139,6 +140,11 @@ class FolioModuleCallsRetriesTest {
     public FolioModuleUpdater folioModuleUpdater(FolioModuleService folioModuleService,
       EntitlementModuleService moduleService) {
       return new FolioModuleUpdater(folioModuleService, moduleService);
+    }
+
+    @Bean
+    public ThreadLocalModuleStageContext threadLocalModuleStageContext() {
+      return new ThreadLocalModuleStageContext();
     }
   }
 }

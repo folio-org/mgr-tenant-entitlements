@@ -35,6 +35,14 @@
       "description": "Stage execution end timestamp",
       "type": "string",
       "format": "date-time"
+    },
+    "retriesCount": {
+      "description": "Number of retries performed during flow stage operations",
+      "type": "integer"
+    },
+    "retriesInfo": {
+      "description": "Error information on operations failures that caused retries",
+      "type": "string"
     }
   }
 }

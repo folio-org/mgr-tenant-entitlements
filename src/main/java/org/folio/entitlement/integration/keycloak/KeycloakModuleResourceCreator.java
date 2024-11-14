@@ -17,6 +17,8 @@ public class KeycloakModuleResourceCreator extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
+    threadLocalModuleStageContext.set(context);
+
     var realm = context.getTenantName();
     keycloakClient.tokenManager().grantToken();
     keycloakService.updateAuthResources(null, context.getModuleDescriptor(), realm);
@@ -34,6 +36,8 @@ public class KeycloakModuleResourceCreator extends ModuleDatabaseLoggingStage {
     var tenantName = context.getTenantName();
     keycloakClient.tokenManager().grantToken();
     keycloakService.removeAuthResources(moduleDescriptor, tenantName);
+
+    threadLocalModuleStageContext.clear();
   }
 
   @Override

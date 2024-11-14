@@ -10,6 +10,7 @@ import feign.codec.ErrorDecoder;
 import org.folio.entitlement.configuration.RetryConfigurationProperties;
 import org.folio.entitlement.retry.feign.FeignRetrySupportingErrorDecoder;
 import org.folio.entitlement.retry.feign.FeignRetryer;
+import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.tools.kong.client.KongAdminClient;
 import org.folio.tools.kong.configuration.KongConfigurationProperties;
 import org.folio.tools.kong.service.KongGatewayService;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(prefix = "application.kong", name = "enabled")
 public class KongConfiguration {
+
   /**
    * Creates {@link KongRouteCreator} bean as a flow stage to populate routes in Kong per application.
    *
@@ -105,15 +107,18 @@ public class KongConfiguration {
   @Bean(name = "folioKongAdminClient")
   public KongAdminClient folioKongIntegrationClient(okhttp3.OkHttpClient okHttpClient,
     KongConfigurationProperties properties, Contract contract, Encoder encoder, Decoder decoder,
-    RetryConfigurationProperties retryConfig) {
+    RetryConfigurationProperties retryConfig, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
 
     var feignClientBuilder = Feign.builder().contract(contract).encoder(encoder).decoder(decoder).errorDecoder(
       new FeignRetrySupportingErrorDecoder(new ErrorDecoder.Default(),
-        methodKeyAndResponse -> methodKeyAndResponse.getRight().status() == 500));
+        methodKeyAndResponse -> methodKeyAndResponse.getRight().status() == 500, "Kong HTTP request",
+        "Internal Server Error", threadLocalModuleStageContext));
 
     feignClientBuilder = feignClientBuilder.client(getOkHttpClient(okHttpClient, properties.getTls())).retryer(
       new FeignRetryer(retryConfig.getKong().getBackoff().getDelay(), retryConfig.getKong().getBackoff().getMaxdelay(),
-        retryConfig.getKong().getMax(), retryableException -> retryableException.status() >= 500));
+        retryConfig.getKong().getMax(), retryableException -> retryableException.status() >= 500,
+        "Kong HTTP request", "HTTP status 500 (Internal Server Error)",
+        threadLocalModuleStageContext));
 
     return feignClientBuilder.target(KongAdminClient.class, properties.getUrl());
   }
