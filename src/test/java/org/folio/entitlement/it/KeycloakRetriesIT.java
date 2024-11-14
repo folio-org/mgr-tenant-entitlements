@@ -113,16 +113,16 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
         && e.getRequest().getBodyAsString().contains("POST#folio-module1.events.item.post")).count()).isEqualTo(3);
 
     assertThat(
-      logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(8);
+      logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(7);
     assertThat(logs.stream().filter(
-      logLine -> logLine.contains("jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error"))).hasSize(8);
+      logLine -> logLine.contains("jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error"))).hasSize(6);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "Flow stage KeycloakModuleResourceCreator folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
       .hasSize(1);
 
     var flowStageData =
-      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "FailedFlowFinalizer", mockMvc);
-    assertThat(flowStageData.getRetriesCount()).isEqualTo(8);
+      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "folio-module1-1.0.0-keycloakModuleResourceCreator", mockMvc);
+    assertThat(flowStageData.getRetriesCount()).isEqualTo(7);
     assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
   }
 
@@ -162,16 +162,16 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       .count()).isEqualTo(3);
 
     assertThat(
-      logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(8);
+      logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(7);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(8);
+      "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(6);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
       .hasSize(1);
 
     var flowStageData =
-      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "FailedFlowFinalizer", mockMvc);
-    assertThat(flowStageData.getRetriesCount()).isEqualTo(8);
+      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "folio-module2-2.0.0-keycloakModuleResourceCleaner", mockMvc);
+    assertThat(flowStageData.getRetriesCount()).isEqualTo(7);
     assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
   }
 

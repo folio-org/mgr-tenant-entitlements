@@ -82,7 +82,7 @@ class KongRetriesIT extends BaseIntegrationTest {
     var logs = captureLog4J2Logs();
     var response = mockMvc.perform(request).andExpect(content().contentType(APPLICATION_JSON)).andReturn();
     var flowStageData =
-      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "FailedFlowFinalizer", mockMvc);
+      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "folio-module1-1.0.0-kongModuleRouteCreator", mockMvc);
     assertThat(flowStageData.getRetriesCount()).isEqualTo(3);
     assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
 
@@ -138,7 +138,7 @@ class KongRetriesIT extends BaseIntegrationTest {
     assertThat(logs).isNotEmpty();
 
     var flowStageData =
-      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "FailedFlowFinalizer", mockMvc);
+      getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()), "folio-module2-2.0.0-kongModuleRouteCleaner", mockMvc);
     assertThat(flowStageData.getRetriesCount()).isEqualTo(3);
     assertThat(flowStageData.getRetriesInfo()).isNotEmpty();
 

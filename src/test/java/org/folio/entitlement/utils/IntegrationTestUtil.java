@@ -29,7 +29,7 @@ public class IntegrationTestUtil {
     var flowData = OBJECT_MAPPER.readValue(
       mockMvc.perform(get("/entitlement-flows/" + flowId + "?includeStages=true")).andReturn().getResponse()
         .getContentAsByteArray(), Flow.class);
-    return flowData.getStages().stream().filter(stageInfo -> stageInfo.getName().equals(stageName)).findAny()
-      .orElseThrow();
+    return flowData.getApplicationFlows().get(0).getStages().stream().filter(s -> s.getName().equals(stageName))
+      .findAny().orElseThrow();
   }
 }
