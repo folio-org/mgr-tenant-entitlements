@@ -148,14 +148,14 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     var logs = result.getRight();
     logs.forEach(System.err::println);
     assertThat(
-      logs.stream().filter(logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(4);
+      logs.stream().filter(logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(3);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "Flow stage FolioModuleInstaller folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(5);
+      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(4);
 
     var stageData = result.getLeft();
-    assertThat(stageData.getRetriesCount()).isEqualTo(4);
+    assertThat(stageData.getRetriesCount()).isEqualTo(3);
     assertThat(stageData.getRetriesInfo()).isNotEmpty();
   }
 
@@ -169,14 +169,14 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     var result = install_negative_httpStatusRetryableErrorFromModule(400);
     var logs = result.getRight();
     assertThat(
-      logs.stream().filter(logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(4);
+      logs.stream().filter(logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(3);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "Flow stage FolioModuleInstaller folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(5);
+      "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(4);
 
     var stageData = result.getLeft();
-    assertThat(stageData.getRetriesCount()).isEqualTo(4);
+    assertThat(stageData.getRetriesCount()).isEqualTo(3);
     assertThat(stageData.getRetriesInfo()).isNotEmpty();
   }
 
@@ -195,7 +195,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     assertThat(logs).isNotEmpty();
 
     var flowId = extractFlowIdFromFailedEntitlementResponse(response);
-    var flowStageData = getFlowStage(flowId, "FailedFlowFinalizer", mockMvc);
+    var flowStageData = getFlowStage(flowId, "folio-module1-1.0.0-folioModuleInstaller", mockMvc);
 
     var wireMockClient =
       new WireMock(new URI(wmAdminClient.getWireMockUrl()).getHost(), wmAdminClient.getWireMockPort());

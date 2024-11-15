@@ -102,6 +102,7 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
     if (retryInfo != null) {
       stageExecutionEntity.setRetriesCount(retryInfo.getRetriesCount());
       stageExecutionEntity.setRetriesInfo(String.join("\n\n", retryInfo.getErrors()));
+      context.put(ATTR_RETRY_INFO, null);
     }
     threadLocalModuleStageContext.clear();
 
