@@ -33,8 +33,8 @@ public class RetryConfiguration {
   public RetryOperationsInterceptor folioModuleCallsRetryInterceptor(RetryConfigurationProperties configProps,
     ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     return createRetryInterceptor(IntegrationException.class,
-      integrationException -> integrationException.getCauseHttpStatus() != null && (
-        integrationException.getCauseHttpStatus() >= 500 || integrationException.getCauseHttpStatus() >= 400),
+      integrationException -> integrationException.getCauseHttpStatus() != null
+        && integrationException.getCauseHttpStatus() >= 400,
       configProps.getModule().getMax(),
       BackOffPolicyBuilder.newBuilder().delay(configProps.getModule().getBackoff().getDelay())
         .maxDelay(configProps.getModule().getBackoff().getMaxdelay())
@@ -87,13 +87,15 @@ public class RetryConfiguration {
           // If there was no error so far (first attempt) - return true
           return true;
         }
-        // If there was no error so far (first attempt) or error is what we allow to retry - return true
-        if (exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error)) {
-          log.error(String.format("Error occurred for %s - retrying", operationDescription), error);
-          addErrorInformation(getStackTrace(error), threadLocalModuleStageContext);
-          return true;
-        }
-        return false;
+        // If there was an error that we can retry - return true
+        return exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error);
+      }
+
+      @Override
+      public void registerThrowable(RetryContext context, Throwable throwable) {
+        super.registerThrowable(context, throwable);
+        log.error(String.format("Error occurred for %s - retrying", operationDescription), throwable);
+        addErrorInformation(getStackTrace(throwable), threadLocalModuleStageContext);
       }
     };
     retryPolicy.setMaxAttempts(numberOfRetries);
