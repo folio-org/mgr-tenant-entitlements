@@ -1,3 +1,6 @@
+## Version `v2.0.1` (15.11.2024)
+* Removed the validator that was skipping all endpoints… (MODROLESKC-233)
+
 ## Version `v2.0.0` (01.11.2024)
 * Remove routes while purge=false (MGRENTITLE-75)
 * Implement retries for external calls (Kong, Keycloak, FOLIO Modules) (MGRENTITLE-72)
