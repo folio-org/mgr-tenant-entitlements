@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
@@ -56,6 +57,22 @@ class EntitleRequestDependencyValidatorTest {
     var dependencyIds = List.of("app-foo-1.2.0", "app-bar-2.3.9", "app-baz-4.2.1");
     var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
     var expectedEntitlements = mapItems(dependencyIds, applicationId -> flow(applicationId, ENTITLE, FINISHED));
+    when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(expectedEntitlements);
+
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    var flowParameters = flowParameters(request, applicationDescriptor());
+    var stageContext = appStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    dependencyValidator.execute(stageContext);
+
+    verify(applicationFlowService).findLastFlowsByNames(dependencyNames, TENANT_ID);
+  }
+
+  @Test
+  void execute_entitle_on_upgrade_positive() {
+    var dependencyIds = List.of("app-foo-1.2.0", "app-bar-2.3.9", "app-baz-4.2.1");
+    var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
+    var expectedEntitlements = mapItems(dependencyIds, applicationId -> flow(applicationId, UPGRADE, FINISHED));
     when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(expectedEntitlements);
 
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
