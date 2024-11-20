@@ -7,6 +7,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.common.utils.SemverUtils.applicationSatisfies;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 
 import java.util.HashMap;
@@ -74,7 +75,7 @@ public class EntitleRequestDependencyValidator extends DatabaseLoggingStage<Appl
   }
 
   private static boolean isFinishedEntitlement(ApplicationFlow flow) {
-    return flow.getStatus() == FINISHED && flow.getType() == ENTITLE;
+    return flow.getStatus() == FINISHED && (flow.getType() == ENTITLE || flow.getType() == UPGRADE);
   }
 
   private static Set<Dependency> removeEntitled(Map<String, Dependency> dependencyByName,
