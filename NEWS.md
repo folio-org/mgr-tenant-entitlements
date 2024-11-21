@@ -1,3 +1,7 @@
+## Version `v2.0.2` (21.11.2024)
+* Application can't be enabled after upgrade (MGRENTITLE-84)
+* Add additional properties to configure validators
+
 ## Version `v2.0.1` (15.11.2024)
 * Removed the validator that was skipping all endpoints… (MODROLESKC-233)
 
