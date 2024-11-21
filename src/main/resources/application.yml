@@ -149,6 +149,9 @@ application:
     last-executions-status-cache-size: ${FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE:25}
     print-flow-result: ${FLOW_ENGINE_PRINT_FLOW_RESULTS:false}
     pool-threads: ${FLOW_ENGINE_THREADS_NUM:4}
+  validation:
+    interface-integrity:
+      enabled: ${VALIDATION_INTERFACE_INTEGRITY_ENABLED:true}
 
 folio:
   jpa:

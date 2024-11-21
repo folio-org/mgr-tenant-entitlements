@@ -123,6 +123,13 @@ docker run \
 | REGISTER_MODULE_IN_KONG                | true                                |  false   | Defines if module must be registered in Kong (it will create for itself service and list of routes from module descriptor)                                                                                 |
 | ROUTER_PATH_PREFIX                     |                                     |  false   | Defines routes prefix to be added to the generated endpoints by OpenAPI generator (`/foo/entites` -> `{{prefix}}/foo/entities`). Required if load balancing group has format like `{{host}}/{{moduleId}}`  |
 
+### Validators environment variables
+
+| Name                                   | Default value | Required | Description                                                                                        |
+|:---------------------------------------|:--------------|:--------:|:---------------------------------------------------------------------------------------------------|
+| VALIDATION_INTERFACE_INTEGRITY_ENABLED | true          |  false   | Configure a behavior of validation. If false, Interface-Integrity validator should not be executed |
+
+
 ### Kafka environment variables
 
 | Name                                         | Default value | Required | Description                                                                                                                                                |
