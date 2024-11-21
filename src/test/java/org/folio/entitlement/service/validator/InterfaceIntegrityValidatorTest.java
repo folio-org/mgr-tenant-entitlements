@@ -13,6 +13,8 @@ import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +23,7 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.ApplicationDependencyValidatorService;
+import org.folio.entitlement.service.validator.configuration.InterfaceIntegrityValidatorProperties;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,6 +40,7 @@ class InterfaceIntegrityValidatorTest {
 
   @InjectMocks private InterfaceIntegrityValidator interfaceIntegrityValidator;
   @Mock private ApplicationDependencyValidatorService validatorService;
+  @Mock private InterfaceIntegrityValidatorProperties properties;
 
   @Test
   void execute_positive() {
@@ -44,9 +48,24 @@ class InterfaceIntegrityValidatorTest {
     var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
     var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
 
+    when(properties.isEnabled()).thenReturn(true);
+
     interfaceIntegrityValidator.execute(stageContext);
 
     verify(validatorService).validateDescriptors(applicationDescriptors);
+  }
+
+  @Test
+  void execute_no_validation_positive() {
+    var applicationDescriptors = List.of(applicationDescriptor());
+    var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
+    var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
+
+    when(properties.isEnabled()).thenReturn(false);
+
+    interfaceIntegrityValidator.execute(stageContext);
+
+    verifyNoInteractions(validatorService);
   }
 
   @Test
@@ -54,6 +73,7 @@ class InterfaceIntegrityValidatorTest {
     var applicationDescriptors = List.of(applicationDescriptor());
     var exception = new RequestValidationException("Invalid interface dependency", "application", APPLICATION_ID);
 
+    when(properties.isEnabled()).thenReturn(true);
     doThrow(exception).when(validatorService).validateDescriptors(applicationDescriptors);
 
     var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
@@ -91,6 +111,7 @@ class InterfaceIntegrityValidatorTest {
   @DisplayName("shouldValidate_parameterized")
   @CsvSource({"ENTITLE,true", "REVOKE,false", "UPGRADE,false", ",false"})
   void shouldValidate_parameterized(EntitlementType type, boolean expected) {
+    when(properties.isEnabled()).thenReturn(true);
     var request = EntitlementRequest.builder().type(type).build();
     var result = interfaceIntegrityValidator.shouldValidate(request);
     assertThat(result).isEqualTo(expected);
