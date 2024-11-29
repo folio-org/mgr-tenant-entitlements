@@ -1,3 +1,6 @@
+## Version `v2.0.3` (29.11.2024)
+* Revert the changes for dummy capabilities (MODROLESKC-233)
+
 ## Version `v2.0.2` (21.11.2024)
 * Application can't be enabled after upgrade (MGRENTITLE-84)
 * Add additional properties to configure validators
