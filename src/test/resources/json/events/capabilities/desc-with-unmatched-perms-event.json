@@ -9,17 +9,6 @@
     "resources": [
       {
         "permission": {
-          "permissionName": "foo.item.get"
-        },
-        "endpoints": [
-          {
-            "path": "/foo/{id}",
-            "method": "GET"
-          }
-        ]
-      },
-      {
-        "permission": {
           "permissionName": "foo.item.post",
           "displayName": "foo.item.post display name",
           "description": "foo.item.post description"

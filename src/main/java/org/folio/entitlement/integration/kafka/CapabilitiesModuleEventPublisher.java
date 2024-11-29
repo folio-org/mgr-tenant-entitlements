@@ -155,10 +155,7 @@ public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublish
       if (permission == null) {
         log.warn("Permission value is not found and could be define "
           + "in the another module: moduleId = {}, permissionName = {}", moduleId, permissionName);
-        permission = new Permission();
-        permission.setPermissionName(permissionName);
-        // Do not skip endpoints where permissions are not found in the descriptor,
-        // as the permissions may already be defined and exist in another module descriptor.
+        continue;
       }
 
       visitedPermissions.add(permissionName);
