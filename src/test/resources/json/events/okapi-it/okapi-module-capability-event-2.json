@@ -9,15 +9,6 @@
     "resources": [
       {
         "permission": {
-          "permissionName": "okapi-module5.entities.item.get"
-        },
-        "endpoints": {
-          "path": "/okapi-module5/entities",
-          "method": "GET"
-        }
-      },
-      {
-        "permission": {
           "permissionName": "test.bar.item.get",
           "displayName": "Test - get bar",
           "description": "okapi-module5.entities.item.get"
