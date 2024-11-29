@@ -9,28 +9,6 @@
     "resources": [
       {
         "permission": {
-          "permissionName": "folio-module2.entity.item.post"
-        },
-        "endpoints": [
-          {
-            "path": "/folio-module2/v2/entities",
-            "method": "POST"
-          }
-        ]
-      },
-      {
-        "permission": {
-          "permissionName": "folio-module2.entity.collection.put"
-        },
-        "endpoints": [
-          {
-            "path": "/folio-module2/entities",
-            "method": "PUT"
-          }
-        ]
-      },
-      {
-        "permission": {
           "permissionName": "folio-module2.entity.collection.get",
           "displayName": "Test Okapi Module #2 - Get list of entity by query",
           "description": "Get list of folio-module2 entities by query"
