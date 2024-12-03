@@ -1,9 +1,14 @@
 package org.folio.entitlement.integration.kafka;
 
 import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
+import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@UnitTest
+@ExtendWith(MockitoExtension.class)
 public class PermissionMappingLoaderTest {
 
   @Test

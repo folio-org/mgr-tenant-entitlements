@@ -231,6 +231,10 @@ class CapabilitiesEventPublisherTest {
         readApplicationDescriptor("json/events/capabilities/desc-with-unmatched-perms.json"),
         List.of(readCapabilityEvent("json/events/capabilities/desc-with-unmatched-perms-event.json"))),
 
+      arguments("application descriptor with pubsub permissions",
+        readApplicationDescriptor("json/events/capabilities/desc-with-pubsub-perms.json"),
+        List.of(readCapabilityEvent("json/events/capabilities/desc-with-pubsub-perms-event.json"))),
+
       arguments("application descriptor with plain permissions",
         readApplicationDescriptor("json/events/capabilities/desc-with-plain-capabilities.json"),
         List.of(
