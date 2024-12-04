@@ -9,7 +9,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-public class PermissionMappingLoaderTest {
+class PermissionMappingLoaderTest {
 
   @Test
   void testStaticMapInitialization() {
