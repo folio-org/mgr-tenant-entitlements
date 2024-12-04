@@ -1,11 +1,20 @@
 package org.folio.entitlement.integration.kafka;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEventType;
 
+@Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class KafkaEventUtils {
 
@@ -17,6 +26,8 @@ public class KafkaEventUtils {
   public static final String CAPABILITY_RESOURCE_NAME = "Capability";
   public static final String SYSTEM_USER_RESOURCE_NAME = "System user";
   public static final String SCHEDULED_JOB_RESOURCE_NAME = "Scheduled Job";
+
+  private static Map<String, PermissionMappingValue> permissionMapping = Collections.emptyMap();
 
   /**
    * Creates {@link ResourceEvent} object for given tenant nane, new and old event bodies.
@@ -57,5 +68,27 @@ public class KafkaEventUtils {
     }
 
     return newValue != null ? ResourceEventType.UPDATE : ResourceEventType.DELETE;
+  }
+
+  //  load permission mappings from a JSON file
+  static {
+    ObjectMapper objectMapper = new ObjectMapper();
+    try {
+      InputStream mappingFileAsStream = KafkaEventUtils.class.getClassLoader()
+        .getResourceAsStream("permissionmappings/mapping.json");
+      permissionMapping = objectMapper.readValue(
+        mappingFileAsStream, new TypeReference<>() {
+        });
+    } catch (IOException e) {
+      log.error("Can't initialize Permission mapping", e);
+    }
+  }
+
+  public static PermissionMappingValue getPermissionValueMapping(String key) {
+    return permissionMapping.get(key);
+  }
+
+  public static boolean isPermissionMappingExist(String key) {
+    return permissionMapping.containsKey(key);
   }
 }

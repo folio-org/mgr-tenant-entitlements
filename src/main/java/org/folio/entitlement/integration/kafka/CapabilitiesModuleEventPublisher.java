@@ -15,14 +15,9 @@ import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITY
 import static org.folio.entitlement.utils.RoutingEntryUtils.getMethods;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -43,33 +38,12 @@ import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
 import org.folio.entitlement.integration.kafka.model.Endpoint;
 import org.folio.entitlement.integration.kafka.model.FolioResource;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
-import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
 public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublisher<CapabilityEventPayload> {
-
-  private static Map<String, PermissionMappingValue> permissionMapping = Collections.emptyMap();
-
-  //  load permission mappings from a JSON file
-  static {
-    ObjectMapper objectMapper = new ObjectMapper();
-    try {
-      InputStream mappingFileAsStream = CapabilitiesModuleEventPublisher.class.getClassLoader()
-        .getResourceAsStream("permissionmappings/mapping.json");
-      permissionMapping = objectMapper.readValue(
-        mappingFileAsStream, new TypeReference<>() {
-        });
-    } catch (IOException e) {
-      log.error("Can't initialize Permission mapping", e);
-    }
-  }
-
-  public static PermissionMappingValue getValue(String key) {
-    return permissionMapping.get(key);
-  }
 
   @Override
   protected Optional<CapabilityEventPayload> getEventPayload(String appId, ModuleType type, ModuleDescriptor desc) {
@@ -145,9 +119,10 @@ public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublish
 
     for (var permissionEntry : permsByName.entrySet()) {
       if (!visitedPermissionNames.contains(permissionEntry.getKey())) {
-        if (moduleId.startsWith("mod-pubsub") && permissionMapping.containsKey(permissionEntry.getKey())) {
-          Endpoint endpoint = Endpoint.of(permissionMapping.get(permissionEntry.getKey()).getEndpoint(),
-            permissionMapping.get(permissionEntry.getKey()).getMethod());
+        if (moduleId.startsWith("mod-pubsub") && KafkaEventUtils.isPermissionMappingExist(permissionEntry.getKey())) {
+          Endpoint endpoint = Endpoint.of(KafkaEventUtils.getPermissionValueMapping(permissionEntry.getKey())
+              .getEndpoint(),
+            KafkaEventUtils.getPermissionValueMapping(permissionEntry.getKey()).getMethod());
           folioResources.add(FolioResource.of(permissionEntry.getValue(), List.of(endpoint)));
         } else {
           folioResources.add(FolioResource.of(permissionEntry.getValue(), null));
