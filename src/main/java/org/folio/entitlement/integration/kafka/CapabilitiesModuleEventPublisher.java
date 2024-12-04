@@ -119,7 +119,14 @@ public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublish
 
     for (var permissionEntry : permsByName.entrySet()) {
       if (!visitedPermissionNames.contains(permissionEntry.getKey())) {
-        folioResources.add(FolioResource.of(permissionEntry.getValue(), null));
+        if (moduleId.startsWith("mod-pubsub") && KafkaEventUtils.isPermissionMappingExist(permissionEntry.getKey())) {
+          Endpoint endpoint = Endpoint.of(KafkaEventUtils.getPermissionValueMapping(permissionEntry.getKey())
+              .getEndpoint(),
+            KafkaEventUtils.getPermissionValueMapping(permissionEntry.getKey()).getMethod());
+          folioResources.add(FolioResource.of(permissionEntry.getValue(), List.of(endpoint)));
+        } else {
+          folioResources.add(FolioResource.of(permissionEntry.getValue(), null));
+        }
       }
     }
 

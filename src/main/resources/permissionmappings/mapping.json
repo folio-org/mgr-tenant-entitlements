@@ -1,0 +1,14 @@
+{
+  "pubsub.events.post": {
+    "endpoint": "/circulation/handlers/loan-related-fee-fine-closed",
+    "method": "POST"
+  },
+  "audit.pub-sub-handlers.log-record-event.post": {
+    "endpoint": "/audit/handlers/log-record",
+    "method": "POST"
+  },
+  "remote-storage.pub-sub-handlers.log-record-event.post": {
+    "endpoint": "/remote-storage/pub-sub-handlers/log-record-event",
+    "method": "POST"
+  }
+}
