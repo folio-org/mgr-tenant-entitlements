@@ -1,0 +1,38 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "mod-pubsub-1.0.0",
+    "moduleType": "module",
+    "applicationId": "test-app-1.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "audit.pub-sub-handlers.log-record-event.post",
+          "displayName": "log record events from pub-sub",
+          "description": "log record events received from pub-sub"
+        },
+        "endpoints": [
+          {
+            "path": "/audit/handlers/log-record",
+            "method": "POST"
+          }
+        ]
+      },
+      {
+        "permission": {
+          "permissionName": "remote-storage.pub-sub-handlers.log-record-event.post",
+          "displayName": "log record events from pub-sub",
+          "description": "log record events received from pub-sub"
+        },
+        "endpoints": [
+          {
+            "path": "/remote-storage/pub-sub-handlers/log-record-event",
+            "method": "POST"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "id": "test-app-1.0.0",
+  "name": "test-app",
+  "version": "1.0.0",
+  "moduleDescriptors": [
+    {
+      "id": "mod-pubsub-1.0.0",
+      "name": "pubsub Service",
+      "provides": [
+        {
+          "id": "foo-interface",
+          "version": "0.1",
+          "handlers": [
+            {
+              "methods": [ "GET" ],
+              "pathPattern": "/foo/{id}",
+              "permissionsRequired": [ "foo.item.get" ]
+            },
+            {
+              "methods": [ "POST" ],
+              "pathPattern": "/foo",
+              "permissionsRequired": [ "foo.item.post" ]
+            }
+          ]
+        }
+      ],
+      "permissionSets": [
+        {
+          "permissionName": "audit.pub-sub-handlers.log-record-event.post",
+          "displayName" : "log record events from pub-sub",
+          "description" : "log record events received from pub-sub"
+        },
+        {
+          "permissionName": "remote-storage.pub-sub-handlers.log-record-event.post",
+          "displayName" : "log record events from pub-sub",
+          "description" : "log record events received from pub-sub"
+        }
+      ]
+    }
+  ]
+}
