@@ -63,7 +63,7 @@ public class KeycloakService {
       throw new IntegrationException("Failed to update authorization scopes in Keycloak", scopeErrorParameters);
     }
 
-    if (newDescriptor.getId().startsWith("mod-pubsub")) {
+    if (newDescriptor != null && newDescriptor.getId() != null && newDescriptor.getId().startsWith("mod-pubsub")) {
       KafkaEventUtils.addMissingResources(newDescriptor);
     }
     var newAuthResources = getAuthorizationResources(newDescriptor);
