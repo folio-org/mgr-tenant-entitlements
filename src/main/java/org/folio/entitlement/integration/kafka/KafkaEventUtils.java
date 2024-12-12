@@ -102,12 +102,11 @@ public class KafkaEventUtils {
     interfaceDescriptor.setId("pubsub-event-handlers");
     interfaceDescriptor.setVersion("1.1");
     ArrayList<RoutingEntry> handlers = new ArrayList<>();
-    for (String permissionName : permissionMapping.keySet()) {
-      PermissionMappingValue value = permissionMapping.get(permissionName);
+    for (Map.Entry<String, PermissionMappingValue> mapping : permissionMapping.entrySet()) {
       RoutingEntry routingEntry = new RoutingEntry();
-      routingEntry.setMethods(List.of(value.getMethod()));
-      routingEntry.setPathPattern(value.getEndpoint());
-      routingEntry.setPermissionsRequired(List.of(permissionName));
+      routingEntry.setMethods(List.of(mapping.getValue().getMethod()));
+      routingEntry.setPathPattern(mapping.getValue().getEndpoint());
+      routingEntry.setPermissionsRequired(List.of(mapping.getKey()));
       handlers.add(routingEntry);
     }
     interfaceDescriptor.setHandlers(handlers);

@@ -41,7 +41,7 @@ class PermissionMappingLoaderTest {
     ModuleDescriptor newDescriptor = new ModuleDescriptor();
     newDescriptor.setProvides(new ArrayList<>());
     KafkaEventUtils.addMissingResources(newDescriptor);
-    Assertions.assertEquals(newDescriptor.getProvides().size(), 1);
-    Assertions.assertEquals(newDescriptor.getProvides().get(0).getHandlers().size(), 3);
+    Assertions.assertEquals(1, newDescriptor.getProvides().size());
+    Assertions.assertEquals(3, newDescriptor.getProvides().get(0).getHandlers().size());
   }
 }
