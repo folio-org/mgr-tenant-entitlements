@@ -4,12 +4,17 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.folio.common.domain.model.InterfaceDescriptor;
+import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEventType;
@@ -90,5 +95,22 @@ public class KafkaEventUtils {
 
   public static boolean isPermissionMappingExist(String key) {
     return permissionMapping.containsKey(key);
+  }
+
+  public static void addMissingResources(ModuleDescriptor newDescriptor) {
+    InterfaceDescriptor interfaceDescriptor = new InterfaceDescriptor();
+    interfaceDescriptor.setId("pubsub-event-handlers");
+    interfaceDescriptor.setVersion("1.1");
+    ArrayList<RoutingEntry> handlers = new ArrayList<>();
+    for (String permissionName : permissionMapping.keySet()) {
+      PermissionMappingValue value = permissionMapping.get(permissionName);
+      RoutingEntry routingEntry = new RoutingEntry();
+      routingEntry.setMethods(List.of(value.getMethod()));
+      routingEntry.setPathPattern(value.getEndpoint());
+      routingEntry.setPermissionsRequired(List.of(permissionName));
+      handlers.add(routingEntry);
+    }
+    interfaceDescriptor.setHandlers(handlers);
+    newDescriptor.getProvides().add(interfaceDescriptor);
   }
 }
