@@ -1,5 +1,6 @@
 package org.folio.entitlement.integration.kafka;
 
+import java.util.ArrayList;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 import org.folio.test.types.UnitTest;
@@ -7,8 +8,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.ArrayList;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
@@ -42,7 +41,7 @@ class PermissionMappingLoaderTest {
     ModuleDescriptor newDescriptor = new ModuleDescriptor();
     newDescriptor.setProvides(new ArrayList<>());
     KafkaEventUtils.addMissingResources(newDescriptor);
-    Assertions.assertEquals( newDescriptor.getProvides().size(), 1);
-    Assertions.assertEquals( newDescriptor.getProvides().get(0).getHandlers().size(), 3);
+    Assertions.assertEquals(newDescriptor.getProvides().size(), 1);
+    Assertions.assertEquals(newDescriptor.getProvides().get(0).getHandlers().size(), 3);
   }
 }
