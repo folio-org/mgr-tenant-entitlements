@@ -33,4 +33,9 @@ class PermissionMappingLoaderTest {
   void testNonExistentKey() {
     Assertions.assertNull(KafkaEventUtils.getPermissionValueMapping("nonExistentKey"));
   }
+
+  @Test
+  void testGetPermissionMapping() {
+    Assertions.assertEquals(3, KafkaEventUtils.getPermissionMapping().size());
+  }
 }
