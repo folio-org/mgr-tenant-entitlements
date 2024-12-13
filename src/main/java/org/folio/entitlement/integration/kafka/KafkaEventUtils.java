@@ -91,4 +91,8 @@ public class KafkaEventUtils {
   public static boolean isPermissionMappingExist(String key) {
     return permissionMapping.containsKey(key);
   }
+
+  public static Map<String, PermissionMappingValue> getPermissionMapping() {
+    return permissionMapping;
+  }
 }

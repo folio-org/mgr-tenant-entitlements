@@ -62,6 +62,9 @@ public class KeycloakService {
       throw new IntegrationException("Failed to update authorization scopes in Keycloak", scopeErrorParameters);
     }
 
+    if (newDescriptor != null && newDescriptor.getId() != null && newDescriptor.getId().startsWith("mod-pubsub")) {
+      KeycloakUtils.addMissingResources(newDescriptor);
+    }
     var newAuthResources = getAuthorizationResources(newDescriptor);
     var prevAuthResources = getAuthorizationResources(prevDescriptor);
 
