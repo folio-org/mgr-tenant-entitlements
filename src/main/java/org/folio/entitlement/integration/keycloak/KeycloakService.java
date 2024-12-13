@@ -30,7 +30,6 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
-import org.folio.entitlement.integration.kafka.KafkaEventUtils;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.retry.keycloak.KeycloakRetrySupportService;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
@@ -64,7 +63,7 @@ public class KeycloakService {
     }
 
     if (newDescriptor != null && newDescriptor.getId() != null && newDescriptor.getId().startsWith("mod-pubsub")) {
-      KafkaEventUtils.addMissingResources(newDescriptor);
+      KeycloakUtils.addMissingResources(newDescriptor);
     }
     var newAuthResources = getAuthorizationResources(newDescriptor);
     var prevAuthResources = getAuthorizationResources(prevDescriptor);

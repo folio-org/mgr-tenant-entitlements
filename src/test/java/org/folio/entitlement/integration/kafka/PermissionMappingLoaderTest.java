@@ -1,7 +1,5 @@
 package org.folio.entitlement.integration.kafka;
 
-import java.util.ArrayList;
-import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Assertions;
@@ -37,11 +35,7 @@ class PermissionMappingLoaderTest {
   }
 
   @Test
-  void testUpdatePubSubDescriptorWithEndpoints() {
-    ModuleDescriptor newDescriptor = new ModuleDescriptor();
-    newDescriptor.setProvides(new ArrayList<>());
-    KafkaEventUtils.addMissingResources(newDescriptor);
-    Assertions.assertEquals(1, newDescriptor.getProvides().size());
-    Assertions.assertEquals(3, newDescriptor.getProvides().get(0).getHandlers().size());
+  void testGetPermissionMapping() {
+    Assertions.assertEquals(3, KafkaEventUtils.getPermissionMapping().size());
   }
 }
