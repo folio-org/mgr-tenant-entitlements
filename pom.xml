@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.3.5</version>
+    <version>3.4.0</version>
     <relativePath />
   </parent>
 
@@ -29,16 +29,17 @@
     <cqlparser.version>1.13</cqlparser.version>
     <mapstruct.version>1.6.3</mapstruct.version>
     <hypersistence-utils-hibernate-63.version>3.9.0</hypersistence-utils-hibernate-63.version>
-    <swagger-annotations.version>2.2.26</swagger-annotations.version>
+    <swagger-annotations.version>2.2.27</swagger-annotations.version>
     <apache-commons-lang3.version>3.17.0</apache-commons-lang3.version>
     <apache-commons-collections4.version>4.4</apache-commons-collections4.version>
     <cql2pgjson.version>35.3.0</cql2pgjson.version>
-    <spring-cloud-bom.version>2023.0.4</spring-cloud-bom.version>
+    <spring-cloud-bom.version>2024.0.0</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
-    <folio-spring-cql.version>8.2.1</folio-spring-cql.version>
+    <folio-spring-cql.version>8.2.2</folio-spring-cql.version>
     <applications-poc-tools.version>2.1.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
     <folio-flow-engine.version>2.1.0-SNAPSHOT</folio-flow-engine.version>
+    <jackson-bom.version>2.17.2</jackson-bom.version>
 
     <mgr-tenant-entitlements.yaml-file>${project.basedir}/src/main/resources/swagger.api/mgr-tenant-entitlements.yaml
     </mgr-tenant-entitlements.yaml-file>
@@ -49,7 +50,7 @@
     <wiremock.version>2.35.2</wiremock.version>
 
     <!-- Plugins versions -->
-    <maven-checkstyle.version>10.20.2</maven-checkstyle.version>
+    <maven-checkstyle.version>10.21.0</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <openapi-generator.version>7.10.0</openapi-generator.version>
 
