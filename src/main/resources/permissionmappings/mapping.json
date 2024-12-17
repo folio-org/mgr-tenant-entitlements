@@ -1,6 +1,10 @@
 {
-  "pubsub.events.post": {
+  "circulation.handlers.loan-related-fee-fine-closed.post": {
     "endpoint": "/circulation/handlers/loan-related-fee-fine-closed",
+    "method": "POST"
+  },
+  "circulation.handlers.fee-fine-balance-changed.post": {
+    "endpoint": "/circulation/handlers/fee-fine-balance-changed",
     "method": "POST"
   },
   "audit.pub-sub-handlers.log-record-event.post": {
