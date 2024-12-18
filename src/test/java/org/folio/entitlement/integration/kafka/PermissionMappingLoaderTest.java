@@ -13,13 +13,16 @@ class PermissionMappingLoaderTest {
 
   @Test
   void testStaticMapInitialization() {
-    Assertions.assertNotNull(KafkaEventUtils.getPermissionValueMapping("pubsub.events.post"));
+    Assertions.assertNotNull(
+      KafkaEventUtils.getPermissionValueMapping("circulation.handlers.loan-related-fee-fine-closed.post"));
     Assertions.assertNotNull(KafkaEventUtils.getPermissionValueMapping("audit.pub-sub-handlers.log-record-event.post"));
 
-    Assertions.assertTrue(KafkaEventUtils.isPermissionMappingExist("pubsub.events.post"));
+    Assertions.assertTrue(
+      KafkaEventUtils.isPermissionMappingExist("circulation.handlers.loan-related-fee-fine-closed.post"));
     Assertions.assertTrue(KafkaEventUtils.isPermissionMappingExist("audit.pub-sub-handlers.log-record-event.post"));
 
-    PermissionMappingValue value1 = KafkaEventUtils.getPermissionValueMapping("pubsub.events.post");
+    PermissionMappingValue value1 =
+      KafkaEventUtils.getPermissionValueMapping("circulation.handlers.loan-related-fee-fine-closed.post");
     Assertions.assertEquals("/circulation/handlers/loan-related-fee-fine-closed", value1.getEndpoint());
     Assertions.assertEquals("POST", value1.getMethod());
 
@@ -36,6 +39,6 @@ class PermissionMappingLoaderTest {
 
   @Test
   void testGetPermissionMapping() {
-    Assertions.assertEquals(3, KafkaEventUtils.getPermissionMapping().size());
+    Assertions.assertEquals(4, KafkaEventUtils.getPermissionMapping().size());
   }
 }
