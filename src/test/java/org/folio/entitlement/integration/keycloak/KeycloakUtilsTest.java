@@ -17,6 +17,6 @@ class KeycloakUtilsTest {
     newDescriptor.setProvides(new ArrayList<>());
     KeycloakUtils.addMissingResources(newDescriptor);
     Assertions.assertEquals(1, newDescriptor.getProvides().size());
-    Assertions.assertEquals(3, newDescriptor.getProvides().get(0).getHandlers().size());
+    Assertions.assertEquals(4, newDescriptor.getProvides().get(0).getHandlers().size());
   }
 }
