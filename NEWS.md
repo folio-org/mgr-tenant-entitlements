@@ -1,3 +1,8 @@
+## Version `v2.0.4` (19.12.2024)
+* Added the missing mapping for the circulation module. (MGRENTITLE-89)
+* Application can't be enabled after upgrade - dependency issue (MGRENTITLE-84)
+* Store retries information in DB and allow retrieval via flow details API (MGRENTITLE-76)
+
 ## Version `v2.0.3` (29.11.2024)
 * Revert the changes for dummy capabilities (MODROLESKC-233)
 
