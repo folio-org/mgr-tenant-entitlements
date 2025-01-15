@@ -26,12 +26,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(properties = {"routemanagement.enable=false"})
 @ContextConfiguration(classes = {KongConfiguration.class, KongRouteManagementDisabledTest.TestConfig.class})
-public class KongRouteManagementDisabledTest {
+class KongRouteManagementDisabledTest {
 
   @Autowired private FolioModuleEntitleFlowFactory flowFactory;
 
   @Test
-  public void testFlowFactory() {
+  void testFlowFactory() {
     var flow = flowFactory.createModuleFlow("123", FlowExecutionStrategy.IGNORE_ON_ERROR, Map.of());
     // Check that we have a keycloak module resource creator stage, but not a ResourceCreatorParallelStage
     // stage that does both Kong routes and Keycloak resources creation

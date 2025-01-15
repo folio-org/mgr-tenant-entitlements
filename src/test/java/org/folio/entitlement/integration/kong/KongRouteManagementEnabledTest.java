@@ -35,12 +35,12 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @SpringBootTest(properties = {"routemanagement.enable=true"})
 @ContextConfiguration(classes = {KongRouteManagementEnabledTest.KongConfigExt.class,
   KongRouteManagementEnabledTest.TestConfig.class})
-public class KongRouteManagementEnabledTest {
+class KongRouteManagementEnabledTest {
 
   @Autowired private FolioModuleEntitleFlowFactory flowFactory;
 
   @Test
-  public void testFlowFactory() {
+  void testFlowFactory() {
     var flow = flowFactory.createModuleFlow("123", FlowExecutionStrategy.IGNORE_ON_ERROR, Map.of());
     // Check that we have a ResourceCreatorParallelStage resource creator stage that does both Kong routes
     // and Keycloak resources creation, but not a separate KeycloakModuleResourceCreator stage
@@ -53,6 +53,7 @@ public class KongRouteManagementEnabledTest {
   public static class KongConfigExt extends KongConfiguration {
 
     @Bean(name = "folioKongAdminClient")
+    @Override
     public KongAdminClient folioKongIntegrationClient(okhttp3.OkHttpClient okHttpClient,
       KongConfigurationProperties properties, Contract contract, Encoder encoder, Decoder decoder,
       RetryConfigurationProperties retryConfig, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
