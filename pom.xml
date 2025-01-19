@@ -36,7 +36,7 @@
     <spring-cloud-bom.version>2024.0.0</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
     <folio-spring-cql.version>8.2.2</folio-spring-cql.version>
-    <applications-poc-tools.version>2.1.0-SNAPSHOT</applications-poc-tools.version>
+    <applications-poc-tools.version>2.1.0</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
     <folio-flow-engine.version>2.1.0-SNAPSHOT</folio-flow-engine.version>
     <jackson-bom.version>2.17.2</jackson-bom.version>
