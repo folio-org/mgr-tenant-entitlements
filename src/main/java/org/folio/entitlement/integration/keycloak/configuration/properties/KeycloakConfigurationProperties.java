@@ -3,12 +3,12 @@ package org.folio.entitlement.integration.keycloak.configuration.properties;
 import lombok.Data;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
 @Data
-@Component
 @Validated
+@Configuration
 @ConditionalOnProperty("application.keycloak.enabled")
 @ConfigurationProperties(prefix = "application.keycloak")
 public class KeycloakConfigurationProperties {
@@ -27,6 +27,16 @@ public class KeycloakConfigurationProperties {
    * Properties object with an information about login client in Keycloak.
    */
   private Login login;
+
+  /**
+   * Authorization token cache max size.
+   */
+  private long authorizationCacheMaxSize;
+
+  /**
+   * Authorization token cache ttl offset.
+   */
+  private long authorizationCacheTtlOffset;
 
   @Data
   public static class Login {

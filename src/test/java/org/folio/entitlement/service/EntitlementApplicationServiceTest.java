@@ -12,7 +12,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -20,6 +19,7 @@ import org.apache.commons.text.CharacterPredicates;
 import org.apache.commons.text.RandomStringGenerator;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
 import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
+import org.folio.entitlement.integration.keycloak.KeycloakCacheableService;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.integration.tm.model.Tenant;
 import org.folio.entitlement.repository.EntitlementRepository;
@@ -28,11 +28,10 @@ import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.token.TokenManager;
 import org.keycloak.representations.AccessTokenResponse;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
@@ -52,15 +51,15 @@ class EntitlementApplicationServiceTest {
   @Mock private ApplicationManagerService applicationManagerService;
   @Mock private TenantManagerService tenantManagerService;
   @Mock private EntitlementRepository entitlementRepository;
-  @Mock private Keycloak keycloak;
-  @Mock private TokenManager keycloakTokenManager;
+  @Mock private KeycloakCacheableService keycloakCacheableService;
 
   private EntitlementApplicationService service;
 
   @BeforeEach
   void setup() {
-    service = new EntitlementApplicationService(
-      applicationManagerService, tenantManagerService, entitlementRepository, Optional.of(keycloak));
+    service = new EntitlementApplicationService(applicationManagerService, tenantManagerService, entitlementRepository);
+    service.setKeycloakCacheableService(keycloakCacheableService);
+    ReflectionTestUtils.setField(service, "keycloakEnabled", true);
   }
 
   @Test
@@ -75,8 +74,7 @@ class EntitlementApplicationServiceTest {
 
     when(tenantManagerService.findTenantByName(anyString(), anyString())).thenReturn(TEST_TENANT);
     when(entitlementRepository.findByTenantId(TEST_TENANT_ID)).thenReturn(entitlementEntities);
-    when(keycloak.tokenManager()).thenReturn(keycloakTokenManager);
-    when(keycloakTokenManager.grantToken()).thenReturn(keycloakAccessToken);
+    when(keycloakCacheableService.getAccessToken(OKAPI_TOKEN)).thenReturn(keycloakAccessToken);
     when(applicationManagerService.getApplicationDescriptors(anyList(), anyString())).thenReturn(appDescriptors);
 
     var actualAppDescriptors =
