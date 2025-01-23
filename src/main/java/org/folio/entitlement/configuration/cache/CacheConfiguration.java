@@ -20,6 +20,7 @@ public class CacheConfiguration {
   public static final String ACCESS_TOKEN = "access-token";
 
   @Bean
+  @SuppressWarnings("java:S3740")
   public CacheManager accessTokenCacheManager(Caffeine caffeine) {
     var cacheManager = new CaffeineCacheManager(ACCESS_TOKEN);
     cacheManager.setCaffeine(caffeine);
