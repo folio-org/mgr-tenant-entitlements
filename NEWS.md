@@ -1,3 +1,6 @@
+## Version `v2.0.6` (24.01.2025)
+* introduced cache for Keycloak auth token (MGRENTITLE-95 / EUREKA-605)
+
 ## Version `v2.0.5` (17.01.2025)
 * Dependabot dependency updates
 * Store retries information in DB (MGRENTITLE-76)
