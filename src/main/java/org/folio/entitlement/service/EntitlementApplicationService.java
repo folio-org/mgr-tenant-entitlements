@@ -4,14 +4,14 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.PaginationUtils.subListAtOffset;
 
 import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.ApplicationDescriptors;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
+import org.folio.entitlement.integration.keycloak.KeycloakCacheableService;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.repository.EntitlementRepository;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.representations.AccessTokenResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,7 +21,14 @@ public class EntitlementApplicationService {
   private final ApplicationManagerService applicationManagerService;
   private final TenantManagerService tenantManagerService;
   private final EntitlementRepository entitlementRepository;
-  private final Optional<Keycloak> keycloak;
+  private KeycloakCacheableService keycloakCacheableService;
+  @Value("${application.keycloak.enabled}")
+  private boolean keycloakEnabled;
+
+  @Autowired(required = false)
+  public void setKeycloakCacheableService(KeycloakCacheableService keycloakCacheableService) {
+    this.keycloakCacheableService = keycloakCacheableService;
+  }
 
   public ApplicationDescriptors getApplicationDescriptorsByTenantName(String tenant, String userToken,
                                                                       Integer offset, Integer limit) {
@@ -40,9 +47,11 @@ public class EntitlementApplicationService {
   }
 
   private String obtainAuthTokenOrElse(String userToken) {
-    return keycloak.map(kc -> kc.tokenManager().grantToken())
-      .map(AccessTokenResponse::getToken)
-      .orElse(userToken);
+    if (keycloakEnabled) {
+      return keycloakCacheableService.getAccessToken(userToken)
+        .getToken();
+    }
+    return userToken;
   }
 
   private List<String> getApplicationIds(String tenantName, String authToken) {

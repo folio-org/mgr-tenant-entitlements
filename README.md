@@ -233,6 +233,8 @@ The feature is controlled by two env variables `SECURITY_ENABLED` and `KEYCLOAK_
 | KC_AUTH_TOKEN_VALIDATE_URI        | false                      |    false    | Defines if validation for JWT must be run to compare configuration URL and token issuer for keycloak.                                                            |
 | KC_JWKS_REFRESH_INTERVAL          | 60                         |    false    | Jwks refresh interval for realm JWT parser (in minutes).                                                                                                         |
 | KC_FORCED_JWKS_REFRESH_INTERVAL   | 60                         |    false    | Forced jwks refresh interval for realm JWT parser (used in signing key rotation, in minutes).                                                                    |
+| KC_AUTHORIZATION_CACHE_MAX_SIZE   | 50                         |    false    | Maximum amount of entries for keycloak authorization cache.                                                                                                      |
+| KC_AUTHORIZATION_CACHE_TTL_OFFSET | 5000                       |    false    | TTL Offset for cached authorization information, positive, in millis.                                                                                            |
 
 ### Retry configuration
 

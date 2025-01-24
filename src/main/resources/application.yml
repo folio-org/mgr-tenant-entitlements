@@ -102,6 +102,8 @@ application:
       validate-uri: ${KC_AUTH_TOKEN_VALIDATE_URI:false}
       jwks-refresh-interval: ${KC_JWKS_REFRESH_INTERVAL:60}
       forced-jwks-refresh-interval: ${KC_FORCED_JWKS_REFRESH_INTERVAL:60}
+    authorization-cache-max-size: ${KC_AUTHORIZATION_CACHE_MAX_SIZE:50}
+    authorization-cache-ttl-offset: ${KC_AUTHORIZATION_CACHE_TTL_OFFSET:5000}
   environment: ${ENV:folio}
   kafka:
     send-duration-timeout: ${KAFKA_SEND_DURATION_TIMEOUT:10s}
