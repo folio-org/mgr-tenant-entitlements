@@ -122,6 +122,7 @@ docker run \
 | FLOW_ENGINE_THREADS_NUM                | 4                                   |  false   | Defines the number of threads for Fork-Join Pool used by flow engine.                                                                                                                                      |
 | REGISTER_MODULE_IN_KONG                | true                                |  false   | Defines if module must be registered in Kong (it will create for itself service and list of routes from module descriptor)                                                                                 |
 | ROUTER_PATH_PREFIX                     |                                     |  false   | Defines routes prefix to be added to the generated endpoints by OpenAPI generator (`/foo/entites` -> `{{prefix}}/foo/entities`). Required if load balancing group has format like `{{host}}/{{moduleId}}`  |
+| ROUTEMANAGEMENT_ENABLE                 | true                                |  false   | Enable Kong routes management for modules on entitlement/unentitlement                                                                                                                                     |
 
 ### Validators environment variables
 
@@ -232,6 +233,8 @@ The feature is controlled by two env variables `SECURITY_ENABLED` and `KEYCLOAK_
 | KC_AUTH_TOKEN_VALIDATE_URI        | false                      |    false    | Defines if validation for JWT must be run to compare configuration URL and token issuer for keycloak.                                                            |
 | KC_JWKS_REFRESH_INTERVAL          | 60                         |    false    | Jwks refresh interval for realm JWT parser (in minutes).                                                                                                         |
 | KC_FORCED_JWKS_REFRESH_INTERVAL   | 60                         |    false    | Forced jwks refresh interval for realm JWT parser (used in signing key rotation, in minutes).                                                                    |
+| KC_AUTHORIZATION_CACHE_MAX_SIZE   | 50                         |    false    | Maximum amount of entries for keycloak authorization cache.                                                                                                      |
+| KC_AUTHORIZATION_CACHE_TTL_OFFSET | 5000                       |    false    | TTL Offset for cached authorization information, positive, in millis.                                                                                            |
 
 ### Retry configuration
 

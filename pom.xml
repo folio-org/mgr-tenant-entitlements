@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.1</version>
+    <version>3.4.2</version>
     <relativePath />
   </parent>
 
@@ -29,7 +29,7 @@
     <cqlparser.version>1.13</cqlparser.version>
     <mapstruct.version>1.6.3</mapstruct.version>
     <hypersistence-utils-hibernate-63.version>3.9.0</hypersistence-utils-hibernate-63.version>
-    <swagger-annotations.version>2.2.27</swagger-annotations.version>
+    <swagger-annotations.version>2.2.28</swagger-annotations.version>
     <apache-commons-lang3.version>3.17.0</apache-commons-lang3.version>
     <apache-commons-collections4.version>4.4</apache-commons-collections4.version>
     <cql2pgjson.version>35.3.0</cql2pgjson.version>
@@ -38,8 +38,9 @@
     <folio-spring-cql.version>8.2.2</folio-spring-cql.version>
     <applications-poc-tools.version>2.2.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.0.1</folio-java-checkstyle.version>
-    <folio-flow-engine.version>2.1.0-SNAPSHOT</folio-flow-engine.version>
+    <folio-flow-engine.version>2.1.0</folio-flow-engine.version>
     <jackson-bom.version>2.17.2</jackson-bom.version>
+    <caffeine.version>3.1.8</caffeine.version>
 
     <mgr-tenant-entitlements.yaml-file>${project.basedir}/src/main/resources/swagger.api/mgr-tenant-entitlements.yaml
     </mgr-tenant-entitlements.yaml-file>
@@ -52,7 +53,7 @@
     <!-- Plugins versions -->
     <maven-checkstyle.version>10.21.1</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-    <openapi-generator.version>7.10.0</openapi-generator.version>
+    <openapi-generator.version>7.11.0</openapi-generator.version>
 
     <sonar.exclusions>
       <!--
@@ -191,6 +192,16 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-cache</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.ben-manes.caffeine</groupId>
+      <artifactId>caffeine</artifactId>
     </dependency>
 
     <dependency>

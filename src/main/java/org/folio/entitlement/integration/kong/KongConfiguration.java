@@ -14,12 +14,14 @@ import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.tools.kong.client.KongAdminClient;
 import org.folio.tools.kong.configuration.KongConfigurationProperties;
 import org.folio.tools.kong.service.KongGatewayService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @ConditionalOnProperty(prefix = "application.kong", name = "enabled")
+@ConditionalOnExpression("${routemanagement.enable:true}")
 public class KongConfiguration {
 
   /**
