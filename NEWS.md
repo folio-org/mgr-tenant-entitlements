@@ -1,5 +1,8 @@
+## Version `v2.0.7` (30.01.2025)
+* Update application-poc-tools to increase keycloak-admin-client to v26.0.4 (MGRENTITLE-91)
+
 ## Version `v2.0.6` (24.01.2025)
-* introduced cache for Keycloak auth token (MGRENTITLE-95 / EUREKA-605)
+* Introduced cache for Keycloak auth token (MGRENTITLE-95 / EUREKA-605)
 
 ## Version `v2.0.5` (17.01.2025)
 * Dependabot dependency updates
