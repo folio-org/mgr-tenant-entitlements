@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
-import org.folio.entitlement.integration.kong.KongRouteCleaner;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.flow.api.Flow;
@@ -20,7 +19,6 @@ public class OkapiModulesRevokeFlowFactory implements OkapiModulesFlowFactory {
   private final OkapiModulesInstaller moduleInstaller;
   private final OkapiModulesEventPublisher okapiModulesEventPublisher;
 
-  private KongRouteCleaner kongRouteCleaner;
   private KeycloakAuthResourceCleaner keycloakAuthResourceCleaner;
 
   @Override
@@ -30,7 +28,7 @@ public class OkapiModulesRevokeFlowFactory implements OkapiModulesFlowFactory {
       .id(context.flowId() + "/OkapiModulesRevokeFlow")
       .stage(moduleInstaller)
       .stage(okapiModulesEventPublisher)
-      .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCleaner, keycloakAuthResourceCleaner)))
+      .stage(combineStages("ParallelResourcesCleaner", asList(keycloakAuthResourceCleaner)))
       .executionStrategy(request.getExecutionStrategy())
       .flowParameters(additionalFlowParameters)
       .build();
@@ -39,11 +37,6 @@ public class OkapiModulesRevokeFlowFactory implements OkapiModulesFlowFactory {
   @Override
   public EntitlementType getEntitlementType() {
     return EntitlementType.REVOKE;
-  }
-
-  @Autowired(required = false)
-  public void setKongRouteCleaner(KongRouteCleaner kongRouteCleaner) {
-    this.kongRouteCleaner = kongRouteCleaner;
   }
 
   @Autowired(required = false)

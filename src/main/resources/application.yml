@@ -205,8 +205,3 @@ retries:
       delay: ${RETRIES_KEYCLOAK_BACKOFF_DELAY:1000}
       maxdelay: ${RETRIES_KEYCLOAK_BACKOFF_MAXDELAY:30000}
       multiplier: ${RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER:5}
-  kong:
-    max: ${RETRIES_KONG_MAX:3}
-    backoff:
-      delay: ${RETRIES_KONG_BACKOFF_DELAY:1000}
-      maxdelay: ${RETRIES_KONG_BACKOFF_MAXDELAY:30000}

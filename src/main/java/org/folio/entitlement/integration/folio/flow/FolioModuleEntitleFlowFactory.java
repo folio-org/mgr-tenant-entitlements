@@ -12,7 +12,6 @@ import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCreator;
-import org.folio.entitlement.integration.kong.KongModuleRouteCreator;
 import org.folio.entitlement.service.flow.ModuleFlowFactory;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
@@ -27,14 +26,13 @@ public class FolioModuleEntitleFlowFactory implements ModuleFlowFactory {
   private final ScheduledJobModuleEventPublisher scheduledJobEventPublisher;
   private final CapabilitiesModuleEventPublisher capabilitiesEventPublisher;
 
-  private KongModuleRouteCreator kongModuleRouteCreator;
   private KeycloakModuleResourceCreator kcModuleResourceCreator;
 
   @Override
   public Flow createModuleFlow(Object flowId, FlowExecutionStrategy strategy, Map<?, ?> additionalFlowParameters) {
     return Flow.builder()
       .id(flowId)
-      .stage(combineStages("ResourceCreatorParallelStage", asList(kongModuleRouteCreator, kcModuleResourceCreator)))
+      .stage(combineStages("ResourceCreatorParallelStage", asList(kcModuleResourceCreator)))
       .stage(systemUserEventPublisher)
       .stage(folioModuleInstaller)
       .stage(folioModuleEventPublisher)
@@ -58,11 +56,6 @@ public class FolioModuleEntitleFlowFactory implements ModuleFlowFactory {
   @Override
   public EntitlementType getEntitlementType() {
     return EntitlementType.ENTITLE;
-  }
-
-  @Autowired(required = false)
-  public void setKongModuleRouteCreator(KongModuleRouteCreator kongModuleRouteCreator) {
-    this.kongModuleRouteCreator = kongModuleRouteCreator;
   }
 
   @Autowired(required = false)

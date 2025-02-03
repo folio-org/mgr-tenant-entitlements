@@ -12,13 +12,10 @@ import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitleme
 import static org.folio.entitlement.support.KafkaEventAssertions.assertScheduledJobEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertSystemUserEvents;
 import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.COMMON_KONG_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.FOLIO_KONG_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.IGNORE_ERRORS;
 import static org.folio.entitlement.support.TestConstants.OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.OKAPI_KONG_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.PURGE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
@@ -696,9 +693,6 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
   private static void checkApplicationContextBeans(ApplicationContext appContext) {
     checkExistingBeans(appContext, OKAPI_MODULE_INSTALLER_BEAN_TYPES);
 
-    checkMissingBeans(appContext, COMMON_KONG_INTEGRATION_BEAN_TYPES);
-    checkMissingBeans(appContext, FOLIO_KONG_INTEGRATION_BEAN_TYPES);
-    checkMissingBeans(appContext, OKAPI_KONG_INTEGRATION_BEAN_TYPES);
     checkMissingBeans(appContext, COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES);
     checkMissingBeans(appContext, FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES);
     checkMissingBeans(appContext, OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES);
