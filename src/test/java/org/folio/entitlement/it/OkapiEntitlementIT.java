@@ -120,12 +120,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   private static final String OKAPI_MODULE_4_ID = "okapi-module4-4.0.0";
   private static final String OKAPI_MODULE_5_ID = "okapi-module5-5.0.0";
 
-  private static final List<String> MODULES = List.of(
-    OKAPI_MODULE_ID, OKAPI_MODULE_3_ID, OKAPI_MODULE_4_ID, OKAPI_MODULE_5_ID,
-    FOLIO_MODULE1_ID, FOLIO_MODULE2_ID, FOLIO_MODULE2_V2_ID, FOLIO_MODULE3_ID, FOLIO_MODULE4_ID);
-
-  private static final String INVALID_ROUTE_HASH = "4737040f862ad8b9cad357726503dae4952836e7";
-
   @Autowired private KeycloakTestClient kcClient;
 
   @BeforeAll

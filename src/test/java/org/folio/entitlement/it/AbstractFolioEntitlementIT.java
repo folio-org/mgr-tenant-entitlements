@@ -95,9 +95,6 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   private static final String FOLIO_APP6_V1_ID = "folio-app6-6.0.0";
   private static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
 
-  private static final List<String> MODULES = List.of(
-    FOLIO_MODULE1_ID, FOLIO_MODULE2_ID, FOLIO_MODULE2_V2_ID, FOLIO_MODULE3_ID, FOLIO_MODULE4_ID);
-
   @Autowired private KeycloakTestClient kcClient;
 
   @BeforeAll
