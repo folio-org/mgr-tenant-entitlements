@@ -1,3 +1,9 @@
+## v1.3.1 2025-02-03
+
+* KEYCLOAK-37 Add support for Keycloak v26.1.0 ([KEYCLOAK-37](https://issues.folio.org/browse/KEYCLOAK-37))
+
+---
+
 ## v1.3.0 2024-09-30
 
 * [APPPOCTOOL-27](https://issues.folio.org/browse/APPPOCTOOL-27) Disable tenant matching validation (#135)
