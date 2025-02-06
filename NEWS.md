@@ -1,3 +1,10 @@
+## Version `v2.0.8` (06.02.2025)
+* Dependabot dependency updates
+* Store retries information in DB (MGRENTITLE-76)
+* Added logic to create resources for endpoints that do not exist in the mod-pub-sub module but are still required. Implemented mapping of Pub/Sub perm$
+* Added the missing mapping for the circulation module (MGRENTITLE-89)
+* Added feature toggle for disabling modules route management in Kong (MGRENTITLE-81)
+
 ## Version `v2.0.7` (30.01.2025)
 * Update application-poc-tools to increase keycloak-admin-client to v26.0.4 (MGRENTITLE-91)
 
