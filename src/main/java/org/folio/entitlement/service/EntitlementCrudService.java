@@ -1,6 +1,7 @@
 package org.folio.entitlement.service;
 
 import static org.apache.commons.lang3.BooleanUtils.isTrue;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 
 import java.util.List;
@@ -38,8 +39,10 @@ public class EntitlementCrudService {
    */
   @Transactional(readOnly = true)
   public ResultList<Entitlement> findByQuery(String cqlQuery, Boolean includeModules, Integer limit, Integer offset) {
-    var pageable = OffsetRequest.of(offset, limit);
-    var appInstallEntities = entitlementRepository.findByCql(cqlQuery, pageable);
+    var appInstallEntities = isNotBlank(cqlQuery)
+      ? entitlementRepository.findByCql(cqlQuery, OffsetRequest.of(offset, limit))
+      : entitlementRepository.findAll(OffsetRequest.of(offset, limit, EntitlementEntity.DEFAULT_SORT));
+
     var tenantEntitlements = mapItems(appInstallEntities.toList(),
       isTrue(includeModules)
         ? entity -> entitlementMapper.mapWithModules(entity, fetchEntitlementModules(entity))

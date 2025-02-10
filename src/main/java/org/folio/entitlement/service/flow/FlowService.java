@@ -1,6 +1,7 @@
 package org.folio.entitlement.service.flow;
 
 import static java.util.Collections.emptyList;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 
 import java.util.UUID;
@@ -37,7 +38,11 @@ public class FlowService {
    */
   @Transactional(readOnly = true)
   public SearchResult<Flow> find(String query, Integer limit, Integer offset) {
-    var foundEntities = flowRepository.findByCql(query, OffsetRequest.of(offset, limit));
+    var pageable = OffsetRequest.of(offset, limit);
+    var foundEntities = isNotBlank(query)
+      ? flowRepository.findByCql(query, pageable)
+      : flowRepository.findAll(pageable);
+
     var flowIds = mapItems(foundEntities.getContent(), FlowEntity::getId);
     var applicationFlowIdsMap = applicationFlowService.findByFlowIds(flowIds);
 

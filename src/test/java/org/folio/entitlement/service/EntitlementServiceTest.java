@@ -2,11 +2,14 @@ package org.folio.entitlement.service;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
+import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
+import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.mockito.Mockito.verify;
@@ -14,6 +17,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.exception.RequestValidationException;
+import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.service.flow.FlowProvider;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.entitlement.support.TestValues;
@@ -37,6 +42,7 @@ class EntitlementServiceTest {
   @Mock private Flow flow;
   @Mock private FlowEngine flowEngine;
   @Mock private FlowProvider flowProvider;
+  @Mock private TenantManagerService tenantManagerService;
   @Mock private EntitlementCrudService crudService;
 
   @AfterEach
@@ -54,9 +60,30 @@ class EntitlementServiceTest {
       var expectedEntitlement = TestValues.entitlement();
       when(crudService.findByQuery(cqlQuery, false, 0, 100)).thenReturn(asSinglePage(expectedEntitlement));
 
-      var actual = entitlementService.findByQuery(cqlQuery, false, 0, 100);
+      var actual = entitlementService.findByQueryOrTenantName(cqlQuery, null, false, 0, 100, OKAPI_TOKEN);
 
       assertThat(actual).isEqualTo(asSinglePage(expectedEntitlement));
+    }
+
+    @Test
+    void get_positive_byTenant() {
+      var cqlQuery = "tenantId==" + TENANT_ID;
+      var expectedEntitlement = TestValues.entitlement();
+
+      when(tenantManagerService.findTenantByName(TENANT_NAME, OKAPI_TOKEN)).thenReturn(TestValues.tenant());
+      when(crudService.findByQuery(cqlQuery, false, 0, 100)).thenReturn(asSinglePage(expectedEntitlement));
+
+      var actual = entitlementService.findByQueryOrTenantName(null, TENANT_NAME, false, 0, 100, OKAPI_TOKEN);
+
+      assertThat(actual).isEqualTo(asSinglePage(expectedEntitlement));
+    }
+
+    @Test
+    void get_negative_queryAndTenantSpecified() {
+      assertThatThrownBy(() -> entitlementService.findByQueryOrTenantName(
+          "cql.allRecords=1", TENANT_NAME, false, 0, 100, OKAPI_TOKEN))
+        .isInstanceOf(RequestValidationException.class)
+        .hasMessage("Both 'query' and 'tenant' parameters are provided but only one of them has to be specified");
     }
   }
 

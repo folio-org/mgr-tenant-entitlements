@@ -70,7 +70,7 @@ paths:
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
     get:
-      operationId: findByQuery
+      operationId: findByQueryOrTenantName
       description: |
         Retrieves all the entitlement using query tools (CQL query, limit and offset parameters).
         Basic authorization is required to perform request (e.g. Authorization=Basic dXNlcjp1c2Vy).
@@ -78,9 +78,11 @@ paths:
         - entitlement
       parameters:
         - $ref: '#/components/parameters/cql-query'
+        - $ref: '#/components/parameters/query-tenant-name'
         - $ref: '#/components/parameters/query-includeModules'
         - $ref: '#/components/parameters/query-limit'
         - $ref: '#/components/parameters/query-offset'
+        - $ref: '#/components/parameters/x-okapi-token'
       responses:
         '200':
           description: "A list with created tenant entitlements"
@@ -118,29 +120,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/extendedEntitlements'
-        '400':
-          $ref: '#/components/responses/badRequestResponse'
-        '500':
-          $ref: '#/components/responses/internalServerErrorResponse'
-
-  /entitlements/{tenantId}:
-    get:
-      operationId: findEntitlementsByTenantId
-      description: List of tenant entitlements
-      tags:
-        - entitlement
-      parameters:
-        - $ref: '#/components/parameters/path-tenant-id'
-        - $ref: '#/components/parameters/query-includeModules'
-        - $ref: '#/components/parameters/query-limit'
-        - $ref: '#/components/parameters/query-offset'
-      responses:
-        '200':
-          description: "A list with created tenant entitlements"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/entitlements'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':
@@ -471,7 +450,13 @@ components:
       description: A CQL query string with search conditions.
       schema:
         type: string
-        default: cql.allRecords=1
+    query-tenant-name:
+      in: query
+      required: false
+      name: tenant
+      description: Tenant name to filter by.
+      schema:
+        type: string
     x-okapi-token:
       name: x-okapi-token
       in: header
