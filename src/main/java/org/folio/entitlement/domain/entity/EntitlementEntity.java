@@ -12,12 +12,15 @@ import java.util.UUID;
 import lombok.Data;
 import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.entity.key.EntitlementKey;
+import org.springframework.data.domain.Sort;
 
 @Data
 @Entity
 @Table(name = "entitlement")
 @IdClass(EntitlementKey.class)
 public class EntitlementEntity implements Serializable {
+
+  public static final Sort DEFAULT_SORT = Sort.by(Sort.Direction.ASC, "tenantId", "applicationId");
 
   @Serial private static final long serialVersionUID = 1717674444565778201L;
 

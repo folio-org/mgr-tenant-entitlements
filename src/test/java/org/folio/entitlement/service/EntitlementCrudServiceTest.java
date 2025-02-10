@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import org.folio.common.domain.model.OffsetRequest;
+import org.folio.entitlement.domain.entity.EntitlementEntity;
 import org.folio.entitlement.domain.entity.key.EntitlementKey;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.mapper.ApplicationDependencyMapper;
@@ -58,6 +59,21 @@ class EntitlementCrudServiceTest {
     when(entitlementMapper.map(entity)).thenReturn(entitlement(TENANT_ID, APPLICATION_ID));
 
     var actual = service.findByQuery(cqlQuery, false, limit, offset);
+
+    assertThat(actual).isEqualTo(asSinglePage(entitlement(TENANT_ID, APPLICATION_ID)));
+  }
+
+  @Test
+  void findByQuery_positive_emptyQuery() {
+    var offset = 0;
+    var limit = 10;
+    var offsetRequest = OffsetRequest.of(offset, limit, EntitlementEntity.DEFAULT_SORT);
+    var entity = entitlementEntity();
+
+    when(entitlementRepository.findAll(offsetRequest)).thenReturn(new PageImpl<>(singletonList(entity)));
+    when(entitlementMapper.map(entity)).thenReturn(entitlement(TENANT_ID, APPLICATION_ID));
+
+    var actual = service.findByQuery(null, false, limit, offset);
 
     assertThat(actual).isEqualTo(asSinglePage(entitlement(TENANT_ID, APPLICATION_ID)));
   }

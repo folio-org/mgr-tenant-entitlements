@@ -1,5 +1,6 @@
 package org.folio.entitlement.service;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 
 import java.util.List;
@@ -10,6 +11,9 @@ import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ResultList;
+import org.folio.entitlement.exception.RequestValidationException;
+import org.folio.entitlement.exception.RequestValidationException.Params;
+import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.service.flow.FlowProvider;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.FlowEngine;
@@ -23,6 +27,7 @@ public class EntitlementService {
 
   private final FlowEngine flowEngine;
   private final FlowProvider flowProvider;
+  private final TenantManagerService tenantManagerService;
   private final EntitlementCrudService entitlementCrudService;
 
   /**
@@ -38,6 +43,22 @@ public class EntitlementService {
     return entitlementCrudService.findByQuery(cqlQuery, includeModules, limit, offset);
   }
 
+  @Transactional(readOnly = true)
+  public ResultList<Entitlement> findByQueryOrTenantName(String query, String tenant, Boolean includeModules,
+    Integer limit, Integer offset, String token) {
+    if (isNotBlank(query) && isNotBlank(tenant)) {
+      throw new RequestValidationException("Both 'query' and 'tenant' parameters are provided "
+        + "but only one of them has to be specified", new Params().add("query", query).add("tenant", tenant));
+    }
+
+    var finalQuery = query;
+    if (isNotBlank(tenant)) {
+      var tenantId = tenantManagerService.findTenantByName(tenant, token).getId();
+      finalQuery = "tenantId==" + tenantId;
+    }
+    return findByQuery(finalQuery, includeModules, limit, offset);
+  }
+  
   /**
    * Performs enable, disable, or upgrade operation for applications in entitlement request for tenant.
    *

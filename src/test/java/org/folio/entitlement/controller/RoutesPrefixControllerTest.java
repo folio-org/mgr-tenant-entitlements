@@ -40,7 +40,8 @@ class RoutesPrefixControllerTest {
   @Test
   void get_positive() throws Exception {
     var cqlQuery = String.format("tenantId=%s", TENANT_ID);
-    when(entitlementService.findByQuery(cqlQuery, false, 10, 0)).thenReturn(asSinglePage(entitlement()));
+    when(entitlementService.findByQueryOrTenantName(cqlQuery, null, false, 10, 0, OKAPI_TOKEN))
+      .thenReturn(asSinglePage(entitlement()));
 
     mockMvc.perform(get("/mgr-tenant-entitlements/entitlements")
         .param("query", cqlQuery)
