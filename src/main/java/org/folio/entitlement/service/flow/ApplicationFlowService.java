@@ -4,6 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 
 import java.util.Collection;
@@ -67,7 +68,11 @@ public class ApplicationFlowService {
    */
   @Transactional(readOnly = true)
   public SearchResult<ApplicationFlow> find(String query, Integer limit, Integer offset) {
-    var foundEntities = applicationFlowRepository.findByCql(query, OffsetRequest.of(offset, limit));
+    var pageable = OffsetRequest.of(offset, limit);
+    var foundEntities = isNotBlank(query)
+      ? applicationFlowRepository.findByCql(query, pageable)
+      : applicationFlowRepository.findAll(pageable);
+
     var mappedRecords = foundEntities.map(applicationFlowMapper::map).getContent();
     return SearchResult.of((int) foundEntities.getTotalElements(), mappedRecords);
   }

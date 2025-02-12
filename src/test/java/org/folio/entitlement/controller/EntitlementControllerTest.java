@@ -12,6 +12,7 @@ import static org.folio.entitlement.support.TestConstants.IGNORE_ERRORS;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.PURGE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
+import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.TENANT_PARAMETERS;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
@@ -99,7 +100,8 @@ class EntitlementControllerTest {
   @Test
   void get_positive() throws Exception {
     var cqlQuery = String.format("tenantId=%s", TENANT_ID);
-    when(entitlementService.findByQuery(cqlQuery, false, 10, 0)).thenReturn(asSinglePage(entitlement()));
+    when(entitlementService.findByQueryOrTenantName(cqlQuery, null, false, 10, 0, OKAPI_TOKEN))
+      .thenReturn(asSinglePage(entitlement()));
 
     mockMvc.perform(get("/entitlements")
         .param("query", cqlQuery)
@@ -116,7 +118,8 @@ class EntitlementControllerTest {
   @Test
   void get_positive_includeModules() throws Exception {
     var cqlQuery = String.format("tenantId=%s", TENANT_ID);
-    when(entitlementService.findByQuery(cqlQuery, true, 10, 0)).thenReturn(asSinglePage(entitlementWithModules()));
+    when(entitlementService.findByQueryOrTenantName(cqlQuery, null, true, 10, 0, OKAPI_TOKEN))
+      .thenReturn(asSinglePage(entitlementWithModules()));
 
     mockMvc.perform(get("/entitlements")
         .param("query", cqlQuery)
@@ -130,6 +133,24 @@ class EntitlementControllerTest {
       .andExpect(jsonPath("$.entitlements[0].applicationId", is(APPLICATION_ID)))
       .andExpect(jsonPath("$.entitlements[0].tenantId", is(TENANT_ID.toString())))
       .andExpect(jsonPath("$.entitlements[0].modules[0]", is(MODULE_ID)));
+  }
+
+  @Test
+  void get_positive_byTenantWithModules() throws Exception {
+    when(entitlementService.findByQueryOrTenantName(null, TENANT_NAME, true, 10, 0, OKAPI_TOKEN))
+      .thenReturn(asSinglePage(entitlementWithModules()));
+
+    mockMvc.perform(get("/entitlements")
+        .param("tenant", TENANT_NAME)
+        .param("includeModules", "true")
+        .param("limit", "10")
+        .param("offset", "0")
+        .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
+        .contentType(APPLICATION_JSON))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.totalRecords", is(1)))
+      .andExpect(jsonPath("$.entitlements[0].applicationId", is(APPLICATION_ID)))
+      .andExpect(jsonPath("$.entitlements[0].tenantId", is(TENANT_ID.toString())));
   }
 
   @Test
