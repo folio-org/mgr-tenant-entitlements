@@ -15,7 +15,6 @@ import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
-import org.folio.entitlement.integration.kong.KongRouteCleaner;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -38,7 +37,6 @@ class OkapiModulesRevokeFlowFactoryTest {
   private final FlowEngine flowEngine = singleThreadFlowEngine("test-flow-engine", false);
 
   @InjectMocks private OkapiModulesRevokeFlowFactory revokeFlowFactory;
-  @Mock private KongRouteCleaner kongRouteCleaner;
   @Mock private OkapiModulesInstaller okapiModulesInstaller;
   @Mock private OkapiModulesEventPublisher okapiModulesEventPublisher;
   @Mock private KeycloakAuthResourceCleaner keycloakAuthResourceCleaner;
@@ -50,8 +48,7 @@ class OkapiModulesRevokeFlowFactoryTest {
 
   @Test
   void createFlow_positive_allConditionalStages() {
-    mockStageNames(kongRouteCleaner, keycloakAuthResourceCleaner, okapiModulesEventPublisher, okapiModulesInstaller);
-    revokeFlowFactory.setKongRouteCleaner(kongRouteCleaner);
+    mockStageNames(keycloakAuthResourceCleaner, okapiModulesEventPublisher, okapiModulesInstaller);
     revokeFlowFactory.setKeycloakAuthResourceCleaner(keycloakAuthResourceCleaner);
 
     var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
@@ -60,14 +57,13 @@ class OkapiModulesRevokeFlowFactoryTest {
     var flow = revokeFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(kongRouteCleaner, keycloakAuthResourceCleaner,
+    var inOrder = Mockito.inOrder(keycloakAuthResourceCleaner,
       okapiModulesEventPublisher, okapiModulesInstaller);
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesRevokeFlow";
     var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
     verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);
     verifyStageExecution(inOrder, okapiModulesEventPublisher, okapiStageContext);
-    verifyStageExecution(inOrder, kongRouteCleaner, okapiStageContext);
     verifyStageExecution(inOrder, keycloakAuthResourceCleaner, okapiStageContext);
   }
 

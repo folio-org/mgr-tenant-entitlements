@@ -21,8 +21,6 @@ public class RetryConfigurationProperties {
   private RetryConfigProps module = new RetryConfigProps();
   @Builder.Default
   private RetryConfigProps keycloak = new RetryConfigProps();
-  @Builder.Default
-  private RetryConfigProps kong = new RetryConfigProps();
 
   @Data
   @NoArgsConstructor

@@ -56,8 +56,3 @@ retries:
       delay: 1
       maxdelay: 1
       multiplier: 1
-  kong:
-    max: 3
-    backoff:
-      delay: 1
-      maxdelay: 1

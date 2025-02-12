@@ -11,7 +11,6 @@ import org.folio.entitlement.integration.kafka.CapabilitiesEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
-import org.folio.entitlement.integration.kong.KongRouteCreator;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.flow.api.Flow;
@@ -27,7 +26,6 @@ public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
   private final CapabilitiesEventPublisher capabilitiesEventPublisher;
   private final OkapiModulesEventPublisher okapiModulesEventPublisher;
 
-  private KongRouteCreator kongRouteCreator;
   private KeycloakAuthResourceCreator keycloakAuthResourceCreator;
 
   @Override
@@ -35,7 +33,7 @@ public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
     var request = context.getEntitlementRequest();
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesEntitleFlow")
-      .stage(combineStages("ParallelResourcesCleaner", asList(kongRouteCreator, keycloakAuthResourceCreator)))
+      .stage(combineStages("ParallelResourcesCleaner", asList(keycloakAuthResourceCreator)))
       .stage(systemUserEventPublisher)
       .stage(okapiModulesInstaller)
       .stage(combineStages("EventPublishingParallelStage",
@@ -49,11 +47,6 @@ public class OkapiModulesEntitleFlowFactory implements OkapiModulesFlowFactory {
   @Override
   public EntitlementType getEntitlementType() {
     return EntitlementType.ENTITLE;
-  }
-
-  @Autowired(required = false)
-  public void setKongRouteCreator(KongRouteCreator kongRouteCreator) {
-    this.kongRouteCreator = kongRouteCreator;
   }
 
   @Autowired(required = false)

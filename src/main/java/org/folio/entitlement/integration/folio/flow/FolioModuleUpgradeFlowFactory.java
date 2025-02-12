@@ -12,7 +12,6 @@ import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
-import org.folio.entitlement.integration.kong.KongModuleRouteUpdater;
 import org.folio.entitlement.service.flow.ModuleFlowFactory;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
@@ -27,7 +26,6 @@ public class FolioModuleUpgradeFlowFactory implements ModuleFlowFactory {
   private final ScheduledJobModuleEventPublisher scheduledJobEventPublisher;
   private final CapabilitiesModuleEventPublisher capabilitiesEventPublisher;
 
-  private KongModuleRouteUpdater kongModuleRouteUpdater;
   private KeycloakModuleResourceUpdater kcModuleResourceUpdater;
 
   @Override
@@ -35,7 +33,7 @@ public class FolioModuleUpgradeFlowFactory implements ModuleFlowFactory {
     return Flow.builder()
       .id(flowId)
       .executionStrategy(strategy)
-      .stage(combineStages("ResourceUpdaterParallelStage", asList(kongModuleRouteUpdater, kcModuleResourceUpdater)))
+      .stage(combineStages("ResourceUpdaterParallelStage", asList(kcModuleResourceUpdater)))
       .stage(systemUserEventPublisher)
       .stage(folioModuleUpdater)
       .stage(folioModuleEventPublisher)
@@ -58,11 +56,6 @@ public class FolioModuleUpgradeFlowFactory implements ModuleFlowFactory {
   @Override
   public EntitlementType getEntitlementType() {
     return EntitlementType.UPGRADE;
-  }
-
-  @Autowired(required = false)
-  public void setKongModuleRouteUpdater(KongModuleRouteUpdater kongModuleRouteUpdater) {
-    this.kongModuleRouteUpdater = kongModuleRouteUpdater;
   }
 
   @Autowired(required = false)

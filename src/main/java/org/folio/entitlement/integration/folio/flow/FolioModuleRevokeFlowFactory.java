@@ -9,7 +9,6 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.folio.stage.FolioModuleUninstaller;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCleaner;
-import org.folio.entitlement.integration.kong.KongModuleRouteCleaner;
 import org.folio.entitlement.service.flow.ModuleFlowFactory;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
@@ -21,7 +20,6 @@ public class FolioModuleRevokeFlowFactory implements ModuleFlowFactory {
   private final FolioModuleUninstaller folioModuleUninstaller;
   private final FolioModuleEventPublisher folioModuleEventPublisher;
 
-  private KongModuleRouteCleaner kongModuleRouteCleaner;
   private KeycloakModuleResourceCleaner kcModuleResourceCleaner;
 
   @Override
@@ -30,7 +28,7 @@ public class FolioModuleRevokeFlowFactory implements ModuleFlowFactory {
       .id(flowId)
       .stage(folioModuleUninstaller)
       .stage(folioModuleEventPublisher)
-      .stage(combineStages("ResourcesCleanerParallelStage", asList(kongModuleRouteCleaner, kcModuleResourceCleaner)))
+      .stage(combineStages("ResourcesCleanerParallelStage", asList(kcModuleResourceCleaner)))
       .executionStrategy(strategy)
       .flowParameters(additionalFlowParameters)
       .build();
@@ -48,11 +46,6 @@ public class FolioModuleRevokeFlowFactory implements ModuleFlowFactory {
   @Override
   public EntitlementType getEntitlementType() {
     return EntitlementType.REVOKE;
-  }
-
-  @Autowired(required = false)
-  public void setKongModuleRouteCleaner(KongModuleRouteCleaner kongModuleRouteCleaner) {
-    this.kongModuleRouteCleaner = kongModuleRouteCleaner;
   }
 
   @Autowired(required = false)

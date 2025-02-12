@@ -23,7 +23,6 @@ import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
-import org.folio.entitlement.integration.kong.KongModuleRouteUpdater;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.flow.api.FlowEngine;
@@ -43,7 +42,6 @@ class FolioModuleUpgradeFlowFactoryTest {
   private final FlowEngine flowEngine = singleThreadFlowEngine("test-flow-engine", false);
 
   @InjectMocks private FolioModuleUpgradeFlowFactory upgradeFlowFactory;
-  @Mock private KongModuleRouteUpdater kongModuleRouteUpdater;
   @Mock private KeycloakModuleResourceUpdater kcModuleResourceUpdater;
 
   @Mock private FolioModuleUpdater folioModuleUpdater;
@@ -59,9 +57,8 @@ class FolioModuleUpgradeFlowFactoryTest {
 
   @Test
   void createModuleFlow_positive_allConditionalStages() {
-    mockStageNames(kongModuleRouteUpdater, kcModuleResourceUpdater, systemUserEventPublisher,
+    mockStageNames(kcModuleResourceUpdater, systemUserEventPublisher,
       scheduledJobEventPublisher, capabilitiesEventPublisher, folioModuleUpdater, folioModuleEventPublisher);
-    upgradeFlowFactory.setKongModuleRouteUpdater(kongModuleRouteUpdater);
     upgradeFlowFactory.setKcModuleResourceUpdater(kcModuleResourceUpdater);
 
     var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor());
@@ -69,10 +66,9 @@ class FolioModuleUpgradeFlowFactoryTest {
     var flow = upgradeFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = inOrder(kongModuleRouteUpdater, kcModuleResourceUpdater, folioModuleUpdater,
+    var inOrder = inOrder(kcModuleResourceUpdater, folioModuleUpdater,
       capabilitiesEventPublisher, scheduledJobEventPublisher, systemUserEventPublisher, folioModuleEventPublisher);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
-    verifyStageExecution(inOrder, kongModuleRouteUpdater, stageContext);
     verifyStageExecution(inOrder, kcModuleResourceUpdater, stageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, folioModuleUpdater, stageContext);
@@ -99,7 +95,7 @@ class FolioModuleUpgradeFlowFactoryTest {
     verifyStageExecution(inOrder, scheduledJobEventPublisher, stageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
 
-    verifyNoInteractions(kongModuleRouteUpdater, kcModuleResourceUpdater);
+    verifyNoInteractions(kcModuleResourceUpdater);
   }
 
   @Test
@@ -112,7 +108,7 @@ class FolioModuleUpgradeFlowFactoryTest {
     var inOrder = inOrder(capabilitiesEventPublisher);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     verifyStageExecution(inOrder, capabilitiesEventPublisher, stageContext);
-    verifyNoInteractions(kongModuleRouteUpdater, kcModuleResourceUpdater);
+    verifyNoInteractions(kcModuleResourceUpdater);
   }
 
   @Test

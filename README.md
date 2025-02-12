@@ -11,7 +11,6 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 * [Compiling](#compiling)
 * [Running It](#running-it)
 * [Environment Variables](#environment-variables)
-* [Kong Gateway Integration](#kong-gateway-integration)
 * [Kafka Integration](#kafka-integration)
 * [FAQ](#faq)
 
@@ -21,8 +20,6 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 
 * Dependency check / platform integrity validation
 * Enabling/disabling of an application (including dependencies)
-* Optional integration with Kong gateway
-  * Add/remove routes per tenant on application install/uninstall
 
 ## Compiling
 
@@ -122,7 +119,6 @@ docker run \
 | FLOW_ENGINE_THREADS_NUM                | 4                                   |  false   | Defines the number of threads for Fork-Join Pool used by flow engine.                                                                                                                                      |
 | REGISTER_MODULE_IN_KONG                | true                                |  false   | Defines if module must be registered in Kong (it will create for itself service and list of routes from module descriptor)                                                                                 |
 | ROUTER_PATH_PREFIX                     |                                     |  false   | Defines routes prefix to be added to the generated endpoints by OpenAPI generator (`/foo/entites` -> `{{prefix}}/foo/entities`). Required if load balancing group has format like `{{host}}/{{moduleId}}`  |
-| ROUTEMANAGEMENT_ENABLE                 | true                                |  false   | Enable Kong routes management for modules on entitlement/unentitlement                                                                                                                                     |
 
 ### Validators environment variables
 
@@ -251,11 +247,6 @@ The feature is controlled by two env variables `SECURITY_ENABLED` and `KEYCLOAK_
 | RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER | 5             |    false    | Keycloak calls retries delay multiplier           |
 | RETRIES_KONG_BACKOFF_DELAY          | 1000          |    false    | Kong calls retries initial delay millisec         |
 | RETRIES_KONG_BACKOFF_MAXDELAY       | 30000         |    false    | Kong calls retries maximum delay millisec         |
-
-## Kong Gateway Integration
-
-Kong gateway integration implemented using idempotent approach
-with [Kong Admin API](https://docs.konghq.com/gateway/latest/admin-api/).
 
 ### Kong Service Registration
 

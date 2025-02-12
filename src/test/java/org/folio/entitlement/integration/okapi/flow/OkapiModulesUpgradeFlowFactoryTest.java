@@ -19,7 +19,6 @@ import org.folio.entitlement.integration.kafka.CapabilitiesEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
-import org.folio.entitlement.integration.kong.KongRouteUpdater;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.entitlement.support.TestValues;
 import org.folio.flow.api.FlowEngine;
@@ -40,7 +39,6 @@ class OkapiModulesUpgradeFlowFactoryTest {
   private final FlowEngine flowEngine = singleThreadFlowEngine("test-flow-engine", false);
 
   @InjectMocks private OkapiModulesUpgradeFlowFactory upgradeFlowFactory;
-  @Mock private KongRouteUpdater kongRouteUpdater;
   @Mock private KeycloakAuthResourceUpdater keycloakAuthResourceUpdater;
   @Mock private SystemUserEventPublisher systemUserEventPublisher;
   @Mock private ScheduledJobEventPublisher scheduledJobEventPublisher;
@@ -53,9 +51,8 @@ class OkapiModulesUpgradeFlowFactoryTest {
 
   @Test
   void createFlow_positive_allConditionalStages() {
-    mockStageNames(kongRouteUpdater, keycloakAuthResourceUpdater,
+    mockStageNames(keycloakAuthResourceUpdater,
       scheduledJobEventPublisher, capabilitiesEventPublisher, systemUserEventPublisher);
-    upgradeFlowFactory.setKongRouteUpdater(kongRouteUpdater);
     upgradeFlowFactory.setKeycloakAuthResourceUpdater(keycloakAuthResourceUpdater);
 
     var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
@@ -64,12 +61,11 @@ class OkapiModulesUpgradeFlowFactoryTest {
     var flow = upgradeFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(kongRouteUpdater, keycloakAuthResourceUpdater,
+    var inOrder = Mockito.inOrder(keycloakAuthResourceUpdater,
       scheduledJobEventPublisher, capabilitiesEventPublisher, systemUserEventPublisher);
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesUpgradeFlow";
     var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, kongRouteUpdater, okapiStageContext);
     verifyStageExecution(inOrder, keycloakAuthResourceUpdater, okapiStageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, scheduledJobEventPublisher, okapiStageContext);
@@ -92,7 +88,7 @@ class OkapiModulesUpgradeFlowFactoryTest {
     verifyStageExecution(inOrder, scheduledJobEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, capabilitiesEventPublisher, okapiStageContext);
 
-    verifyNoInteractions(keycloakAuthResourceUpdater, kongRouteUpdater);
+    verifyNoInteractions(keycloakAuthResourceUpdater);
   }
 
   @Test

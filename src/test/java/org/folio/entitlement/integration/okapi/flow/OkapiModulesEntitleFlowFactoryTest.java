@@ -19,7 +19,6 @@ import org.folio.entitlement.integration.kafka.CapabilitiesEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
-import org.folio.entitlement.integration.kong.KongRouteCreator;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -47,7 +46,6 @@ class OkapiModulesEntitleFlowFactoryTest {
   @Mock private CapabilitiesEventPublisher capabilitiesEventPublisher;
   @Mock private OkapiModulesEventPublisher okapiModulesEventPublisher;
 
-  @Mock private KongRouteCreator kongRouteCreator;
   @Mock private OkapiModulesInstaller okapiModulesInstaller;
   @Mock private KeycloakAuthResourceCreator keycloakAuthResourceCreator;
 
@@ -58,9 +56,8 @@ class OkapiModulesEntitleFlowFactoryTest {
 
   @Test
   void createFlow_positive_allConditionalStages() {
-    mockStageNames(kongRouteCreator, keycloakAuthResourceCreator, okapiModulesEventPublisher,
+    mockStageNames(keycloakAuthResourceCreator, okapiModulesEventPublisher,
       systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher, okapiModulesInstaller);
-    entitleFlowFactory.setKongRouteCreator(kongRouteCreator);
     entitleFlowFactory.setKeycloakAuthResourceCreator(keycloakAuthResourceCreator);
 
     var flowParameters = flowParameters(entitlementRequest(), applicationDescriptor());
@@ -69,12 +66,11 @@ class OkapiModulesEntitleFlowFactoryTest {
     var flow = entitleFlowFactory.createFlow(stageContext, emptyMap());
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(kongRouteCreator, keycloakAuthResourceCreator, okapiModulesEventPublisher,
+    var inOrder = Mockito.inOrder(keycloakAuthResourceCreator, okapiModulesEventPublisher,
       systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher, okapiModulesInstaller);
 
     var flowId = FLOW_STAGE_ID + "/OkapiModulesEntitleFlow";
     var okapiStageContext = okapiStageContext(flowId, emptyMap(), emptyMap());
-    verifyStageExecution(inOrder, kongRouteCreator, okapiStageContext);
     verifyStageExecution(inOrder, keycloakAuthResourceCreator, okapiStageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, okapiStageContext);
     verifyStageExecution(inOrder, okapiModulesInstaller, okapiStageContext);

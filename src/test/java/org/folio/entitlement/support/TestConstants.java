@@ -23,18 +23,10 @@ import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCleaner;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCreator;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
 import org.folio.entitlement.integration.keycloak.KeycloakService;
-import org.folio.entitlement.integration.kong.KongModuleRouteCleaner;
-import org.folio.entitlement.integration.kong.KongModuleRouteCreator;
-import org.folio.entitlement.integration.kong.KongModuleRouteUpdater;
-import org.folio.entitlement.integration.kong.KongRouteCleaner;
-import org.folio.entitlement.integration.kong.KongRouteCreator;
-import org.folio.entitlement.integration.kong.KongRouteUpdater;
 import org.folio.entitlement.integration.okapi.flow.OkapiModulesFlowProvider;
 import org.folio.entitlement.integration.okapi.flow.OkapiModulesRevokeFlowFactory;
 import org.folio.entitlement.integration.okapi.flow.OkapiModulesUpgradeFlowFactory;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
-import org.folio.tools.kong.client.KongAdminClient;
-import org.folio.tools.kong.service.KongGatewayService;
 import org.keycloak.admin.client.Keycloak;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -66,14 +58,8 @@ public class TestConstants {
 
   public static final HttpClient HTTP_CLIENT_DUMMY_SSL = httpClientWithDummySslContext();
 
-  public static final List<Class<?>> COMMON_KONG_INTEGRATION_BEAN_TYPES =
-    List.of(KongAdminClient.class, KongGatewayService.class);
-
   public static final List<Class<?>> COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES =
     List.of(Keycloak.class, KeycloakService.class);
-
-  public static final List<Class<?>> FOLIO_KONG_INTEGRATION_BEAN_TYPES =
-    List.of(KongModuleRouteCreator.class, KongModuleRouteUpdater.class, KongModuleRouteCleaner.class);
 
   public static final List<Class<?>> FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES = List.of(
     KeycloakModuleResourceCreator.class, KeycloakModuleResourceUpdater.class, KeycloakModuleResourceCleaner.class);
@@ -82,9 +68,6 @@ public class TestConstants {
     FolioModulesFlowProvider.class, FolioModuleEntitleFlowFactory.class, FolioModuleUpgradeFlowFactory.class,
     FolioModuleRevokeFlowFactory.class, FolioModuleInstaller.class, FolioModuleUninstaller.class,
     FolioModuleEventPublisher.class);
-
-  public static final List<Class<?>> OKAPI_KONG_INTEGRATION_BEAN_TYPES =
-    List.of(KongRouteCreator.class, KongRouteUpdater.class, KongRouteCleaner.class);
 
   public static final List<Class<?>> OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES = List.of(
     KeycloakAuthResourceCreator.class, KeycloakAuthResourceUpdater.class, KeycloakAuthResourceCleaner.class);

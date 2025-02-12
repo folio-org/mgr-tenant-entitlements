@@ -14,13 +14,10 @@ import static org.folio.entitlement.support.KafkaEventAssertions.assertScheduled
 import static org.folio.entitlement.support.KafkaEventAssertions.assertSystemUserEvents;
 import static org.folio.entitlement.support.KeycloakTestClientConfiguration.KeycloakTestClient.ALL_HTTP_METHODS;
 import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.COMMON_KONG_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.FOLIO_KONG_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.IGNORE_ERRORS;
 import static org.folio.entitlement.support.TestConstants.OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.OKAPI_KONG_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.PURGE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
@@ -49,22 +46,15 @@ import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsAf
 import static org.folio.entitlement.support.UpgradeTestValues.capabilityEventsBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.kcResourcesAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.kcResourcesBeforeUpgrade;
-import static org.folio.entitlement.support.UpgradeTestValues.kongRoutesAfterUpgrade;
-import static org.folio.entitlement.support.UpgradeTestValues.kongRoutesBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.scheduledTimerEventsBeforeUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsAfterUpgrade;
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsBeforeUpgrade;
 import static org.folio.entitlement.support.model.AuthorizationResource.authResource;
-import static org.folio.test.extensions.impl.WireMockExtension.WM_DOCKER_PORT;
-import static org.folio.test.extensions.impl.WireMockExtension.WM_NETWORK_ALIAS;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.startsWith;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
@@ -97,17 +87,10 @@ import org.folio.test.extensions.EnableOkapiSecurity;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
-import org.folio.tools.kong.client.KongAdminClient;
-import org.folio.tools.kong.model.Route;
-import org.folio.tools.kong.model.Service;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
@@ -137,39 +120,16 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   private static final String OKAPI_MODULE_4_ID = "okapi-module4-4.0.0";
   private static final String OKAPI_MODULE_5_ID = "okapi-module5-5.0.0";
 
-  private static final List<String> MODULES = List.of(
-    OKAPI_MODULE_ID, OKAPI_MODULE_3_ID, OKAPI_MODULE_4_ID, OKAPI_MODULE_5_ID,
-    FOLIO_MODULE1_ID, FOLIO_MODULE2_ID, FOLIO_MODULE2_V2_ID, FOLIO_MODULE3_ID, FOLIO_MODULE4_ID);
-
-  private static final String INVALID_ROUTE_HASH = "4737040f862ad8b9cad357726503dae4952836e7";
-
   @Autowired private KeycloakTestClient kcClient;
-  @SpyBean private KongAdminClient kongAdminClient;
 
   @BeforeAll
-  static void beforeAll(@Autowired KongAdminClient kongAdminClient, @Autowired ApplicationContext appContext) {
+  static void beforeAll(@Autowired ApplicationContext appContext) {
     checkApplicationContextBeans(appContext);
-
-    var wiremockUrl = String.format("http://%s:%s", WM_NETWORK_ALIAS, WM_DOCKER_PORT);
-    MODULES.forEach(moduleId -> kongAdminClient.upsertService(moduleId, new Service().name(moduleId).url(wiremockUrl)));
 
     fakeKafkaConsumer.registerTopic(entitlementTopic(), EntitlementEvent.class);
     fakeKafkaConsumer.registerTopic(capabilitiesTenantTopic(), ResourceEvent.class);
     fakeKafkaConsumer.registerTopic(scheduledJobsTenantTopic(), ResourceEvent.class);
     fakeKafkaConsumer.registerTopic(systemUserTenantTopic(), ResourceEvent.class);
-  }
-
-  @AfterEach
-  void tearDown() {
-    Mockito.reset(kongAdminClient);
-    for (var kr : kongAdminClient.getRoutesByTag(TENANT_NAME, null)) {
-      kongAdminClient.deleteRoute(kr.getService().getId(), kr.getId());
-    }
-  }
-
-  @AfterAll
-  static void tearDown(@Autowired KongAdminClient kongAdminClient) {
-    MODULES.forEach(kongAdminClient::deleteService);
   }
 
   @Test
@@ -207,7 +167,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var entitlement1 = entitlementWithModules(TENANT_ID, OKAPI_APP_ID, List.of(OKAPI_MODULE_ID));
     entitleApplications(entitlementRequest(OKAPI_APP_ID), emptyMap(), extendedEntitlements(entitlement(OKAPI_APP_ID)));
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement1));
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
@@ -220,7 +179,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     entitleApplications(request, emptyMap(), extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     var entitlement2 = entitlementWithModules(TENANT_ID, OKAPI_APP_5_ID, List.of(OKAPI_MODULE_5_ID));
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_5_ID), entitlements(entitlement2));
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
@@ -256,7 +214,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var savedEntitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_ID, OKAPI_APP_5_ID);
     assertEntitlementsWithModules(savedEntitlementQuery, entitlements(entitlement1, entitlement2));
 
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
@@ -294,7 +251,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var entitlement = entitlementWithModules(TENANT_ID, OKAPI_APP_ID, List.of(OKAPI_MODULE_ID));
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement));
     assertEntitlementEvents(entitlementEvent(ENTITLE, "okapi-module-1.0.0"));
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
@@ -321,7 +277,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var expectedEntitlements = extendedEntitlements(entitlement(OKAPI_APP_ID));
     revokeEntitlements(entitlementRequest, queryParams, expectedEntitlements);
     assertEntitlementEvents(entitlementEvent(REVOKE, OKAPI_MODULE_ID));
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     assertEntitlementsWithModules(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
@@ -351,7 +306,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       entitlementEvent(REVOKE, OKAPI_MODULE_3_ID, tenantName, tenantId),
       entitlementEvent(REVOKE, OKAPI_MODULE_4_ID, tenantName, tenantId));
 
-    assertThat(kongAdminClient.getRoutesByTag(tenantName, null)).isEmpty();
     assertThat(kcClient.getAuthorizationResources(tenantName)).isEmpty();
 
     var entitlementQuery = String.format("applicationId==(%s or %s)", OKAPI_APP_3_ID, OKAPI_APP_4_ID);
@@ -402,7 +356,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var expectedExtendedEntitlements = extendedEntitlements(entitlement(OKAPI_APP_ID));
     entitleApplications(entitlementRequest(OKAPI_APP_ID), queryParams, expectedExtendedEntitlements);
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
@@ -412,7 +365,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     // entitle application
     var entitlementRequest = entitlementRequest(OKAPI_APP_5_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
@@ -423,7 +375,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var revokeParams = Map.of("purge", "true");
     revokeEntitlements(entitlementRequest, revokeParams, extendedEntitlements(entitlement(OKAPI_APP_5_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_5_ID), emptyEntitlements());
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
@@ -436,7 +387,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       entitlementEvent(ENTITLE, OKAPI_MODULE_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID),
       entitlementEvent(REVOKE, OKAPI_MODULE_5_ID), entitlementEvent(ENTITLE, OKAPI_MODULE_5_ID));
     assertCapabilityEvents(readCapabilityEvent("json/events/okapi-it/okapi-module-capability-event-1.json"));
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(4);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
@@ -576,40 +526,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
-    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
-    getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
-  }
-
-  @Test
-  @KeycloakRealms("/keycloak/test-realm.json")
-  @WireMockStub(scripts = {
-    "/wiremock/mgr-tenants/test/get.json",
-    "/wiremock/mgr-applications/okapi-app/get-by-ids-query-full.json",
-    "/wiremock/mgr-applications/okapi-app/get-discovery.json",
-    "/wiremock/mgr-applications/validate-any-descriptor.json",
-  })
-  void install_negative_kongGateway502() throws Exception {
-    doAnswer(OkapiEntitlementIT::badGatewayErr).when(kongAdminClient).upsertRoute(any(), eq(INVALID_ROUTE_HASH), any());
-    doAnswer(OkapiEntitlementIT::badGatewayErr).when(kongAdminClient).deleteRoute(any(), any());
-
-    mockMvc.perform(post("/entitlements")
-        .queryParam("ignoreErrors", "false")
-        .queryParam("purgeOnRollback", "true")
-        .contentType(APPLICATION_JSON)
-        .header(TOKEN, getSystemAccessToken())
-        .content(asJsonString(entitlementRequest(OKAPI_APP_ID))))
-      .andExpect(status().isBadRequest())
-      .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLATION_FAILED")))
-      .andExpect(jsonPath("$.errors[0].type", is("FlowCancellationException")))
-      .andExpect(jsonPath("$.errors[0].code", is("service_error")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("KongRouteCreator")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
-        "CANCELLATION_FAILED: [KongIntegrationException] Failed to remove routes, parameters:")));
-
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(2);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
@@ -639,7 +555,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).hasSize(3);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
       authResource("/okapi-module/entities/{id}", "PUT"),
@@ -671,7 +586,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
         "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
 
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null)).isEmpty();
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
   }
@@ -764,11 +678,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
     var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
     entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
 
-    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_ID, null)).hasSize(5);
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null))
-      .map(Route::getExpression)
-      .containsExactlyInAnyOrderElementsOf(kongRoutesBeforeUpgrade());
-
     assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactlyElementsOf(kcResourcesBeforeUpgrade());
 
@@ -781,12 +690,6 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V1_ID, emptyEntitlements());
     getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
-
-    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_ID, null)).isEmpty();
-    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE2_V2_ID, null)).hasSize(6);
-    assertThat(kongAdminClient.getRoutesByTag(TENANT_NAME, null))
-      .map(Route::getExpression)
-      .containsExactlyInAnyOrderElementsOf(kongRoutesAfterUpgrade());
 
     assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactlyElementsOf(kcResourcesAfterUpgrade());
@@ -807,12 +710,9 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
   private static void checkApplicationContextBeans(ApplicationContext appContext) {
     checkExistingBeans(appContext, OKAPI_MODULE_INSTALLER_BEAN_TYPES);
-    checkExistingBeans(appContext, COMMON_KONG_INTEGRATION_BEAN_TYPES);
-    checkExistingBeans(appContext, OKAPI_KONG_INTEGRATION_BEAN_TYPES);
     checkExistingBeans(appContext, COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES);
     checkExistingBeans(appContext, OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES);
 
-    checkMissingBeans(appContext, FOLIO_KONG_INTEGRATION_BEAN_TYPES);
     checkMissingBeans(appContext, FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES);
     checkMissingBeans(appContext, FOLIO_MODULE_INSTALLER_BEAN_TYPES);
   }

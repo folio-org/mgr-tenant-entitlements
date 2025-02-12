@@ -18,7 +18,6 @@ import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.folio.stage.FolioModuleUninstaller;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCleaner;
-import org.folio.entitlement.integration.kong.KongModuleRouteCleaner;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
@@ -39,14 +38,12 @@ class FolioModuleRevokeFlowFactoryTest {
   @InjectMocks private FolioModuleRevokeFlowFactory revokeFlowFactory;
 
   @Mock private FolioModuleUninstaller folioModuleUninstaller;
-  @Mock private KongModuleRouteCleaner kongModuleRouteCleaner;
   @Mock private FolioModuleEventPublisher folioModuleEventPublisher;
   @Mock private KeycloakModuleResourceCleaner kcModuleResourceCleaner;
 
   @Test
   void createModuleFlow_positive_allConditionalStages() {
-    mockStageNames(kongModuleRouteCleaner, kcModuleResourceCleaner, folioModuleUninstaller, folioModuleEventPublisher);
-    revokeFlowFactory.setKongModuleRouteCleaner(kongModuleRouteCleaner);
+    mockStageNames(kcModuleResourceCleaner, folioModuleUninstaller, folioModuleEventPublisher);
     revokeFlowFactory.setKcModuleResourceCleaner(kcModuleResourceCleaner);
 
     var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor());
@@ -54,13 +51,12 @@ class FolioModuleRevokeFlowFactoryTest {
     var flow = revokeFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(kongModuleRouteCleaner, kcModuleResourceCleaner,
+    var inOrder = Mockito.inOrder(kcModuleResourceCleaner,
       folioModuleUninstaller, folioModuleEventPublisher);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     verifyStageExecution(inOrder, folioModuleUninstaller, stageContext);
     verifyStageExecution(inOrder, folioModuleEventPublisher, stageContext);
-    verifyStageExecution(inOrder, kongModuleRouteCleaner, stageContext);
     verifyStageExecution(inOrder, kcModuleResourceCleaner, stageContext);
   }
 
