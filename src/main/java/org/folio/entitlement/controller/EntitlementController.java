@@ -23,8 +23,9 @@ public class EntitlementController extends BaseController implements Entitlement
   private final EntitlementService entitlementService;
 
   @Override
-  public ResponseEntity<Entitlements> findByQuery(String query, Boolean includeModules, Integer limit, Integer offset) {
-    var entitlements = entitlementService.findByQuery(query, includeModules, limit, offset);
+  public ResponseEntity<Entitlements> findByQuery(String query, String tenant, Boolean includeModules, Integer limit,
+    Integer offset) {
+    var entitlements = entitlementService.findByQueryOrTenant(query, tenant, includeModules, limit, offset);
     return ResponseEntity.ok(new Entitlements()
       .totalRecords(entitlements.getTotalRecords())
       .entitlements(entitlements.getRecords()));

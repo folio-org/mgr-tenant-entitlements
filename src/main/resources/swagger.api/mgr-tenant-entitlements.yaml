@@ -78,6 +78,14 @@ paths:
         - entitlement
       parameters:
         - $ref: '#/components/parameters/cql-query'
+        - name: tenant
+          in: query
+          required: false
+          description: |
+            Tenant name to filter entitlements. 
+            Cannot be used together with 'query' parameter.
+          schema:
+            type: string
         - $ref: '#/components/parameters/query-includeModules'
         - $ref: '#/components/parameters/query-limit'
         - $ref: '#/components/parameters/query-offset'
@@ -118,29 +126,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/extendedEntitlements'
-        '400':
-          $ref: '#/components/responses/badRequestResponse'
-        '500':
-          $ref: '#/components/responses/internalServerErrorResponse'
-
-  /entitlements/{tenantId}:
-    get:
-      operationId: findEntitlementsByTenantId
-      description: List of tenant entitlements
-      tags:
-        - entitlement
-      parameters:
-        - $ref: '#/components/parameters/path-tenant-id'
-        - $ref: '#/components/parameters/query-includeModules'
-        - $ref: '#/components/parameters/query-limit'
-        - $ref: '#/components/parameters/query-offset'
-      responses:
-        '200':
-          description: "A list with created tenant entitlements"
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/entitlements'
         '400':
           $ref: '#/components/responses/badRequestResponse'
         '500':

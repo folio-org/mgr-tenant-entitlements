@@ -2,6 +2,7 @@ package org.folio.entitlement.service;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
@@ -14,6 +15,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.flow.FlowProvider;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.entitlement.support.TestValues;
@@ -45,18 +47,40 @@ class EntitlementServiceTest {
   }
 
   @Nested
-  @DisplayName("get")
-  class Get {
+  @DisplayName("findByQueryOrTenant")
+  class FindByQueryOrTenant {
 
     @Test
-    void get_positive() {
-      var cqlQuery = "cql.allRecords=1";
+    void positive_withTenantFilter() {
+      var tenant = "testTenant";
+      var expectedCql = "tenant==testTenant";
       var expectedEntitlement = TestValues.entitlement();
-      when(crudService.findByQuery(cqlQuery, false, 0, 100)).thenReturn(asSinglePage(expectedEntitlement));
+      when(crudService.findByQuery(expectedCql, false, 0, 100))
+        .thenReturn(asSinglePage(expectedEntitlement));
 
-      var actual = entitlementService.findByQuery(cqlQuery, false, 0, 100);
+      var actual = entitlementService.findByQueryOrTenant(null, tenant, false, 0, 100);
 
       assertThat(actual).isEqualTo(asSinglePage(expectedEntitlement));
+    }
+
+    @Test
+    void positive_withQueryFilter() {
+      var cqlQuery = "cql.allRecords=1";
+      var expectedEntitlement = TestValues.entitlement();
+      when(crudService.findByQuery(cqlQuery, false, 0, 100))
+        .thenReturn(asSinglePage(expectedEntitlement));
+
+      var actual = entitlementService.findByQueryOrTenant(cqlQuery, null, false, 0, 100);
+
+      assertThat(actual).isEqualTo(asSinglePage(expectedEntitlement));
+    }
+
+    @Test
+    void negative_bothQueryAndTenantProvided() {
+      assertThatThrownBy(() ->
+        entitlementService.findByQueryOrTenant("cql.allRecords=1", "testTenant", false, 0, 100))
+        .isInstanceOf(RequestValidationException.class)
+        .hasMessageContaining("Cannot use both 'query' and 'tenant' parameters together");
     }
   }
 
