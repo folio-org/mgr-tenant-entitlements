@@ -22,7 +22,6 @@ import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCreator;
-import org.folio.entitlement.integration.kong.KongModuleRouteCreator;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
@@ -48,7 +47,6 @@ class FolioModuleEntitleFlowFactoryTest {
   @Mock private CapabilitiesModuleEventPublisher capabilitiesEventPublisher;
 
   @Mock private FolioModuleInstaller folioModuleInstaller;
-  @Mock private KongModuleRouteCreator kongModuleRouteCreator;
   @Mock private KeycloakModuleResourceCreator kcModuleResourceCreator;
 
   @AfterEach
@@ -58,9 +56,8 @@ class FolioModuleEntitleFlowFactoryTest {
 
   @Test
   void createModuleFlow_positive_allConditionalStages() {
-    mockStageNames(kongModuleRouteCreator, kcModuleResourceCreator, folioModuleEventPublisher,
+    mockStageNames(kcModuleResourceCreator, folioModuleEventPublisher,
       folioModuleInstaller, systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher);
-    entitleFlowFactory.setKongModuleRouteCreator(kongModuleRouteCreator);
     entitleFlowFactory.setKcModuleResourceCreator(kcModuleResourceCreator);
 
     var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor());
@@ -68,11 +65,10 @@ class FolioModuleEntitleFlowFactoryTest {
     var flow = entitleFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(kongModuleRouteCreator, kcModuleResourceCreator, folioModuleEventPublisher,
+    var inOrder = Mockito.inOrder(kcModuleResourceCreator, folioModuleEventPublisher,
       systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher, folioModuleInstaller);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
-    verifyStageExecution(inOrder, kongModuleRouteCreator, stageContext);
     verifyStageExecution(inOrder, kcModuleResourceCreator, stageContext);
     verifyStageExecution(inOrder, systemUserEventPublisher, stageContext);
     verifyStageExecution(inOrder, folioModuleInstaller, stageContext);
