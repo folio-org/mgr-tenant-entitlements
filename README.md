@@ -99,7 +99,7 @@ docker run \
 | KONG_TLS_TRUSTSTORE_TYPE               | -                                   |  false   | Truststore file type for TLS connection to Kong.                                                                                                                                                           |
 | OKAPI_INTEGRATION_ENABLED              | false                               |  false   | Defines if okapi integration is enabled or disabled.<br/>If it set to `false` - it will exclude OkapiModuleInstaller stage from flow and okapi related beans from spring context.                          |
 | ENV                                    | folio                               |  false   | The logical name of the deployment (kafka topic prefix), must be unique across all environments using the same shared Kafka/Elasticsearch clusters, `a-z (any case)`, `0-9`, `-`, `_` symbols only allowed |
-| SECURITY_ENABLED                       | false                               |  false   | Allows to enable/disable security. If true and KEYCLOAK_INTEGRATION_ENABLED is also true - the Keycloak will be used as a security provider.                                                               |
+| SECURITY_ENABLED                       | false                               |  false   | Allows to enable/disable security. If true and KC_INTEGRATION_ENABLED is also true - the Keycloak will be used as a security provider.                                                               |
 | MT_CLIENT_TLS_ENABLED                  | false                               |  false   | Allows to enable/disable TLS connection to mgr-tenants module.                                                                                                                                             |
 | MT_CLIENT_TLS_TRUSTSTORE_PATH          | -                                   |  false   | Truststore file path for TLS connection to mgr-tenants module.                                                                                                                                             |
 | MT_CLIENT_TLS_TRUSTSTORE_PASSWORD      | -                                   |  false   | Truststore password for TLS connection to mgr-tenants module.                                                                                                                                              |
@@ -205,7 +205,7 @@ As startup, the application creates/updates necessary records in Keycloak from t
 Keycloak can be used as a security provider. If enabled - application will delegate endpoint permissions evaluation to
 Keycloak.
 A valid Keycloak JWT token must be passed for accessing secured resources.
-The feature is controlled by two env variables `SECURITY_ENABLED` and `KEYCLOAK_INTEGRATION_ENABLED`.
+The feature is controlled by two env variables `SECURITY_ENABLED` and `KC_INTEGRATION_ENABLED`.
 
 ### Keycloak specific environment variables
 
