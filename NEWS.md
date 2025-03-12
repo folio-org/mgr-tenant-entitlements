@@ -1,3 +1,10 @@
+## Version `v3.0.0` (11.03.2025)
+* Upgrade Java to v21. (MGRENTITLE-102)
+* Remove Kong routes management for entitled modules (MGRENTITLE-92)
+* Extend GET /entitlements with ability to retrieve tenant entitlements by tenant name via additional "tenant" query parameter (MGRENTITLE-101)
+
+---
+
 ## Version `v2.0.0` (01.11.2024)
 * Remove routes while purge=false (MGRENTITLE-75)
 * Implement retries for external calls (Kong, Keycloak, FOLIO Modules) (MGRENTITLE-72)
