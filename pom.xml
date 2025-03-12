@@ -12,7 +12,7 @@
   <name>mgr-tenant-entitlements</name>
   <groupId>org.folio</groupId>
   <artifactId>mgr-tenant-entitlements</artifactId>
-  <version>3.0.0</version>
+  <version>3.0.1-SNAPSHOT</version>
   <description>Tenant entitlements manager</description>
   <packaging>jar</packaging>
 
