@@ -16,23 +16,24 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import org.junit.jupiter.api.BeforeEach;
+import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@UnitTest
+@ExtendWith(MockitoExtension.class)
 public class ParallelUtilTest {
 
+  @Mock
   private ExecutorService mockExecutor;
+  @Mock
   private Callable<String> mockTask1;
+  @Mock
   private Callable<String> mockTask2;
+  @Mock
   private Consumer<Throwable> mockErrorHandler;
-
-  @BeforeEach
-  public void setUp() {
-    mockExecutor = mock(ExecutorService.class);
-    mockTask1 = mock(Callable.class);
-    mockTask2 = mock(Callable.class);
-    mockErrorHandler = mock(Consumer.class);
-  }
 
   @Test
   public void testRunParallel_successfulExecution() throws Exception {
