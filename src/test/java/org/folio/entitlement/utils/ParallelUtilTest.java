@@ -84,6 +84,7 @@ class ParallelUtilTest {
 
     assertThatThrownBy(() -> {
       ParallelUtil.runParallel(() -> mockExecutor, tasks, mockErrorHandler);
-    }).isInstanceOf(RuntimeException.class).hasMessage("Execution interrupter").hasCause(interruptException);
+    }).isInstanceOf(ParallelUtil.InterruptException.class).hasMessage("Execution interrupter")
+      .hasCause(interruptException);
   }
 }

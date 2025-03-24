@@ -41,7 +41,7 @@ class ReinstallServiceTest {
   private final String authToken = "test-auth-token";
 
   @BeforeEach
-  public void setupTenantMock() {
+  void setupTenantMock() {
     when(executorSupplier.get()).then(inv -> Executors.newSingleThreadExecutor());
     when(tenantManagerService.findTenant(tenantUuid, authToken)).thenReturn(
       Tenant.of(tenantUuid, "test", "Unit tests tenant"));
