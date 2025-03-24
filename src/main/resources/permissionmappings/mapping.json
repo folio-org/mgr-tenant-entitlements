@@ -14,5 +14,37 @@
   "remote-storage.pub-sub-handlers.log-record-event.post": {
     "endpoint": "/remote-storage/pub-sub-handlers/log-record-event",
     "method": "POST"
+  },
+  "patron-blocks.handlers.fee-fine-balance-changed.post": {
+    "endpoint": "/automated-patron-blocks/handlers/fee-fine-balance-changed",
+    "method": "POST"
+  },
+  "patron-blocks.handlers.item-checked-out.post": {
+    "endpoint": "/automated-patron-blocks/handlers/item-checked-out",
+    "method": "POST"
+  },
+  "patron-blocks.handlers.item-checked-in.post": {
+    "endpoint": "/automated-patron-blocks/handlers/item-checked-in",
+    "method": "POST"
+  },
+  "patron-blocks.handlers.item-declared-lost.post": {
+    "endpoint": "/automated-patron-blocks/handlers/item-declared-lost",
+    "method": "POST"
+  },
+  "patron-blocks.handlers.item-aged-to-lost.post": {
+    "endpoint": "/automated-patron-blocks/handlers/item-aged-to-lost",
+    "method": "POST"
+  },
+  "patron-blocks.handlers.item-claimed-returned.post": {
+    "endpoint": "/automated-patron-blocks/handlers/item-claimed-returned",
+    "method": "POST"
+  },
+  "patron-blocks.handlers.loan-due-date-changed.post": {
+    "endpoint": "/automated-patron-blocks/handlers/loan-due-date-changed",
+    "method": "POST"
+  },
+  "patron-blocks.handlers.loan-closed.post": {
+    "endpoint": "/automated-patron-blocks/handlers/loan-closed",
+    "method": "POST"
   }
 }
