@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.3</version>
+    <version>3.4.4</version>
     <relativePath />
   </parent>
 
@@ -35,9 +35,9 @@
     <apache-commons-lang3.version>3.17.0</apache-commons-lang3.version>
     <apache-commons-collections4.version>4.4</apache-commons-collections4.version>
     <cql2pgjson.version>35.4.0</cql2pgjson.version>
-    <spring-cloud-bom.version>2024.0.0</spring-cloud-bom.version>
+    <spring-cloud-bom.version>2024.0.1</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
-    <folio-spring-cql.version>9.0.0</folio-spring-cql.version>
+    <folio-spring-cql.version>9.0.1</folio-spring-cql.version>
     <applications-poc-tools.version>3.1.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.1.0</folio-java-checkstyle.version>
     <folio-flow-engine.version>3.1.0-SNAPSHOT</folio-flow-engine.version>
