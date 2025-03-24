@@ -98,7 +98,7 @@ public class ReinstallService {
       var error = "Error re-installing module " + moduleRequest.getModuleId();
       log.error(error, e);
       errorConsumer.accept(
-        String.format("%s - %s %s.\n%s", error, e.getClass().getSimpleName(), e.getMessage(), getStackTrace(e)));
+        String.format("%s - %s %s.%n%s", error, e.getClass().getSimpleName(), e.getMessage(), getStackTrace(e)));
     }
     return null;
   }

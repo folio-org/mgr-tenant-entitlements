@@ -24,19 +24,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-public class ParallelUtilTest {
+class ParallelUtilTest {
 
-  @Mock
-  private ExecutorService mockExecutor;
-  @Mock
-  private Callable<String> mockTask1;
-  @Mock
-  private Callable<String> mockTask2;
-  @Mock
-  private Consumer<Throwable> mockErrorHandler;
+  @Mock private ExecutorService mockExecutor;
+  @Mock private Callable<String> mockTask1;
+  @Mock private Callable<String> mockTask2;
+  @Mock private Consumer<Throwable> mockErrorHandler;
 
   @Test
-  public void testRunParallel_successfulExecution() throws Exception {
+  void testRunParallel_successfulExecution() throws Exception {
     var mockFuture1 = mock(Future.class);
     var mockFuture2 = mock(Future.class);
 
@@ -56,7 +52,7 @@ public class ParallelUtilTest {
   }
 
   @Test
-  public void testRunParallel_taskThrowsExecutionException() throws Exception {
+  void testRunParallel_taskThrowsExecutionException() throws Exception {
     var mockFuture1 = mock(Future.class);
     var mockFuture2 = mock(Future.class);
 
@@ -76,17 +72,18 @@ public class ParallelUtilTest {
   }
 
   @Test
-  public void testRunParallel_interruptedExecution() throws Exception {
+  void testRunParallel_interruptedExecution() throws Exception {
     var mockFuture1 = mock(Future.class);
     var mockFuture2 = mock(Future.class);
 
     when(mockExecutor.invokeAll(any(Collection.class))).thenReturn(List.of(mockFuture1, mockFuture2));
-    when(mockFuture1.get()).thenThrow(new InterruptedException("Execution interrupted"));
+    var interruptException = new InterruptedException("Execution interrupted");
+    when(mockFuture1.get()).thenThrow(interruptException);
 
     var tasks = List.of(mockTask1, mockTask2);
 
     assertThatThrownBy(() -> {
       ParallelUtil.runParallel(() -> mockExecutor, tasks, mockErrorHandler);
-    });
+    }).isInstanceOf(RuntimeException.class).hasMessage("Execution interrupter").hasCause(interruptException);
   }
 }

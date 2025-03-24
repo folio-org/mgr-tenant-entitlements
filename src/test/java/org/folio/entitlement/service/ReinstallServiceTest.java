@@ -28,7 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-public class ReinstallServiceTest {
+class ReinstallServiceTest {
 
   @InjectMocks private ReinstallService unit;
 
@@ -48,7 +48,7 @@ public class ReinstallServiceTest {
   }
 
   @Test
-  public void testAppsReinstall() {
+  void testAppsReinstall() {
     var appId1 = "app1";
     List<String> modules = List.of("m1", "m2", "m3", "m4");
     var appDesc1 = mockModuleData(appId1, modules);
@@ -81,7 +81,7 @@ public class ReinstallServiceTest {
   }
 
   @Test
-  public void testModulesReinstall() {
+  void testModulesReinstall() {
     var appId = "mock-app";
     List<String> modules = List.of("m1", "m2", "m3", "m4");
     mockModuleData(appId, modules);
