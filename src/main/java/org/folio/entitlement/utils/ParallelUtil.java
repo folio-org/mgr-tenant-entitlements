@@ -17,12 +17,6 @@ import lombok.extern.log4j.Log4j2;
 @UtilityClass
 public class ParallelUtil {
 
-  public static class InterruptException extends RuntimeException {
-    public InterruptException(String message, Throwable cause) {
-      super(message, cause);
-    }
-  }
-
   public static <T> List<T> runParallel(Supplier<ExecutorService> executorSupplier, Collection<Callable<T>> tasks,
     Consumer<Throwable> errorHandler) {
     var executor = executorSupplier.get();
@@ -54,6 +48,12 @@ public class ParallelUtil {
       if (errorHandler != null) {
         errorHandler.accept(e.getCause());
       }
+    }
+  }
+
+  public static class InterruptException extends RuntimeException {
+    public InterruptException(String message, Throwable cause) {
+      super(message, cause);
     }
   }
 }
