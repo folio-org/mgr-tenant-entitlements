@@ -6,13 +6,15 @@
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "description": "Entitled modules list"
     },
     "errors": {
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "description": "Errors that occurred during entitlement calls"
     }
   }
 }
