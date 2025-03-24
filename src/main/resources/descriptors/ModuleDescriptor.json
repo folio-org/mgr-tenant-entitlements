@@ -117,6 +117,25 @@
           "permissionsRequired": [ "mgr-tenant-entitlements.flows.stages.item.get" ]
         }
       ]
+    }, {
+	    "id": "reinstallations",
+	    "version": "1.0",
+	    "handlers": [
+	      {
+	        "type": "internal",
+	        "methods": [ "POST" ],
+	        "pathPattern": "/reinstall/applications",
+	        "permissionsRequired": [ "mgr-tenant-entitlements.app-reinstallation.execute" ],
+            "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
+	      },
+	      {
+	        "type": "internal",
+	        "methods": [ "POST" ],
+	        "pathPattern": "/reinstall/modules",
+	        "permissionsRequired": [ "mgr-tenant-entitlements.module-reinstallation.execute" ],
+            "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
+	      }
+	    ]
     }
   ],
   "requires": [ ],

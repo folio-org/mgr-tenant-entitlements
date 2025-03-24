@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "id": "moduleReinstallRequestBody.json",
+  "title": "Module Reinstall Request Schema",
+  "description": "A collection of application ids to reinstall",
+  "properties": {
+    "tenantId": {
+      "description": "Tenant id",
+      "type": "string",
+      "format": "uuid"
+    },
+    "applicationId": {
+      "description": "Application id",
+      "type": "string"
+    },
+    "modules": {
+      "description": "List of application ids",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 25,
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [ "modules", "tenantId" ]
+}
