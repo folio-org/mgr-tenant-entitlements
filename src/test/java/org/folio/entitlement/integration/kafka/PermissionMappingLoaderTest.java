@@ -39,6 +39,6 @@ class PermissionMappingLoaderTest {
 
   @Test
   void testGetPermissionMapping() {
-    Assertions.assertEquals(4, KafkaEventUtils.getPermissionMapping().size());
+    Assertions.assertEquals(12, KafkaEventUtils.getPermissionMapping().size());
   }
 }
