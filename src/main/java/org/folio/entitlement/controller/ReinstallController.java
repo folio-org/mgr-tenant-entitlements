@@ -6,13 +6,13 @@ import org.folio.entitlement.domain.dto.ModuleReinstallRequestBody;
 import org.folio.entitlement.domain.dto.ReinstallResult;
 import org.folio.entitlement.rest.resource.ReinstallApi;
 import org.folio.entitlement.service.ReinstallService;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@ConditionalOnBean(ReinstallService.class)
+@ConditionalOnProperty(name = "application.okapi.enabled", havingValue = "false")
 public class ReinstallController extends BaseController implements ReinstallApi {
 
   private final ReinstallService reinstallService;
