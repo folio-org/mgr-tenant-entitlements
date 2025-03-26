@@ -74,7 +74,7 @@ public class FolioModuleService {
     };
   }
 
-  private void installModule(ModuleRequest moduleRequest) {
+  public void installModule(ModuleRequest moduleRequest) {
     moduleService.save(moduleRequest);
     if (moduleRequest.getTenantInterface() == null) {
       log.debug("Skipping module installation, tenant interface is not found: moduleId = {}, tenantId = {}",

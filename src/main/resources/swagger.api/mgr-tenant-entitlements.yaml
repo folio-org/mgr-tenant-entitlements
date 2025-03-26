@@ -321,6 +321,60 @@ paths:
           $ref: '#/components/responses/badRequestResponse'
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
+  /reinstall/applications:
+    post:
+      operationId: appReinstall
+      description: |
+        Redo installation of apps' modules for tenant, even if they are already installed.
+      tags:
+        - reinstall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/appReinstallRequestBody'
+      parameters:
+        - $ref: '#/components/parameters/x-okapi-token'
+        - $ref: '#/components/parameters/tenantParameters'
+      responses:
+        '200':
+          description: 'A list with successfully created tenant entitlements'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/reinstallResult'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+  /reinstall/modules:
+    post:
+      operationId: moduleReinstall
+      description: |
+        Redo installation of modules for tenant, even if they are already installed.
+      tags:
+        - reinstall
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/moduleReinstallRequestBody'
+      parameters:
+        - $ref: '#/components/parameters/x-okapi-token'
+        - $ref: '#/components/parameters/tenantParameters'
+      responses:
+        '200':
+          description: 'A list with successfully created tenant entitlements'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/reinstallResult'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
 
 components:
   schemas:
@@ -350,6 +404,12 @@ components:
       $ref: schemas/common/errors.json
     entitlementType:
       $ref: schemas/types/entitlementType.json
+    appReinstallRequestBody:
+      $ref: schemas/appReinstallRequestBody.json
+    moduleReinstallRequestBody:
+      $ref: schemas/moduleReinstallRequestBody.json
+    reinstallResult:
+      $ref: schemas/reinstallResult.json
 
   responses:
     badRequestResponse:

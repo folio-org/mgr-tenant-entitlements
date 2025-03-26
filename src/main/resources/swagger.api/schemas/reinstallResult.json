@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "description": "Reinstall results",
+  "properties": {
+    "entitlements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Entitled modules list"
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Errors that occurred during entitlement calls"
+    }
+  }
+}

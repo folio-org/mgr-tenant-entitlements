@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import org.folio.common.domain.model.InterfaceDescriptor;
+import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.flow.api.StageContext;
@@ -64,6 +65,10 @@ public class ModuleRequest {
 
   private static InterfaceDescriptor getTenantInterfaceDescriptor(ModuleStageContext context) {
     var moduleDescriptor = context.getModuleDescriptor();
+    return getTenantInterfaceDescriptor(moduleDescriptor);
+  }
+
+  public static InterfaceDescriptor getTenantInterfaceDescriptor(ModuleDescriptor moduleDescriptor) {
     return toStream(moduleDescriptor.getProvides())
       .filter(interfaceDescriptor -> TENANT_INTERFACE_ID.equals(interfaceDescriptor.getId()))
       .findFirst()

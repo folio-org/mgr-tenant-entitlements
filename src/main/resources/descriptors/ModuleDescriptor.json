@@ -117,6 +117,25 @@
           "permissionsRequired": [ "mgr-tenant-entitlements.flows.stages.item.get" ]
         }
       ]
+    }, {
+	    "id": "reinstallations",
+	    "version": "1.0",
+	    "handlers": [
+	      {
+	        "type": "internal",
+	        "methods": [ "POST" ],
+	        "pathPattern": "/reinstall/applications",
+	        "permissionsRequired": [ "mgr-tenant-entitlements.app-reinstallation.execute" ],
+            "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
+	      },
+	      {
+	        "type": "internal",
+	        "methods": [ "POST" ],
+	        "pathPattern": "/reinstall/modules",
+	        "permissionsRequired": [ "mgr-tenant-entitlements.module-reinstallation.execute" ],
+            "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
+	      }
+	    ]
     }
   ],
   "requires": [ ],
@@ -236,6 +255,16 @@
         "mgr-tenant-entitlements.entitlements.modules.item.get",
         "mgr-tenant-entitlements.entitlements.validate.post"
       ]
+    },
+    {
+      "description": "Perform reinstallation for specified applications' modules",
+      "displayName": "Manager Tenant Entitlements - reinstall apps",
+      "permissionName": "mgr-tenant-entitlements.app-reinstallation.execute"
+    },
+    {
+      "description": "Perform reinstallation for specified modules",
+      "displayName": "Manager Tenant Entitlements - reinstall modules",
+      "permissionName": "mgr-tenant-entitlements.module-reinstallation.execute"
     }
   ]
 }
