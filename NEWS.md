@@ -1,3 +1,6 @@
+## Version `v2.0.9` (26.03.2025)
+* Add permission mappings for mod-patron-blocks (MGRENTITLE-107)
+
 ## Version `v2.0.8` (06.02.2025)
 * Dependabot dependency updates
 * Store retries information in DB (MGRENTITLE-76)
