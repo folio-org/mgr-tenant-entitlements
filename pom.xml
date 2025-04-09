@@ -253,7 +253,7 @@
     <dependency>
       <groupId>org.folio</groupId>
       <artifactId>folio-flow-engine</artifactId>
-      <version>${applications-poc-tools.version}</version>
+      <version>${folio-flow-engine.version}</version>
     </dependency>
 
     <dependency>
