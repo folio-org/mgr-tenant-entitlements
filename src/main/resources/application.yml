@@ -145,7 +145,6 @@ application:
       keystore-password: ${SECRET_STORE_VAULT_KEYSTORE_PASSWORD:}
       keystore-file-path: ${SECRET_STORE_VAULT_KEYSTORE_FILE_PATH:}
       truststore-file-path: ${SECRET_STORE_VAULT_TRUSTSTORE_FILE_PATH:}
-
   flow-engine:
     execution-timeout: ${FLOW_ENGINE_EXECUTION_TIMEOUT:30m}
     last-executions-status-cache-size: ${FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE:25}
@@ -154,6 +153,8 @@ application:
   validation:
     interface-integrity:
       enabled: ${VALIDATION_INTERFACE_INTEGRITY_ENABLED:true}
+      interface-collector:
+        mode: ${VALIDATION_INTERFACE_COLLECTOR_MODE:scoped}
 
 folio:
   jpa:
