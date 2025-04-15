@@ -139,7 +139,7 @@ class EntitlementValidationIT extends BaseIntegrationTest {
       attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.errors[0].message", containsString("Missing dependencies found for the applications")))
+        .andExpect(jsonPath("$.errors[0].message", containsString("Missing interfaces found for the applications")))
         .andExpect(jsonPath("$.errors[0].code", is("validation_error")))
         .andExpect(jsonPath("$.errors[0].type", is(RequestValidationException.class.getSimpleName())))
         .andExpect(jsonPath("$.errors[0].parameters[0].key", is(FOLIO_APP_ID_2)))
