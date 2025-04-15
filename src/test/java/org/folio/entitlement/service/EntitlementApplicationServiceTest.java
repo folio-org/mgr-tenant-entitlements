@@ -103,7 +103,7 @@ class EntitlementApplicationServiceTest {
 
   private static List<ApplicationDescriptor> applicationDescriptors(int totalRecords) {
     return IntStream.rangeClosed(0, totalRecords - 1)
-      .mapToObj(idx -> TestValues.simpleApplicationDescriptor(RANDOM_STRING_GENERATOR.generate(32)))
+      .mapToObj(idx -> TestValues.simpleAppDescriptor(RANDOM_STRING_GENERATOR.generate(32)))
       .collect(Collectors.toList());
   }
 }

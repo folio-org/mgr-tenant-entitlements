@@ -2,6 +2,7 @@ package org.folio.entitlement.service;
 
 import static java.util.Collections.emptySet;
 import static java.util.function.UnaryOperator.identity;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.empty;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
@@ -61,7 +62,7 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
      Set<ApplicationDescriptor> dependencies) {
   }
 
-  private static final class ApplicationDependencyResolver {
+  static final class ApplicationDependencyResolver {
 
     private final Map<String, ApplicationDescriptor> applicationsByName;
     private final Map<String, Set<ApplicationDescriptor>> cache = new HashMap<>();
@@ -75,21 +76,32 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
     }
 
     Set<ApplicationDescriptor> getAllDependencies(ApplicationDescriptor application) {
-      return resolveDependencies(application, new ArrayDeque<>());
+      log.debug("Resolving dependencies for application: {}", application.getId());
+
+      var result = resolveDependencies(application, new ArrayDeque<>());
+
+      log.debug("Resolved dependencies: application = {}, dependencies = {}",
+        application::getId,
+        () -> toStream(result).map(ApplicationDescriptor::getId).collect(joining(", ", "[", "]")));
+
+      return result;
     }
 
     private Set<ApplicationDescriptor> resolveDependencies(ApplicationDescriptor application, Deque<String> visited) {
       var appName = application.getName();
       if (visited.contains(appName)) {
-        throw new IllegalStateException("Circular application dependency detected for: " + appName
-          + ". Chain is: " + visited.stream().reduce((first, second) -> first + " -> " + second).orElse(""));
+        throw new IllegalArgumentException("Circular application dependency detected for: " + appName
+          + ". Chain is: " + appName + " <- "
+          + visited.stream().reduce((first, second) -> first + " <- " + second).orElse(""));
       }
 
       if (isEmpty(application.getDependencies())) {
+        log.trace("Application has no dependencies: {}. Returning empty set", application::getId);
         return emptySet();
       }
 
       if (cache.containsKey(appName)) {
+        log.trace("Dependencies for application already resolved: {}. Returning cached value", application::getId);
         return cache.get(appName);
       }
 
@@ -111,6 +123,9 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
 
       visited.pop();
       cache.put(appName, result);
+      log.trace("Saving resolved dependencies in the cache: application = {}, dependencies = {}",
+        application::getId,
+        () -> toStream(result).map(ApplicationDescriptor::getId).collect(joining(", ", "[", "]")));
 
       return result;
     }

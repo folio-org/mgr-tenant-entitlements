@@ -8,8 +8,8 @@ import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
+import static org.folio.entitlement.support.TestValues.appDescriptor;
 import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.dependency;
 import static org.mockito.Mockito.doNothing;
 
@@ -64,7 +64,7 @@ class ApplicationDependencyCleanerTest {
     var flowParameters = Map.of(
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_REQUEST, request,
-      PARAM_APPLICATION_DESCRIPTOR, applicationDescriptor(APPLICATION_ID, DEPENDENCY));
+      PARAM_APPLICATION_DESCRIPTOR, appDescriptor(APPLICATION_ID, DEPENDENCY));
 
     return appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
   }

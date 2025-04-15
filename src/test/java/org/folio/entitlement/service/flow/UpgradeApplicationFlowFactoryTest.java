@@ -6,7 +6,6 @@ import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.folio.flow.model.FlowExecutionStrategy.IGNORE_ON_ERROR;
@@ -21,6 +20,7 @@ import org.folio.entitlement.service.stage.FailedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.SkippedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.UpgradeApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.UpgradeRequestDependencyValidator;
+import org.folio.entitlement.support.TestValues;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
@@ -55,8 +55,8 @@ class UpgradeApplicationFlowFactoryTest {
       failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer, applicationDiscoveryLoader);
 
     var request = EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).ignoreErrors(true).build();
-    var entitledApplicationDescriptor = applicationDescriptor("app-foo-1.0.0");
-    var flowParameters = flowParameters(request, applicationDescriptor("app-foo-1.1.0"), entitledApplicationDescriptor);
+    var entitledApplicationDescriptor = TestValues.appDescriptor("app-foo-1.0.0");
+    var flowParameters = flowParameters(request, TestValues.appDescriptor("app-foo-1.1.0"), entitledApplicationDescriptor);
 
     var actual = flowFactory.createFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(actual);

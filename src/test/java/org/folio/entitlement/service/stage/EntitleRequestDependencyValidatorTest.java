@@ -87,7 +87,7 @@ class EntitleRequestDependencyValidatorTest {
   @Test
   void execute_positive_zeroDependencies() {
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
-    var flowParameters = flowParameters(request, TestValues.applicationDescriptor());
+    var flowParameters = flowParameters(request, TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
     dependencyValidator.execute(stageContext);

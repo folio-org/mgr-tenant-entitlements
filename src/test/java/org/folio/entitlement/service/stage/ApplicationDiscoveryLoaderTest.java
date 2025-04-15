@@ -13,7 +13,7 @@ import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.folio.entitlement.support.TestValues.module;
 import static org.folio.entitlement.support.TestValues.moduleDiscoveries;
-import static org.folio.entitlement.support.TestValues.simpleApplicationDescriptor;
+import static org.folio.entitlement.support.TestValues.simpleAppDescriptor;
 import static org.folio.entitlement.support.TestValues.uiApplicationDescriptor;
 import static org.mockito.Mockito.when;
 
@@ -41,7 +41,7 @@ class ApplicationDiscoveryLoaderTest {
 
   @Test
   void execute_positive() {
-    var stageContext = stageContext(simpleApplicationDescriptor(APPLICATION_ID));
+    var stageContext = stageContext(simpleAppDescriptor(APPLICATION_ID));
 
     when(applicationManagerService.getModuleDiscoveries(APPLICATION_ID, OKAPI_TOKEN)).thenReturn(moduleDiscoveries());
 
@@ -62,7 +62,7 @@ class ApplicationDiscoveryLoaderTest {
 
   @Test
   void execute_negative_moduleDiscoveriesNotFound() {
-    var stageContext = stageContext(simpleApplicationDescriptor(APPLICATION_ID));
+    var stageContext = stageContext(simpleAppDescriptor(APPLICATION_ID));
 
     when(applicationManagerService.getModuleDiscoveries(APPLICATION_ID, OKAPI_TOKEN)).thenReturn(ResultList.empty());
 
@@ -73,7 +73,7 @@ class ApplicationDiscoveryLoaderTest {
 
   @Test
   void execute_negative_moduleDiscoveryInformationNotMatching() {
-    var applicationDescriptor = TestValues.applicationDescriptor()
+    var applicationDescriptor = TestValues.appDescriptor()
       .modules(List.of(module("mod-bar", "1.7.9"), module("mod-foo", "2.1.0")));
     var stageContext = stageContext(applicationDescriptor);
 

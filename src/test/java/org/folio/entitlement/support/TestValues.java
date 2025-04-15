@@ -64,28 +64,28 @@ import org.folio.flow.api.StageContext;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TestValues {
 
-  public static ApplicationDescriptor applicationDescriptor() {
-    return applicationDescriptor(APPLICATION_ID, APPLICATION_NAME, APPLICATION_VERSION);
+  public static ApplicationDescriptor appDescriptor() {
+    return appDescriptor(APPLICATION_ID, APPLICATION_NAME, APPLICATION_VERSION);
   }
 
-  public static ApplicationDescriptor applicationDescriptor(String appId) {
-    return applicationDescriptor(appId, getName(appId), getVersion(appId));
+  public static ApplicationDescriptor appDescriptor(String appId) {
+    return appDescriptor(appId, getName(appId), getVersion(appId));
   }
 
-  public static ApplicationDescriptor applicationDescriptor(String id, String name, String version) {
+  public static ApplicationDescriptor appDescriptor(String id, String name, String version) {
     return new ApplicationDescriptor().id(id).name(name).version(version);
   }
 
-  public static ApplicationDescriptor applicationDescriptor(String appId, Dependency... dependencies) {
-    return applicationDescriptor(appId).dependencies(List.of(dependencies));
+  public static ApplicationDescriptor appDescriptor(String appId, Dependency... dependencies) {
+    return appDescriptor(appId).dependencies(List.of(dependencies));
   }
 
   public static Dependency dependency(String depId) {
     return Dependency.of(getName(depId), getVersion(depId));
   }
 
-  public static ApplicationDescriptor simpleApplicationDescriptor(String id) {
-    var applicationDescriptor = applicationDescriptor(id, "test-app", "1.0.0");
+  public static ApplicationDescriptor simpleAppDescriptor(String id) {
+    var applicationDescriptor = appDescriptor(id, "test-app", "1.0.0");
 
     var moduleDescriptor = new ModuleDescriptor();
     moduleDescriptor.setId("mod-bar-1.7.9");
@@ -96,7 +96,7 @@ public class TestValues {
   }
 
   public static ApplicationDescriptor uiApplicationDescriptor() {
-    var applicationDescriptor = applicationDescriptor(APPLICATION_ID, "test-app", "1.0.0");
+    var applicationDescriptor = appDescriptor(APPLICATION_ID, "test-app", "1.0.0");
 
     var moduleDescriptor = new ModuleDescriptor();
     moduleDescriptor.setId("mod-bar-1.7.9");

@@ -9,7 +9,6 @@ import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -24,6 +23,7 @@ import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.ApplicationDependencyValidatorService;
 import org.folio.entitlement.service.validator.configuration.InterfaceIntegrityValidatorProperties;
+import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -44,7 +44,7 @@ class InterfaceIntegrityValidatorTest {
 
   @Test
   void execute_positive() {
-    var applicationDescriptors = List.of(applicationDescriptor());
+    var applicationDescriptors = List.of(TestValues.appDescriptor());
     var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
     var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
 
@@ -57,7 +57,7 @@ class InterfaceIntegrityValidatorTest {
 
   @Test
   void execute_no_validation_positive() {
-    var applicationDescriptors = List.of(applicationDescriptor());
+    var applicationDescriptors = List.of(TestValues.appDescriptor());
     var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
     var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
 
@@ -70,7 +70,7 @@ class InterfaceIntegrityValidatorTest {
 
   @Test
   void execute_negative() {
-    var applicationDescriptors = List.of(applicationDescriptor());
+    var applicationDescriptors = List.of(TestValues.appDescriptor());
     var exception = new RequestValidationException("Invalid interface dependency", "application", APPLICATION_ID);
 
     when(properties.isEnabled()).thenReturn(true);
