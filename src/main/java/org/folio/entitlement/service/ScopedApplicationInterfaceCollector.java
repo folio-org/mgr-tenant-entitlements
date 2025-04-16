@@ -10,11 +10,13 @@ import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.service.ApplicationInterfaceCollectorUtils.populateRequiredAndProvidedFromApp;
 
 import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import lombok.extern.log4j.Log4j2;
@@ -34,11 +36,19 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
       return empty();
     }
 
+    log.debug("Reading required/provided interfaces from the descriptors [scoped mode]...");
+
     var dependencyResolver = new ApplicationDependencyResolver(descriptors);
 
     return toStream(descriptors)
       .map(descriptor -> combineApplicationWithDependencies(descriptor, dependencyResolver))
-      .map(this::populateRequiredAndProvided);
+      .map(this::populateRequiredAndProvided)
+      .peek(reqProv ->
+        log.debug("Interface summary: required = {}, provided = [{}]", reqProv::required,
+          () -> reqProv.provided().values().stream()
+            .flatMap(Collection::stream)
+            .map(Objects::toString)
+            .collect(joining(", "))));
   }
 
   private RequiredProvidedInterfaces populateRequiredAndProvided(ApplicationWithDependencies appWithDependencies) {
