@@ -24,10 +24,10 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.EntitlementType;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 
 public class ModuleInstallationGraph {
 

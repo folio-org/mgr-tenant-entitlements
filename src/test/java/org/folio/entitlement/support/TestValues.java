@@ -34,6 +34,9 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.folio.common.domain.model.ApplicationDescriptor;
+import org.folio.common.domain.model.Dependency;
+import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
@@ -50,9 +53,6 @@ import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.domain.model.ModulesSequence;
 import org.folio.entitlement.domain.model.ResultList;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.integration.am.model.Dependency;
-import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
@@ -172,7 +172,7 @@ public class TestValues {
   }
 
   public static Module module(String name, String version) {
-    return Module.of(name + "-" + version, name, version);
+    return new Module(name, version).id(name + "-" + version);
   }
 
   public static ModuleDiscovery moduleDiscovery() {

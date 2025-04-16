@@ -12,11 +12,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.InterfaceItem;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.service.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
 
 @Log4j2

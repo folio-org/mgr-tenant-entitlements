@@ -15,10 +15,10 @@ import static org.mockito.Mockito.doNothing;
 
 import java.util.List;
 import java.util.Map;
+import org.folio.common.domain.model.Dependency;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.Dependency;
 import org.folio.entitlement.service.ApplicationDependencyService;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.extension.ExtendWith;

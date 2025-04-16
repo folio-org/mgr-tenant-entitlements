@@ -11,8 +11,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.model.InterfaceItem;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 
 public interface ApplicationInterfaceCollector {
 

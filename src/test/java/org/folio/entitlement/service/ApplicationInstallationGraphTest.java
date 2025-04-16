@@ -10,7 +10,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

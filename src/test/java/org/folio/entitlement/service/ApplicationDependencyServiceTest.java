@@ -11,7 +11,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Set;
-import org.folio.entitlement.integration.am.model.Dependency;
+import org.folio.common.domain.model.Dependency;
 import org.folio.entitlement.mapper.ApplicationDependencyMapper;
 import org.folio.entitlement.repository.ApplicationDependencyRepository;
 import org.folio.test.types.UnitTest;

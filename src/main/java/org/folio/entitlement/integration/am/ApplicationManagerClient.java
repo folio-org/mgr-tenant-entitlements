@@ -3,9 +3,9 @@ package org.folio.entitlement.integration.am;
 import static org.folio.common.utils.OkapiHeaders.TOKEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.utils.CqlQuery;
 import org.folio.entitlement.domain.model.ResultList;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
