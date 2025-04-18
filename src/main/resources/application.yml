@@ -154,7 +154,7 @@ application:
     interface-integrity:
       enabled: ${VALIDATION_INTERFACE_INTEGRITY_ENABLED:true}
       interface-collector:
-        mode: ${VALIDATION_INTERFACE_COLLECTOR_MODE:scoped}
+        mode: ${VALIDATION_INTERFACE_COLLECTOR_MODE:combined}
 
 folio:
   jpa:
