@@ -9,7 +9,6 @@ import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.mockito.Mockito.verify;
@@ -19,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementCrudService;
+import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,7 +38,7 @@ class RevokeRequestDependencyValidatorTest {
     when(entitlementCrudService.findInstalledDependentEntitlements(APPLICATION_ID, TENANT_ID)).thenReturn(emptyList());
 
     var request = EntitlementRequest.builder().type(REVOKE).tenantId(TENANT_ID).build();
-    var flowParameters = flowParameters(request, applicationDescriptor());
+    var flowParameters = flowParameters(request, TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
     dependencyValidator.execute(stageContext);
@@ -51,7 +51,7 @@ class RevokeRequestDependencyValidatorTest {
     when(entitlementCrudService.findInstalledDependentEntitlements(APPLICATION_ID, TENANT_ID)).thenReturn(emptyList());
 
     var request = EntitlementRequest.builder().type(REVOKE).tenantId(TENANT_ID).build();
-    var flowParameters = flowParameters(request, applicationDescriptor());
+    var flowParameters = flowParameters(request, TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
     dependencyValidator.execute(stageContext);
@@ -65,7 +65,7 @@ class RevokeRequestDependencyValidatorTest {
       List.of(entitlement("app-foo-1.2.0"), entitlement("app-baz-4.2.1")));
 
     var request = EntitlementRequest.builder().type(REVOKE).tenantId(TENANT_ID).build();
-    var flowParameters = flowParameters(request, applicationDescriptor());
+    var flowParameters = flowParameters(request, TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
     assertThatThrownBy(() -> dependencyValidator.execute(stageContext))

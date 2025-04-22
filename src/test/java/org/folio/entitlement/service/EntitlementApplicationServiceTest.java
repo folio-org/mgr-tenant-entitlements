@@ -17,8 +17,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.text.CharacterPredicates;
 import org.apache.commons.text.RandomStringGenerator;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.keycloak.KeycloakCacheableService;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.integration.tm.model.Tenant;
@@ -103,7 +103,7 @@ class EntitlementApplicationServiceTest {
 
   private static List<ApplicationDescriptor> applicationDescriptors(int totalRecords) {
     return IntStream.rangeClosed(0, totalRecords - 1)
-      .mapToObj(idx -> TestValues.simpleApplicationDescriptor(RANDOM_STRING_GENERATOR.generate(32)))
+      .mapToObj(idx -> TestValues.simpleAppDescriptor(RANDOM_STRING_GENERATOR.generate(32)))
       .collect(Collectors.toList());
   }
 }

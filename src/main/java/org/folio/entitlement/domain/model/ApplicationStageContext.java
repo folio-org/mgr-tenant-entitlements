@@ -4,7 +4,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.ToString;
 import org.apache.commons.collections4.MapUtils;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.flow.api.StageContext;
 
 @ToString(callSuper = true)

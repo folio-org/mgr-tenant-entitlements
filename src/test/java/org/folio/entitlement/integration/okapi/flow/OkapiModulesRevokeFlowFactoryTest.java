@@ -8,7 +8,6 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestUtils.verifyNoMoreInteractions;
 import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 
@@ -51,7 +50,7 @@ class OkapiModulesRevokeFlowFactoryTest {
     mockStageNames(keycloakAuthResourceCleaner, okapiModulesEventPublisher, okapiModulesInstaller);
     revokeFlowFactory.setKeycloakAuthResourceCleaner(keycloakAuthResourceCleaner);
 
-    var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
+    var flowParameters = TestValues.flowParameters(entitlementRequest(), TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
     var flow = revokeFlowFactory.createFlow(stageContext, emptyMap());
@@ -71,7 +70,7 @@ class OkapiModulesRevokeFlowFactoryTest {
   void createFlow_positive_noConditionalStages() {
     mockStageNames(okapiModulesEventPublisher, okapiModulesInstaller);
 
-    var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
+    var flowParameters = TestValues.flowParameters(entitlementRequest(), TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
     var flow = revokeFlowFactory.createFlow(stageContext, emptyMap());

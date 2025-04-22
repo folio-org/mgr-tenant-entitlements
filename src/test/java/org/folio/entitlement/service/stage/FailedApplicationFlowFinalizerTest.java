@@ -6,7 +6,6 @@ import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAI
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -42,7 +41,7 @@ class FailedApplicationFlowFinalizerTest {
   @Test
   void execute_positive() {
     var request = EntitlementRequest.builder().type(ENTITLE).build();
-    var flowParameters = TestValues.flowParameters(request, applicationDescriptor());
+    var flowParameters = TestValues.flowParameters(request, TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, Map.of());
 
     var entity = new ApplicationFlowEntity();

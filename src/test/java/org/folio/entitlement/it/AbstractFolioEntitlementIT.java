@@ -262,7 +262,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
       .andExpect(jsonPath("$.errors[0].parameters[0].key", is("InterfaceIntegrityValidator")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", is("FAILED: [RequestValidationException] "
-        + "Missing dependencies found for the applications, "
+        + "Missing interfaces found for the applications, "
         + "parameters: [{key: folio-app2-2.0.0, value: folio-module1-api 1.0.0}]")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP2_ID), emptyEntitlements());

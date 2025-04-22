@@ -542,7 +542,7 @@
               <generateModelDocumentation>true</generateModelDocumentation>
               <importMappings>
                 ErrorResponse=org.folio.common.domain.model.error.ErrorResponse,
-                ApplicationDescriptor=org.folio.entitlement.integration.am.model.ApplicationDescriptor
+                ApplicationDescriptor=org.folio.common.domain.model.ApplicationDescriptor
               </importMappings>
               <schemaMappings>
                 errors=ErrorResponse,

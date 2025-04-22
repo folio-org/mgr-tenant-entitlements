@@ -26,10 +26,10 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.service.ModuleSequenceProvider;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.flow.api.Flow;

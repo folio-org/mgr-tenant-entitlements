@@ -23,11 +23,11 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
 import org.folio.entitlement.support.TestValues;
@@ -87,7 +87,7 @@ class EntitleRequestDependencyValidatorTest {
   @Test
   void execute_positive_zeroDependencies() {
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
-    var flowParameters = flowParameters(request, TestValues.applicationDescriptor());
+    var flowParameters = flowParameters(request, TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
     dependencyValidator.execute(stageContext);

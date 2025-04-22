@@ -1,6 +1,13 @@
+## Version `TBD` 
+* mgr-tenant-entitlements does not check the cross-application module dependencies as expected (MGRENTITLE-113)
+
+---
+
 ## Version `v3.1.0` (09.04.2025)
 * Reinstall API endpoints (MGRENTITLE-103)
 * Permission mappings for mod-patron-blocks (MGRENTITLE-107)
+
+---
 
 ## Version `v3.0.0` (11.03.2025)
 * Upgrade Java to v21. (MGRENTITLE-102)

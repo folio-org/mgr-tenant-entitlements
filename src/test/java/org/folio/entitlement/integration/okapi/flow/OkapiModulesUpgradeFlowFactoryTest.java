@@ -8,7 +8,6 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestUtils.verifyNoMoreInteractions;
 import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -55,7 +54,7 @@ class OkapiModulesUpgradeFlowFactoryTest {
       scheduledJobEventPublisher, capabilitiesEventPublisher, systemUserEventPublisher);
     upgradeFlowFactory.setKeycloakAuthResourceUpdater(keycloakAuthResourceUpdater);
 
-    var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
+    var flowParameters = TestValues.flowParameters(entitlementRequest(), TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
     var flow = upgradeFlowFactory.createFlow(stageContext, emptyMap());
@@ -75,7 +74,7 @@ class OkapiModulesUpgradeFlowFactoryTest {
   @Test
   void createFlow_positive_noConditionalStages() {
     mockStageNames(scheduledJobEventPublisher, capabilitiesEventPublisher, systemUserEventPublisher);
-    var flowParameters = TestValues.flowParameters(entitlementRequest(), applicationDescriptor());
+    var flowParameters = TestValues.flowParameters(entitlementRequest(), TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
     var flow = upgradeFlowFactory.createFlow(stageContext, emptyMap());

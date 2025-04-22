@@ -6,7 +6,6 @@ import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.folio.flow.model.FlowExecutionStrategy.IGNORE_ON_ERROR;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,7 +75,7 @@ class EntitleApplicationFlowFactoryTest {
       cancellationFailedApplicationFlowFinalizer, skippedFlowFinalizer);
 
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
-    var flowParameters = TestValues.flowParameters(request, applicationDescriptor());
+    var flowParameters = TestValues.flowParameters(request, TestValues.appDescriptor());
 
     var actual = flowFactory.createFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(actual);

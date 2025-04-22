@@ -7,7 +7,6 @@ import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestUtils.createBadRequest;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.moduleDiscovery;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,6 +29,7 @@ import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.am.ApplicationManagerClient;
+import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +47,7 @@ class ApplicationManagerServiceTest {
 
   @Test
   void getApplicationDescriptor_positive() {
-    var applicationDescriptor = applicationDescriptor();
+    var applicationDescriptor = TestValues.appDescriptor();
     when(client.getApplicationDescriptor(APPLICATION_ID, true, OKAPI_TOKEN)).thenReturn(applicationDescriptor);
     var actual = applicationManagerService.getApplicationDescriptor(APPLICATION_ID, OKAPI_TOKEN);
     assertThat(actual).isEqualTo(applicationDescriptor);
@@ -72,7 +72,7 @@ class ApplicationManagerServiceTest {
 
   @Test
   void getApplicationDescriptors_positive() {
-    var applicationDescriptor = applicationDescriptor();
+    var applicationDescriptor = TestValues.appDescriptor();
     var query = CqlQuery.exactMatchAny("id", List.of(APPLICATION_ID));
     var resultList = asSinglePage(applicationDescriptor);
     when(client.queryApplicationDescriptors(query, true, 50, 0, OKAPI_TOKEN)).thenReturn(resultList);
@@ -122,7 +122,7 @@ class ApplicationManagerServiceTest {
 
   @Test
   void validate_positive() {
-    var descriptor = applicationDescriptor();
+    var descriptor = TestValues.appDescriptor();
     doNothing().when(client).validate(descriptor, OKAPI_TOKEN);
     applicationManagerService.validate(descriptor, OKAPI_TOKEN);
     verify(client).validate(descriptor, OKAPI_TOKEN);
@@ -130,7 +130,7 @@ class ApplicationManagerServiceTest {
 
   @Test
   void validate_negative_validationException() {
-    var descriptor = applicationDescriptor();
+    var descriptor = TestValues.appDescriptor();
     doThrow(BadRequest.class).when(client).validate(descriptor, OKAPI_TOKEN);
     assertThatThrownBy(() -> applicationManagerService.validate(descriptor, OKAPI_TOKEN))
       .isInstanceOf(RequestValidationException.class)
@@ -140,7 +140,7 @@ class ApplicationManagerServiceTest {
 
   @Test
   void validate_negative_validationExceptionWithErrorResponse() throws JsonProcessingException {
-    var descriptor = applicationDescriptor();
+    var descriptor = TestValues.appDescriptor();
 
     var rve = new RequestValidationException("Application name is invalid", "name", "xxx");
     var badRequest = createBadRequest(rve);
@@ -162,7 +162,7 @@ class ApplicationManagerServiceTest {
 
   @Test
   void validate_negative_validationExceptionWithBadErrorResponse() throws JsonProcessingException {
-    var descriptor = applicationDescriptor();
+    var descriptor = TestValues.appDescriptor();
 
     var badRequest = createBadRequest("Not a valid ErrorResponse json");
 
@@ -182,7 +182,7 @@ class ApplicationManagerServiceTest {
 
   @Test
   void validate_negative_internalServerError() {
-    var descriptor = applicationDescriptor();
+    var descriptor = TestValues.appDescriptor();
     doThrow(InternalServerError.class).when(client).validate(descriptor, OKAPI_TOKEN);
     assertThatThrownBy(() -> applicationManagerService.validate(descriptor, OKAPI_TOKEN))
       .isInstanceOf(IntegrationException.class)
