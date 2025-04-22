@@ -20,8 +20,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.ListUtils;
-import org.folio.entitlement.domain.model.Artifact;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
+import org.folio.common.domain.model.ApplicationDescriptor;
+import org.folio.common.domain.model.Artifact;
 
 @Log4j2
 public class ApplicationInstallationGraph {

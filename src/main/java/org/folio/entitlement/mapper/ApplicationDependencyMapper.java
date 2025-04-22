@@ -3,8 +3,8 @@ package org.folio.entitlement.mapper;
 import static org.mapstruct.InjectionStrategy.CONSTRUCTOR;
 
 import java.util.UUID;
+import org.folio.common.domain.model.Dependency;
 import org.folio.entitlement.domain.entity.ApplicationDependencyEntity;
-import org.folio.entitlement.integration.am.model.Dependency;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

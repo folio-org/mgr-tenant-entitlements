@@ -17,11 +17,11 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.IterableUtils;
+import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
-import org.folio.entitlement.integration.am.model.Module;
 import org.folio.tools.kong.exception.KongIntegrationException;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

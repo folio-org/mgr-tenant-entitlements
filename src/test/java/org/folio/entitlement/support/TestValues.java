@@ -34,6 +34,9 @@ import java.util.UUID;
 import java.util.concurrent.Executors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.folio.common.domain.model.ApplicationDescriptor;
+import org.folio.common.domain.model.Dependency;
+import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
@@ -50,9 +53,6 @@ import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.domain.model.ModulesSequence;
 import org.folio.entitlement.domain.model.ResultList;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.integration.am.model.Dependency;
-import org.folio.entitlement.integration.am.model.Module;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
@@ -64,28 +64,28 @@ import org.folio.flow.api.StageContext;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TestValues {
 
-  public static ApplicationDescriptor applicationDescriptor() {
-    return applicationDescriptor(APPLICATION_ID, APPLICATION_NAME, APPLICATION_VERSION);
+  public static ApplicationDescriptor appDescriptor() {
+    return appDescriptor(APPLICATION_ID, APPLICATION_NAME, APPLICATION_VERSION);
   }
 
-  public static ApplicationDescriptor applicationDescriptor(String appId) {
-    return applicationDescriptor(appId, getName(appId), getVersion(appId));
+  public static ApplicationDescriptor appDescriptor(String appId) {
+    return appDescriptor(appId, getName(appId), getVersion(appId));
   }
 
-  public static ApplicationDescriptor applicationDescriptor(String id, String name, String version) {
+  public static ApplicationDescriptor appDescriptor(String id, String name, String version) {
     return new ApplicationDescriptor().id(id).name(name).version(version);
   }
 
-  public static ApplicationDescriptor applicationDescriptor(String appId, Dependency... dependencies) {
-    return applicationDescriptor(appId).dependencies(List.of(dependencies));
+  public static ApplicationDescriptor appDescriptor(String appId, Dependency... dependencies) {
+    return appDescriptor(appId).dependencies(List.of(dependencies));
   }
 
   public static Dependency dependency(String depId) {
     return Dependency.of(getName(depId), getVersion(depId));
   }
 
-  public static ApplicationDescriptor simpleApplicationDescriptor(String id) {
-    var applicationDescriptor = applicationDescriptor(id, "test-app", "1.0.0");
+  public static ApplicationDescriptor simpleAppDescriptor(String id) {
+    var applicationDescriptor = appDescriptor(id, "test-app", "1.0.0");
 
     var moduleDescriptor = new ModuleDescriptor();
     moduleDescriptor.setId("mod-bar-1.7.9");
@@ -96,7 +96,7 @@ public class TestValues {
   }
 
   public static ApplicationDescriptor uiApplicationDescriptor() {
-    var applicationDescriptor = applicationDescriptor(APPLICATION_ID, "test-app", "1.0.0");
+    var applicationDescriptor = appDescriptor(APPLICATION_ID, "test-app", "1.0.0");
 
     var moduleDescriptor = new ModuleDescriptor();
     moduleDescriptor.setId("mod-bar-1.7.9");
@@ -172,7 +172,7 @@ public class TestValues {
   }
 
   public static Module module(String name, String version) {
-    return Module.of(name + "-" + version, name, version);
+    return new Module(name, version).id(name + "-" + version);
   }
 
   public static ModuleDiscovery moduleDiscovery() {

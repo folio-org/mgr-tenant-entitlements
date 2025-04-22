@@ -10,12 +10,12 @@ import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import java.util.List;
 import java.util.UUID;
 import lombok.ToString;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.flow.api.StageContext;
 

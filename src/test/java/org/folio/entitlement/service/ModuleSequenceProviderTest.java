@@ -19,16 +19,16 @@ import static org.folio.entitlement.support.TestValues.module;
 
 import java.util.List;
 import java.util.regex.Pattern;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.InterfaceReference;
+import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.domain.model.ModulesSequence;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
-import org.folio.entitlement.integration.am.model.Module;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

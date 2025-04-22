@@ -227,9 +227,9 @@ class ApplicationFlowValidatorTest {
       arguments("Entitle: failed entitle flow found", request(ENTITLE), List.of(flow(ENTITLE, FAILED))),
       arguments("Entitle: cancelled entitle flow found", request(ENTITLE), List.of(flow(ENTITLE, CANCELLED))),
 
-      arguments("Entitle: multiple application flows", request(ENTITLE, "app1", "app2"), emptyList()),
-      arguments("Entitle: multiple revoked application flows", request(ENTITLE, "app1", "app2"),
-        List.of(flow("app1", REVOKE, FINISHED), flow("app2", REVOKE, FINISHED))),
+      arguments("Entitle: multiple application flows", request(ENTITLE, "app1-1.0.0", "app2-1.0.0"), emptyList()),
+      arguments("Entitle: multiple revoked application flows", request(ENTITLE, "app1-1.0.0", "app2-1.0.0"),
+        List.of(flow("app1-1.0.0", REVOKE, FINISHED), flow("app2-1.0.0", REVOKE, FINISHED))),
 
       arguments("Upgrade: no application flows found", request(UPGRADE), emptyList()),
       arguments("Upgrade: revoked flow found", request(UPGRADE), List.of(flow(REVOKE, FINISHED))),

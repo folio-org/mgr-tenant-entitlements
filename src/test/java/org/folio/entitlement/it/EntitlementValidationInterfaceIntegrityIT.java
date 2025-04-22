@@ -24,37 +24,105 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
 
-@IntegrationTest
-@SqlMergeMode(MERGE)
-@Sql(scripts = "classpath:/sql/truncate-tables.sql", executionPhase = AFTER_TEST_METHOD)
-@TestPropertySource(properties = {
-  "application.keycloak.enabled=false",
-  "application.okapi.enabled=false",
-  "application.kong.enabled=false"
-})
-class EntitlementValidationIT extends BaseIntegrationTest {
+class EntitlementValidationInterfaceIntegrityIT {
+
+  private static final String VALIDATOR = InterfaceIntegrityValidator.class.getSimpleName();
+
+  private static final String FOLIO_APP_NAME_1 = "folio-app1";
+  private static final String FOLIO_APP_ID_1 = "folio-app1-1.0.0";
+  private static final String FOLIO_APP_ID_2 = "folio-app2-2.0.0";
+  private static final String FOLIO_APP_ID_3 = "folio-app3-3.0.0";
 
   @Nested
-  class InterfaceIntegrity {
-
-    private static final String VALIDATOR = InterfaceIntegrityValidator.class.getSimpleName();
-
-    private static final String FOLIO_APP_NAME_1 = "folio-app1";
-    private static final String FOLIO_APP_ID_1 = "folio-app1-1.0.0";
-    private static final String FOLIO_APP_ID_2 = "folio-app2-2.0.0";
-    private static final String FOLIO_APP_ID_3 = "folio-app3-3.0.0";
+  @IntegrationTest
+  @SqlMergeMode(MERGE)
+  @Sql(scripts = "classpath:/sql/truncate-tables.sql", executionPhase = AFTER_TEST_METHOD)
+  @TestPropertySource(properties = {
+    "application.keycloak.enabled=false",
+    "application.okapi.enabled=false",
+    "application.kong.enabled=false",
+    "application.validation.interface-integrity.interface-collector.mode=scoped"
+  })
+  class ScopedInterfaceCollector extends BaseIntegrationTest {
 
     @Test
     @WireMockStub(scripts = {
       "/wiremock/mgr-applications/folio-app-mixed/get-by-ids-123-query-full.json"
     })
-    void validate_positive() throws Exception {
+    void validate_positive_correctDependencies() throws Exception {
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_1, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
       attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isNoContent());
     }
+
+    @Test
+    @WireMockStub(scripts = {
+      "/wiremock/mgr-applications/folio-app-mixed/get-by-ids-123-query-full-missing-dependency.json"
+    })
+    void validate_negative_missingDependencyInApp3() throws Exception {
+      var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_1, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
+
+      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+        request, ENTITLE.getValue(), VALIDATOR)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors[0].message", containsString("Missing interfaces found for the applications")))
+        .andExpect(jsonPath("$.errors[0].code", is("validation_error")))
+        .andExpect(jsonPath("$.errors[0].type", is(RequestValidationException.class.getSimpleName())))
+        .andExpect(jsonPath("$.errors[0].parameters[0].key", is(FOLIO_APP_ID_3)))
+        .andExpect(jsonPath("$.errors[0].parameters[0].value", is("folio-module1-api 1.0")))
+        .andExpect(jsonPath("$.total_records", is(1)));
+    }
+  }
+
+  @Nested
+  @IntegrationTest
+  @SqlMergeMode(MERGE)
+  @Sql(scripts = "classpath:/sql/truncate-tables.sql", executionPhase = AFTER_TEST_METHOD)
+  @TestPropertySource(properties = {
+    "application.keycloak.enabled=false",
+    "application.okapi.enabled=false",
+    "application.kong.enabled=false",
+    "application.validation.interface-integrity.interface-collector.mode=combined"
+  })
+  class CombinedInterfaceCollector extends BaseIntegrationTest {
+
+    @Test
+    @WireMockStub(scripts = {
+      "/wiremock/mgr-applications/folio-app-mixed/get-by-ids-123-query-full.json"
+    })
+    void validate_positive_correctDependencies() throws Exception {
+      var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_1, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
+
+      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+        request, ENTITLE.getValue(), VALIDATOR)
+        .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WireMockStub(scripts = {
+      "/wiremock/mgr-applications/folio-app-mixed/get-by-ids-123-query-full-missing-dependency.json"
+    })
+    void validate_positive_missingDependencyInApp3() throws Exception {
+      var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_1, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
+
+      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+        request, ENTITLE.getValue(), VALIDATOR)
+        .andExpect(status().isNoContent());
+    }
+  }
+
+  @Nested
+  @IntegrationTest
+  @SqlMergeMode(MERGE)
+  @Sql(scripts = "classpath:/sql/truncate-tables.sql", executionPhase = AFTER_TEST_METHOD)
+  @TestPropertySource(properties = {
+    "application.keycloak.enabled=false",
+    "application.okapi.enabled=false",
+    "application.kong.enabled=false",
+  })
+  class EntitledApplication extends BaseIntegrationTest {
 
     @Test
     @WireMockStub(scripts = {
@@ -139,7 +207,7 @@ class EntitlementValidationIT extends BaseIntegrationTest {
       attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.errors[0].message", containsString("Missing dependencies found for the applications")))
+        .andExpect(jsonPath("$.errors[0].message", containsString("Missing interfaces found for the applications")))
         .andExpect(jsonPath("$.errors[0].code", is("validation_error")))
         .andExpect(jsonPath("$.errors[0].type", is(RequestValidationException.class.getSimpleName())))
         .andExpect(jsonPath("$.errors[0].parameters[0].key", is(FOLIO_APP_ID_2)))

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import lombok.ToString;
-import org.folio.entitlement.integration.am.model.ApplicationDescriptor;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.service.stage.ApplicationDescriptorTreeLoader;
 import org.folio.flow.api.StageContext;
 

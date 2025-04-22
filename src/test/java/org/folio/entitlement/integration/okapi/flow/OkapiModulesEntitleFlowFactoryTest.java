@@ -8,7 +8,6 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestUtils.mockStageNames;
 import static org.folio.entitlement.support.TestUtils.verifyNoMoreInteractions;
 import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.applicationDescriptor;
 import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
@@ -22,6 +21,7 @@ import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.entitlement.support.TestValues;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
@@ -60,7 +60,7 @@ class OkapiModulesEntitleFlowFactoryTest {
       systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher, okapiModulesInstaller);
     entitleFlowFactory.setKeycloakAuthResourceCreator(keycloakAuthResourceCreator);
 
-    var flowParameters = flowParameters(entitlementRequest(), applicationDescriptor());
+    var flowParameters = flowParameters(entitlementRequest(), TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
     var flow = entitleFlowFactory.createFlow(stageContext, emptyMap());
@@ -86,7 +86,7 @@ class OkapiModulesEntitleFlowFactoryTest {
     mockStageNames(okapiModulesEventPublisher, systemUserEventPublisher, scheduledJobEventPublisher,
       capabilitiesEventPublisher, okapiModulesInstaller);
 
-    var flowParameters = flowParameters(entitlementRequest(), applicationDescriptor());
+    var flowParameters = flowParameters(entitlementRequest(), TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
 
     var flow = entitleFlowFactory.createFlow(stageContext, emptyMap());
