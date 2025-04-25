@@ -1,5 +1,5 @@
 {
-  "id": "mgr-tenant-entitlements-1.0.0",
+  "id": "mgr-tenant-entitlements-4.0.0",
   "name": "Manager Tenant Entitlements",
   "provides": [
     {
