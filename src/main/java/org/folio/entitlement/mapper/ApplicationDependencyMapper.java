@@ -17,5 +17,6 @@ public interface ApplicationDependencyMapper {
   @Mapping(target = "applicationName", ignore = true)
   @Mapping(target = "parentName", source = "dependency.name")
   @Mapping(target = "parentVersion", source = "dependency.version")
+  @Mapping(target = "optional", source = "dependency.optional", defaultValue = "false")
   ApplicationDependencyEntity map(UUID tenantId, String applicationId, Dependency dependency);
 }
