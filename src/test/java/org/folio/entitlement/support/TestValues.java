@@ -81,7 +81,7 @@ public class TestValues {
   }
 
   public static Dependency dependency(String depId) {
-    return Dependency.of(getName(depId), getVersion(depId));
+    return Dependency.of(getName(depId), getVersion(depId), false);
   }
 
   public static ApplicationDescriptor simpleAppDescriptor(String id) {
@@ -189,7 +189,7 @@ public class TestValues {
   }
 
   public static Dependency applicationDependency(String name, String version) {
-    return Dependency.of(name, version);
+    return Dependency.of(name, version, false);
   }
 
   public static ApplicationDependencyEntity applicationDependencyEntity(Dependency dependency) {
