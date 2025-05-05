@@ -198,6 +198,7 @@ public class TestValues {
     entity.setTenantId(TENANT_ID);
     entity.setParentName(dependency.getName());
     entity.setParentVersion(dependency.getVersion());
+    entity.setOptional(false);
     return entity;
   }
 
