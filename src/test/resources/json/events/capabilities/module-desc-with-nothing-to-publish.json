@@ -1,5 +1,5 @@
 {
-  "id": "foo-module",
+  "id": "foo-module-1.0.0",
   "name": "Foo Service",
   "provides": [
     {

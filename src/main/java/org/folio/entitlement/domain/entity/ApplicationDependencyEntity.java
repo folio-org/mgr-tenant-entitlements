@@ -49,6 +49,9 @@ public class ApplicationDependencyEntity implements Serializable {
   @Column(name = "parent_version")
   private String parentVersion;
 
+  @Column(name = "optional")
+  private Boolean optional;
+
   /**
    * Sets application name and version from application id.
    */

@@ -122,9 +122,10 @@ docker run \
 
 ### Validators environment variables
 
-| Name                                   | Default value | Required | Description                                                                                        |
-|:---------------------------------------|:--------------|:--------:|:---------------------------------------------------------------------------------------------------|
-| VALIDATION_INTERFACE_INTEGRITY_ENABLED | true          |  false   | Configure a behavior of validation. If false, Interface-Integrity validator should not be executed |
+| Name                                   | Default value | Required | Description                                                                                                                                                                                                                                                     |
+|:---------------------------------------|:--------------|:--------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| VALIDATION_INTERFACE_INTEGRITY_ENABLED | true          |  false   | Configure a behavior of validation. If false, Interface-Integrity validator should not be executed                                                                                                                                                              |
+| VALIDATION_INTERFACE_COLLECTOR_MODE    | combined      |  false   | Defines how required / provided interfaces collected from application descriptors for validation. `scoped` means the interfaces collected for each application and its dependencies, `combined` means the interfaces collected from all applications altogether |
 
 
 ### Kafka environment variables

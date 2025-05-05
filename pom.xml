@@ -5,14 +5,14 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.4.4</version>
+    <version>3.4.5</version>
     <relativePath />
   </parent>
 
   <name>mgr-tenant-entitlements</name>
   <groupId>org.folio</groupId>
   <artifactId>mgr-tenant-entitlements</artifactId>
-  <version>3.2.0-SNAPSHOT</version>
+  <version>4.0.0-SNAPSHOT</version>
   <description>Tenant entitlements manager</description>
   <packaging>jar</packaging>
 
@@ -30,14 +30,14 @@
     <lombok.version>1.18.38</lombok.version>
     <cqlparser.version>1.13</cqlparser.version>
     <mapstruct.version>1.6.3</mapstruct.version>
-    <hypersistence-utils-hibernate-63.version>3.9.9</hypersistence-utils-hibernate-63.version>
+    <hypersistence-utils-hibernate-63.version>3.9.10</hypersistence-utils-hibernate-63.version>
     <swagger-annotations.version>2.2.30</swagger-annotations.version>
     <apache-commons-lang3.version>3.17.0</apache-commons-lang3.version>
-    <apache-commons-collections4.version>4.4</apache-commons-collections4.version>
+    <apache-commons-collections4.version>4.5.0</apache-commons-collections4.version>
     <cql2pgjson.version>35.4.0</cql2pgjson.version>
     <spring-cloud-bom.version>2024.0.1</spring-cloud-bom.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
-    <folio-spring-cql.version>9.0.1</folio-spring-cql.version>
+    <folio-spring-cql.version>9.1.0</folio-spring-cql.version>
     <applications-poc-tools.version>3.1.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.1.0</folio-java-checkstyle.version>
     <folio-flow-engine.version>3.1.0-SNAPSHOT</folio-flow-engine.version>
@@ -48,14 +48,14 @@
     </mgr-tenant-entitlements.yaml-file>
 
     <!-- Test dependencies versions -->
-    <testcontainer.version>1.20.6</testcontainer.version>
+    <testcontainer.version>1.21.0</testcontainer.version>
     <awaitility.version>4.3.0</awaitility.version>
     <wiremock.version>2.35.2</wiremock.version>
 
     <!-- Plugins versions -->
-    <maven-checkstyle.version>10.23.0</maven-checkstyle.version>
+    <maven-checkstyle.version>10.23.1</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-    <openapi-generator.version>7.12.0</openapi-generator.version>
+    <openapi-generator.version>7.13.0</openapi-generator.version>
 
     <sonar.exclusions>
       <!--
@@ -542,7 +542,7 @@
               <generateModelDocumentation>true</generateModelDocumentation>
               <importMappings>
                 ErrorResponse=org.folio.common.domain.model.error.ErrorResponse,
-                ApplicationDescriptor=org.folio.entitlement.integration.am.model.ApplicationDescriptor
+                ApplicationDescriptor=org.folio.common.domain.model.ApplicationDescriptor
               </importMappings>
               <schemaMappings>
                 errors=ErrorResponse,
