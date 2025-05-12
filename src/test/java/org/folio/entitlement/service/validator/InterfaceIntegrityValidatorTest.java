@@ -47,9 +47,8 @@ class InterfaceIntegrityValidatorTest {
   void execute_positive() {
     var applicationDescriptors = List.of(TestValues.appDescriptor());
     var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
-    var entitlementReq =  EntitlementRequest.builder().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
-    var flowParameters = Map.of(PARAM_REQUEST, entitlementReq);
-    var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
+    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest());
+    var stageContext = commonStageContext(FLOW_ID, flowParameters, stageParameters);
 
     when(properties.isEnabled()).thenReturn(true);
 
@@ -80,7 +79,8 @@ class InterfaceIntegrityValidatorTest {
     doThrow(exception).when(validatorService).validateDescriptors(applicationDescriptors, TENANT_ID);
 
     var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
-    var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
+    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest());
+    var stageContext = commonStageContext(FLOW_ID, flowParameters, stageParameters);
     assertThatThrownBy(() -> interfaceIntegrityValidator.execute(stageContext))
       .isInstanceOf(RequestValidationException.class)
       .hasMessage("Invalid interface dependency")
