@@ -11,6 +11,7 @@ import static org.apache.commons.lang3.StringUtils.join;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,17 +50,18 @@ public class ApplicationDependencyValidatorService {
 
     var applicationDescriptors = applicationTreeLoader.load(request);
 
-    validateDescriptors(applicationDescriptors);
+    validateDescriptors(applicationDescriptors, tenantId);
   }
 
-  public void validateDescriptors(List<ApplicationDescriptor> descriptors) {
+  public void validateDescriptors(List<ApplicationDescriptor> descriptors, UUID tenantId) {
     if (isEmpty(descriptors)) {
       throw new RequestValidationException("No application descriptors provided", "descriptors", null);
     }
-    log.info("Validating dependencies between application descriptors: appIds = [{}]",
-      () -> descriptors.stream().map(ApplicationDescriptor::getId).collect(Collectors.joining(", ")));
+    log.info("Validating dependencies between application descriptors: appIds = [{}], tenantId = {}",
+      () -> descriptors.stream().map(ApplicationDescriptor::getId).collect(Collectors.joining(", ")),
+      () -> tenantId);
 
-    var missingInterfaces = interfaceCollector.collectRequiredAndProvided(descriptors)
+    var missingInterfaces = interfaceCollector.collectRequiredAndProvided(descriptors, tenantId)
       .flatMap(this::findMissingInterfaces)
       .collect(toSet());
 

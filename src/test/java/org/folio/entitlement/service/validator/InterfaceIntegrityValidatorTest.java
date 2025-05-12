@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_APP_DESCRIPTORS;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
@@ -46,13 +47,15 @@ class InterfaceIntegrityValidatorTest {
   void execute_positive() {
     var applicationDescriptors = List.of(TestValues.appDescriptor());
     var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
+    var entitlementReq =  EntitlementRequest.builder().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
+    var flowParameters = Map.of(PARAM_REQUEST, entitlementReq);
     var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
 
     when(properties.isEnabled()).thenReturn(true);
 
     interfaceIntegrityValidator.execute(stageContext);
 
-    verify(validatorService).validateDescriptors(applicationDescriptors);
+    verify(validatorService).validateDescriptors(applicationDescriptors, TENANT_ID);
   }
 
   @Test
@@ -74,7 +77,7 @@ class InterfaceIntegrityValidatorTest {
     var exception = new RequestValidationException("Invalid interface dependency", "application", APPLICATION_ID);
 
     when(properties.isEnabled()).thenReturn(true);
-    doThrow(exception).when(validatorService).validateDescriptors(applicationDescriptors);
+    doThrow(exception).when(validatorService).validateDescriptors(applicationDescriptors, TENANT_ID);
 
     var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
     var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
