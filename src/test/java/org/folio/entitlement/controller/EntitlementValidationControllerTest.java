@@ -34,17 +34,16 @@ import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @UnitTest
 @Import({ControllerTestConfiguration.class,
   EntitlementValidationController.class,
   EntitlementTypeConverters.FromString.class})
-@MockBean(FlowStageService.class)
-@MockBean(KeycloakAuthClient.class)
+@MockitoBean(types = {FlowStageService.class, KeycloakAuthClient.class})
 @WebMvcTest(EntitlementValidationController.class)
 @EnableKeycloakSecurity
 @TestPropertySource(properties = "application.router.path-prefix=/")
@@ -55,8 +54,8 @@ class EntitlementValidationControllerTest {
 
   @Autowired private MockMvc mockMvc;
   @Mock private JsonWebToken jsonWebToken;
-  @MockBean private JsonWebTokenParser jsonWebTokenParser;
-  @MockBean private EntitlementValidationService validationService;
+  @MockitoBean private JsonWebTokenParser jsonWebTokenParser;
+  @MockitoBean private EntitlementValidationService validationService;
 
   @ParameterizedTest
   @EnumSource(EntitlementType.class)

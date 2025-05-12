@@ -26,9 +26,9 @@ import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @UnitTest
@@ -38,9 +38,9 @@ import org.springframework.test.web.servlet.MockMvc;
 class  FlowControllerTest {
 
   @Autowired private MockMvc mockMvc;
-  @MockBean private FlowService flowService;
-  @MockBean private ApplicationFlowService applicationFlowService;
-  @MockBean private FlowStageService flowStageService;
+  @MockitoBean private FlowService flowService;
+  @MockitoBean private ApplicationFlowService applicationFlowService;
+  @MockitoBean private FlowStageService flowStageService;
 
   @Test
   void findFlows_positive() throws Exception {

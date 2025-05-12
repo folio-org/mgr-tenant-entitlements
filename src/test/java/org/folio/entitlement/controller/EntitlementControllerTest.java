@@ -52,14 +52,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @UnitTest
 @Import({ControllerTestConfiguration.class, EntitlementController.class})
-@MockBean(FlowStageService.class)
+@MockitoBean(types = FlowStageService.class)
 @WebMvcTest(EntitlementController.class)
 @EnableKeycloakSecurity
 @TestPropertySource(properties = "application.router.path-prefix=/")
@@ -70,9 +70,9 @@ class EntitlementControllerTest {
 
   @Autowired private MockMvc mockMvc;
   @Mock private JsonWebToken jsonWebToken;
-  @MockBean private EntitlementService entitlementService;
-  @MockBean private KeycloakAuthClient authClient;
-  @MockBean private JsonWebTokenParser jsonWebTokenParser;
+  @MockitoBean private EntitlementService entitlementService;
+  @MockitoBean private KeycloakAuthClient authClient;
+  @MockitoBean private JsonWebTokenParser jsonWebTokenParser;
 
   @Test
   void create_positive() throws Exception {
