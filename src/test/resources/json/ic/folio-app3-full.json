@@ -1,0 +1,93 @@
+{
+  "id": "folio-app3-1.0.0",
+  "name": "folio-app3",
+  "version": "1.0.0",
+  "modules": [
+    {
+      "id": "folio-module3-1.0.0",
+      "name": "folio-module3",
+      "version": "1.0.0"
+    }
+  ],
+  "uiModules": [
+    {
+      "id": "ui-module3-1.0.0",
+      "name": "ui-module3",
+      "version": "1.0.0"
+    }
+  ],
+  "moduleDescriptors": [
+    {
+      "id": "folio-module3-1.0.0",
+      "name": "Test Folio Module #3",
+      "requires": [
+        {
+          "id": "folio-module2-api",
+          "version": "1.0"
+        }
+      ],
+      "provides": [
+        {
+          "id": "folio-module3-api",
+          "version": "1.0",
+          "handlers": [
+            {
+              "methods": [ "GET" ],
+              "pathPattern": "/folio-module3/events",
+              "permissionsRequired": [ "folio-module3.events.collection.get" ]
+            }
+          ]
+        },
+        {
+          "id": "_tenant",
+          "version": "2.0",
+          "interfaceType": "system",
+          "handlers": [
+            {
+              "methods": [ "POST" ],
+              "pathPattern": "/_/tenant"
+            },
+            {
+              "methods": [ "GET", "DELETE" ],
+              "pathPattern": "/_/tenant/{id}"
+            }
+          ]
+        }
+      ],
+      "permissionSets": [
+        {
+          "permissionName": "folio-module3.events.item.get",
+          "displayName": "Folio Module #3 - Get event by id",
+          "description": "Get folio-module3 event by id"
+        }
+      ]
+    }
+  ],
+  "uiModuleDescriptors": [
+    {
+      "id": "ui-module3-1.0.0",
+      "name": "Test UI Module #3",
+      "permissionSets": [
+        {
+          "permissionName": "ui-module3.events.item.view",
+          "displayName": "ui-module3.events.item.view display name",
+          "description": "ui-module3.events.item.view description",
+          "subPermissions": [ "folio-module3.events.item.get" ],
+          "visible": true
+        }
+      ],
+      "requires": [
+        {
+          "id": "folio-module3-api",
+          "version": "1.0"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "folio-app2",
+      "version": "1.x"
+    }
+  ]
+}
