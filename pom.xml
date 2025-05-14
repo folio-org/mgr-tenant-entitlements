@@ -12,7 +12,7 @@
   <name>mgr-tenant-entitlements</name>
   <groupId>org.folio</groupId>
   <artifactId>mgr-tenant-entitlements</artifactId>
-  <version>3.1.1-SNAPSHOT</version>
+  <version>3.1.1</version>
   <description>Tenant entitlements manager</description>
   <packaging>jar</packaging>
 
@@ -617,7 +617,7 @@
     <url>https://https://github.com/folio-org/mgr-tenant-entitlements</url>
     <connection>scm:git:git://github.com:folio-org/mgr-tenant-entitlements.git</connection>
     <developerConnection>scm:git:git@github.com:folio-org/mgr-tenant-entitlements.git</developerConnection>
-    <tag>v3.1.0</tag>
+    <tag>v3.1.1</tag>
   </scm>
 
   <profiles>
