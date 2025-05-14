@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -22,7 +23,7 @@ public interface ApplicationInterfaceCollector {
    * @param descriptors the list of application descriptors
    * @return a stream of {@link RequiredProvidedInterfaces} containing required and provided interfaces
    */
-  Stream<RequiredProvidedInterfaces> collectRequiredAndProvided(List<ApplicationDescriptor> descriptors);
+  Stream<RequiredProvidedInterfaces> collectRequiredAndProvided(List<ApplicationDescriptor> descriptors, UUID tenantId);
 
   record RequiredProvidedInterfaces(Set<InterfaceItem> required, Map<String, Set<InterfaceItem>> provided) {
 

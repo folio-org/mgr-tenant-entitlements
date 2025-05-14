@@ -155,6 +155,8 @@ application:
       enabled: ${VALIDATION_INTERFACE_INTEGRITY_ENABLED:true}
       interface-collector:
         mode: ${VALIDATION_INTERFACE_COLLECTOR_MODE:combined}
+        required:
+          exclude-entitled: ${VALIDATION_INTERFACE_COLLECTOR_EXCLUDE_ENTITLED_REQUIRED:true}
 
 folio:
   jpa:

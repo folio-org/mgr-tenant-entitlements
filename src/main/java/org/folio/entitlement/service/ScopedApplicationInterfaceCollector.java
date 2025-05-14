@@ -1,11 +1,14 @@
 package org.folio.entitlement.service;
 
 import static java.util.Collections.emptySet;
+import static java.util.function.Predicate.not;
 import static java.util.function.UnaryOperator.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.empty;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
+import static org.folio.common.utils.CollectionUtils.mapItems;
+import static org.folio.common.utils.CollectionUtils.mapItemsToSet;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.service.ApplicationInterfaceCollectorUtils.populateRequiredAndProvidedFromApp;
 
@@ -18,31 +21,43 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
+import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.service.configuration.ApplicationInterfaceCollectorProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
+@RequiredArgsConstructor
 @ConditionalOnProperty(name = "application.validation.interface-integrity.interface-collector.mode",
   havingValue = "scoped", matchIfMissing = true)
 public class ScopedApplicationInterfaceCollector implements ApplicationInterfaceCollector {
 
+  private final EntitlementCrudService entitlementCrudService;
+  private final ApplicationInterfaceCollectorProperties collectorProperties;
+
   @Override
-  public Stream<RequiredProvidedInterfaces> collectRequiredAndProvided(List<ApplicationDescriptor> descriptors) {
+  public Stream<RequiredProvidedInterfaces> collectRequiredAndProvided(List<ApplicationDescriptor> descriptors,
+    UUID tenantId) {
     if (isEmpty(descriptors)) {
       return empty();
     }
 
     log.debug("Reading required/provided interfaces from the descriptors [scoped mode]...");
-
+    var entitledApplicationIds = getEntitledApplicationIds(descriptors, tenantId);
     var dependencyResolver = new ApplicationDependencyResolver(descriptors);
 
     return toStream(descriptors)
+      // skip application if it's entitled and required interfaces are excluded
+      .filter(not(excludeEntitledRequired(entitledApplicationIds)))
       .map(descriptor -> combineApplicationWithDependencies(descriptor, dependencyResolver))
-      .map(this::populateRequiredAndProvided)
+      .map(this::populateInterfaces)
       .peek(reqProv ->
         log.debug("Interface summary: required = {}, provided = [{}]", reqProv::required,
           () -> reqProv.provided().values().stream()
@@ -51,14 +66,27 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
             .collect(joining(", "))));
   }
 
-  private RequiredProvidedInterfaces populateRequiredAndProvided(ApplicationWithDependencies appWithDependencies) {
-    var appRequiredProvided = populateRequiredAndProvidedFromApp(appWithDependencies.application());
+  private Set<String> getEntitledApplicationIds(List<ApplicationDescriptor> descriptors, UUID tenantId) {
+    var entitlements = entitlementCrudService.findByApplicationIds(tenantId,
+      mapItems(descriptors, ApplicationDescriptor::getId));
+    return mapItemsToSet(entitlements, Entitlement::getApplicationId);
+  }
 
-    var depProvided = toStream(appWithDependencies.dependencies())
+  private Predicate<ApplicationDescriptor> excludeEntitledRequired(Set<String> entitledApplicationIds) {
+    return descriptor -> collectorProperties.getRequired().isExcludeEntitled()
+      && entitledApplicationIds.contains(descriptor.getId());
+  }
+
+  private RequiredProvidedInterfaces populateInterfaces(ApplicationWithDependencies appWithDependencies) {
+    var application = appWithDependencies.application();
+
+    var appInterfaces = populateRequiredAndProvidedFromApp(application);
+
+    var depInterfaces = toStream(appWithDependencies.dependencies())
       .map(ApplicationInterfaceCollectorUtils::populateProvidedFromApp)
       .reduce(RequiredProvidedInterfaces.empty(), RequiredProvidedInterfaces::merge);
 
-    return appRequiredProvided.merge(depProvided);
+    return appInterfaces.merge(depInterfaces);
   }
 
   private ApplicationWithDependencies combineApplicationWithDependencies(ApplicationDescriptor application,
