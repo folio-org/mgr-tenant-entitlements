@@ -1,4 +1,5 @@
 ## Version `4.0.0` (TBD)
+* Not able to entitle application due to dependency issue (MGRENTITLE-118)
 * mgr-tenant-entitlements does not check the cross-application module dependencies as expected (MGRENTITLE-113)
 * Introduce optional application dependencies (MGRAPPS-57)
 ---

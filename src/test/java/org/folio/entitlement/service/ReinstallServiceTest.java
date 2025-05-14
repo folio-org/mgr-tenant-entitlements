@@ -70,14 +70,18 @@ class ReinstallServiceTest {
     assertThat(result.getEntitlements()).hasSize(4);
     assertThat(result.getErrors()).hasSize(4);
     assertThat(result.getEntitlements()).containsAll(List.of("m1", "m4", "m1_2", "m4_2"));
-    assertThat(result.getErrors().get(0)).startsWith(
-      "Error re-installing module m2 - RuntimeException Test Exception.\njava.lang.RuntimeException: Test Exception");
-    assertThat(result.getErrors().get(1)).startsWith(
-      "Error re-installing module m3 - RuntimeException Test Exception.\njava.lang.RuntimeException: Test Exception");
-    assertThat(result.getErrors().get(2)).startsWith(
-      "Error re-installing module m2_2 - RuntimeException Test Exception.\njava.lang.RuntimeException: Test Exception");
-    assertThat(result.getErrors().get(3)).startsWith(
-      "Error re-installing module m3_2 - RuntimeException Test Exception.\njava.lang.RuntimeException: Test Exception");
+    assertThat(result.getErrors().get(0))
+      .startsWith("Error re-installing module m2 - RuntimeException Test Exception.")
+      .contains("java.lang.RuntimeException: Test Exception");
+    assertThat(result.getErrors().get(1))
+      .startsWith("Error re-installing module m3 - RuntimeException Test Exception.")
+      .contains("java.lang.RuntimeException: Test Exception");
+    assertThat(result.getErrors().get(2))
+      .startsWith("Error re-installing module m2_2 - RuntimeException Test Exception.")
+      .contains("java.lang.RuntimeException: Test Exception");
+    assertThat(result.getErrors().get(3))
+      .startsWith("Error re-installing module m3_2 - RuntimeException Test Exception.")
+      .contains("java.lang.RuntimeException: Test Exception");
   }
 
   @Test
@@ -98,10 +102,12 @@ class ReinstallServiceTest {
     assertThat(result.getEntitlements()).hasSize(2);
     assertThat(result.getErrors()).hasSize(2);
     assertThat(result.getEntitlements()).containsAll(List.of("m1", "m4"));
-    assertThat(result.getErrors().get(0)).startsWith(
-      "Error re-installing module m2 - RuntimeException Test Exception.\njava.lang.RuntimeException: Test Exception");
-    assertThat(result.getErrors().get(1)).startsWith(
-      "Error re-installing module m3 - RuntimeException Test Exception.\njava.lang.RuntimeException: Test Exception");
+    assertThat(result.getErrors().get(0))
+      .startsWith("Error re-installing module m2 - RuntimeException Test Exception.")
+      .contains("java.lang.RuntimeException: Test Exception");
+    assertThat(result.getErrors().get(1))
+      .startsWith("Error re-installing module m3 - RuntimeException Test Exception.")
+      .contains("java.lang.RuntimeException: Test Exception");
   }
 
   private ApplicationDescriptor mockModuleData(String appId, List<String> modules) {

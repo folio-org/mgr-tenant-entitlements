@@ -58,9 +58,9 @@ import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -79,8 +79,8 @@ class ApiExceptionHandlerTest {
   private final FlowEngine flowEngine = singleThreadFlowEngine("api-exception-handler-fe", false);
 
   @Autowired private MockMvc mockMvc;
-  @MockBean private TestService testService;
-  @MockBean private FlowStageService flowStageService;
+  @MockitoBean private TestService testService;
+  @MockitoBean private FlowStageService flowStageService;
 
   @Test
   void handleUnsupportedOperationException_positive() throws Exception {
