@@ -158,8 +158,10 @@ class UpgradeRequestValidatorTest {
 
   @Test
   void execute_negative_invalidApplicationVersion() {
-    var applicationName = "app-foo-1.2";
+    var applicationName = "app-foo";
     var entitlementRequest = entitlementRequest(List.of(applicationName));
+    var entitlements = List.of(entitlement("app-fo-1.2.3"));
+    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-fo"))).thenReturn(entitlements);
 
     var flowParams = Map.of(PARAM_REQUEST, entitlementRequest);
     var stageContext = commonStageContext(FLOW_ID, flowParams, emptyMap());
@@ -168,17 +170,17 @@ class UpgradeRequestValidatorTest {
       .hasMessage("Invalid applications provided for upgrade")
       .extracting(error -> ((RequestValidationException) error).getErrorParameters())
       .satisfies(parameters -> assertThat(parameters).containsExactly(
-        new Parameter().key("details").value("Invalid semantic version: source = " + applicationName)));
+        new Parameter().key(applicationName).value("Application has invalid version")));
 
     assertThat(stageContext.getEntitledApplicationIds()).isNull();
   }
 
   @Test
   void execute_negative_invalidRequestApplicationVersion() {
-    var applicationName = "app-foo-1.2.3";
+    var applicationName = "app-foo";
     var entitlementRequest = entitlementRequest(List.of(applicationName));
-    var entitlements = List.of(entitlement("app-foo"));
-    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-foo"))).thenReturn(entitlements);
+    var entitlements = List.of(entitlement(applicationName));
+    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-fo"))).thenReturn(entitlements);
 
     var flowParams = Map.of(PARAM_REQUEST, entitlementRequest);
     var stageContext = commonStageContext(FLOW_ID, flowParams, emptyMap());
@@ -187,7 +189,7 @@ class UpgradeRequestValidatorTest {
       .hasMessage("Invalid applications provided for upgrade")
       .extracting(error -> ((RequestValidationException) error).getErrorParameters())
       .satisfies(parameters -> assertThat(parameters).containsExactly(
-        new Parameter().key("details").value("Invalid semantic version: source = app-foo")));
+        new Parameter().key(applicationName).value("Entitled application has invalid version")));
 
     assertThat(stageContext.getEntitledApplicationIds()).isNull();
   }
@@ -288,28 +290,30 @@ class UpgradeRequestValidatorTest {
   void validate_negative_invalidApplicationVersion() {
     var applicationName = "app-foo";
     var entitlementRequest = entitlementRequest(List.of(applicationName));
+    var entitlements = List.of(entitlement("app-fo-1.2.3"));
+    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-fo"))).thenReturn(entitlements);
 
     assertThatThrownBy(() -> upgradeRequestValidator.validate(entitlementRequest))
       .isInstanceOf(RequestValidationException.class)
       .hasMessage("Invalid applications provided for upgrade")
       .extracting(error -> ((RequestValidationException) error).getErrorParameters())
       .satisfies(parameters -> assertThat(parameters).containsExactly(
-        new Parameter().key("details").value("Invalid semantic version: source = " + applicationName)));
+        new Parameter().key(applicationName).value("Application has invalid version")));
   }
 
   @Test
   void validate_negative_invalidRequestApplicationVersion() {
-    var applicationName = "app-foo-1.2.3";
+    var applicationName = "app-foo";
     var entitlementRequest = entitlementRequest(List.of(applicationName));
-    var entitlements = List.of(entitlement("app-foo"));
-    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-foo"))).thenReturn(entitlements);
+    var entitlements = List.of(entitlement(applicationName));
+    when(entitlementService.findByApplicationNames(TENANT_ID, List.of("app-fo"))).thenReturn(entitlements);
 
     assertThatThrownBy(() -> upgradeRequestValidator.validate(entitlementRequest))
       .isInstanceOf(RequestValidationException.class)
       .hasMessage("Invalid applications provided for upgrade")
       .extracting(error -> ((RequestValidationException) error).getErrorParameters())
       .satisfies(parameters -> assertThat(parameters).containsExactly(
-        new Parameter().key("details").value("Invalid semantic version: source = app-foo")));
+        new Parameter().key(applicationName).value("Entitled application has invalid version")));
   }
 
   @ParameterizedTest

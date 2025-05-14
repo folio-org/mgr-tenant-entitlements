@@ -50,27 +50,14 @@ public class UpgradeRequestValidator extends DatabaseLoggingStage<CommonStageCon
   private List<Entitlement> loadEntitlementsByApplicationNames(EntitlementRequest request) {
     var tenantId = request.getTenantId();
     var applicationIds = request.getApplications();
-
-    List<String> applicationNames;
-    try {
-      applicationNames = getNames(applicationIds);
-    } catch (IllegalArgumentException e) {
-      throw new RequestValidationException("Invalid applications provided for upgrade", "details", e.getMessage());
-    }
-
+    var applicationNames = getNames(applicationIds);
     return entitlementService.findByApplicationNames(tenantId, applicationNames);
   }
 
   private static void validateRequest(EntitlementRequest request, List<Entitlement> tenantEntitlements) {
     var applicationIds = request.getApplications();
     var entitlementsByAppNames = tenantEntitlements.stream()
-      .collect(toMap(entitlement -> {
-        try {
-          return SemverUtils.getName(entitlement.getApplicationId());
-        } catch (Exception e) {
-          throw new RequestValidationException("Invalid applications provided for upgrade", "details", e.getMessage());
-        }
-      }, identity(), (o1, o2) -> o1));
+      .collect(toMap(entitlement -> SemverUtils.getName(entitlement.getApplicationId()), identity(), (o1, o2) -> o1));
 
     var validationErrors = applicationIds.stream()
       .map(applicationId -> validateApplicationId(applicationId, entitlementsByAppNames))
@@ -91,11 +78,11 @@ public class UpgradeRequestValidator extends DatabaseLoggingStage<CommonStageCon
 
     var entitledApplicationId = entitlementByName.getApplicationId();
     var entitledVersion = Semver.parse(SemverUtils.getVersion(entitledApplicationId));
+    var requestVersion = Semver.parse(SemverUtils.getVersion(applicationId));
     if (entitledVersion == null) {
       return Optional.of(new Parameter().key(entitledApplicationId).value("Entitled application has invalid version"));
     }
 
-    var requestVersion = Semver.parse(SemverUtils.getVersion(applicationId));
     if (requestVersion == null) {
       return Optional.of(new Parameter().key(applicationId).value("Application has invalid version"));
     }
