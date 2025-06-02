@@ -46,7 +46,7 @@ application:
   router:
     path-prefix: ${ROUTER_PATH_PREFIX:}
   security:
-    enabled: ${SECURITY_ENABLED:false}
+    enabled: ${SECURITY_ENABLED:true}
   kong:
     enabled: ${KONG_INTEGRATION_ENABLED:true}
     url: ${KONG_ADMIN_URL:${kong.url:}}
@@ -80,7 +80,7 @@ application:
       trust-store-password: ${MT_CLIENT_TLS_TRUSTSTORE_PASSWORD:}
       trust-store-type: ${MT_CLIENT_TLS_TRUSTSTORE_TYPE:}
   keycloak:
-    enabled: ${KC_INTEGRATION_ENABLED:false}
+    enabled: ${KC_INTEGRATION_ENABLED:true}
     url: ${KC_URL:http://keycloak:8080}
     login:
       client-name-suffix: ${KC_LOGIN_CLIENT_SUFFIX:-login-application}
