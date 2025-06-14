@@ -428,7 +428,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(jsonPath("$.errors[0].message", is("size must be between 1 and 25")))
+      .andExpect(jsonPath("$.errors[0].message", is("size must be between 1 and 50")))
       .andExpect(jsonPath("$.errors[0].type", is("MethodArgumentNotValidException")))
       .andExpect(jsonPath("$.errors[0].code", is("validation_error")));
   }
@@ -462,7 +462,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         .content(asJsonString(new EntitlementRequestBody().tenantId(TENANT_ID))))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(jsonPath("$.errors[0].message", is("size must be between 1 and 25")))
+      .andExpect(jsonPath("$.errors[0].message", is("size must be between 1 and 50")))
       .andExpect(jsonPath("$.errors[0].type", is("MethodArgumentNotValidException")))
       .andExpect(jsonPath("$.errors[0].code", is("validation_error")));
   }
@@ -600,7 +600,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(jsonPath("$.errors[0].message", is("size must be between 1 and 25")))
+      .andExpect(jsonPath("$.errors[0].message", is("size must be between 1 and 50")))
       .andExpect(jsonPath("$.errors[0].type", is("MethodArgumentNotValidException")))
       .andExpect(jsonPath("$.errors[0].code", is("validation_error")));
   }
