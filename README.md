@@ -11,8 +11,30 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 * [Compiling](#compiling)
 * [Running It](#running-it)
 * [Environment Variables](#environment-variables)
+  * [Validators environment variables](#validators-environment-variables)
+  * [Kafka environment variables](#kafka-environment-variables)
+  * [SSL Configuration environment variables](#ssl-configuration-environment-variables)
+  * [Secure storage environment variables](#secure-storage-environment-variables)
+    * [AWS-SSM](#aws-ssm)
+    * [Vault](#vault)
+    * [Folio Secure Store Proxy (FSSP)](#folio-secure-store-proxy-fssp)
+  * [Keycloak Integration](#keycloak-integration)
+    * [Import Keycloak data on startup](#import-keycloak-data-on-startup)
+    * [Keycloak Security](#keycloak-security)
+    * [Keycloak specific environment variables](#keycloak-specific-environment-variables)
+  * [Retry configuration](#retry-configuration)
+  * [Kong Service Registration](#kong-service-registration)
+  * [Kong Route Registration](#kong-route-registration)
 * [Kafka Integration](#kafka-integration)
+  * [Events upon application being enabled/disabled](#events-upon-application-being-enableddisabled)
+    * [Naming convention](#naming-convention)
+    * [Event structure](#event-structure)
 * [FAQ](#faq)
+  * [How ignoreErrors affects tenant entitlement?](#how-ignoreerrors-affects-tenant-entitlement)
+  * [How purgeOnRollback affects tenant entitlement process](#how-purgeonrollback-affects-tenant-entitlement-process)
+  * [How purge flag is working for application uninstalling?](#how-purge-flag-is-working-for-application-uninstalling)
+  * [Is rollbacks are supported for the application uninstalling/upgrades?](#is-rollbacks-are-supported-for-the-application-uninstallingupgrades)
+  * [How async flag works?](#how-async-flag-works)
 
 ## Introduction
 
@@ -99,7 +121,7 @@ docker run \
 | KONG_TLS_TRUSTSTORE_TYPE               | -                                   |  false   | Truststore file type for TLS connection to Kong.                                                                                                                                                           |
 | OKAPI_INTEGRATION_ENABLED              | false                               |  false   | Defines if okapi integration is enabled or disabled.<br/>If it set to `false` - it will exclude OkapiModuleInstaller stage from flow and okapi related beans from spring context.                          |
 | ENV                                    | folio                               |  false   | The logical name of the deployment (kafka topic prefix), must be unique across all environments using the same shared Kafka/Elasticsearch clusters, `a-z (any case)`, `0-9`, `-`, `_` symbols only allowed |
-| SECURITY_ENABLED                       | false                               |  false   | Allows to enable/disable security. If true and KC_INTEGRATION_ENABLED is also true - the Keycloak will be used as a security provider.                                                               |
+| SECURITY_ENABLED                       | false                               |  false   | Allows to enable/disable security. If true and KC_INTEGRATION_ENABLED is also true - the Keycloak will be used as a security provider.                                                                     |
 | MT_CLIENT_TLS_ENABLED                  | false                               |  false   | Allows to enable/disable TLS connection to mgr-tenants module.                                                                                                                                             |
 | MT_CLIENT_TLS_TRUSTSTORE_PATH          | -                                   |  false   | Truststore file path for TLS connection to mgr-tenants module.                                                                                                                                             |
 | MT_CLIENT_TLS_TRUSTSTORE_PASSWORD      | -                                   |  false   | Truststore password for TLS connection to mgr-tenants module.                                                                                                                                              |
@@ -111,7 +133,7 @@ docker run \
 | FOLIO_CLIENT_TLS_TRUSTSTORE_PASSWORD   | -                                   |  false   | Truststore password for TLS connection to Folio Modules.                                                                                                                                                   |
 | FOLIO_CLIENT_TLS_TRUSTSTORE_TYPE       | -                                   |  false   | Truststore file type for TLS connection to Folio Modules.                                                                                                                                                  |
 | MOD_AUTHTOKEN_URL                      | -                                   |   true   | Mod-authtoken URL. Required if OKAPI_INTEGRATION_ENABLED is true and SECURITY_ENABLED  is true and KC_INTEGRATION_ENABLED is false.                                                                        |
-| SECRET_STORE_TYPE                      | -                                   |   true   | Secure storage type. Supported values: `EPHEMERAL`, `AWS_SSM`, `VAULT`                                                                                                                                     |
+| SECRET_STORE_TYPE                      | -                                   |   true   | Secure storage type. Supported values: `EPHEMERAL`, `AWS_SSM`, `VAULT`, `FSSP`                                                                                                                             |
 | MAX_HTTP_REQUEST_HEADER_SIZE           | 200KB                               |  false   | Maximum size of the HTTP request header.                                                                                                                                                                   |
 | FLOW_ENGINE_EXECUTION_TIMEOUT          | 30m                                 |  false   | Maximum execution timeout for entitlement execution in sync mode.                                                                                                                                          |
 | FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE | 25                                  |  false   | Max cache size for the latest flow executions                                                                                                                                                              |
@@ -188,6 +210,19 @@ Required when `SECRET_STORE_TYPE=VAULT`
 | SECRET_STORE_VAULT_KEYSTORE_PASSWORD    | -             | the password used to access the JKS keystore (optional)                             |
 | SECRET_STORE_VAULT_KEYSTORE_FILE_PATH   | -             | the path to a JKS keystore file containing a client cert and private key            |
 | SECRET_STORE_VAULT_TRUSTSTORE_FILE_PATH | -             | the path to a JKS truststore file containing Vault server certs that can be trusted |
+
+#### Folio Secure Store Proxy (FSSP)
+
+Required when `SECRET_STORE_TYPE=FSSP`
+
+| Name                                   | Default value         | Description                                          |
+|:---------------------------------------|:----------------------|:-----------------------------------------------------|
+| SECRET_STORE_FSSP_ADDRESS              | -                     | The address (URL) of the FSSP service.               |
+| SECRET_STORE_FSSP_SECRET_PATH          | secure-store/entries  | The path in FSSP where secrets are stored/retrieved. |
+| SECRET_STORE_FSSP_ENABLE_SSL           | false                 | Whether to use SSL when connecting to FSSP.          |
+| SECRET_STORE_FSSP_TRUSTSTORE_PATH      | -                     | Path to the truststore file for SSL connections.     |
+| SECRET_STORE_FSSP_TRUSTSTORE_FILE_TYPE | -                     | The type of the truststore file (e.g., JKS, PKCS12). |
+| SECRET_STORE_FSSP_TRUSTSTORE_PASSWORD  | -                     | The password for the truststore file.                |
 
 ### Keycloak Integration
 
