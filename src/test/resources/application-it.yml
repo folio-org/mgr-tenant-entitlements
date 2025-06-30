@@ -9,6 +9,8 @@ spring:
       group-id: testing
 
 application:
+  security:
+    enabled: false
   flow-engine:
     print-flow-result: true
   kong:
