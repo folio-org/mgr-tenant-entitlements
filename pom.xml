@@ -48,14 +48,14 @@
     </mgr-tenant-entitlements.yaml-file>
 
     <!-- Test dependencies versions -->
-    <testcontainer.version>1.21.2</testcontainer.version>
+    <testcontainer.version>1.21.3</testcontainer.version>
     <awaitility.version>4.3.0</awaitility.version>
     <wiremock.version>2.35.2</wiremock.version>
 
     <!-- Plugins versions -->
-    <maven-checkstyle.version>10.25.1</maven-checkstyle.version>
+    <maven-checkstyle.version>10.26.1</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-    <openapi-generator.version>7.13.0</openapi-generator.version>
+    <openapi-generator.version>7.14.0</openapi-generator.version>
 
     <sonar.exclusions>
       <!--
