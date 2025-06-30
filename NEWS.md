@@ -8,6 +8,7 @@
 ## Version `v3.1.0` (09.04.2025)
 * Reinstall API endpoints (MGRENTITLE-103)fix
 * Permission mappings for mod-patron-blocks (MGRENTITLE-107)
+* Enable security by default (MGRENTITLE-104)
 
 ---
 
