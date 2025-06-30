@@ -26,7 +26,8 @@ public class InterfaceIntegrityValidator extends DatabaseLoggingStage<CommonStag
       return;
     }
     var applicationDescriptors = context.getApplicationDescriptors();
-    dependencyValidatorService.validateDescriptors(applicationDescriptors);
+    var tenantId = context.getEntitlementRequest().getTenantId();
+    dependencyValidatorService.validateDescriptors(applicationDescriptors, tenantId);
   }
 
   @Override

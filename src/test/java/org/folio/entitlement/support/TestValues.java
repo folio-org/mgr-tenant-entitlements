@@ -36,6 +36,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.Dependency;
+import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
@@ -49,6 +50,7 @@ import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.domain.model.InterfaceItem;
 import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.domain.model.ModulesSequence;
@@ -186,6 +188,10 @@ public class TestValues {
 
   public static ResultList<ModuleDiscovery> moduleDiscoveries() {
     return asSinglePage(moduleDiscovery());
+  }
+
+  public static InterfaceItem itfItem(String name, String version, String appId) {
+    return new InterfaceItem(new InterfaceReference().id(name).version(version), appId);
   }
 
   public static Dependency applicationDependency(String name, String version) {
