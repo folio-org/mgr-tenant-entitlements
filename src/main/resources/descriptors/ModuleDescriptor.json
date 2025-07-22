@@ -254,7 +254,7 @@
         "mgr-tenant-entitlements.entitlements.applications.collection.get",
         "mgr-tenant-entitlements.entitlements.modules.item.get",
         "mgr-tenant-entitlements.entitlements.validate.post",
-        "mgr-tenant-entitlements.app-reinstallation.manage.all"
+        "mgr-tenant-entitlements.reinstallation.all"
       ]
     },
     {
