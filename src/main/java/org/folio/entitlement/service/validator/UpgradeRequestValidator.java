@@ -5,6 +5,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.SemverUtils.getNames;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.UPGRADE_REQUEST;
 
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,7 @@ import org.semver4j.Semver;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-@Order(2)
+@Order(UPGRADE_REQUEST)
 @Component
 @RequiredArgsConstructor
 public class UpgradeRequestValidator extends DatabaseLoggingStage<CommonStageContext>

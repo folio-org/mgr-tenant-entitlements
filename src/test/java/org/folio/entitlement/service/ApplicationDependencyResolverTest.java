@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.folio.common.domain.model.ApplicationDescriptor;
-import org.folio.entitlement.service.ScopedApplicationInterfaceCollector.ApplicationDependencyResolver;
+import org.folio.entitlement.service.validator.ScopedApplicationInterfaceCollector.ApplicationDependencyResolver;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

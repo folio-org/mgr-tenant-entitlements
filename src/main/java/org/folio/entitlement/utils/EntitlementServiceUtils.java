@@ -8,11 +8,13 @@ import static java.util.stream.Collectors.joining;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.common.utils.Collectors.toLinkedHashMap;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.collections4.CollectionUtils;
@@ -98,6 +100,17 @@ public class EntitlementServiceUtils {
     }
 
     return unmodifiableMap(resultMap);
+  }
+
+  /** Filters a collection based on a predicate and returns a list of elements that match the predicate.
+   *
+   * @param source - collection to filter
+   * @param predicate - predicate to apply for filtering
+   * @param <T> - type of elements in the collection
+   * @return - list of elements that match the predicate
+   */
+  public static <T> List<T> filter(Collection<T> source, Predicate<T> predicate) {
+    return toStream(source).filter(predicate).toList();
   }
 
   /**

@@ -1,10 +1,10 @@
-package org.folio.entitlement.service;
+package org.folio.entitlement.service.validator;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toSet;
 import static org.folio.common.utils.CollectionUtils.mapItemsToSet;
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.service.ApplicationInterfaceCollector.RequiredProvidedInterfaces.empty;
+import static org.folio.entitlement.service.validator.ApplicationInterfaceCollector.RequiredProvidedInterfaces.empty;
 
 import java.util.Objects;
 import java.util.function.BiFunction;
@@ -17,7 +17,7 @@ import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.InterfaceItem;
-import org.folio.entitlement.service.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
+import org.folio.entitlement.service.validator.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
 
 @Log4j2
 @UtilityClass

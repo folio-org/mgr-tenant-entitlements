@@ -22,7 +22,6 @@ import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
-import org.folio.entitlement.service.ApplicationDependencyValidatorService;
 import org.folio.entitlement.service.validator.configuration.InterfaceIntegrityValidatorProperties;
 import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;

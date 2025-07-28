@@ -1,4 +1,4 @@
-package org.folio.entitlement.service;
+package org.folio.entitlement.service.validator;
 
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
@@ -16,7 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
-import org.folio.entitlement.service.configuration.ApplicationInterfaceCollectorProperties;
+import org.folio.entitlement.service.EntitlementCrudService;
+import org.folio.entitlement.service.validator.configuration.ApplicationInterfaceCollectorProperties;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 

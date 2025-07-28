@@ -1,4 +1,4 @@
-package org.folio.entitlement.service.configuration;
+package org.folio.entitlement.service.validator.configuration;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

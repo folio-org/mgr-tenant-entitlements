@@ -13,8 +13,10 @@ public class CommonStageContext extends IdentifiableStageContext {
 
   public static final String PARAM_REQUEST = "entitlementRequest";
   public static final String PARAM_APP_DESCRIPTORS = "applicationDescriptors";
-  public static final String PARAM_QUEUED_APPLICATION_FLOWS = "queuedApplicationFlows";
-  public static final String PARAM_ENTITLED_APPLICATION_IDS = "entitledApplicationIds";
+  public static final String PARAM_QUEUED_APP_FLOWS = "queuedApplicationFlows";
+  public static final String PARAM_ENTITLED_APP_IDS = "entitledApplicationIds";
+  public static final String PARAM_ENTITLED_APP_DESCRIPTORS = "entitledApplicationDescriptors";
+  public static final String PARAM_APP_AND_DEPENDENCY_DESCRIPTORS = "applicationAndDependencyDescriptors";
   public static final String PARAM_TENANT_NAME = "tenantName";
 
   /**
@@ -44,7 +46,7 @@ public class CommonStageContext extends IdentifiableStageContext {
   }
 
   /**
-   * Returns all application descriptors in request and all dependent application descriptors.
+   * Returns all application descriptors in request.
    *
    * @return list with loaded application descriptors
    */
@@ -58,7 +60,18 @@ public class CommonStageContext extends IdentifiableStageContext {
    * @return list with loaded entitled application descriptors
    */
   public List<ApplicationDescriptor> getEntitledApplicationDescriptors() {
-    return context.get(PARAM_ENTITLED_APPLICATION_IDS);
+    return context.get(PARAM_ENTITLED_APP_DESCRIPTORS);
+  }
+
+  /**
+   * Returns all application descriptors in request and all dependent application descriptors.
+   *
+   * <p>Application descriptors are loaded in {@link ApplicationDescriptorTreeLoader} stage</p>
+   *
+   * @return list with parent application descriptors and their dependencies
+   */
+  public List<ApplicationDescriptor> getApplicationAndDependencyDescriptors() {
+    return context.get(PARAM_APP_AND_DEPENDENCY_DESCRIPTORS);
   }
 
   /**
@@ -68,7 +81,7 @@ public class CommonStageContext extends IdentifiableStageContext {
    * @return application-id to queued application flow id map
    */
   public Map<String, UUID> getQueuedApplicationFlows() {
-    return context.get(PARAM_QUEUED_APPLICATION_FLOWS);
+    return context.get(PARAM_QUEUED_APP_FLOWS);
   }
 
   /**
@@ -77,16 +90,18 @@ public class CommonStageContext extends IdentifiableStageContext {
    * @return {@link List} with entitled application ids as {@link String}
    */
   public List<String> getEntitledApplicationIds() {
-    return context.get(PARAM_ENTITLED_APPLICATION_IDS);
+    return context.get(PARAM_ENTITLED_APP_IDS);
   }
 
   /**
    * Adds loaded tenant name to {@link StageContext}.
    *
    * @param tenantName - loaded tenant name from {@code mgr-tenants}
+   * @return {@link CommonStageContext} with tenant name set
    */
-  public void withTenantName(String tenantName) {
+  public CommonStageContext withTenantName(String tenantName) {
     context.put(PARAM_TENANT_NAME, tenantName);
+    return this;
   }
 
   /**
@@ -94,9 +109,12 @@ public class CommonStageContext extends IdentifiableStageContext {
    *
    * <p>Application descriptors are loaded
    * in {@link ApplicationDescriptorTreeLoader} stage</p>
+   *
+   * @return {@link CommonStageContext} with application descriptors set
    */
-  public void withApplicationDescriptors(List<ApplicationDescriptor> applicationDescriptors) {
+  public CommonStageContext withApplicationDescriptors(List<ApplicationDescriptor> applicationDescriptors) {
     context.put(PARAM_APP_DESCRIPTORS, applicationDescriptors);
+    return this;
   }
 
   /**
@@ -104,27 +122,47 @@ public class CommonStageContext extends IdentifiableStageContext {
    *
    * <p>Application descriptors are loaded
    * in {@link ApplicationDescriptorTreeLoader} stage</p>
+   *
+   * @return {@link CommonStageContext} with application descriptors set
    */
-  public void withEntitledApplicationDescriptors(List<ApplicationDescriptor> applicationDescriptors) {
-    context.put(PARAM_ENTITLED_APPLICATION_IDS, applicationDescriptors);
+  public CommonStageContext withEntitledApplicationDescriptors(List<ApplicationDescriptor> applicationDescriptors) {
+    context.put(PARAM_ENTITLED_APP_DESCRIPTORS, applicationDescriptors);
+    return this;
   }
 
   /**
    * Sets queued application flow ids per application id as {@link Map}.
    *
    * @param queuedApplicationFlows - queued application flow ids map
+   * @return {@link CommonStageContext} with queued application flows set
    */
-  public void withQueuedApplicationFlows(Map<String, UUID> queuedApplicationFlows) {
-    context.put(PARAM_QUEUED_APPLICATION_FLOWS, queuedApplicationFlows);
+  public CommonStageContext withQueuedApplicationFlows(Map<String, UUID> queuedApplicationFlows) {
+    context.put(PARAM_QUEUED_APP_FLOWS, queuedApplicationFlows);
+    return this;
   }
 
   /**
    * Sets entitled application ids for upgrade flow.
    *
    * @param entitledApplicationIds - queued application flow ids map
+   * @return {@link CommonStageContext} with entitled application ids set
    */
-  public void withEntitledApplicationIds(List<String> entitledApplicationIds) {
-    context.put(PARAM_ENTITLED_APPLICATION_IDS, entitledApplicationIds);
+  public CommonStageContext withEntitledApplicationIds(List<String> entitledApplicationIds) {
+    context.put(PARAM_ENTITLED_APP_IDS, entitledApplicationIds);
+    return this;
+  }
+
+  /**
+   * Sets all application descriptors in request and all dependent application descriptors.
+   *
+   * <p>Application descriptors are loaded in {@link ApplicationDescriptorTreeLoader} stage</p>
+   *
+   * @param descriptors - list of parent application descriptors
+   * @return {@link CommonStageContext} with parent application descriptors set
+   */
+  public CommonStageContext withApplicationAndDependencyDescriptors(List<ApplicationDescriptor> descriptors) {
+    context.put(PARAM_APP_AND_DEPENDENCY_DESCRIPTORS, descriptors);
+    return this;
   }
 
   /**
@@ -132,7 +170,10 @@ public class CommonStageContext extends IdentifiableStageContext {
    */
   public void clearContext() {
     context.remove(PARAM_APP_DESCRIPTORS);
-    context.remove(PARAM_QUEUED_APPLICATION_FLOWS);
-    context.remove(PARAM_ENTITLED_APPLICATION_IDS);
+    context.remove(PARAM_QUEUED_APP_FLOWS);
+    context.remove(PARAM_ENTITLED_APP_IDS);
+    context.remove(PARAM_APP_AND_DEPENDENCY_DESCRIPTORS);
+    context.remove(PARAM_ENTITLED_APP_DESCRIPTORS);
   }
+
 }
