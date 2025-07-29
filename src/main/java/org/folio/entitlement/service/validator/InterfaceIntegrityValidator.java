@@ -24,15 +24,15 @@ import org.folio.entitlement.domain.model.InterfaceItem;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.service.validator.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
-import org.folio.entitlement.service.stage.DatabaseLoggingStage;
-import org.folio.entitlement.service.validator.configuration.InterfaceIntegrityValidatorProperties;
 import org.springframework.core.annotation.Order;
 
 @Order(INTERFACE_INTEGRITY)
 @Log4j2
 @RequiredArgsConstructor
-public class InterfaceIntegrityValidator extends DatabaseLoggingStage<CommonStageContext>
-  implements EntitlementRequestValidator {
+public class InterfaceIntegrityValidator extends StageRequestValidator {
+
+  public static final StageRequestValidator NO_OP =
+    new StageRequestValidator.NoOp(InterfaceIntegrityValidator.class.getSimpleName());
 
   /**
    * The type of entitlement request this validator is responsible for.
@@ -40,14 +40,9 @@ public class InterfaceIntegrityValidator extends DatabaseLoggingStage<CommonStag
   private final EntitlementType entitlementType;
   private final ApplicationInterfaceCollector interfaceCollector;
   private final ApplicationDescriptorProvider applicationDescriptorProvider;
-  private final InterfaceIntegrityValidatorProperties properties;
 
   @Override
   public void execute(CommonStageContext context) {
-    if (!properties.isEnabled()) {
-      return;
-    }
-
     var applicationDescriptors = applicationDescriptorProvider.getDescriptors(context);
     var tenantId = context.getEntitlementRequest().getTenantId();
 
@@ -64,7 +59,7 @@ public class InterfaceIntegrityValidator extends DatabaseLoggingStage<CommonStag
 
   @Override
   public boolean shouldValidate(EntitlementRequest entitlementRequest) {
-    return properties.isEnabled() && (entitlementRequest.getType() == entitlementType);
+    return entitlementRequest.getType() == entitlementType;
   }
 
   private void validateDescriptors(List<ApplicationDescriptor> descriptors, UUID tenantId) {

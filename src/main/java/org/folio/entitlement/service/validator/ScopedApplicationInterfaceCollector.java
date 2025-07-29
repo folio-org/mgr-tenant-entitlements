@@ -29,14 +29,13 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.service.EntitlementCrudService;
-import org.folio.entitlement.service.validator.configuration.ApplicationInterfaceCollectorProperties;
 
 @Log4j2
 @RequiredArgsConstructor
 public class ScopedApplicationInterfaceCollector implements ApplicationInterfaceCollector {
 
   private final EntitlementCrudService entitlementCrudService;
-  private final ApplicationInterfaceCollectorProperties collectorProperties;
+  private final boolean excludeRequiredInterfacesOfEntitledApps;
 
   @Override
   public Stream<RequiredProvidedInterfaces> collectRequiredAndProvided(List<ApplicationDescriptor> descriptors,
@@ -69,7 +68,7 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
   }
 
   private Predicate<ApplicationDescriptor> excludeEntitledRequired(Set<String> entitledApplicationIds) {
-    return descriptor -> collectorProperties.getRequired().isExcludeEntitled()
+    return descriptor -> excludeRequiredInterfacesOfEntitledApps
       && entitledApplicationIds.contains(descriptor.getId());
   }
 

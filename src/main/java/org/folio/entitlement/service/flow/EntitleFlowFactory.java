@@ -13,7 +13,7 @@ import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.stage.TenantLoader;
 import org.folio.entitlement.service.validator.ApplicationFlowValidator;
-import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
+import org.folio.entitlement.service.validator.StageRequestValidator;
 import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -27,7 +27,7 @@ public class EntitleFlowFactory implements FlowFactory {
   private final ApplicationsFlowProvider applicationsFlowFactory;
   private final ApplicationFlowValidator applicationFlowValidator;
   @Qualifier("entitlementInterfaceIntegrityValidator")
-  private final InterfaceIntegrityValidator interfaceIntegrityValidator;
+  private final StageRequestValidator interfaceIntegrityValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorTreeLoader applicationDescriptorTreeLoader;
 

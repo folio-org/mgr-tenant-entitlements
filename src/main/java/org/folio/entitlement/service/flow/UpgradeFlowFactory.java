@@ -13,7 +13,7 @@ import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.stage.TenantLoader;
 import org.folio.entitlement.service.validator.ApplicationFlowValidator;
-import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
+import org.folio.entitlement.service.validator.StageRequestValidator;
 import org.folio.entitlement.service.validator.UpgradeRequestValidator;
 import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
@@ -29,7 +29,7 @@ public class UpgradeFlowFactory implements FlowFactory {
   private final UpgradeRequestValidator upgradeRequestValidator;
   private final ApplicationFlowValidator applicationFlowValidator;
   @Qualifier("upgradeInterfaceIntegrityValidator")
-  private final InterfaceIntegrityValidator interfaceIntegrityValidator;
+  private final StageRequestValidator interfaceIntegrityValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorLoader applicationDescriptorLoader;
 
