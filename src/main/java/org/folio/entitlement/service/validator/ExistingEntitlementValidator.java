@@ -1,7 +1,7 @@
 package org.folio.entitlement.service.validator;
 
 import static java.util.stream.Collectors.toSet;
-import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.*;
+import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.EXISTING_ENTITLEMENT;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.LinkedHashSet;

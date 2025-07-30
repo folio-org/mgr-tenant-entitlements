@@ -175,5 +175,4 @@ public class CommonStageContext extends IdentifiableStageContext {
     context.remove(PARAM_APP_AND_DEPENDENCY_DESCRIPTORS);
     context.remove(PARAM_ENTITLED_APP_DESCRIPTORS);
   }
-
 }

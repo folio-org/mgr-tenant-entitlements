@@ -1,10 +1,9 @@
-package org.folio.entitlement.service.validator;
+package org.folio.entitlement.service.validator.icollector;
 
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
-import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.common.utils.CollectionUtils.mapItemsToSet;
 import static org.folio.common.utils.CollectionUtils.toStream;
+import static org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollectorUtils.getEntitledApplicationIds;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
-import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.service.EntitlementCrudService;
 
 @Log4j2
@@ -35,10 +33,7 @@ public class CombinedApplicationInterfaceCollector implements ApplicationInterfa
 
     log.debug("Reading required/provided interfaces from the descriptors [combined mode]...");
 
-    Function<ApplicationDescriptor, RequiredProvidedInterfaces> populateInterfacesFromDescriptor =
-      (excludeRequiredInterfacesOfEntitledApps)
-        ? populateInterfacesDependingOnEntitlement(getEntitledApplicationIds(descriptors, tenantId))
-        : ApplicationInterfaceCollectorUtils::populateRequiredAndProvidedFromApp;
+    var populateInterfacesFromDescriptor = getPopulateInterfacesMethod(descriptors, tenantId);
 
     var result = toStream(descriptors)
       .map(populateInterfacesFromDescriptor)
@@ -53,10 +48,12 @@ public class CombinedApplicationInterfaceCollector implements ApplicationInterfa
     return Stream.of(result);
   }
 
-  private Set<String> getEntitledApplicationIds(List<ApplicationDescriptor> descriptors, UUID tenantId) {
-    var entitlements = entitlementCrudService.findByApplicationIds(tenantId,
-      mapItems(descriptors, ApplicationDescriptor::getId));
-    return mapItemsToSet(entitlements, Entitlement::getApplicationId);
+  private Function<ApplicationDescriptor, RequiredProvidedInterfaces> getPopulateInterfacesMethod(
+    List<ApplicationDescriptor> descriptors, UUID tenantId) {
+    return excludeRequiredInterfacesOfEntitledApps
+      ? populateInterfacesDependingOnEntitlement(
+          getEntitledApplicationIds(descriptors, tenantId, entitlementCrudService))
+      : ApplicationInterfaceCollectorUtils::populateRequiredAndProvidedFromApp;
   }
 
   private static Function<ApplicationDescriptor, RequiredProvidedInterfaces> populateInterfacesDependingOnEntitlement(

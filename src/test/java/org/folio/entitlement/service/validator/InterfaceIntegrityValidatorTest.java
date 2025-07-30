@@ -22,9 +22,12 @@ import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
-import org.folio.entitlement.service.validator.configuration.InterfaceIntegrityValidatorProperties;
+import org.folio.entitlement.service.validator.adp.ApplicationDescriptorProvider;
+import org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector;
+import org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
 import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,9 +41,33 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class InterfaceIntegrityValidatorTest {
 
-  @InjectMocks private InterfaceIntegrityValidator interfaceIntegrityValidator;
-  @Mock private ApplicationDependencyValidatorService validatorService;
-  @Mock private InterfaceIntegrityValidatorProperties properties;
+  private InterfaceIntegrityValidator interfaceIntegrityValidator;
+  @Mock private ApplicationInterfaceCollector interfaceCollector;
+  @Mock private ApplicationDescriptorProvider applicationDescriptorProvider;
+
+  @BeforeEach
+  void setUp() {
+    interfaceIntegrityValidator = new InterfaceIntegrityValidator(EntitlementType.ENTITLE, interfaceCollector, 
+      applicationDescriptorProvider);
+  }
+
+  @Test
+  void execute_positive_noMissingInterfaces() {
+    var applicationDescriptors = List.of(TestValues.appDescriptor());
+    var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
+    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest());
+    var stageContext = commonStageContext(FLOW_ID, flowParameters, stageParameters);
+    var requiredProvidedInterfaces = new RequiredProvidedInterfaces(emptySet(), emptyMap());
+
+    when(applicationDescriptorProvider.getDescriptors(stageContext)).thenReturn(applicationDescriptors);
+    when(interfaceCollector.collectRequiredAndProvided(applicationDescriptors, TENANT_ID))
+      .thenReturn(Stream.of(requiredProvidedInterfaces));
+
+    interfaceIntegrityValidator.execute(stageContext);
+
+    verify(applicationDescriptorProvider).getDescriptors(stageContext);
+    verify(interfaceCollector).collectRequiredAndProvided(applicationDescriptors, TENANT_ID);
+  }
 
   @Test
   void execute_positive() {
@@ -61,8 +88,6 @@ class InterfaceIntegrityValidatorTest {
     var applicationDescriptors = List.of(TestValues.appDescriptor());
     var stageParameters = Map.of(PARAM_APP_DESCRIPTORS, applicationDescriptors);
     var stageContext = commonStageContext(FLOW_ID, emptyMap(), stageParameters);
-
-    when(properties.isEnabled()).thenReturn(false);
 
     interfaceIntegrityValidator.execute(stageContext);
 
@@ -91,8 +116,17 @@ class InterfaceIntegrityValidatorTest {
   @Test
   void validate_positive() {
     var request = entitlementRequest();
+    var applicationDescriptors = List.of(TestValues.appDescriptor());
+    var requiredProvidedInterfaces = new RequiredProvidedInterfaces(emptySet(), emptyMap());
+
+    when(applicationDescriptorProvider.getDescriptors(request)).thenReturn(applicationDescriptors);
+    when(interfaceCollector.collectRequiredAndProvided(applicationDescriptors, TENANT_ID))
+      .thenReturn(Stream.of(requiredProvidedInterfaces));
+
     interfaceIntegrityValidator.validate(request);
-    verify(validatorService).validateApplications(request);
+
+    verify(applicationDescriptorProvider).getDescriptors(request);
+    verify(interfaceCollector).collectRequiredAndProvided(applicationDescriptors, TENANT_ID);
   }
 
   @Test
@@ -113,7 +147,6 @@ class InterfaceIntegrityValidatorTest {
   @DisplayName("shouldValidate_parameterized")
   @CsvSource({"ENTITLE,true", "REVOKE,false", "UPGRADE,false", ",false"})
   void shouldValidate_parameterized(EntitlementType type, boolean expected) {
-    when(properties.isEnabled()).thenReturn(true);
     var request = EntitlementRequest.builder().type(type).build();
     var result = interfaceIntegrityValidator.shouldValidate(request);
     assertThat(result).isEqualTo(expected);

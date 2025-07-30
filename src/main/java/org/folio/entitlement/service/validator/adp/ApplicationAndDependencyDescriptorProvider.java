@@ -1,4 +1,4 @@
-package org.folio.entitlement.service.validator;
+package org.folio.entitlement.service.validator.adp;
 
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.join;
@@ -17,7 +17,8 @@ import org.springframework.stereotype.Component;
  * Provides application and dependency descriptors for interface integrity validator.
  * It loads all application descriptors and their dependencies from the context
  * or from the request, depending on the method called.
- * In the later case, it delegates to {@code ApplicationDescriptorTreeLoader}.
+ *
+ * <p>In the later case, it delegates to {@code ApplicationDescriptorTreeLoader}.
  */
 @Log4j2
 @Component

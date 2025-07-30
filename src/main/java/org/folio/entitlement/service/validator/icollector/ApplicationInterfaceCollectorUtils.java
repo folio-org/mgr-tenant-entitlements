@@ -1,12 +1,16 @@
-package org.folio.entitlement.service.validator;
+package org.folio.entitlement.service.validator.icollector;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toSet;
+import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.mapItemsToSet;
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.service.validator.ApplicationInterfaceCollector.RequiredProvidedInterfaces.empty;
+import static org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector.RequiredProvidedInterfaces.empty;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -16,8 +20,10 @@ import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.model.InterfaceItem;
-import org.folio.entitlement.service.validator.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
+import org.folio.entitlement.service.EntitlementCrudService;
+import org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
 
 @Log4j2
 @UtilityClass
@@ -31,6 +37,21 @@ class ApplicationInterfaceCollectorUtils {
 
   static RequiredProvidedInterfaces populateProvidedFromApp(ApplicationDescriptor descriptor) {
     return populateFromApp(descriptor, populateProvidedFromModule());
+  }
+
+  /**
+   * Collects the application IDs of all entitled applications from the provided descriptors.
+   *
+   * @param descriptors the list of application descriptors
+   * @param tenantId    the tenant ID
+   * @param entitlementCrudService the service to fetch entitlements
+   * @return a set of application IDs that are entitled
+   */
+  static Set<String> getEntitledApplicationIds(List<ApplicationDescriptor> descriptors, UUID tenantId,
+    EntitlementCrudService entitlementCrudService) {
+    var entitlements = entitlementCrudService.findByApplicationIds(tenantId,
+      mapItems(descriptors, ApplicationDescriptor::getId));
+    return mapItemsToSet(entitlements, Entitlement::getApplicationId);
   }
 
   private static RequiredProvidedInterfaces populateFromApp(ApplicationDescriptor descriptor,

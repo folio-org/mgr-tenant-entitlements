@@ -1,4 +1,4 @@
-package org.folio.entitlement.service.validator;
+package org.folio.entitlement.service.validator.adp;
 
 import static java.util.Collections.emptyList;
 import static org.folio.common.utils.SemverUtils.getName;
@@ -49,6 +49,9 @@ public class ApplicationAndEntitledDescriptorProvider implements ApplicationDesc
   }
 
   private List<String> getEntitledAppIdsToLoad(EntitlementRequest request) {
+    log.debug("Calculating entitled application ids to load for request: tenantId = {}, requestAppIds = {}",
+      request.getTenantId(), request.getApplications());
+
     var requestAppIds = request.getApplications();
     var excludedAppNames = Set.copyOf(getNames(requestAppIds));
 

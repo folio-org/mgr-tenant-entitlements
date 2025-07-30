@@ -23,7 +23,9 @@ import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.InterfaceItem;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
-import org.folio.entitlement.service.validator.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
+import org.folio.entitlement.service.validator.adp.ApplicationDescriptorProvider;
+import org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector;
+import org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
 import org.springframework.core.annotation.Order;
 
 @Order(INTERFACE_INTEGRITY)

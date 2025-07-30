@@ -3,13 +3,13 @@ package org.folio.entitlement.service.validator.configuration;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.service.EntitlementCrudService;
-import org.folio.entitlement.service.validator.ApplicationAndDependencyDescriptorProvider;
-import org.folio.entitlement.service.validator.ApplicationAndEntitledDescriptorProvider;
-import org.folio.entitlement.service.validator.ApplicationInterfaceCollector;
-import org.folio.entitlement.service.validator.CombinedApplicationInterfaceCollector;
 import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
-import org.folio.entitlement.service.validator.ScopedApplicationInterfaceCollector;
 import org.folio.entitlement.service.validator.StageRequestValidator;
+import org.folio.entitlement.service.validator.adp.ApplicationAndDependencyDescriptorProvider;
+import org.folio.entitlement.service.validator.adp.ApplicationAndEntitledDescriptorProvider;
+import org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector;
+import org.folio.entitlement.service.validator.icollector.CombinedApplicationInterfaceCollector;
+import org.folio.entitlement.service.validator.icollector.ScopedApplicationInterfaceCollector;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,6 +24,22 @@ public class InterfaceIntegrityValidationConfiguration {
   private static final String PROP_UPGRADE_VALIDATION_ENABLED =
     "application.validation.interface-integrity.upgrade.enabled";
 
+  /**
+   * Configuration for interface integrity validation for entitlement requests when the validation is enabled.
+   * It provides beans for application interface collector and interface integrity validator.
+   *
+   * <p>The validation is enabled by default, but can be disabled by setting the property
+   * {@code application.validation.interface-integrity.entitlement.enabled} to {@code false}.
+   *
+   * <p>The interface collector can be configured to use either 'combined' or 'scoped' mode
+   * by setting the property {@code application.validation.interface-integrity.entitlement.interface-collector.mode}
+   * to {@code combined} or {@code scoped}, respectively.
+   * The default mode is {@code scoped}.
+   *
+   * <p>The property
+   * {@code application.validation.interface-integrity.entitlement.interface-collector.required.exclude-entitled}
+   * can be used to exclude required interfaces of entitled applications from the validation.
+   */
   @Configuration
   @ConditionalOnProperty(
     name = PROP_ENTITLEMENT_VALIDATION_ENABLED,
@@ -43,6 +59,8 @@ public class InterfaceIntegrityValidationConfiguration {
       EntitlementCrudService entitlementCrudService,
       @Value(VAL_EXCLUDE_REQUIRED_INTERFACES_OF_ENTITLED_APPS) boolean excludeEntitled) {
 
+      log.info("Creating 'combined' interface collector for Entitlement requests with excludeEntitled = {}",
+        excludeEntitled);
       return new CombinedApplicationInterfaceCollector(entitlementCrudService, excludeEntitled);
     }
 
@@ -54,6 +72,8 @@ public class InterfaceIntegrityValidationConfiguration {
       EntitlementCrudService entitlementCrudService,
       @Value(VAL_EXCLUDE_REQUIRED_INTERFACES_OF_ENTITLED_APPS) boolean excludeEntitled) {
 
+      log.info("Creating 'scoped' interface collector for Entitlement requests with excludeEntitled = {}",
+        excludeEntitled);
       return new ScopedApplicationInterfaceCollector(entitlementCrudService, excludeEntitled);
     }
 
@@ -69,6 +89,13 @@ public class InterfaceIntegrityValidationConfiguration {
     }
   }
 
+  /**
+   * Configuration for interface integrity validation for entitlement requests when the validation is disabled.
+   * It provides a no-op validator that does not perform any validation.
+   *
+   * <p>The validation is disabled by setting the property
+   * {@code application.validation.interface-integrity.entitlement.enabled} to {@code false}.
+   */
   @Configuration
   @ConditionalOnProperty(
     name = PROP_ENTITLEMENT_VALIDATION_ENABLED,
@@ -76,11 +103,22 @@ public class InterfaceIntegrityValidationConfiguration {
   public static class DisabledValidationForEntitlement {
 
     @Bean
-    public StageRequestValidator entitlementInterfaceIntegrityValidator(){
+    public StageRequestValidator entitlementInterfaceIntegrityValidator() {
+      log.info("Interface integrity validation for Entitlement requests is disabled");
       return InterfaceIntegrityValidator.NO_OP;
     }
   }
 
+  /**
+   * Configuration for interface integrity validation for upgrade requests when the validation is enabled.
+   * It provides beans for application interface collector and interface integrity validator.
+   *
+   * <p>The validation is enabled by default, but can be disabled by setting the property
+   * {@code application.validation.interface-integrity.upgrade.enabled} to {@code false}.
+   *
+   * <p>The interface collector is always 'combined' for upgrade requests with the turned-off ability to exclude
+   * required interfaces of entitled applications from the validation.
+   */
   @Configuration
   @ConditionalOnProperty(
     name = PROP_UPGRADE_VALIDATION_ENABLED,
@@ -106,6 +144,13 @@ public class InterfaceIntegrityValidationConfiguration {
     }
   }
 
+  /**
+   * Configuration for interface integrity validation for upgrade requests when the validation is disabled.
+   * It provides a no-op validator that does not perform any validation.
+   *
+   * <p>The validation is disabled by setting the property
+   * {@code application.validation.interface-integrity.upgrade.enabled} to {@code false}.
+   */
   @Configuration
   @ConditionalOnProperty(
     name = PROP_UPGRADE_VALIDATION_ENABLED,
@@ -113,7 +158,8 @@ public class InterfaceIntegrityValidationConfiguration {
   public static class DisabledValidationForUpgrade {
 
     @Bean
-    public StageRequestValidator upgradeInterfaceIntegrityValidator(){
+    public StageRequestValidator upgradeInterfaceIntegrityValidator() {
+      log.info("Interface integrity validation for Upgrade requests is disabled");
       return InterfaceIntegrityValidator.NO_OP;
     }
   }

@@ -1,4 +1,4 @@
-package org.folio.entitlement.service.validator;
+package org.folio.entitlement.service.validator.icollector;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;

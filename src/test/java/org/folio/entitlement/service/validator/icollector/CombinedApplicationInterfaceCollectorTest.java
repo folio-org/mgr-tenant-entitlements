@@ -1,4 +1,4 @@
-package org.folio.entitlement.service;
+package org.folio.entitlement.service.validator.icollector;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -16,10 +16,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
-import org.folio.entitlement.service.validator.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
-import org.folio.entitlement.service.validator.configuration.ApplicationInterfaceCollectorProperties;
-import org.folio.entitlement.service.validator.configuration.CollectedInterfaceSettings;
-import org.folio.entitlement.service.validator.CombinedApplicationInterfaceCollector;
+import org.folio.entitlement.service.EntitlementCrudService;
+import org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

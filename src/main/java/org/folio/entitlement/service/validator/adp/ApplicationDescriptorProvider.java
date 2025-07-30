@@ -1,4 +1,4 @@
-package org.folio.entitlement.service.validator;
+package org.folio.entitlement.service.validator.adp;
 
 import java.util.List;
 import org.folio.common.domain.model.ApplicationDescriptor;
