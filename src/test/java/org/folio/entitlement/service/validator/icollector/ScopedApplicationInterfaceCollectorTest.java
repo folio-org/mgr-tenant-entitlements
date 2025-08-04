@@ -90,12 +90,7 @@ class ScopedApplicationInterfaceCollectorTest {
 
     @BeforeEach
     void setUp() {
-      var required = new CollectedInterfaceSettings();
-      required.setExcludeEntitled(false);
-      var properties = new ApplicationInterfaceCollectorProperties();
-      properties.setRequired(required);
-
-      this.collector = new ScopedApplicationInterfaceCollector(entitlementCrudService, properties);
+      this.collector = new ScopedApplicationInterfaceCollector(entitlementCrudService, false);
     }
 
     @ParameterizedTest(name = "[{index}] {0}")
@@ -147,12 +142,7 @@ class ScopedApplicationInterfaceCollectorTest {
 
     @BeforeEach
     void setUp() {
-      var required = new CollectedInterfaceSettings();
-      required.setExcludeEntitled(true);
-      var properties = new ApplicationInterfaceCollectorProperties();
-      properties.setRequired(required);
-
-      this.collector = new ScopedApplicationInterfaceCollector(entitlementCrudService, properties);
+      this.collector = new ScopedApplicationInterfaceCollector(entitlementCrudService, true);
     }
 
     @ParameterizedTest(name = "[{index}] {0}")

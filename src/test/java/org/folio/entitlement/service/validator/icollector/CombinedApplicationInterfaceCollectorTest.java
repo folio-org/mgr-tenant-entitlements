@@ -77,12 +77,7 @@ class CombinedApplicationInterfaceCollectorTest {
 
     @BeforeEach
     void setUp() {
-      var required = new CollectedInterfaceSettings();
-      required.setExcludeEntitled(false);
-      var properties = new ApplicationInterfaceCollectorProperties();
-      properties.setRequired(required);
-
-      this.collector = new CombinedApplicationInterfaceCollector(entitlementCrudService, properties);
+      this.collector = new CombinedApplicationInterfaceCollector(entitlementCrudService, false);
     }
 
     @ParameterizedTest(name = "[{index}] {0}")
@@ -134,12 +129,7 @@ class CombinedApplicationInterfaceCollectorTest {
 
     @BeforeEach
     void setUp() {
-      var required = new CollectedInterfaceSettings();
-      required.setExcludeEntitled(true);
-      var properties = new ApplicationInterfaceCollectorProperties();
-      properties.setRequired(required);
-
-      this.collector = new CombinedApplicationInterfaceCollector(entitlementCrudService, properties);
+      this.collector = new CombinedApplicationInterfaceCollector(entitlementCrudService, true);
     }
 
     @ParameterizedTest(name = "[{index}] {0}")
