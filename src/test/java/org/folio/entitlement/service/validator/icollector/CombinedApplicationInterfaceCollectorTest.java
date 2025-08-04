@@ -83,11 +83,7 @@ class CombinedApplicationInterfaceCollectorTest {
     @ParameterizedTest(name = "[{index}] {0}")
     @MethodSource("requiredInterfacesIncludedDataProvider")
     void collectRequiredAndProvided_positive(@SuppressWarnings("unused") String testName,
-      List<ApplicationDescriptor> descriptors, List<Entitlement> entitlements,
-      List<RequiredProvidedInterfaces> expected) {
-      when(entitlementCrudService.findByApplicationIds(TENANT_ID, mapItems(descriptors, ApplicationDescriptor::getId)))
-        .thenReturn(entitlements);
-
+      List<ApplicationDescriptor> descriptors, List<RequiredProvidedInterfaces> expected) {
       var result = collector.collectRequiredAndProvided(descriptors, TENANT_ID);
 
       assertThat(result).hasSameElementsAs(expected);
@@ -104,17 +100,14 @@ class CombinedApplicationInterfaceCollectorTest {
       return Stream.of(
         arguments("nothing entitled",
           List.of(APP_DESCRIPTOR1, APP_DESCRIPTOR2, APP_DESCRIPTOR3),
-          emptyList(),
           REQUIRED_PROVIDED_INTERFACES
         ),
         arguments("app1/app2 entitled",
           List.of(APP_DESCRIPTOR1, APP_DESCRIPTOR2, APP_DESCRIPTOR3),
-          List.of(ENTITLEMENT_APP1, ENTITLEMENT_APP2),
           REQUIRED_PROVIDED_INTERFACES
         ),
         arguments("all apps entitled",
           List.of(APP_DESCRIPTOR1, APP_DESCRIPTOR2, APP_DESCRIPTOR3),
-          List.of(ENTITLEMENT_APP1, ENTITLEMENT_APP2, ENTITLEMENT_APP3),
           REQUIRED_PROVIDED_INTERFACES
         )
       );
