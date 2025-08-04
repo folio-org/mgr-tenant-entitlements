@@ -253,7 +253,18 @@
         "mgr-tenant-entitlements.flows.all",
         "mgr-tenant-entitlements.entitlements.applications.collection.get",
         "mgr-tenant-entitlements.entitlements.modules.item.get",
-        "mgr-tenant-entitlements.entitlements.validate.post"
+        "mgr-tenant-entitlements.entitlements.validate.post",
+        "mgr-tenant-entitlements.reinstallation.all"
+      ]
+    },
+    {
+      "description": "Manager Tenant Entitlements - Reinstallation",
+      "displayName": "Manager Tenant Entitlements - Reinstallation",
+      "permissionName": "mgr-tenant-entitlements.reinstallation.all",
+      "visible": true,
+      "subPermissions": [
+        "mgr-tenant-entitlements.app-reinstallation.execute",
+        "mgr-tenant-entitlements.module-reinstallation.execute"
       ]
     },
     {
