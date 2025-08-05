@@ -3,6 +3,7 @@ package org.folio.entitlement.service.validator;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_APP_DESCRIPTORS;
@@ -79,7 +80,8 @@ class InterfaceIntegrityValidatorTest {
     when(interfaceCollector.collectRequiredAndProvided(applicationDescriptors, TENANT_ID))
       .thenReturn(Stream.of(requiredProvidedInterfaces));
 
-    interfaceIntegrityValidator.execute(stageContext);
+    assertThatNoException().isThrownBy(() ->
+      interfaceIntegrityValidator.execute(stageContext));
   }
 
   @ParameterizedTest
@@ -127,7 +129,8 @@ class InterfaceIntegrityValidatorTest {
     when(interfaceCollector.collectRequiredAndProvided(applicationDescriptors, TENANT_ID))
       .thenReturn(Stream.of(requiredProvidedInterfaces));
 
-    interfaceIntegrityValidator.validate(entitlementRequest);
+    assertThatNoException().isThrownBy(() ->
+      interfaceIntegrityValidator.validate(entitlementRequest));
   }
 
   @ParameterizedTest
