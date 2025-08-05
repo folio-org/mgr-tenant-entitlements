@@ -15,7 +15,7 @@ class KeycloakUtilsTest {
   void testUpdatePubSubDescriptorWithEndpoints() {
     ModuleDescriptor newDescriptor = new ModuleDescriptor();
     newDescriptor.setProvides(new ArrayList<>());
-    KeycloakUtils.addMissingResources(newDescriptor);
+    KeycloakUtils.addPubSubResources(newDescriptor);
     Assertions.assertEquals(1, newDescriptor.getProvides().size());
     Assertions.assertEquals(12, newDescriptor.getProvides().get(0).getHandlers().size());
   }

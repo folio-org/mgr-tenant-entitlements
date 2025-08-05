@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
+import org.folio.common.domain.model.Dependency;
 import org.folio.entitlement.service.EntitlementCrudService;
 
 @Log4j2
@@ -149,19 +150,7 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
 
       visited.push(appName);
 
-      var result = new HashSet<ApplicationDescriptor>();
-      for (var dependency : application.getDependencies()) {
-        var dependencyName = dependency.getName();
-
-        var dependencyDescriptor = applicationsByName.get(dependencyName);
-        if (dependencyDescriptor == null) {
-          throw new IllegalStateException("Application descriptor not found for: " + dependencyName);
-        }
-
-        result.add(dependencyDescriptor);
-
-        result.addAll(resolveDependencies(dependencyDescriptor, visited));
-      }
+      var result = resolveAllSubDependencies(application, visited);
 
       visited.pop();
       cache.put(appName, result);
@@ -170,6 +159,29 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
         () -> toStream(result).map(ApplicationDescriptor::getId).collect(joining(", ", "[", "]")));
 
       return result;
+    }
+
+    private Set<ApplicationDescriptor> resolveAllSubDependencies(ApplicationDescriptor application,
+      Deque<String> visited) {
+      var result = new HashSet<ApplicationDescriptor>();
+      for (var dependency : application.getDependencies()) {
+        var dependencyDescriptor = getDependencyDescriptor(dependency);
+
+        result.add(dependencyDescriptor);
+
+        result.addAll(resolveDependencies(dependencyDescriptor, visited));
+      }
+      return result;
+    }
+
+    private ApplicationDescriptor getDependencyDescriptor(Dependency dependency) {
+      var dependencyName = dependency.getName();
+
+      var dependencyDescriptor = applicationsByName.get(dependencyName);
+      if (dependencyDescriptor == null) {
+        throw new IllegalStateException("Application descriptor not found for: " + dependencyName);
+      }
+      return dependencyDescriptor;
     }
   }
 }

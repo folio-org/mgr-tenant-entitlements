@@ -151,7 +151,6 @@ class InterfaceIntegrityValidatorTest {
 
   @Test
   void validate_negative_noDescriptorsProvided() {
-    var applicationDescriptors = List.of(appDescriptor(APP_FOO_ID), appDescriptor(APP_BAR_ID));
     var entitlementRequest = entitlementRequest(APP_BAR_ID);
 
     when(applicationDescriptorProvider.getDescriptors(entitlementRequest)).thenReturn(emptyList());

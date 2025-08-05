@@ -1,5 +1,8 @@
 package org.folio.entitlement.service.validator;
 
+import static lombok.AccessLevel.PRIVATE;
+
+import lombok.NoArgsConstructor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 
 public interface EntitlementRequestValidator {
@@ -29,6 +32,7 @@ public interface EntitlementRequestValidator {
    */
   boolean shouldValidate(EntitlementRequest entitlementRequest);
 
+  @NoArgsConstructor(access = PRIVATE)
   class Order {
 
     public static final int APPLICATION_FLOW = 1;

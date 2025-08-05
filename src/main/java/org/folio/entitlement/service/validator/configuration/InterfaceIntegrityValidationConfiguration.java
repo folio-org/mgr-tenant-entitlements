@@ -1,5 +1,7 @@
 package org.folio.entitlement.service.validator.configuration;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.service.EntitlementCrudService;
@@ -17,6 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Log4j2
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class InterfaceIntegrityValidationConfiguration {
 
   private static final String PROP_ENTITLEMENT_VALIDATION_ENABLED =
