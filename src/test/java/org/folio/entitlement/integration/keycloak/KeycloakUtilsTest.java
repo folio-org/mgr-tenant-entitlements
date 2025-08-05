@@ -14,7 +14,9 @@ class KeycloakUtilsTest {
   @Test
   void testUpdatePubSubDescriptorWithEndpoints() {
     ModuleDescriptor newDescriptor = new ModuleDescriptor();
+    newDescriptor.setId("mod-pubsub-1.1.0");
     newDescriptor.setProvides(new ArrayList<>());
+
     KeycloakUtils.addPubSubResources(newDescriptor);
     Assertions.assertEquals(1, newDescriptor.getProvides().size());
     Assertions.assertEquals(12, newDescriptor.getProvides().get(0).getHandlers().size());
