@@ -38,6 +38,7 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
   private final boolean excludeRequiredInterfacesOfEntitledApps;
 
   @Override
+  @SuppressWarnings("java:S3864")
   public Stream<RequiredProvidedInterfaces> collectRequiredAndProvided(List<ApplicationDescriptor> descriptors,
     UUID tenantId) {
     if (isEmpty(descriptors)) {
@@ -155,8 +156,7 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
       visited.pop();
       cache.put(appName, result);
       log.trace("Saving resolved dependencies in the cache: application = {}, dependencies = {}",
-        application::getId,
-        () -> toStream(result).map(ApplicationDescriptor::getId).collect(joining(", ", "[", "]")));
+        application::getId, () -> toStream(result).map(ApplicationDescriptor::getId).collect(joining(", ", "[", "]")));
 
       return result;
     }

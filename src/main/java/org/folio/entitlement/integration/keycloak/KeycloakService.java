@@ -12,6 +12,7 @@ import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.common.utils.Collectors.toLinkedHashMap;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.filterAndMap;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.ws.rs.WebApplicationException;
@@ -67,15 +68,12 @@ public class KeycloakService {
     var newAuthResources = getAuthorizationResources(newDescriptor);
     var prevAuthResources = getAuthorizationResources(prevDescriptor);
 
-    var newResources = newAuthResources.entrySet().stream()
-      .filter(not(entry -> resourceAlreadyExists(entry.getKey(), entry.getValue(), prevAuthResources)))
-      .map(Entry::getValue)
-      .toList();
+    var newResources = filterAndMap(newAuthResources.entrySet(),
+      not(entry -> resourceAlreadyExists(entry.getKey(), entry.getValue(), prevAuthResources)),
+      Entry::getValue);
 
-    var deprecatedResources = prevAuthResources.keySet().stream()
-      .filter(not(newAuthResources::containsKey))
-      .map(prevAuthResources::get)
-      .toList();
+    var deprecatedResources = filterAndMap(prevAuthResources.keySet(),
+      not(newAuthResources::containsKey), prevAuthResources::get);
 
     var resourceErrorParameters = new ArrayList<Parameter>();
     resourceErrorParameters.addAll(createResources(authResourceClient, newResources));
