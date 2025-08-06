@@ -4,6 +4,7 @@
 * Introduce optional application dependencies (MGRAPPS-57)
 * Introduce configuration for FSSP (APPPOCTOOL-59)
 * Reinstall endpoint responding with 403 error (MGRENTITLE-134)
+* Validate that upgrade of application does not affect other installed applications (MGRENTITLE-68)
 ---
 
 ## Version `v3.1.0` (09.04.2025)
