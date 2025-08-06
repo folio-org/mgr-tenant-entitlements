@@ -1,6 +1,5 @@
 package org.folio.entitlement.service.validator.adp;
 
-
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
