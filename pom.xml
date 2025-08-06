@@ -72,6 +72,7 @@
       src/main/java/**/rest/resource/**/*,
       src/main/java/**/TenantEntitlementApplication.java
     </sonar.exclusions>
+    <argLine/>
   </properties>
 
   <dependencyManagement>
