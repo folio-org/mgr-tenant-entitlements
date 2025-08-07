@@ -5,11 +5,15 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Map;
+import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.WireMockStub;
@@ -24,7 +28,6 @@ class UpgradeValidationInterfaceIntegrityIT {
 
   private static final String VALIDATOR = InterfaceIntegrityValidator.class.getSimpleName();
 
-  private static final String FOLIO_APP_NAME_1 = "folio-app1";
   private static final String FOLIO_APP1_ID = "folio-app1-1.0.0";
   private static final String FOLIO_APP2_V1_ID = "folio-app2-2.0.0";
   private static final String FOLIO_APP2_V2_ID = "folio-app2-3.0.0";
@@ -87,7 +90,15 @@ class UpgradeValidationInterfaceIntegrityIT {
 
       attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
         request, UPGRADE.getValue(), VALIDATOR)
-        .andExpect(status().isNoContent());
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors[0].message", containsString("Missing interfaces found for the applications")))
+        .andExpect(jsonPath("$.errors[0].code", is("validation_error")))
+        .andExpect(jsonPath("$.errors[0].type", is(RequestValidationException.class.getSimpleName())))
+        .andExpect(jsonPath("$.errors[0].parameters[0].key", is(FOLIO_APP7_ID)))
+        .andExpect(jsonPath("$.errors[0].parameters[0].value", is("folio-module2-api 1.0.0")))
+        .andExpect(jsonPath("$.errors[0].parameters[1].key", is(FOLIO_APP3_ID)))
+        .andExpect(jsonPath("$.errors[0].parameters[1].value", is("folio-module1-api 2.0")))
+        .andExpect(jsonPath("$.total_records", is(1)));
     }
   }
 }
