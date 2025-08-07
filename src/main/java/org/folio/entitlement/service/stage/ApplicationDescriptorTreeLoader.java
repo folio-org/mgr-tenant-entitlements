@@ -8,7 +8,6 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.filter;
 
 import java.util.HashMap;
@@ -61,8 +60,7 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
   public List<ApplicationDescriptor> load(EntitlementRequest entitlementRequest) {
     var tenantId = entitlementRequest.getTenantId();
     var token = entitlementRequest.getOkapiToken();
-    var applicationIds = toStream(entitlementRequest.getApplications()).sorted().toList();
-    var descriptors = applicationManagerService.getApplicationDescriptors(applicationIds, token);
+    var descriptors = applicationManagerService.getApplicationDescriptors(entitlementRequest.getApplications(), token);
     var allApplications = descriptors.stream().collect(toMap(ApplicationDescriptor::getName, identity()));
 
     for (var descriptor : descriptors) {
@@ -90,8 +88,7 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
     var dependencyIds = resolveDependenciesToEntitledApps(dependenciesToBeLoaded, entitled, descriptor);
     log.debug("Dependencies resolved to the following applications: {}", dependencyIds);
 
-    var applicationIds = toStream(dependencyIds).sorted().toList();
-    var dependencyApps = applicationManagerService.getApplicationDescriptors(applicationIds, token);
+    var dependencyApps = applicationManagerService.getApplicationDescriptors(dependencyIds, token);
     for (var dependencyDescriptor : dependencyApps) {
       var dependencyId = dependencyDescriptor.getId();
 

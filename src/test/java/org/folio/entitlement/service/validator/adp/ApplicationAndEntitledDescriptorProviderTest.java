@@ -4,7 +4,6 @@ import static java.util.Collections.emptyList;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_APP_DESCRIPTORS;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
@@ -17,7 +16,6 @@ import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.when;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -60,7 +58,7 @@ class ApplicationAndEntitledDescriptorProviderTest {
     List<String> descriptorIdsToLoad, List<ApplicationDescriptor> expectedDescriptors) {
     when(entitlementService.findByTenantId(TENANT_ID)).thenReturn(entitlements);
     if (isNotEmpty(descriptorIdsToLoad)) {
-      when(applicationManagerService.getApplicationDescriptors(sorted(descriptorIdsToLoad), OKAPI_TOKEN))
+      when(applicationManagerService.getApplicationDescriptors(descriptorIdsToLoad, OKAPI_TOKEN))
         .thenReturn(expectedDescriptors);
     }
 
@@ -76,7 +74,7 @@ class ApplicationAndEntitledDescriptorProviderTest {
     List<String> descriptorIdsToLoad, List<ApplicationDescriptor> expectedDescriptors) {
     when(entitlementService.findByTenantId(TENANT_ID)).thenReturn(entitlements);
     if (isNotEmpty(descriptorIdsToLoad)) {
-      when(applicationManagerService.getApplicationDescriptors(sorted(descriptorIdsToLoad), OKAPI_TOKEN))
+      when(applicationManagerService.getApplicationDescriptors(descriptorIdsToLoad, OKAPI_TOKEN))
         .thenReturn(mapItems(descriptorIdsToLoad, TestValues::appDescriptor));
     }
 
@@ -232,9 +230,5 @@ class ApplicationAndEntitledDescriptorProviderTest {
       .applications(applicationIds)
       .okapiToken(OKAPI_TOKEN)
       .build();
-  }
-
-  private static <T> List<T> sorted(Collection<T> list) {
-    return toStream(list).sorted().toList();
   }
 }

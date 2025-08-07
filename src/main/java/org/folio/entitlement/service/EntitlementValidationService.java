@@ -40,7 +40,7 @@ public class EntitlementValidationService {
     log.info("Validating entitlement request by specific validator: validator = {}, request = {}",
       validatorName, request);
 
-    for (var validator : getValidatorByName(validatorName)) {
+    for (var validator : getValidatorsByName(validatorName)) {
       if (validator.shouldValidate(request)) {
         validator.validate(request);
       } else {
@@ -49,7 +49,7 @@ public class EntitlementValidationService {
     }
   }
 
-  private List<EntitlementRequestValidator> getValidatorByName(String validatorName) {
+  private List<EntitlementRequestValidator> getValidatorsByName(String validatorName) {
     var result = entitlementRequestValidators.stream()
       .filter(validator -> validatorName.equalsIgnoreCase(validator.getName()))
       .toList();

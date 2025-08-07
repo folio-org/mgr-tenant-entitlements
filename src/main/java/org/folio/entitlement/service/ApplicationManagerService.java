@@ -4,6 +4,7 @@ import static java.lang.String.join;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.ClassUtils.getSimpleName;
+import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.common.utils.PaginationUtils.loadInBatches;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -68,8 +69,9 @@ public class ApplicationManagerService {
    * @param token auth token
    * @return Application descriptors
    */
-  public List<ApplicationDescriptor> getApplicationDescriptors(List<String> applicationIds, String token) {
-    var descriptors = loadInBatches(applicationIds, loadAppDescriptorsBatch(token), APP_DESCRIPTOR_BATCH_SIZE);
+  public List<ApplicationDescriptor> getApplicationDescriptors(Collection<String> applicationIds, String token) {
+    var sortedIds = toStream(applicationIds).sorted().toList();
+    var descriptors = loadInBatches(sortedIds, loadAppDescriptorsBatch(token), APP_DESCRIPTOR_BATCH_SIZE);
     checkAllApplicationsFound(applicationIds, descriptors);
     return descriptors;
   }

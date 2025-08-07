@@ -69,10 +69,9 @@ public class ApplicationAndEntitledDescriptorProvider implements ApplicationDesc
       log.debug("No application descriptors to load: tenantId = {}", tenantId);
       return emptyList();
     } else {
-      var sortedIds = applicationIds.stream().sorted().toList();
-      log.debug("Loading application descriptors: tenantId = {}, appIds = {}", tenantId, sortedIds);
+      log.debug("Loading application descriptors: tenantId = {}, appIds = {}", tenantId, applicationIds);
 
-      return applicationManagerService.getApplicationDescriptors(sortedIds, authToken);
+      return applicationManagerService.getApplicationDescriptors(applicationIds, authToken);
     }
   }
 
