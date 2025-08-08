@@ -1,4 +1,4 @@
-package org.folio.entitlement.service;
+package org.folio.entitlement.service.validator.icollector;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
@@ -16,9 +16,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
-import org.folio.entitlement.service.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
-import org.folio.entitlement.service.configuration.ApplicationInterfaceCollectorProperties;
-import org.folio.entitlement.service.configuration.CollectedInterfaceSettings;
+import org.folio.entitlement.service.EntitlementCrudService;
+import org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector.RequiredProvidedInterfaces;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -78,22 +77,13 @@ class CombinedApplicationInterfaceCollectorTest {
 
     @BeforeEach
     void setUp() {
-      var required = new CollectedInterfaceSettings();
-      required.setExcludeEntitled(false);
-      var properties = new ApplicationInterfaceCollectorProperties();
-      properties.setRequired(required);
-
-      this.collector = new CombinedApplicationInterfaceCollector(entitlementCrudService, properties);
+      this.collector = new CombinedApplicationInterfaceCollector(entitlementCrudService, false);
     }
 
     @ParameterizedTest(name = "[{index}] {0}")
     @MethodSource("requiredInterfacesIncludedDataProvider")
     void collectRequiredAndProvided_positive(@SuppressWarnings("unused") String testName,
-      List<ApplicationDescriptor> descriptors, List<Entitlement> entitlements,
-      List<RequiredProvidedInterfaces> expected) {
-      when(entitlementCrudService.findByApplicationIds(TENANT_ID, mapItems(descriptors, ApplicationDescriptor::getId)))
-        .thenReturn(entitlements);
-
+      List<ApplicationDescriptor> descriptors, List<RequiredProvidedInterfaces> expected) {
       var result = collector.collectRequiredAndProvided(descriptors, TENANT_ID);
 
       assertThat(result).hasSameElementsAs(expected);
@@ -110,17 +100,14 @@ class CombinedApplicationInterfaceCollectorTest {
       return Stream.of(
         arguments("nothing entitled",
           List.of(APP_DESCRIPTOR1, APP_DESCRIPTOR2, APP_DESCRIPTOR3),
-          emptyList(),
           REQUIRED_PROVIDED_INTERFACES
         ),
         arguments("app1/app2 entitled",
           List.of(APP_DESCRIPTOR1, APP_DESCRIPTOR2, APP_DESCRIPTOR3),
-          List.of(ENTITLEMENT_APP1, ENTITLEMENT_APP2),
           REQUIRED_PROVIDED_INTERFACES
         ),
         arguments("all apps entitled",
           List.of(APP_DESCRIPTOR1, APP_DESCRIPTOR2, APP_DESCRIPTOR3),
-          List.of(ENTITLEMENT_APP1, ENTITLEMENT_APP2, ENTITLEMENT_APP3),
           REQUIRED_PROVIDED_INTERFACES
         )
       );
@@ -135,12 +122,7 @@ class CombinedApplicationInterfaceCollectorTest {
 
     @BeforeEach
     void setUp() {
-      var required = new CollectedInterfaceSettings();
-      required.setExcludeEntitled(true);
-      var properties = new ApplicationInterfaceCollectorProperties();
-      properties.setRequired(required);
-
-      this.collector = new CombinedApplicationInterfaceCollector(entitlementCrudService, properties);
+      this.collector = new CombinedApplicationInterfaceCollector(entitlementCrudService, true);
     }
 
     @ParameterizedTest(name = "[{index}] {0}")

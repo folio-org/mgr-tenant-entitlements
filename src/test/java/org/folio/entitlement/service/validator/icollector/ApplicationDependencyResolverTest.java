@@ -1,4 +1,4 @@
-package org.folio.entitlement.service;
+package org.folio.entitlement.service.validator.icollector;
 
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.folio.common.domain.model.ApplicationDescriptor;
-import org.folio.entitlement.service.ScopedApplicationInterfaceCollector.ApplicationDependencyResolver;
+import org.folio.entitlement.service.validator.icollector.ScopedApplicationInterfaceCollector.ApplicationDependencyResolver;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

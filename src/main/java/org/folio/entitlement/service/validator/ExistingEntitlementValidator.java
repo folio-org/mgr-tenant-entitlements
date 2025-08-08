@@ -1,6 +1,7 @@
 package org.folio.entitlement.service.validator;
 
 import static java.util.stream.Collectors.toSet;
+import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.EXISTING_ENTITLEMENT;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.LinkedHashSet;
@@ -14,7 +15,7 @@ import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-@Order(2)
+@Order(EXISTING_ENTITLEMENT)
 @Component
 @RequiredArgsConstructor
 public class ExistingEntitlementValidator extends DatabaseLoggingStage<CommonStageContext>

@@ -280,13 +280,7 @@ public class ApiExceptionHandler {
         .orElseGet(Collections::emptyList);
     }
 
-    var errorResponse = new ErrorResponse()
-      .totalRecords(1)
-      .addErrorsItem(new Error()
-        .message(format("Flow '%s' finished with status: %s", flowId, executionStatus))
-        .code(SERVICE_ERROR)
-        .type(exception.getClass().getSimpleName())
-        .parameters(errorParameters));
+    var errorResponse = flowExecutionErrorResponse(exception, flowId, executionStatus, errorParameters);
 
     return badRequest()
       .header(FLOW_ID_HEADER, flowId)
@@ -388,5 +382,16 @@ public class ApiExceptionHandler {
     }
 
     return FAILED;
+  }
+
+  private static ErrorResponse flowExecutionErrorResponse(StageExecutionException exception, String flowId,
+    ExecutionStatus executionStatus, List<Parameter> errorParameters) {
+    return new ErrorResponse()
+      .totalRecords(1)
+      .addErrorsItem(new Error()
+        .message(format("Flow '%s' finished with status: %s", flowId, executionStatus))
+        .code(SERVICE_ERROR)
+        .type(exception.getClass().getSimpleName())
+        .parameters(errorParameters));
   }
 }

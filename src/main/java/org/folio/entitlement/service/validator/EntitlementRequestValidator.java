@@ -1,5 +1,8 @@
 package org.folio.entitlement.service.validator;
 
+import static lombok.AccessLevel.PRIVATE;
+
+import lombok.NoArgsConstructor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 
 public interface EntitlementRequestValidator {
@@ -28,4 +31,13 @@ public interface EntitlementRequestValidator {
    * @return true if entitlement request validator must be executed, false - otherwise
    */
   boolean shouldValidate(EntitlementRequest entitlementRequest);
+
+  @NoArgsConstructor(access = PRIVATE)
+  class Order {
+
+    public static final int APPLICATION_FLOW = 1;
+    public static final int EXISTING_ENTITLEMENT = 2;
+    public static final int UPGRADE_REQUEST = 3;
+    public static final int INTERFACE_INTEGRITY = 4;
+  }
 }

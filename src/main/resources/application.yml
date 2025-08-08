@@ -152,11 +152,14 @@ application:
     pool-threads: ${FLOW_ENGINE_THREADS_NUM:4}
   validation:
     interface-integrity:
-      enabled: ${VALIDATION_INTERFACE_INTEGRITY_ENABLED:true}
-      interface-collector:
-        mode: ${VALIDATION_INTERFACE_COLLECTOR_MODE:combined}
-        required:
-          exclude-entitled: ${VALIDATION_INTERFACE_COLLECTOR_EXCLUDE_ENTITLED_REQUIRED:true}
+      entitlement:
+        enabled: ${VALIDATION_INTERFACE_INTEGRITY_ENTITLEMENT_ENABLED:true}
+        interface-collector:
+          mode: ${VALIDATION_INTERFACE_COLLECTOR_MODE:combined}
+          required:
+            exclude-entitled: ${VALIDATION_INTERFACE_COLLECTOR_EXCLUDE_ENTITLED_REQUIRED:true}
+      upgrade:
+        enabled: ${VALIDATION_INTERFACE_INTEGRITY_UPGRADE_ENABLED:true}
 
 folio:
   jpa:

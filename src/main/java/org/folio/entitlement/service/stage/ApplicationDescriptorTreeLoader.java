@@ -8,7 +8,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.common.utils.CollectionUtils.toStream;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.filter;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
@@ -33,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Log4j2
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<CommonStageContext> {
 
@@ -40,14 +42,17 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
   private final EntitlementRepository entitlementRepository;
 
   @Override
-  @Transactional(readOnly = true)
   public void execute(CommonStageContext context) {
     var allApplicationDescriptors = load(context.getEntitlementRequest());
-    context.withApplicationDescriptors(allApplicationDescriptors);
+
+    var request = context.getEntitlementRequest();
+
+    context.withApplicationDescriptors(filter(allApplicationDescriptors, applicationFromRequest(request)))
+      .withApplicationAndDependencyDescriptors(allApplicationDescriptors);
   }
 
   /**
-   * Loads application descriptors with all dependent descriptors.
+   * Loads application descriptors with all parent descriptors.
    *
    * @param entitlementRequest - entitlement request to process
    * @return {@link List} with loaded {@link ApplicationDescriptor} object
@@ -55,8 +60,7 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
   public List<ApplicationDescriptor> load(EntitlementRequest entitlementRequest) {
     var tenantId = entitlementRequest.getTenantId();
     var token = entitlementRequest.getOkapiToken();
-    var applicationIds = toStream(entitlementRequest.getApplications()).sorted().toList();
-    var descriptors = applicationManagerService.getApplicationDescriptors(applicationIds, token);
+    var descriptors = applicationManagerService.getApplicationDescriptors(entitlementRequest.getApplications(), token);
     var allApplications = descriptors.stream().collect(toMap(ApplicationDescriptor::getName, identity()));
 
     for (var descriptor : descriptors) {
@@ -84,8 +88,7 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
     var dependencyIds = resolveDependenciesToEntitledApps(dependenciesToBeLoaded, entitled, descriptor);
     log.debug("Dependencies resolved to the following applications: {}", dependencyIds);
 
-    var applicationIds = toStream(dependencyIds).sorted().toList();
-    var dependencyApps = applicationManagerService.getApplicationDescriptors(applicationIds, token);
+    var dependencyApps = applicationManagerService.getApplicationDescriptors(dependencyIds, token);
     for (var dependencyDescriptor : dependencyApps) {
       var dependencyId = dependencyDescriptor.getId();
 
@@ -184,5 +187,9 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
         "Entitled application(s) is not found or too many application(s) found by the given name(s)",
         "applicationName(s)", join(", ", notFoundOrTooMany));
     }
+  }
+
+  private static Predicate<ApplicationDescriptor> applicationFromRequest(EntitlementRequest entitlementRequest) {
+    return appDescriptor -> entitlementRequest.getApplications().contains(appDescriptor.getId());
   }
 }

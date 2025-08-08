@@ -8,6 +8,7 @@ import static org.folio.common.utils.SemverUtils.getNames;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.APPLICATION_FLOW;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-@Order(1)
+@Order(APPLICATION_FLOW)
 @Component
 @RequiredArgsConstructor
 public class ApplicationFlowValidator extends DatabaseLoggingStage<CommonStageContext>

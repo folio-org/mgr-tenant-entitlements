@@ -72,6 +72,7 @@ public class ModuleInstallationGraph {
    *
    * @return list of lists of module identifiers as installation sequence
    */
+  @SuppressWarnings("checkstyle:MethodLength")
   public List<List<String>> getInstallationSequence() {
     var remainingIndices = new HashSet<Integer>();
     for (var i = 0; i < adjacencyMatrix.length; i++) {

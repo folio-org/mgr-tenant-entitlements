@@ -4,7 +4,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.reverseList;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
@@ -56,12 +55,7 @@ public class ApplicationsFlowProvider {
     var ctx = CommonStageContext.decorate(stageContext);
     var flowId = ctx.flowId();
     var request = ctx.getEntitlementRequest();
-    var applicationIds = request.getApplications();
-    var loadedDescriptors = ctx.getApplicationDescriptors();
-
-    var requestDescriptors = loadedDescriptors.stream()
-      .filter(applicationDescriptor -> applicationIds.contains(applicationDescriptor.getId()))
-      .toList();
+    var requestDescriptors = ctx.getApplicationDescriptors();
 
     var applicationDescriptorsLayers = getApplicationDescriptorsLayers(request.getType(), requestDescriptors);
     var lfp = new LayerFlowProvider(ctx, requestDescriptors);
@@ -83,7 +77,10 @@ public class ApplicationsFlowProvider {
   private List<Set<String>> getApplicationDescriptorsLayers(EntitlementType type, List<ApplicationDescriptor> list) {
     var applicationGraph = new ApplicationInstallationGraph(list);
     var result = applicationGraph.getInstallationSequence();
-    return type == ENTITLE ? result : reverseList(result);
+    return switch (type) {
+      case ENTITLE, UPGRADE -> result;
+      case REVOKE -> reverseList(result);
+    };
   }
 
   private static Flow buildApplicationsFlow(String flowId, EntitlementRequest request,

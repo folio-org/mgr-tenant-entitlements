@@ -1,4 +1,4 @@
-package org.folio.entitlement.service;
+package org.folio.entitlement.service.validator.icollector;
 
 import static java.util.Collections.emptySet;
 import static java.util.function.Predicate.not;
@@ -7,10 +7,10 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.empty;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
-import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.common.utils.CollectionUtils.mapItemsToSet;
+import static org.apache.commons.collections4.PredicateUtils.truePredicate;
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.service.ApplicationInterfaceCollectorUtils.populateRequiredAndProvidedFromApp;
+import static org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollectorUtils.getEntitledApplicationIds;
+import static org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollectorUtils.populateRequiredAndProvidedFromApp;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -27,22 +27,18 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
-import org.folio.entitlement.domain.dto.Entitlement;
-import org.folio.entitlement.service.configuration.ApplicationInterfaceCollectorProperties;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
+import org.folio.common.domain.model.Dependency;
+import org.folio.entitlement.service.EntitlementCrudService;
 
 @Log4j2
-@Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "application.validation.interface-integrity.interface-collector.mode",
-  havingValue = "scoped", matchIfMissing = true)
 public class ScopedApplicationInterfaceCollector implements ApplicationInterfaceCollector {
 
   private final EntitlementCrudService entitlementCrudService;
-  private final ApplicationInterfaceCollectorProperties collectorProperties;
+  private final boolean excludeRequiredInterfacesOfEntitledApps;
 
   @Override
+  @SuppressWarnings("java:S3864")
   public Stream<RequiredProvidedInterfaces> collectRequiredAndProvided(List<ApplicationDescriptor> descriptors,
     UUID tenantId) {
     if (isEmpty(descriptors)) {
@@ -50,12 +46,13 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
     }
 
     log.debug("Reading required/provided interfaces from the descriptors [scoped mode]...");
-    var entitledApplicationIds = getEntitledApplicationIds(descriptors, tenantId);
+
     var dependencyResolver = new ApplicationDependencyResolver(descriptors);
+    // get the predicate to filter out applications if required interfaces of entitled applications are excluded
+    var descriptorFilter = getDescriptorFilter(descriptors, tenantId);
 
     return toStream(descriptors)
-      // skip application if it's entitled and required interfaces are excluded
-      .filter(not(excludeEntitledRequired(entitledApplicationIds)))
+      .filter(descriptorFilter)
       .map(descriptor -> combineApplicationWithDependencies(descriptor, dependencyResolver))
       .map(this::populateInterfaces)
       .peek(reqProv ->
@@ -66,15 +63,20 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
             .collect(joining(", "))));
   }
 
-  private Set<String> getEntitledApplicationIds(List<ApplicationDescriptor> descriptors, UUID tenantId) {
-    var entitlements = entitlementCrudService.findByApplicationIds(tenantId,
-      mapItems(descriptors, ApplicationDescriptor::getId));
-    return mapItemsToSet(entitlements, Entitlement::getApplicationId);
-  }
+  private Predicate<ApplicationDescriptor> getDescriptorFilter(List<ApplicationDescriptor> descriptors,
+    UUID tenantId) {
+    Predicate<ApplicationDescriptor> descriptorFilter;
 
-  private Predicate<ApplicationDescriptor> excludeEntitledRequired(Set<String> entitledApplicationIds) {
-    return descriptor -> collectorProperties.getRequired().isExcludeEntitled()
-      && entitledApplicationIds.contains(descriptor.getId());
+    if (excludeRequiredInterfacesOfEntitledApps) {
+      var entitledApplicationIds = getEntitledApplicationIds(descriptors, tenantId, entitlementCrudService);
+      descriptorFilter = not(entitledApp(entitledApplicationIds));
+    } else {
+      // if we do not exclude required interfaces of entitled applications, we can skip the filtering
+      // and return a predicate that always evaluates to true
+      descriptorFilter = truePredicate();
+    }
+
+    return descriptorFilter;
   }
 
   private RequiredProvidedInterfaces populateInterfaces(ApplicationWithDependencies appWithDependencies) {
@@ -94,6 +96,10 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
     var dependencies = dependencyResolver.getAllDependencies(application);
 
     return new ApplicationWithDependencies(application, dependencies);
+  }
+
+  private static Predicate<ApplicationDescriptor> entitledApp(Set<String> entitledApplicationIds) {
+    return descriptor -> entitledApplicationIds.contains(descriptor.getId());
   }
 
   private record ApplicationWithDependencies(ApplicationDescriptor application,
@@ -145,27 +151,37 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
 
       visited.push(appName);
 
+      var result = resolveAllSubDependencies(application, visited);
+
+      visited.pop();
+      cache.put(appName, result);
+      log.trace("Saving resolved dependencies in the cache: application = {}, dependencies = {}",
+        application::getId, () -> toStream(result).map(ApplicationDescriptor::getId).collect(joining(", ", "[", "]")));
+
+      return result;
+    }
+
+    private Set<ApplicationDescriptor> resolveAllSubDependencies(ApplicationDescriptor application,
+      Deque<String> visited) {
       var result = new HashSet<ApplicationDescriptor>();
       for (var dependency : application.getDependencies()) {
-        var dependencyName = dependency.getName();
-
-        var dependencyDescriptor = applicationsByName.get(dependencyName);
-        if (dependencyDescriptor == null) {
-          throw new IllegalStateException("Application descriptor not found for: " + dependencyName);
-        }
+        var dependencyDescriptor = getDependencyDescriptor(dependency);
 
         result.add(dependencyDescriptor);
 
         result.addAll(resolveDependencies(dependencyDescriptor, visited));
       }
-
-      visited.pop();
-      cache.put(appName, result);
-      log.trace("Saving resolved dependencies in the cache: application = {}, dependencies = {}",
-        application::getId,
-        () -> toStream(result).map(ApplicationDescriptor::getId).collect(joining(", ", "[", "]")));
-
       return result;
+    }
+
+    private ApplicationDescriptor getDependencyDescriptor(Dependency dependency) {
+      var dependencyName = dependency.getName();
+
+      var dependencyDescriptor = applicationsByName.get(dependencyName);
+      if (dependencyDescriptor == null) {
+        throw new IllegalStateException("Application descriptor not found for: " + dependencyName);
+      }
+      return dependencyDescriptor;
     }
   }
 }
