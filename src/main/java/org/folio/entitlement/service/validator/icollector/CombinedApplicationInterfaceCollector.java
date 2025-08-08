@@ -1,34 +1,28 @@
-package org.folio.entitlement.service;
+package org.folio.entitlement.service.validator.icollector;
 
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
-import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.common.utils.CollectionUtils.mapItemsToSet;
 import static org.folio.common.utils.CollectionUtils.toStream;
+import static org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollectorUtils.getEntitledApplicationIds;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
-import org.folio.entitlement.domain.dto.Entitlement;
-import org.folio.entitlement.service.configuration.ApplicationInterfaceCollectorProperties;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
+import org.folio.entitlement.service.EntitlementCrudService;
 
 @Log4j2
-@Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "application.validation.interface-integrity.interface-collector.mode",
-  havingValue = "combined")
 public class CombinedApplicationInterfaceCollector implements ApplicationInterfaceCollector {
 
   private final EntitlementCrudService entitlementCrudService;
-  private final ApplicationInterfaceCollectorProperties collectorProperties;
+  private final boolean excludeRequiredInterfacesOfEntitledApps;
 
   @Override
   public Stream<RequiredProvidedInterfaces> collectRequiredAndProvided(List<ApplicationDescriptor> descriptors,
@@ -38,10 +32,11 @@ public class CombinedApplicationInterfaceCollector implements ApplicationInterfa
     }
 
     log.debug("Reading required/provided interfaces from the descriptors [combined mode]...");
-    var entitledApplicationIds = getEntitledApplicationIds(descriptors, tenantId);
+
+    var populateInterfacesFromDescriptor = getPopulateInterfacesMethod(descriptors, tenantId);
 
     var result = toStream(descriptors)
-      .map(descriptor -> populateInterfaces(descriptor, entitledApplicationIds))
+      .map(populateInterfacesFromDescriptor)
       .reduce(RequiredProvidedInterfaces.empty(), RequiredProvidedInterfaces::merge);
 
     log.debug("Interface summary: required = {}, provided = [{}]", result::required,
@@ -53,16 +48,17 @@ public class CombinedApplicationInterfaceCollector implements ApplicationInterfa
     return Stream.of(result);
   }
 
-  private Set<String> getEntitledApplicationIds(List<ApplicationDescriptor> descriptors, UUID tenantId) {
-    var entitlements = entitlementCrudService.findByApplicationIds(tenantId,
-      mapItems(descriptors, ApplicationDescriptor::getId));
-    return mapItemsToSet(entitlements, Entitlement::getApplicationId);
+  private Function<ApplicationDescriptor, RequiredProvidedInterfaces> getPopulateInterfacesMethod(
+    List<ApplicationDescriptor> descriptors, UUID tenantId) {
+    return excludeRequiredInterfacesOfEntitledApps
+      ? populateInterfacesDependingOnEntitlement(
+          getEntitledApplicationIds(descriptors, tenantId, entitlementCrudService))
+      : ApplicationInterfaceCollectorUtils::populateRequiredAndProvidedFromApp;
   }
 
-  private RequiredProvidedInterfaces populateInterfaces(ApplicationDescriptor descriptor,
+  private static Function<ApplicationDescriptor, RequiredProvidedInterfaces> populateInterfacesDependingOnEntitlement(
     Set<String> entitledApplicationIds) {
-    return (collectorProperties.getRequired().isExcludeEntitled()
-      && entitledApplicationIds.contains(descriptor.getId()))
+    return descriptor -> entitledApplicationIds.contains(descriptor.getId())
       ? ApplicationInterfaceCollectorUtils.populateProvidedFromApp(descriptor)
       : ApplicationInterfaceCollectorUtils.populateRequiredAndProvidedFromApp(descriptor);
   }

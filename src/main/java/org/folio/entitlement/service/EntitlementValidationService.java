@@ -40,25 +40,33 @@ public class EntitlementValidationService {
     log.info("Validating entitlement request by specific validator: validator = {}, request = {}",
       validatorName, request);
 
-    var validator = getValidatorByName(validatorName);
-    if (validator.shouldValidate(request)) {
-      validator.validate(request);
-    } else {
-      log.debug("Validator is not designed to verify the request");
+    for (var validator : getValidatorsByName(validatorName)) {
+      if (validator.shouldValidate(request)) {
+        validator.validate(request);
+      } else {
+        log.debug("Validator is not designed to verify the request");
+      }
     }
   }
 
-  private EntitlementRequestValidator getValidatorByName(String validatorName) {
-    return entitlementRequestValidators.stream()
+  private List<EntitlementRequestValidator> getValidatorsByName(String validatorName) {
+    var result = entitlementRequestValidators.stream()
       .filter(validator -> validatorName.equalsIgnoreCase(validator.getName()))
-      .findFirst()
-      .orElseThrow(() -> new RequestValidationException(
-        "Invalid validator name. Should be one of the following: " + validatorNames(), "validator", validatorName));
+      .toList();
+
+    if (result.isEmpty()) {
+      throw new RequestValidationException(
+        "Invalid validator name. Should be one of the following: " + validatorNames(), "validator", validatorName);
+    }
+
+    log.debug("Found validators: name = {}, count = {}", validatorName, result.size());
+    return result;
   }
 
   private String validatorNames() {
     return entitlementRequestValidators.stream()
       .map(EntitlementRequestValidator::getName)
+      .distinct()
       .collect(joining(", ", "[", "]"));
   }
 }

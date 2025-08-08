@@ -15,19 +15,24 @@ import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 @Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class KeycloakUtils {
-  public static void addMissingResources(ModuleDescriptor newDescriptor) {
-    InterfaceDescriptor interfaceDescriptor = new InterfaceDescriptor();
-    interfaceDescriptor.setId("pubsub-event-handlers");
-    interfaceDescriptor.setVersion("1.1");
-    ArrayList<RoutingEntry> handlers = new ArrayList<>();
-    for (Map.Entry<String, PermissionMappingValue> mapping : KafkaEventUtils.getPermissionMapping().entrySet()) {
-      RoutingEntry routingEntry = new RoutingEntry();
-      routingEntry.setMethods(List.of(mapping.getValue().getMethod()));
-      routingEntry.setPathPattern(mapping.getValue().getEndpoint());
-      routingEntry.setPermissionsRequired(List.of(mapping.getKey()));
-      handlers.add(routingEntry);
+
+  public static void addPubSubResources(ModuleDescriptor newDescriptor) {
+    if (newDescriptor != null && newDescriptor.getId() != null && newDescriptor.getId().startsWith("mod-pubsub")) {
+      InterfaceDescriptor interfaceDescriptor = new InterfaceDescriptor();
+      interfaceDescriptor.setId("pubsub-event-handlers");
+      interfaceDescriptor.setVersion("1.1");
+
+      ArrayList<RoutingEntry> handlers = new ArrayList<>();
+      for (Map.Entry<String, PermissionMappingValue> mapping : KafkaEventUtils.getPermissionMapping().entrySet()) {
+        RoutingEntry routingEntry = new RoutingEntry();
+        routingEntry.setMethods(List.of(mapping.getValue().getMethod()));
+        routingEntry.setPathPattern(mapping.getValue().getEndpoint());
+        routingEntry.setPermissionsRequired(List.of(mapping.getKey()));
+        handlers.add(routingEntry);
+      }
+
+      interfaceDescriptor.setHandlers(handlers);
+      newDescriptor.getProvides().add(interfaceDescriptor);
     }
-    interfaceDescriptor.setHandlers(handlers);
-    newDescriptor.getProvides().add(interfaceDescriptor);
   }
 }

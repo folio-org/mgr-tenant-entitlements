@@ -39,7 +39,7 @@
     <openapi-tools.jackson-databind-nullable.version>0.2.6</openapi-tools.jackson-databind-nullable.version>
     <folio-spring-cql.version>9.1.0</folio-spring-cql.version>
     <applications-poc-tools.version>3.1.0-SNAPSHOT</applications-poc-tools.version>
-    <folio-java-checkstyle.version>1.1.0</folio-java-checkstyle.version>
+    <folio-java-checkstyle.version>1.2.0-SNAPSHOT</folio-java-checkstyle.version>
     <folio-flow-engine.version>3.1.0-SNAPSHOT</folio-flow-engine.version>
     <jackson-bom.version>2.17.2</jackson-bom.version>
     <caffeine.version>3.1.8</caffeine.version>
@@ -48,6 +48,7 @@
     </mgr-tenant-entitlements.yaml-file>
 
     <!-- Test dependencies versions -->
+    <mockito.version>5.18.0</mockito.version>
     <testcontainer.version>1.21.3</testcontainer.version>
     <awaitility.version>4.3.0</awaitility.version>
     <wiremock.version>2.35.2</wiremock.version>
@@ -71,7 +72,34 @@
       src/main/java/**/rest/resource/**/*,
       src/main/java/**/TenantEntitlementApplication.java
     </sonar.exclusions>
+    <argLine/>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-dependencies</artifactId>
+        <version>${spring-cloud-bom.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainer.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-bom</artifactId>
+        <version>${mockito.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -340,25 +368,6 @@
     </dependency>
   </dependencies>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-dependencies</artifactId>
-        <version>${spring-cloud-bom.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.testcontainers</groupId>
-        <artifactId>testcontainers-bom</artifactId>
-        <version>${testcontainer.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
   <build>
     <plugins>
       <plugin>
@@ -453,9 +462,12 @@
         </executions>
         <configuration>
           <sourceDirectories>
-            <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
-            <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>
+            <directory>${project.build.sourceDirectory}</directory>
           </sourceDirectories>
+          <testSourceDirectories>
+            <directory>${project.build.testSourceDirectory}</directory>
+          </testSourceDirectories>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <failsOnError>true</failsOnError>
           <outputEncoding>UTF-8</outputEncoding>
           <inputEncoding>UTF-8</inputEncoding>
@@ -463,6 +475,8 @@
           <failOnViolation>true</failOnViolation>
           <logViolationsToConsole>true</logViolationsToConsole>
           <configLocation>folio-checkstyle/checkstyle.xml</configLocation>
+          <propertiesLocation>${basedir}/checkstyle/checkstyle-checker.properties</propertiesLocation>
+          <suppressionsLocation>${basedir}/checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
           <cacheFile>${basedir}/target/cachefile</cacheFile>
         </configuration>
       </plugin>
@@ -474,6 +488,7 @@
         <configuration>
           <useSystemClassLoader>false</useSystemClassLoader>
           <groups>unit</groups>
+          <argLine>@{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
         </configuration>
       </plugin>
 
@@ -483,6 +498,7 @@
         <version>${maven-failsafe-plugin.version}</version>
         <configuration>
           <groups>integration</groups>
+          <argLine>@{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
         </configuration>
       </plugin>
 

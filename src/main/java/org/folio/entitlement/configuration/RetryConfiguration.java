@@ -75,30 +75,48 @@ public class RetryConfiguration {
   private <T extends Exception> @NotNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
     Predicate<T> shouldRetry, int numberOfRetries, String operationDescription,
     ThreadLocalModuleStageContext threadLocalModuleStageContext) {
-    var retryPolicy = new SimpleRetryPolicy() {
-      @Override
-      @SuppressWarnings("unchecked")
-      public boolean canRetry(RetryContext context) {
-        var error = context.getLastThrowable();
-        if (context.getRetryCount() >= numberOfRetries) {
-          return false;
-        }
-        if (error == null) {
-          // If there was no error so far (first attempt) - return true
-          return true;
-        }
-        // If there was an error that we can retry - return true
-        return exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error);
-      }
-
-      @Override
-      public void registerThrowable(RetryContext context, Throwable throwable) {
-        super.registerThrowable(context, throwable);
-        log.error(String.format("Error occurred for %s - retrying", operationDescription), throwable);
-        addErrorInformation(getStackTrace(throwable), threadLocalModuleStageContext);
-      }
-    };
+    var retryPolicy = new CustomRetryPolicy<>(numberOfRetries, exceptionClass, shouldRetry, operationDescription,
+      threadLocalModuleStageContext);
     retryPolicy.setMaxAttempts(numberOfRetries);
     return retryPolicy;
+  }
+
+  private static class CustomRetryPolicy<T extends Exception> extends SimpleRetryPolicy {
+    private final int numberOfRetries;
+    private final Class<T> exceptionClass;
+    private final Predicate<T> shouldRetry;
+    private final String operationDescription;
+    private final ThreadLocalModuleStageContext threadLocalModuleStageContext;
+
+    CustomRetryPolicy(int numberOfRetries, Class<T> exceptionClass, Predicate<T> shouldRetry,
+      String operationDescription, ThreadLocalModuleStageContext threadLocalModuleStageContext) {
+      this.numberOfRetries = numberOfRetries;
+      this.exceptionClass = exceptionClass;
+      this.shouldRetry = shouldRetry;
+      this.operationDescription = operationDescription;
+      this.threadLocalModuleStageContext = threadLocalModuleStageContext;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public boolean canRetry(RetryContext context) {
+      var error = context.getLastThrowable();
+      if (context.getRetryCount() >= numberOfRetries) {
+        return false;
+      }
+      if (error == null) {
+        // If there was no error so far (first attempt) - return true
+        return true;
+      }
+      // If there was an error that we can retry - return true
+      return exceptionClass.isAssignableFrom(error.getClass()) && shouldRetry.test((T) error);
+    }
+
+    @Override
+    public void registerThrowable(RetryContext context, Throwable throwable) {
+      super.registerThrowable(context, throwable);
+      log.error(String.format("Error occurred for %s - retrying", operationDescription), throwable);
+      addErrorInformation(getStackTrace(throwable), threadLocalModuleStageContext);
+    }
   }
 }

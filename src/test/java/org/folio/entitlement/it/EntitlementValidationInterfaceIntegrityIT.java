@@ -41,7 +41,7 @@ class EntitlementValidationInterfaceIntegrityIT {
     "application.keycloak.enabled=false",
     "application.okapi.enabled=false",
     "application.kong.enabled=false",
-    "application.validation.interface-integrity.interface-collector.mode=scoped"
+    "application.validation.interface-integrity.entitlement.interface-collector.mode=scoped"
   })
   class ScopedInterfaceCollector extends BaseIntegrationTest {
 
@@ -84,7 +84,7 @@ class EntitlementValidationInterfaceIntegrityIT {
     "application.keycloak.enabled=false",
     "application.okapi.enabled=false",
     "application.kong.enabled=false",
-    "application.validation.interface-integrity.interface-collector.mode=combined"
+    "application.validation.interface-integrity.entitlement.interface-collector.mode=combined"
   })
   class CombinedInterfaceCollector extends BaseIntegrationTest {
 
