@@ -103,4 +103,27 @@ class UpgradeValidationInterfaceIntegrityIT {
         .andExpect(jsonPath("$.total_records", is(1)));
     }
   }
+
+  @Nested
+  @IntegrationTest
+  @SqlMergeMode(MERGE)
+  @Sql(scripts = "classpath:/sql/truncate-tables.sql", executionPhase = AFTER_TEST_METHOD)
+  @TestPropertySource(properties = {
+    "application.keycloak.enabled=false",
+    "application.okapi.enabled=false",
+    "application.kong.enabled=false",
+    "application.validation.interface-integrity.entitlement.enabled=false",
+    "application.validation.interface-integrity.upgrade.enabled=false"
+  })
+  class ValidationDisabled extends BaseIntegrationTest {
+
+    @Test
+    void validate_positive_incorrectDependencies() throws Exception {
+      var request = entitlementRequest(TENANT_ID, FOLIO_APP2_V2_ID, FOLIO_APP3_ID, FOLIO_APP7_ID);
+
+      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+        request, UPGRADE.getValue(), VALIDATOR)
+        .andExpect(status().isNoContent());
+    }
+  }
 }

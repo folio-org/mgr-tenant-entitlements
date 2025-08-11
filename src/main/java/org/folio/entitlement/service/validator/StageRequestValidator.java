@@ -14,7 +14,7 @@ public abstract class StageRequestValidator extends DatabaseLoggingStage<CommonS
    * This can be used when a validator is not needed or disabled by configuration,
    * but the flow requires a validator to be present in the pipeline.
    */
-  public static final class NoOp extends StageRequestValidator {
+  public static class NoOp extends StageRequestValidator {
 
     private final String name;
 
