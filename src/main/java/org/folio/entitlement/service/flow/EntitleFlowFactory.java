@@ -5,6 +5,7 @@ import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUES
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.integration.kafka.KafkaTenantTopicCreator;
 import org.folio.entitlement.service.stage.ApplicationDescriptorTreeLoader;
 import org.folio.entitlement.service.stage.CancellationFailedFlowFinalizer;
 import org.folio.entitlement.service.stage.CancelledFlowFinalizer;
@@ -30,6 +31,7 @@ public class EntitleFlowFactory implements FlowFactory {
   private final StageRequestValidator interfaceIntegrityValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorTreeLoader applicationDescriptorTreeLoader;
+  private final KafkaTenantTopicCreator kafkaTenantTopicCreator;
 
   private final FinishedFlowFinalizer finishedFlowFinalizer;
   private final FlowInitializer flowInitializer;
@@ -47,6 +49,7 @@ public class EntitleFlowFactory implements FlowFactory {
       .stage(applicationDescriptorTreeLoader)
       .stage(interfaceIntegrityValidator)
       .stage(applicationFlowQueuingStage)
+      .stage(kafkaTenantTopicCreator)
       .stage(DynamicStage.of(applicationsFlowFactory.getName(), applicationsFlowFactory::createFlow))
       .stage(finishedFlowFinalizer)
       .onFlowError(failedFlowFinalizer)

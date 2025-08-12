@@ -1,27 +1,32 @@
 package org.folio.entitlement.integration.kafka;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
-import static org.folio.entitlement.support.TestValues.appStageContext;
-import static org.folio.entitlement.support.TestValues.entitlement;
+import static org.folio.entitlement.support.TestUtils.verifyNoMoreInteractions;
+import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
-import org.folio.entitlement.service.EntitlementCrudService;
-import org.folio.entitlement.support.TestUtils;
 import org.folio.integration.kafka.FolioKafkaProperties.KafkaTopic;
 import org.folio.integration.kafka.KafkaAdminService;
 import org.folio.test.types.UnitTest;
@@ -29,6 +34,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -38,75 +45,90 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class KafkaTenantTopicCreatorTest {
 
+  private static final String KAFKA_TENANT_TOPIC_CREATOR_CREATED = "KafkaTenantTopicCreator.created";
+  private static final String TEST_TENANT_TOPIC = "folio.test.test-topic";
+
   @InjectMocks private KafkaTenantTopicCreator topicCreator;
   @Mock private KafkaAdminService kafkaAdminService;
-  @Mock private EntitlementCrudService entitlementCrudService;
   @Spy private final TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties = tenantTopicProperties();
 
   @BeforeEach
   void setUp() {
-    System.setProperty("env", "tst");
+    System.setProperty("env", "folio");
   }
 
   @AfterEach
   void tearDown() {
-    TestUtils.verifyNoMoreInteractions(this);
     System.clearProperty("env");
+    verifyNoMoreInteractions(this);
   }
 
   @Test
   void execute_positive() {
-    var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).build();
-    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
-    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_ID, flowParameters, contextParameters);
+    var entitlementRequest = entitlementRequest(ENTITLE);
+    var stageContext = stageContext(entitlementRequest);
 
-    when(entitlementCrudService.findByTenantId(TENANT_ID)).thenReturn(emptyList());
+    when(kafkaAdminService.findTopics(Set.of(TEST_TENANT_TOPIC))).thenReturn(emptyList());
 
     topicCreator.execute(stageContext);
 
-    assertThat(stageContext.<Boolean>get("KafkaTenantTopicCreator.created")).isTrue();
+    assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isTrue();
     verify(tenantEntitlementKafkaProperties).getTenantTopics();
-    verify(kafkaAdminService).createTopic(new NewTopic("tst.test.test-topic", 10, (short) 1));
+    verify(kafkaAdminService).createTopic(new NewTopic(TEST_TENANT_TOPIC, 10, (short) 1));
   }
 
   @Test
-  void execute_positive_entitlementsFound() {
-    var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).build();
-    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
-    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = appStageContext(FLOW_ID, flowParameters, contextParameters);
+  void execute_positive_topicIsPresent() {
+    var entitlementRequest = entitlementRequest(ENTITLE);
+    var stageContext = stageContext(entitlementRequest);
 
-    when(entitlementCrudService.findByTenantId(TENANT_ID)).thenReturn(List.of(entitlement()));
+    when(kafkaAdminService.findTopics(Set.of(TEST_TENANT_TOPIC))).thenReturn(Set.of(TEST_TENANT_TOPIC));
 
     topicCreator.execute(stageContext);
 
-    verify(tenantEntitlementKafkaProperties, never()).getTenantTopics();
+    assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isNull();
+    verify(tenantEntitlementKafkaProperties).getTenantTopics();
     verify(kafkaAdminService, never()).createTopic(any());
-    assertThat(stageContext.<Boolean>get("KafkaTenantTopicCreator.created")).isNull();
+  }
+
+  @Test
+  void execute_positive_noTenantTopics() {
+    var entitlementRequest = entitlementRequest(ENTITLE);
+    var stageContext = stageContext(entitlementRequest);
+    when(tenantEntitlementKafkaProperties.getTenantTopics()).thenReturn(emptyList());
+    when(kafkaAdminService.findTopics(emptySet())).thenReturn(emptyList());
+
+    topicCreator.execute(stageContext);
+
+    assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isNull();
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = EntitlementType.class, names = {"ENTITLE"}, mode = EnumSource.Mode.EXCLUDE)
+  void execute_positive_notEntitleType(EntitlementType type) {
+    var entitlementRequest = entitlementRequest(type);
+    var stageContext = stageContext(entitlementRequest);
+
+    topicCreator.execute(stageContext);
+
+    assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isNull();
   }
 
   @Test
   void cancel_positive() {
-    var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).build();
-    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
-    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME, "KafkaTenantTopicCreator.created", true);
-
-    var stageContext = appStageContext(FLOW_ID, flowParameters, contextParameters);
+    var entitlementRequest = entitlementRequest(ENTITLE);
+    var stageContext = stageContext(entitlementRequest, Map.of(KAFKA_TENANT_TOPIC_CREATOR_CREATED, true));
 
     topicCreator.cancel(stageContext);
 
     verify(tenantEntitlementKafkaProperties).getTenantTopics();
-    verify(kafkaAdminService).deleteTopics(List.of("tst.test.test-topic"));
+    verify(kafkaAdminService).deleteTopics(List.of(TEST_TENANT_TOPIC));
   }
 
   @Test
   void cancel_positive_skipped() {
-    var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).build();
-    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
-    var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-
-    var stageContext = appStageContext(FLOW_ID, flowParameters, contextParameters);
+    var entitlementRequest = entitlementRequest(ENTITLE);
+    var stageContext = stageContext(entitlementRequest);
 
     topicCreator.cancel(stageContext);
 
@@ -118,5 +140,26 @@ class KafkaTenantTopicCreatorTest {
     var props = new TenantEntitlementKafkaProperties();
     props.setTenantTopics(List.of(KafkaTopic.of("test-topic", 10, (short) 1)));
     return props;
+  }
+
+  private static EntitlementRequest entitlementRequest(EntitlementType type) {
+    return EntitlementRequest.builder()
+      .tenantId(TENANT_ID)
+      .type(type)
+      .build();
+  }
+
+  private static CommonStageContext stageContext(EntitlementRequest entitlementRequest) {
+    return stageContext(entitlementRequest, emptyMap());
+  }
+
+  private static CommonStageContext stageContext(EntitlementRequest entitlementRequest,
+    Map<?, ?> additionalStageParameters) {
+    var stageParameters = new HashMap<>();
+    stageParameters.put(PARAM_TENANT_NAME, TENANT_NAME);
+    stageParameters.putAll(additionalStageParameters);
+
+    var flowParameters = Map.of(PARAM_REQUEST, entitlementRequest);
+    return commonStageContext(FLOW_ID, flowParameters, stageParameters);
   }
 }

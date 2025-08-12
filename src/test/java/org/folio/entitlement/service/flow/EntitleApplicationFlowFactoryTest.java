@@ -15,7 +15,6 @@ import static org.mockito.Mockito.verify;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
-import org.folio.entitlement.integration.kafka.KafkaTenantTopicCreator;
 import org.folio.entitlement.service.stage.ApplicationDependencySaver;
 import org.folio.entitlement.service.stage.ApplicationDescriptorValidator;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
@@ -52,7 +51,6 @@ class EntitleApplicationFlowFactoryTest {
   @Mock private ApplicationDependencySaver applicationDependencySaver;
   @Mock private ApplicationDiscoveryLoader applicationDiscoveryLoader;
   @Mock private EntitleRequestDependencyValidator entitleRequestDependencyValidator;
-  @Mock private KafkaTenantTopicCreator kafkaTenantTopicCreator;
 
   @Mock private ModulesFlowProvider modulesFlowProvider;
   @Mock private ApplicationFlowInitializer flowInitializer;
@@ -70,7 +68,7 @@ class EntitleApplicationFlowFactoryTest {
   @Test
   void prepareFlow_positive() {
     mockStageNames(applicationDescriptorValidator, applicationDependencySaver,
-      entitleRequestDependencyValidator, applicationDiscoveryLoader, kafkaTenantTopicCreator,
+      entitleRequestDependencyValidator, applicationDiscoveryLoader,
       finishedFlowFinalizer, flowInitializer, failedFlowFinalizer, cancelledFlowFinalizer,
       cancellationFailedApplicationFlowFinalizer, skippedFlowFinalizer);
 
@@ -83,8 +81,7 @@ class EntitleApplicationFlowFactoryTest {
     var context = appStageContext(actual.getId(), flowParameters, emptyMap());
 
     var inOrder = Mockito.inOrder(flowInitializer, applicationDependencySaver, entitleRequestDependencyValidator,
-      applicationDiscoveryLoader, finishedFlowFinalizer, applicationDescriptorValidator,
-      kafkaTenantTopicCreator, modulesFlowProvider);
+      applicationDiscoveryLoader, finishedFlowFinalizer, applicationDescriptorValidator, modulesFlowProvider);
 
     inOrder.verify(modulesFlowProvider).getName();
     verifyStageExecution(inOrder, flowInitializer, context);
@@ -92,7 +89,6 @@ class EntitleApplicationFlowFactoryTest {
     verifyStageExecution(inOrder, applicationDependencySaver, context);
     verifyStageExecution(inOrder, entitleRequestDependencyValidator, context);
     verifyStageExecution(inOrder, applicationDiscoveryLoader, context);
-    verifyStageExecution(inOrder, kafkaTenantTopicCreator, context);
     inOrder.verify(modulesFlowProvider).createFlow(context);
     verifyStageExecution(inOrder, finishedFlowFinalizer, context);
 
