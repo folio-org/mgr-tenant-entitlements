@@ -1,3 +1,8 @@
+## Version `v3.1.4` (12.08.2025)
+* Reinstall endpoint responding with 403 error (MGRENTITLE-134)
+
+---
+
 ## Version `v3.1.3` (11.07.2025)
 * Update applications-poc-tools version to 3.0.2 to resolve issue with patch part comparison in semver4j
 
