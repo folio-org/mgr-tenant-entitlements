@@ -18,7 +18,6 @@ import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.context.TestPropertySource;
@@ -44,7 +43,6 @@ class UpgradeValidationInterfaceIntegrityIT {
     "application.okapi.enabled=false",
     "application.kong.enabled=false",
   })
-  @Disabled("Disabled until the issue with concurrent kafka topic creation is resolved")
   class ValidationEnabled extends BaseIntegrationTest {
 
     @Test
