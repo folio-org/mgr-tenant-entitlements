@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
-import org.folio.entitlement.integration.kafka.KafkaTenantTopicCreator;
 import org.folio.entitlement.service.stage.ApplicationDependencySaver;
 import org.folio.entitlement.service.stage.ApplicationDescriptorValidator;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
@@ -28,7 +27,6 @@ public class EntitleApplicationFlowFactory implements ApplicationFlowFactory {
   private final ApplicationDependencySaver applicationDependencySaver;
   private final ApplicationDiscoveryLoader applicationDiscoveryLoader;
   private final EntitleRequestDependencyValidator entitleRequestDependencyValidator;
-  private final KafkaTenantTopicCreator kafkaTenantTopicCreator;
 
   private final ModulesFlowProvider modulesFlowFactory;
   private final ApplicationFlowInitializer flowInitializer;
@@ -54,7 +52,6 @@ public class EntitleApplicationFlowFactory implements ApplicationFlowFactory {
       .stage(applicationDependencySaver)
       .stage(entitleRequestDependencyValidator)
       .stage(applicationDiscoveryLoader)
-      .stage(kafkaTenantTopicCreator)
       .stage(DynamicStage.of(modulesFlowFactory.getName(), modulesFlowFactory::createFlow))
       .stage(finishedFlowFinalizer)
       .onFlowSkip(skippedFlowFinalizer)

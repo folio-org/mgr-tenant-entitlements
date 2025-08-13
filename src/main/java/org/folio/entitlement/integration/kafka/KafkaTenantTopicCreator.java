@@ -1,71 +1,96 @@
 package org.folio.entitlement.integration.kafka;
 
 import static java.lang.Boolean.TRUE;
-import static org.apache.commons.collections4.ListUtils.emptyIfNull;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.integration.kafka.KafkaUtils.createTopic;
+import static org.folio.common.utils.CollectionUtils.toStream;
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.CollectionUtils;
-import org.folio.entitlement.domain.model.ApplicationStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
-import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.integration.kafka.FolioKafkaProperties;
 import org.folio.integration.kafka.KafkaAdminService;
+import org.folio.integration.kafka.KafkaUtils;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class KafkaTenantTopicCreator extends DatabaseLoggingStage<ApplicationStageContext> {
+public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageContext> {
 
   private static final String PARAM_TOPICS_CREATED = "KafkaTenantTopicCreator.created";
 
   private final KafkaAdminService kafkaAdminService;
   private final TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
-  private final EntitlementCrudService entitlementCrudService;
 
   @Override
-  public void execute(ApplicationStageContext context) {
-    var tenantName = context.getTenantName();
-    var tenantId = context.getTenantId();
+  public void execute(CommonStageContext context) {
+    var request = context.getEntitlementRequest();
+    if (request.getType() == ENTITLE) {
+      var tenant = getTenant(context);
 
-    var existingEntitlements = entitlementCrudService.findByTenantId(tenantId);
-    if (CollectionUtils.isNotEmpty(existingEntitlements)) {
-      var appId = context.getApplicationId();
-      var msgTemplate = "Ignoring topics creation, current application is not first: applicationId = {}, tenantId = {}";
-      log.debug(msgTemplate, appId, tenantId);
-      return;
+      var createdTopics = createTenantTopics(tenant);
+
+      if (isNotEmpty(createdTopics)) {
+        context.put(PARAM_TOPICS_CREATED, true);
+        log.info("Tenant topics created: tenant = {}, topics = {}", tenant, createdTopics);
+      } else {
+        log.debug("No new tenant topics created: tenant = {}", tenant);
+      }
     }
-
-    createTenantTopics(tenantName);
-    context.put(PARAM_TOPICS_CREATED, true);
   }
 
   @Override
-  public void cancel(ApplicationStageContext context) {
+  public void cancel(CommonStageContext context) {
     var topicsCreated = context.<Boolean>get(PARAM_TOPICS_CREATED);
     if (!TRUE.equals(topicsCreated)) {
       return;
     }
 
-    var tenantName = context.getTenantName();
-    removeTenantTopics(tenantName);
+    var tenant = getTenant(context);
+    removeTenantTopics(tenant);
+    log.info("Tenant topics removed: tenant = {}", tenant);
   }
 
-  private void createTenantTopics(String tenantName) {
-    for (var kafkaTopic : emptyIfNull(tenantEntitlementKafkaProperties.getTenantTopics())) {
-      var name = getTenantTopicName(kafkaTopic.getName(), tenantName);
-      var topic = createTopic(name, kafkaTopic.getNumPartitions(), kafkaTopic.getReplicationFactor());
-      kafkaAdminService.createTopic(topic);
-    }
+  private List<String> createTenantTopics(String tenant) {
+    var tenantTopicsWithConfig = toStream(tenantEntitlementKafkaProperties.getTenantTopics())
+      .collect(toMap(topic -> getTenantTopicName(topic.getName(), tenant), identity()));
+
+    var existingTenantTopics = kafkaAdminService.findTopics(tenantTopicsWithConfig.keySet());
+    log.debug("Existing tenant topics: topicNames = {}", existingTenantTopics);
+
+    var createdTopics = new ArrayList<String>();
+    tenantTopicsWithConfig.entrySet().stream()
+      .filter(topic -> !existingTenantTopics.contains(topic.getKey()))
+      .forEach(topic -> {
+        createTopic(topic.getKey(), topic.getValue());
+        createdTopics.add(topic.getKey());
+      });
+
+    return createdTopics;
+  }
+
+  private void createTopic(String topicName, FolioKafkaProperties.KafkaTopic topicConfig) {
+    var createdTopic = KafkaUtils.createTopic(topicName, topicConfig.getNumPartitions(),
+      topicConfig.getReplicationFactor());
+    kafkaAdminService.createTopic(createdTopic);
   }
 
   private void removeTenantTopics(String tenantName) {
     var tenantTopics = tenantEntitlementKafkaProperties.getTenantTopics();
     var topicsToPurge = mapItems(tenantTopics, topic -> getTenantTopicName(topic.getName(), tenantName));
     kafkaAdminService.deleteTopics(topicsToPurge);
+  }
+
+  private static String getTenant(CommonStageContext context) {
+    return context.get(CommonStageContext.PARAM_TENANT_NAME);
   }
 }
