@@ -48,7 +48,7 @@
     </mgr-tenant-entitlements.yaml-file>
 
     <!-- Test dependencies versions -->
-    <mockito.version>5.18.0</mockito.version>
+    <mockito.version>5.19.0</mockito.version>
     <testcontainer.version>1.21.3</testcontainer.version>
     <awaitility.version>4.3.0</awaitility.version>
     <wiremock.version>2.35.2</wiremock.version>
