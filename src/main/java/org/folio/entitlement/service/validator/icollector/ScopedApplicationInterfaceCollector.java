@@ -7,7 +7,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.empty;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
-import static org.apache.commons.collections4.PredicateUtils.truePredicate;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollectorUtils.getEntitledApplicationIds;
 import static org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollectorUtils.populateRequiredAndProvidedFromApp;
@@ -73,7 +72,7 @@ public class ScopedApplicationInterfaceCollector implements ApplicationInterface
     } else {
       // if we do not exclude required interfaces of entitled applications, we can skip the filtering
       // and return a predicate that always evaluates to true
-      descriptorFilter = truePredicate();
+      descriptorFilter = applicationDescriptor -> true;
     }
 
     return descriptorFilter;
