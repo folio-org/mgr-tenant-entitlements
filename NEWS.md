@@ -1,3 +1,9 @@
+## Version `v3.1.5` (21.08.2025)
+* Validate that upgrade of application does not affect other installed applications (MGRENTITLE-68)
+* Concurrent Kafka topic creation at application flow level causes intermittent errors (MGRENTITLE-135)
+
+---
+
 ## Version `v3.1.4` (12.08.2025)
 * Reinstall endpoint responding with 403 error (MGRENTITLE-134)
 
