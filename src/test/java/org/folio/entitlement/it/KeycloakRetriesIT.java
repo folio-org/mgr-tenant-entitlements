@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.utils.IntegrationTestUtil.extractFlowIdFromFailedEntitlementResponse;
+import static org.folio.entitlement.utils.IntegrationTestUtil.getDefaultKeycloakStoreKeyProvider;
 import static org.folio.entitlement.utils.IntegrationTestUtil.getFlowStage;
 import static org.folio.entitlement.utils.LogTestUtil.captureLog4J2Logs;
 import static org.folio.entitlement.utils.LogTestUtil.stopCaptureLog4J2Logs;
@@ -25,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.github.tomakehurst.wiremock.client.WireMock;
 import java.util.List;
 import java.util.Map;
+import org.awaitility.Awaitility;
 import org.folio.entitlement.integration.keycloak.KeycloakService;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties.Login;
@@ -33,6 +35,7 @@ import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakAdminProperties;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
+import org.folio.security.integration.keycloak.service.KeycloakStoreKeyProvider;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient.KongResultList;
@@ -112,13 +115,17 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/test/authz/resource-server/resource")
         && e.getRequest().getBodyAsString().contains("POST#folio-module1.events.item.post")).count()).isEqualTo(3);
 
-    assertThat(
-      logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(7);
-    assertThat(logs.stream().filter(
-      logLine -> logLine.contains("jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error"))).hasSize(6);
-    assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "Flow stage KeycloakModuleResourceCreator folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
-      .hasSize(1);
+    Awaitility.await().untilAsserted(() -> {  // ignore ConcurrentModificationException
+      assertThat(
+          logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying")))
+        .hasSize(7);
+      assertThat(logs.stream().filter(
+          logLine -> logLine.contains("jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error")))
+        .hasSize(6);
+      assertThat(logs.stream().filter(logLine -> logLine.contains("Flow stage KeycloakModuleResourceCreator "
+          + "folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
+        .hasSize(1);
+    });
 
     var flowStageData = getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()),
       "folio-module1-1.0.0-keycloakModuleResourceCreator", mockMvc);
@@ -161,13 +168,15 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
         "/admin/realms/test/clients/test/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents%2F%7Bid%7D"))
       .count()).isEqualTo(3);
 
-    assertThat(
-      logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(7);
-    assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(6);
-    assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
-      .hasSize(1);
+    Awaitility.await().untilAsserted(() -> {  // ignore ConcurrentModificationException
+      assertThat(
+        logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(7);
+      assertThat(logs.stream().filter(logLine -> logLine.contains(
+        "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(6);
+      assertThat(logs.stream().filter(logLine -> logLine.contains(
+        "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
+        .hasSize(1);
+    });
 
     var flowStageData = getFlowStage(extractFlowIdFromFailedEntitlementResponse(response.getResponse()),
       "folio-module2-2.0.0-keycloakModuleResourceCleaner", mockMvc);
@@ -226,6 +235,12 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       adminProps.setUsername("admin");
       adminProps.setPassword("secret");
       return result;
+    }
+
+    @Bean
+    @Primary
+    public KeycloakStoreKeyProvider keycloakStoreKeyProvider() {
+      return getDefaultKeycloakStoreKeyProvider();
     }
 
     @Bean
