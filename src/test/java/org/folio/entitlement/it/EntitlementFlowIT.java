@@ -5,6 +5,7 @@ import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
+import static org.folio.entitlement.utils.IntegrationTestUtil.getDefaultKeycloakStoreKeyProvider;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -25,6 +26,7 @@ import org.folio.entitlement.domain.dto.Flow;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.dto.FlowStages;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
+import org.folio.security.integration.keycloak.service.KeycloakStoreKeyProvider;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.types.IntegrationTest;
@@ -33,11 +35,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.jdbc.Sql;
 
 @EnableKeycloakTlsMode
 @IntegrationTest
 @EnableKeycloakSecurity
+@Import(EntitlementFlowIT.TestConfiguration.class)
 @Sql(executionPhase = BEFORE_TEST_METHOD, scripts = "classpath:/sql/entitlement-flow-data.sql")
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 class EntitlementFlowIT extends BaseIntegrationTest {
@@ -277,5 +283,14 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .status(FINISHED)
       .startedAt(timestampFrom(startedAt))
       .finishedAt(timestampFrom(finishedAt));
+  }
+
+  static class TestConfiguration {
+
+    @Bean
+    @Primary
+    public KeycloakStoreKeyProvider keycloakStoreKeyProvider() {
+      return getDefaultKeycloakStoreKeyProvider();
+    }
   }
 }

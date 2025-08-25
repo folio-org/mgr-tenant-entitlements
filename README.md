@@ -1,6 +1,6 @@
 # mgr-tenant-entitlements
 
-Copyright (C) 2022-2022 The Open Library Foundation
+Copyright (C) 2022-2025 The Open Library Foundation
 
 This software is distributed under the terms of the Apache License,
 Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
@@ -133,6 +133,7 @@ docker run \
 | FOLIO_CLIENT_TLS_TRUSTSTORE_PASSWORD   | -                                   |  false   | Truststore password for TLS connection to Folio Modules.                                                                                                                                                   |
 | FOLIO_CLIENT_TLS_TRUSTSTORE_TYPE       | -                                   |  false   | Truststore file type for TLS connection to Folio Modules.                                                                                                                                                  |
 | MOD_AUTHTOKEN_URL                      | -                                   |   true   | Mod-authtoken URL. Required if OKAPI_INTEGRATION_ENABLED is true and SECURITY_ENABLED  is true and KC_INTEGRATION_ENABLED is false.                                                                        |
+| SECURE\_STORE\_ENV                     | folio                               |  false   | First segment of the secure store key, for example `prod` or `test`. Defaults to `folio`. In Ramsons and Sunflower defaults to ENV with fall-back `folio`.                                                 |
 | SECRET_STORE_TYPE                      | -                                   |   true   | Secure storage type. Supported values: `EPHEMERAL`, `AWS_SSM`, `VAULT`, `FSSP`                                                                                                                             |
 | MAX_HTTP_REQUEST_HEADER_SIZE           | 200KB                               |  false   | Maximum size of the HTTP request header.                                                                                                                                                                   |
 | FLOW_ENGINE_EXECUTION_TIMEOUT          | 30m                                 |  false   | Maximum execution timeout for entitlement execution in sync mode.                                                                                                                                          |

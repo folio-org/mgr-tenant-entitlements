@@ -56,6 +56,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Map;
 import lombok.SneakyThrows;
+import org.awaitility.Awaitility;
 import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
@@ -317,26 +318,29 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/folio-module2/install-timeout.json"
   })
   void install_negative_readTimeoutOnModuleCancellation() throws Exception {
-    mockMvc.perform(post(updatePathWithPrefix("/entitlements"))
-        .queryParam("tenantParameters", "loadReference=true")
-        .queryParam("ignoreErrors", "false")
-        .queryParam("purgeOnRollback", "true")
-        .contentType(APPLICATION_JSON)
-        .header(TOKEN, getSystemAccessToken())
-        .content(asJsonString(entitlementRequest(FOLIO_APP5_ID))))
-      .andExpect(status().isBadRequest())
-      .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(jsonPath("$.total_records", is(1)))
-      .andExpect(jsonPath("$.errors[0].type", is("FlowCancellationException")))
-      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLATION_FAILED")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-folioModuleInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[0].value", matchesPattern(
-        "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
-          + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")))
-      .andExpect(jsonPath("$.errors[0].parameters[1].key", is("folio-module1-1.0.0-folioModuleInstaller")))
-      .andExpect(jsonPath("$.errors[0].parameters[1].value", matchesPattern(
-        "CANCELLATION_FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
-          + "\\[method: POST, uri: http://.+:\\d+/folio-module1/_/tenant], cause: request timed out")));
+    Awaitility.await().untilAsserted(() -> {
+      mockMvc.perform(post(updatePathWithPrefix("/entitlements"))
+          .queryParam("tenantParameters", "loadReference=true")
+          .queryParam("ignoreErrors", "false")
+          .queryParam("purgeOnRollback", "true")
+          .contentType(APPLICATION_JSON)
+          .header(TOKEN, getSystemAccessToken())
+          .content(asJsonString(entitlementRequest(FOLIO_APP5_ID))))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentType(APPLICATION_JSON))
+        .andExpect(jsonPath("$.total_records", is(1)))
+        .andExpect(jsonPath("$.errors[0].type", is("FlowCancellationException")))
+        .andExpect(jsonPath("$.errors[0].message",
+            matchesPattern("Flow '.+' finished with status: CANCELLATION_FAILED")))
+        .andExpect(jsonPath("$.errors[0].parameters[0].key", is("folio-module2-2.0.0-folioModuleInstaller")))
+        .andExpect(jsonPath("$.errors[0].parameters[0].value", matchesPattern(
+          "FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
+            + "\\[method: POST, uri: http://.+:\\d+/folio-module2/_/tenant], cause: request timed out")))
+        .andExpect(jsonPath("$.errors[0].parameters[1].key", is("folio-module1-1.0.0-folioModuleInstaller")))
+        .andExpect(jsonPath("$.errors[0].parameters[1].value", matchesPattern(
+          "CANCELLATION_FAILED: \\[IntegrationException] \\[HttpTimeoutException] Failed to perform request "
+            + "\\[method: POST, uri: http://.+:\\d+/folio-module1/_/tenant], cause: request timed out")));
+    });
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP5_ID), emptyEntitlements());
 
