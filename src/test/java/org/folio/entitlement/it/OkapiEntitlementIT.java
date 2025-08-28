@@ -88,9 +88,7 @@ import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.mockito.invocation.InvocationOnMock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -111,7 +109,6 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 })
 @Import(KeycloakTestClientConfiguration.class)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "/sql/truncate-tables.sql")
-@TestMethodOrder(MethodOrderer.MethodName.class)
 class OkapiEntitlementIT extends BaseIntegrationTest {
 
   private static final String OKAPI_APP_ID = "okapi-app-1.0.0";

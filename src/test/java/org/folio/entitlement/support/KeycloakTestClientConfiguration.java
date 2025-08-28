@@ -10,7 +10,6 @@ import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestConstants.HTTP_CLIENT_DUMMY_SSL;
 import static org.folio.entitlement.support.TestUtils.OBJECT_MAPPER;
-import static org.folio.entitlement.utils.IntegrationTestUtil.getDefaultKeycloakStoreKeyProvider;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
 import static org.springframework.http.HttpMethod.DELETE;
@@ -46,23 +45,15 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.support.model.AuthorizationResource;
-import org.folio.security.integration.keycloak.service.KeycloakStoreKeyProvider;
 import org.keycloak.admin.client.Keycloak;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
 
 @Log4j2
 @TestConfiguration
 @RequiredArgsConstructor
 public class KeycloakTestClientConfiguration {
-
-  @Bean
-  @Primary
-  public KeycloakStoreKeyProvider keycloakStoreKeyProvider() {
-    return getDefaultKeycloakStoreKeyProvider();
-  }
 
   @Bean
   public KeycloakTestClient keycloakTestClient(
