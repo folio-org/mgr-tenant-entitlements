@@ -19,7 +19,6 @@ import org.folio.security.integration.keycloak.service.KeycloakStoreKeyProvider;
 import org.folio.tools.store.SecureStore;
 import org.folio.tools.store.exception.SecretNotFoundException;
 import org.keycloak.admin.client.Keycloak;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -29,7 +28,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @RequiredArgsConstructor
 @EnableConfigurationProperties(KeycloakProperties.class)
-@ConditionalOnBean({ KeycloakConfigurationProperties.class, KeycloakStoreKeyProvider.class })
+@ConditionalOnProperty("application.keycloak.enabled")
 public class KeycloakConfiguration {
 
   private final KeycloakProperties properties;
@@ -51,6 +50,7 @@ public class KeycloakConfiguration {
   }
 
   @Bean
+  @ConditionalOnProperty(name = "application.keycloak.enabled", havingValue = "true", matchIfMissing = true)
   public KeycloakService keycloakService(Keycloak client, KeycloakModuleDescriptorMapper mapper,
     KeycloakConfigurationProperties properties, KeycloakRetrySupportService keycloakRetrySupportService) {
     return new KeycloakService(client, mapper, properties, keycloakRetrySupportService);
