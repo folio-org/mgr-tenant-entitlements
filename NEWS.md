@@ -1,3 +1,8 @@
+## Version `v3.1.6` (21.08.2025)
+* Upgrade to Keycloak 26.3.3 (KEYCLOAK-56)
+
+---
+
 ## Version `v3.1.5` (21.08.2025)
 * Validate that upgrade of application does not affect other installed applications (MGRENTITLE-68)
 * Concurrent Kafka topic creation at application flow level causes intermittent errors (MGRENTITLE-135)
