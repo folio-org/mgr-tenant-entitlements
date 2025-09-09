@@ -1,3 +1,6 @@
+## Version `v3.0.1` (09.09.2025)
+* Upgrade to Keycloak 26.3.3 (KEYCLOAK-56)
+
 ## Version `v3.0.0` (11.03.2025)
 * Upgrade Java to v21. (MGRENTITLE-102)
 * Remove Kong routes management for entitled modules (MGRENTITLE-92)
