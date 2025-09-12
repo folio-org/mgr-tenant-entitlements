@@ -5,7 +5,7 @@ import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
-import static org.folio.entitlement.utils.IntegrationTestUtil.getDefaultKeycloakStoreKeyProvider;
+import static org.folio.entitlement.utils.IntegrationTestUtil.getDefaultSecureStoreKeyProvider;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -26,7 +26,7 @@ import org.folio.entitlement.domain.dto.Flow;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.dto.FlowStages;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.security.integration.keycloak.service.KeycloakStoreKeyProvider;
+import org.folio.security.integration.keycloak.service.SecureStoreKeyProvider;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.types.IntegrationTest;
@@ -289,8 +289,8 @@ class EntitlementFlowIT extends BaseIntegrationTest {
 
     @Bean
     @Primary
-    public KeycloakStoreKeyProvider keycloakStoreKeyProvider() {
-      return getDefaultKeycloakStoreKeyProvider();
+    public SecureStoreKeyProvider secureStoreKeyProvider() {
+      return getDefaultSecureStoreKeyProvider();
     }
   }
 }

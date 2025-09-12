@@ -15,7 +15,7 @@ import org.folio.entitlement.integration.keycloak.configuration.properties.Keycl
 import org.folio.entitlement.retry.keycloak.KeycloakRetrySupportService;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
-import org.folio.security.integration.keycloak.service.KeycloakStoreKeyProvider;
+import org.folio.security.integration.keycloak.service.SecureStoreKeyProvider;
 import org.folio.tools.store.SecureStore;
 import org.folio.tools.store.exception.SecretNotFoundException;
 import org.keycloak.admin.client.Keycloak;
@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Configuration;
 public class KeycloakConfiguration {
 
   private final KeycloakProperties properties;
-  private final KeycloakStoreKeyProvider keycloakStoreKeyProvider;
+  private final SecureStoreKeyProvider secureStoreKeyProvider;
   private final SecureStore secureStore;
 
   @Bean
@@ -94,7 +94,7 @@ public class KeycloakConfiguration {
 
   private String getKeycloakClientSecret(String clientId) {
     try {
-      return secureStore.get(keycloakStoreKeyProvider.globalStoreKey(clientId));
+      return secureStore.get(secureStoreKeyProvider.globalStoreKey(clientId));
     } catch (SecretNotFoundException e) {
       log.debug("Secret for 'admin' client is not defined in the secret store: clientId = {}", clientId);
       return null;

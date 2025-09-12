@@ -17,7 +17,7 @@ import org.folio.entitlement.repository.EntitlementRepository;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.service.EntitlementApplicationService;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.security.integration.keycloak.service.KeycloakStoreKeyProvider;
+import org.folio.security.integration.keycloak.service.SecureStoreKeyProvider;
 import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -47,7 +47,7 @@ class EntitlementApplicationServiceTokenCacheIT extends BaseIntegrationTest {
   @MockitoBean
   private ApplicationManagerService applicationManagerService;
   @MockitoBean
-  private KeycloakStoreKeyProvider keycloakStoreKeyProvider;
+  private SecureStoreKeyProvider secureStoreKeyProvider;
   @Autowired
   private CacheManager cacheManager;
 

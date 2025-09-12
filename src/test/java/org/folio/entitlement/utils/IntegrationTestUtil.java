@@ -9,7 +9,7 @@ import java.io.UnsupportedEncodingException;
 import lombok.experimental.UtilityClass;
 import org.folio.entitlement.domain.dto.Flow;
 import org.folio.entitlement.domain.dto.FlowStage;
-import org.folio.security.integration.keycloak.service.KeycloakStoreKeyProvider;
+import org.folio.security.integration.keycloak.service.SecureStoreKeyProvider;
 import org.folio.tools.store.properties.SecureStoreProperties;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,9 +35,9 @@ public class IntegrationTestUtil {
       .findAny().orElseThrow();
   }
 
-  public static KeycloakStoreKeyProvider getDefaultKeycloakStoreKeyProvider() {
+  public static SecureStoreKeyProvider getDefaultSecureStoreKeyProvider() {
     var secureStoreProperties = new SecureStoreProperties();
     secureStoreProperties.setEnvironment("folio");
-    return new KeycloakStoreKeyProvider(secureStoreProperties);
+    return new SecureStoreKeyProvider(secureStoreProperties);
   }
 }

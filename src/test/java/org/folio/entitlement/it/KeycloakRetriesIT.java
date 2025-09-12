@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.utils.IntegrationTestUtil.extractFlowIdFromFailedEntitlementResponse;
-import static org.folio.entitlement.utils.IntegrationTestUtil.getDefaultKeycloakStoreKeyProvider;
+import static org.folio.entitlement.utils.IntegrationTestUtil.getDefaultSecureStoreKeyProvider;
 import static org.folio.entitlement.utils.IntegrationTestUtil.getFlowStage;
 import static org.folio.entitlement.utils.LogTestUtil.captureLog4J2Logs;
 import static org.folio.entitlement.utils.LogTestUtil.stopCaptureLog4J2Logs;
@@ -35,7 +35,7 @@ import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakAdminProperties;
 import org.folio.security.integration.keycloak.configuration.properties.KeycloakProperties;
 import org.folio.security.integration.keycloak.service.KeycloakModuleDescriptorMapper;
-import org.folio.security.integration.keycloak.service.KeycloakStoreKeyProvider;
+import org.folio.security.integration.keycloak.service.SecureStoreKeyProvider;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient.KongResultList;
@@ -239,8 +239,8 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
 
     @Bean
     @Primary
-    public KeycloakStoreKeyProvider keycloakStoreKeyProvider() {
-      return getDefaultKeycloakStoreKeyProvider();
+    public SecureStoreKeyProvider keycloakStoreKeyProvider() {
+      return getDefaultSecureStoreKeyProvider();
     }
 
     @Bean
