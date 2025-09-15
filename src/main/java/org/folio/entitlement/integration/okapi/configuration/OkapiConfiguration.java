@@ -20,13 +20,13 @@ import org.folio.entitlement.integration.okapi.stage.OkapiModulesEventPublisher;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.ModuleSequenceProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 @Configuration
-@ConditionalOnBean(OkapiConfigurationProperties.class)
+@ConditionalOnProperty("application.okapi.enabled")
 public class OkapiConfiguration {
 
   /**

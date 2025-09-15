@@ -22,13 +22,13 @@ import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.ModuleSequenceProvider;
 import org.folio.entitlement.utils.JsonConverter;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @RequiredArgsConstructor
-@ConditionalOnBean(FolioClientConfigurationProperties.class)
+@ConditionalOnProperty(name = "application.okapi.enabled", havingValue = "false")
 public class FolioConfiguration {
 
   /**
