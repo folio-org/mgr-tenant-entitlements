@@ -1,3 +1,8 @@
+## Version `v3.1.7` (26.09.2025)
+* Use SECURE_STORE_ENV, not ENV, for secure store key (MGRENTITLE-139)
+
+---
+
 ## Version `v3.1.6` (21.08.2025)
 * Upgrade to Keycloak 26.3.3 (KEYCLOAK-56)
 
