@@ -54,7 +54,7 @@
     <wiremock.version>2.35.2</wiremock.version>
 
     <!-- Plugins versions -->
-    <maven-checkstyle.version>11.1.0</maven-checkstyle.version>
+    <maven-checkstyle.version>12.0.1</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <openapi-generator.version>7.16.0</openapi-generator.version>
 
@@ -666,7 +666,7 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.13</version>
+            <version>0.8.14</version>
             <configuration>
               <excludes>
                 <exclude>**/cql/**/*</exclude>
