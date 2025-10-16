@@ -5,7 +5,7 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SCHEDULED_JOB_RESOURCE_NAME;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SCHEDULED_JOB_TOPIC;
-import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,6 +16,7 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
+import org.folio.integration.kafka.KafkaUtils;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -28,8 +29,13 @@ public class ScheduledJobModuleEventPublisher extends AbstractModuleEventPublish
   }
 
   @Override
-  protected String getTopicName(String tenantName) {
-    return getTenantTopicName(SCHEDULED_JOB_TOPIC, tenantName);
+  protected String getTopicNameByTenant(String tenantName) {
+    return KafkaUtils.getTenantTopicName(SCHEDULED_JOB_TOPIC, tenantName);
+  }
+
+  @Override
+  protected String getTopicNameByTenantCollection() {
+    return KafkaUtils.getTenantTopicName(SCHEDULED_JOB_TOPIC, TOPIC_TENANT_COLLECTION_KEY);
   }
 
   @Override

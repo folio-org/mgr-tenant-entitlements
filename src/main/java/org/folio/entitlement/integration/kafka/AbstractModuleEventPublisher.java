@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
+import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
@@ -17,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLoggingStage {
 
   protected KafkaEventPublisher kafkaEventPublisher;
+  protected TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
 
   @Override
   public void execute(ModuleStageContext ctx) {
@@ -50,6 +52,11 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
     this.kafkaEventPublisher = kafkaEventPublisher;
   }
 
+  @Autowired
+  public void setTenantEntitlementKafkaProperties(TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties) {
+    this.tenantEntitlementKafkaProperties = tenantEntitlementKafkaProperties;
+  }
+
   /**
    * Creates event payload from application id and module descriptor.
    *
@@ -65,7 +72,14 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
    * @param tenantName - tenant name as {@link String}
    * @return kafka topic name
    */
-  protected abstract String getTopicName(String tenantName);
+  protected abstract String getTopicNameByTenant(String tenantName);
+
+  /**
+   * Creates topic tenants collection name.
+   *
+   * @return kafka topic tenants collection name
+   */
+  protected abstract String getTopicNameByTenantCollection();
 
   /**
    * Returns resource name for {@link ResourceEvent} object.
@@ -99,5 +113,12 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
    */
   private Optional<ResourceEvent<T>> createEvent(String tenantName, T newPayload, T oldPayload) {
     return KafkaEventUtils.createEvent(getResourceName(), tenantName, newPayload, oldPayload);
+  }
+
+  private String getTopicName(String tenantName) {
+    if (tenantEntitlementKafkaProperties.isProducerTenantCollection()) {
+      return getTopicNameByTenantCollection();
+    }
+    return getTopicNameByTenant(tenantName);
   }
 }

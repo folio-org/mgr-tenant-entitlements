@@ -27,6 +27,7 @@ import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.folio.entitlement.support.TestUtils;
@@ -55,6 +57,7 @@ class ScheduledJobModuleEventPublisherTest {
 
   @InjectMocks private ScheduledJobModuleEventPublisher moduleEventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
+  @Mock private TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
 
   @BeforeEach
   void setUp() {
@@ -74,6 +77,8 @@ class ScheduledJobModuleEventPublisherTest {
     var flowParameters = moduleFlowParameters(request, moduleDescriptor);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
+
     moduleEventPublisher.execute(stageContext);
 
     var expectedNewHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
@@ -92,6 +97,8 @@ class ScheduledJobModuleEventPublisherTest {
     var flowParameters = moduleFlowParameters(request, moduleDescriptor);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
+
     moduleEventPublisher.execute(stageContext);
 
     verifyNoInteractions(kafkaEventPublisher);
@@ -107,6 +114,8 @@ class ScheduledJobModuleEventPublisherTest {
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
@@ -144,6 +153,8 @@ class ScheduledJobModuleEventPublisherTest {
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 

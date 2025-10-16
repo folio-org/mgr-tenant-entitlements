@@ -12,8 +12,8 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITIES_TOPIC;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITY_RESOURCE_NAME;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.entitlement.utils.RoutingEntryUtils.getMethods;
-import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -38,6 +38,7 @@ import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
 import org.folio.entitlement.integration.kafka.model.Endpoint;
 import org.folio.entitlement.integration.kafka.model.FolioResource;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
+import org.folio.integration.kafka.KafkaUtils;
 import org.springframework.stereotype.Component;
 
 @Log4j2
@@ -51,8 +52,13 @@ public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublish
   }
 
   @Override
-  protected String getTopicName(String tenantName) {
-    return getTenantTopicName(CAPABILITIES_TOPIC, tenantName);
+  protected String getTopicNameByTenant(String tenantName) {
+    return KafkaUtils.getTenantTopicName(CAPABILITIES_TOPIC, tenantName);
+  }
+
+  @Override
+  protected String getTopicNameByTenantCollection() {
+    return KafkaUtils.getTenantTopicName(CAPABILITIES_TOPIC, TOPIC_TENANT_COLLECTION_KEY);
   }
 
   @Override

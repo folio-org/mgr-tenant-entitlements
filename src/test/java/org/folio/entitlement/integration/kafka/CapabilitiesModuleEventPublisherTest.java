@@ -30,6 +30,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
@@ -61,6 +63,7 @@ class CapabilitiesModuleEventPublisherTest {
 
   @InjectMocks private CapabilitiesModuleEventPublisher moduleEventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
+  @Mock private TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
   @Captor private ArgumentCaptor<ResourceEvent<CapabilityEventPayload>> eventCaptor;
   @Captor private ArgumentCaptor<String> messageKeyCaptor;
 
@@ -81,6 +84,7 @@ class CapabilitiesModuleEventPublisherTest {
 
     var topicName = capabilitiesTenantTopic();
     doNothing().when(kafkaEventPublisher).send(eq(topicName), messageKeyCaptor.capture(), eventCaptor.capture());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
@@ -94,8 +98,9 @@ class CapabilitiesModuleEventPublisherTest {
     var descriptor = readModuleDescriptor("json/events/capabilities/module-desc-with-nothing-to-publish.json");
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var flowParameters = moduleFlowParameters(request, descriptor);
-
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
+
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
@@ -116,6 +121,7 @@ class CapabilitiesModuleEventPublisherTest {
 
     var topicName = capabilitiesTenantTopic();
     doNothing().when(kafkaEventPublisher).send(eq(topicName), messageKeyCaptor.capture(), eventCaptor.capture());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 

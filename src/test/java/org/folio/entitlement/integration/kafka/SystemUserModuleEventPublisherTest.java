@@ -35,6 +35,7 @@ import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.UserDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.entitlement.support.TestUtils;
@@ -60,11 +61,13 @@ class SystemUserModuleEventPublisherTest {
   @InjectMocks private SystemUserModuleEventPublisher moduleEventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
   @Mock private SystemUserEventProvider systemUserEventProvider;
+  @Mock private TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
 
   @BeforeEach
   void setUp() {
     System.setProperty("env", "test-env");
     moduleEventPublisher.setKafkaEventPublisher(kafkaEventPublisher);
+    moduleEventPublisher.setTenantEntitlementKafkaProperties(tenantEntitlementKafkaProperties);
   }
 
   @AfterEach
@@ -85,6 +88,7 @@ class SystemUserModuleEventPublisherTest {
     var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
@@ -102,6 +106,7 @@ class SystemUserModuleEventPublisherTest {
 
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(empty());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
@@ -125,6 +130,7 @@ class SystemUserModuleEventPublisherTest {
 
     when(systemUserEventProvider.getSystemUserEvent(v1ModuleDescriptor)).thenReturn(of(v1UserEvent));
     when(systemUserEventProvider.getSystemUserEvent(v2ModuleDescriptor)).thenReturn(of(v2UserEvent));
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
@@ -167,6 +173,7 @@ class SystemUserModuleEventPublisherTest {
     var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
