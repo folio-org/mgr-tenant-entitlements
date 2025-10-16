@@ -66,10 +66,11 @@ class KafkaTenantTopicCreatorTest {
   @Test
   void execute_positive() {
     var entitlementRequest = entitlementRequest(ENTITLE);
-    var stageContext = stageContext(entitlementRequest);
 
     when(kafkaAdminService.findTopics(Set.of(TEST_TENANT_TOPIC))).thenReturn(emptyList());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
+    var stageContext = stageContext(entitlementRequest);
     topicCreator.execute(stageContext);
 
     assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isTrue();
@@ -80,10 +81,11 @@ class KafkaTenantTopicCreatorTest {
   @Test
   void execute_positive_topicIsPresent() {
     var entitlementRequest = entitlementRequest(ENTITLE);
-    var stageContext = stageContext(entitlementRequest);
 
     when(kafkaAdminService.findTopics(Set.of(TEST_TENANT_TOPIC))).thenReturn(Set.of(TEST_TENANT_TOPIC));
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
+    var stageContext = stageContext(entitlementRequest);
     topicCreator.execute(stageContext);
 
     assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isNull();
@@ -94,10 +96,11 @@ class KafkaTenantTopicCreatorTest {
   @Test
   void execute_positive_noTenantTopics() {
     var entitlementRequest = entitlementRequest(ENTITLE);
-    var stageContext = stageContext(entitlementRequest);
     when(tenantEntitlementKafkaProperties.getTenantTopics()).thenReturn(emptyList());
     when(kafkaAdminService.findTopics(emptySet())).thenReturn(emptyList());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
+    var stageContext = stageContext(entitlementRequest);
     topicCreator.execute(stageContext);
 
     assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isNull();
