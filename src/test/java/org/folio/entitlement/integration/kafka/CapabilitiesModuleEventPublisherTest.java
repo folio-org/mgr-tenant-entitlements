@@ -164,7 +164,6 @@ class CapabilitiesModuleEventPublisherTest {
     assertThat(actual).isEqualTo("folio.ALL.mgr-tenant-entitlements.capability");
   }
 
-
   private static EntitlementRequest entitlementRequest() {
     return EntitlementRequest.builder()
       .type(ENTITLE)
