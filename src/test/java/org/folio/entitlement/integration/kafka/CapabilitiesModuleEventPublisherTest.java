@@ -21,6 +21,7 @@ import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.entitlement.support.TestConstants.capabilitiesTenantCollectionTopic;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
 import static org.folio.entitlement.support.TestUtils.readCapabilityEvent;
 import static org.folio.entitlement.support.TestUtils.readModuleDescriptor;
@@ -85,6 +86,26 @@ class CapabilitiesModuleEventPublisherTest {
     var topicName = capabilitiesTenantTopic();
     doNothing().when(kafkaEventPublisher).send(eq(topicName), messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
+
+    moduleEventPublisher.execute(stageContext);
+
+    assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+  }
+
+  @DisplayName("execute_positive_parameterized_useTenantCollectionTopic")
+  @MethodSource("executeDatasetProvider")
+  @ParameterizedTest(name = "[{index}] {0}")
+  void execute_positive_parameterized_useTenantCollectionTopic(@SuppressWarnings("unused") String testName,
+    ModuleType moduleType, ModuleDescriptor descriptor, ModuleDescriptor installedModuleDescriptor,
+    List<ResourceEvent<CapabilityEventPayload>> expectedEvents) {
+    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var flowParameters = flowParameters(moduleType, descriptor, installedModuleDescriptor);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
+
+    var topicName = capabilitiesTenantCollectionTopic();
+    doNothing().when(kafkaEventPublisher).send(eq(topicName), messageKeyCaptor.capture(), eventCaptor.capture());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
 
     moduleEventPublisher.execute(stageContext);
 

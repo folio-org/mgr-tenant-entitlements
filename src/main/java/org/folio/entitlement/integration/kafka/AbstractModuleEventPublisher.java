@@ -116,9 +116,7 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
   }
 
   private String getTopicName(String tenantName) {
-    if (tenantEntitlementKafkaProperties.isProducerTenantCollection()) {
-      return getTopicNameByTenantCollection();
-    }
-    return getTopicNameByTenant(tenantName);
+    return tenantEntitlementKafkaProperties.isProducerTenantCollection()
+      ? getTopicNameByTenantCollection() : getTopicNameByTenant(tenantName);
   }
 }

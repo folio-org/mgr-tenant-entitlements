@@ -22,6 +22,7 @@ import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantCollectionTopic;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
@@ -88,6 +89,26 @@ class ScheduledJobModuleEventPublisherTest {
       .build();
 
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
+  }
+
+  @Test
+  void execute_positive_useTenantCollectionTopic() {
+    var moduleDescriptor = fooModuleDescriptor();
+    var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
+    var flowParameters = moduleFlowParameters(request, moduleDescriptor);
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
+
+    moduleEventPublisher.execute(stageContext);
+
+    var expectedNewHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
+    var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+      .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
+      .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, expectedNewHandlers))
+      .build();
+
+    verify(kafkaEventPublisher).send(scheduledJobsTenantCollectionTopic(), TENANT_ID.toString(), fooTimerEvent);
   }
 
   @Test

@@ -97,9 +97,7 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageCon
   }
 
   private String getTopicTenantValue(String tenant) {
-    if (tenantEntitlementKafkaProperties.isProducerTenantCollection()) {
-      return TOPIC_TENANT_COLLECTION_KEY;
-    }
-    return tenant;
+    return tenantEntitlementKafkaProperties.isProducerTenantCollection()
+      ? TOPIC_TENANT_COLLECTION_KEY : tenant;
   }
 }
