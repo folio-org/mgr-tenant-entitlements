@@ -179,6 +179,13 @@ class ScheduledJobModuleEventPublisherTest {
     assertThat(result).isEqualTo("mod-foo-1.0.0-scheduledJobModuleEventPublisher");
   }
 
+  @Test
+  void getTopicNameByTenantCollection_positive() {
+    var actual = moduleEventPublisher.getTopicNameByTenantCollection();
+
+    assertThat(actual).isEqualTo("test-env.ALL.mgr-tenant-entitlements.scheduled-job");
+  }
+
   private static ModuleDescriptor fooModuleDescriptor() {
     return new ModuleDescriptor().id(MODULE_ID)
       .addProvidesItem(new InterfaceDescriptor()

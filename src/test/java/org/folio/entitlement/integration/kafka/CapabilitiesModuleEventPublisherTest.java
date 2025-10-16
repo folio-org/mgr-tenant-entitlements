@@ -157,6 +157,14 @@ class CapabilitiesModuleEventPublisherTest {
     assertThat(result).isEqualTo("mod-foo-1.0.0-capabilitiesModuleEventPublisher");
   }
 
+  @Test
+  void getTopicNameByTenantCollection_positive() {
+    var actual = moduleEventPublisher.getTopicNameByTenantCollection();
+
+    assertThat(actual).isEqualTo("folio.ALL.mgr-tenant-entitlements.capability");
+  }
+
+
   private static EntitlementRequest entitlementRequest() {
     return EntitlementRequest.builder()
       .type(ENTITLE)

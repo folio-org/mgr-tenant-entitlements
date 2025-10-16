@@ -197,6 +197,13 @@ class SystemUserModuleEventPublisherTest {
     assertThat(result).isEqualTo("mod-foo-1.0.0-systemUserModuleEventPublisher");
   }
 
+  @Test
+  void getTopicNameByTenantCollection_positive() {
+    var actual = moduleEventPublisher.getTopicNameByTenantCollection();
+
+    assertThat(actual).isEqualTo("test-env.ALL.mgr-tenant-entitlements.system-user");
+  }
+
   private static ModuleDescriptor moduleDescriptor(String moduleId, UserDescriptor userDescriptor) {
     //noinspection deprecation
     return new ModuleDescriptor().id(moduleId).user(userDescriptor);

@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageContext> {
 
   private static final String PARAM_TOPICS_CREATED = "KafkaTenantTopicCreator.created";
+
   private final KafkaAdminService kafkaAdminService;
   private final TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
 
