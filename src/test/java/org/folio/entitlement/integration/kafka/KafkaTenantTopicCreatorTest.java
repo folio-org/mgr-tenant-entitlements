@@ -47,6 +47,7 @@ class KafkaTenantTopicCreatorTest {
 
   private static final String KAFKA_TENANT_TOPIC_CREATOR_CREATED = "KafkaTenantTopicCreator.created";
   private static final String TEST_TENANT_TOPIC = "folio.test.test-topic";
+  private static final String TEST_TENANT_COLLECTION_TOPIC = "folio.ALL.test-topic";
 
   @InjectMocks private KafkaTenantTopicCreator topicCreator;
   @Mock private KafkaAdminService kafkaAdminService;
@@ -76,6 +77,21 @@ class KafkaTenantTopicCreatorTest {
     assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isTrue();
     verify(tenantEntitlementKafkaProperties).getTenantTopics();
     verify(kafkaAdminService).createTopic(new NewTopic(TEST_TENANT_TOPIC, 10, (short) 1));
+  }
+
+  @Test
+  void execute_positive_useTenantCollectionTopic() {
+    var entitlementRequest = entitlementRequest(ENTITLE);
+
+    when(kafkaAdminService.findTopics(Set.of(TEST_TENANT_COLLECTION_TOPIC))).thenReturn(emptyList());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
+
+    var stageContext = stageContext(entitlementRequest);
+    topicCreator.execute(stageContext);
+
+    assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isTrue();
+    verify(tenantEntitlementKafkaProperties).getTenantTopics();
+    verify(kafkaAdminService).createTopic(new NewTopic(TEST_TENANT_COLLECTION_TOPIC, 10, (short) 1));
   }
 
   @Test
