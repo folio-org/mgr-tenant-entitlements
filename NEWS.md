@@ -8,6 +8,7 @@
 * Concurrent Kafka topic creation at application flow level causes intermittent errors (MGRENTITLE-135)
 * Use SECURE_STORE_ENV, not ENV, for secure store key (MGRENTITLE-139)
 * Add support for custom Keycloak base URL for JWKS endpoint, new ENV variable `KC_JWKS_BASE_URL` (MODSIDECAR-148)
+* Implement Kafka Tenant Collection Topics (MGRENTITLE-41)
 
 ---
 
