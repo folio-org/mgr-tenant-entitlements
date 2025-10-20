@@ -4,6 +4,7 @@ import static org.folio.common.utils.tls.FeignClientTlsUtils.getOkHttpClient;
 
 import feign.RequestInterceptor;
 import feign.okhttp.OkHttpClient;
+import org.folio.entitlement.integration.interceptor.TokenRefreshRequestInterceptor;
 import org.folio.entitlement.integration.token.TokenProvider;
 import org.springframework.context.annotation.Bean;
 
@@ -16,6 +17,6 @@ public class TenantManagerClientConfiguration {
 
   @Bean
   public RequestInterceptor tenantManagerRequestInterceptor(TokenProvider tokenProvider) {
-    return new TenantManagerRequestInterceptor(tokenProvider);
+    return new TokenRefreshRequestInterceptor(tokenProvider);
   }
 }

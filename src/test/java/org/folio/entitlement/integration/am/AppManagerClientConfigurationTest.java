@@ -7,6 +7,7 @@ import feign.RequestInterceptor;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
 import okhttp3.OkHttpClient;
+import org.folio.entitlement.integration.interceptor.TokenRefreshRequestInterceptor;
 import org.folio.entitlement.integration.token.TokenProvider;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -43,6 +44,6 @@ class AppManagerClientConfigurationTest {
   void applicationManagerRequestInterceptor_positive() {
     var interceptor = appManagerClientConfiguration.applicationManagerRequestInterceptor(tokenProvider);
     assertThat(interceptor).isNotNull();
-    assertThat(interceptor).isInstanceOf(ApplicationManagerRequestInterceptor.class);
+    assertThat(interceptor).isInstanceOf(TokenRefreshRequestInterceptor.class);
   }
 }

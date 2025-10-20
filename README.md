@@ -246,6 +246,26 @@ Keycloak.
 A valid Keycloak JWT token must be passed for accessing secured resources.
 The feature is controlled by two env variables `SECURITY_ENABLED` and `KC_INTEGRATION_ENABLED`.
 
+#### Automatic Token Refresh for Long-Running Operations
+
+During long-running entitlement operations (upgrades, installations), user-provided access tokens may expire before the
+operation completes. To prevent failures, `mgr-tenant-entitlements` automatically refreshes tokens when communicating
+with `mgr-tenants` and `mgr-applications` services.
+
+**How it works:**
+- When Keycloak integration is enabled, a `TokenRefreshRequestInterceptor` transparently replaces user-provided tokens
+  with fresh system tokens obtained using Keycloak's client credentials flow
+- Tokens are cached and reused until near expiration (controlled by `KC_AUTHORIZATION_CACHE_TTL_OFFSET`)
+- The refresh happens automatically at the Feign client level, requiring no code changes in existing services
+- When Keycloak is disabled, user tokens pass through unchanged
+
+**Configuration:**
+- Requires `KC_INTEGRATION_ENABLED=true`
+- Uses the admin client configured via `KC_ADMIN_CLIENT_ID` and `KC_ADMIN_CLIENT_SECRET`
+- Token cache behavior controlled by `KC_AUTHORIZATION_CACHE_MAX_SIZE` and `KC_AUTHORIZATION_CACHE_TTL_OFFSET`
+
+This ensures operations of any duration can complete successfully without token expiration issues.
+
 ### Keycloak specific environment variables
 
 | Name                              | Default value              |  Required   | Description                                                                                                                                                      |

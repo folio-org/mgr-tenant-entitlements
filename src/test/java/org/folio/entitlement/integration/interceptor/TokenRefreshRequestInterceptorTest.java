@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.tm;
+package org.folio.entitlement.integration.interceptor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.common.utils.OkapiHeaders.TOKEN;
@@ -19,17 +19,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class TenantManagerRequestInterceptorTest {
+class TokenRefreshRequestInterceptorTest {
 
   private static final String FRESH_TOKEN = "fresh-token";
 
   @Mock private TokenProvider tokenProvider;
 
-  private TenantManagerRequestInterceptor interceptor;
+  private TokenRefreshRequestInterceptor interceptor;
 
   @BeforeEach
   void setUp() {
-    interceptor = new TenantManagerRequestInterceptor(tokenProvider);
+    interceptor = new TokenRefreshRequestInterceptor(tokenProvider);
   }
 
   @Test

@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.am;
+package org.folio.entitlement.integration.interceptor;
 
 import static org.folio.common.utils.OkapiHeaders.TOKEN;
 
@@ -10,12 +10,12 @@ import org.folio.entitlement.integration.token.TokenProvider;
 
 /**
  * Feign request interceptor that replaces user-provided tokens with fresh system tokens
- * from Keycloak for requests to mgr-applications. This prevents token expiration issues
+ * from Keycloak for requests to external services. This prevents token expiration issues
  * during long-running operations.
  */
 @Log4j2
 @RequiredArgsConstructor
-public class ApplicationManagerRequestInterceptor implements RequestInterceptor {
+public class TokenRefreshRequestInterceptor implements RequestInterceptor {
 
   private final TokenProvider tokenProvider;
 
@@ -31,7 +31,7 @@ public class ApplicationManagerRequestInterceptor implements RequestInterceptor 
       template.removeHeader(TOKEN);
       template.header(TOKEN, freshToken);
       
-      log.debug("Replaced token for mgr-applications request");
+      log.debug("Replaced token for external service request");
     }
   }
 }
