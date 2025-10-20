@@ -142,7 +142,6 @@ docker run \
 | FLOW_ENGINE_THREADS_NUM                | 4                                   |  false   | Defines the number of threads for Fork-Join Pool used by flow engine.                                                                                                                                      |
 | REGISTER_MODULE_IN_KONG                | true                                |  false   | Defines if module must be registered in Kong (it will create for itself service and list of routes from module descriptor)                                                                                 |
 | ROUTER_PATH_PREFIX                     |                                     |  false   | Defines routes prefix to be added to the generated endpoints by OpenAPI generator (`/foo/entites` -> `{{prefix}}/foo/entities`). Required if load balancing group has format like `{{host}}/{{moduleId}}`  |
-| KAFKA_PRODUCER_TENANT_COLLECTION       | false                               |  false   | Defines usage Kafka Topic Tenant Collection for tenant specific events                                                                                                                                     |
 
 ### Validators environment variables
 
@@ -174,6 +173,7 @@ docker run \
 | KAFKA_SYS_USER_TOPIC_PARTITIONS              | 1             |  false   | Amount of partitions for `system-user` topic.                                                                                                              |
 | KAFKA_SYS_USER_TOPIC_REPLICATION_FACTOR      | -             |  false   | Replication factor for `system-user` topic.                                                                                                                |
 | KAFKA_SEND_DURATION_TIMEOUT                  | 10s           |  false   | A default duration for KafkaEventPublisher will wait for the message acknowledgment from kafka                                                             |
+| KAFKA_PRODUCER_TENANT_COLLECTION             | false         |  false   | Defines usage Kafka Topic Tenant Collection for tenant specific events                                                                                     |
 
 ### SSL Configuration environment variables
 
