@@ -65,4 +65,24 @@ class TokenProviderTest {
 
     assertThat(result).isEqualTo(OKAPI_TOKEN);
   }
+
+  @Test
+  void getToken_positive_withNullToken() {
+    ReflectionTestUtils.setField(tokenProvider, "keycloakEnabled", false);
+
+    var result = tokenProvider.getToken(null);
+
+    assertThat(result).isNull();
+    verifyNoInteractions(keycloakCacheableService);
+  }
+
+  @Test
+  void getToken_positive_withEmptyToken() {
+    ReflectionTestUtils.setField(tokenProvider, "keycloakEnabled", false);
+
+    var result = tokenProvider.getToken("");
+
+    assertThat(result).isEmpty();
+    verifyNoInteractions(keycloakCacheableService);
+  }
 }

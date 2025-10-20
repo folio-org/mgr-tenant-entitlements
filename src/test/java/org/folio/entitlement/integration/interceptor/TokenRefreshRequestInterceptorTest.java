@@ -56,4 +56,29 @@ class TokenRefreshRequestInterceptorTest {
     assertThat(tokenHeaders).isNull();
     verifyNoInteractions(tokenProvider);
   }
+
+  @Test
+  void apply_positive_emptyTokenHeaders() {
+    var template = new RequestTemplate();
+    template.header(TOKEN, new String[0]);
+
+    interceptor.apply(template);
+
+    verifyNoInteractions(tokenProvider);
+  }
+
+  @Test
+  void apply_positive_multipleTokenHeaders() {
+    when(tokenProvider.getToken(OKAPI_TOKEN)).thenReturn(FRESH_TOKEN);
+
+    var template = new RequestTemplate();
+    template.header(TOKEN, OKAPI_TOKEN, "another-token");
+
+    interceptor.apply(template);
+
+    // Should only use the first token
+    Collection<String> tokenHeaders = template.headers().get(TOKEN);
+    assertThat(tokenHeaders).containsExactly(FRESH_TOKEN);
+    verify(tokenProvider).getToken(OKAPI_TOKEN);
+  }
 }
