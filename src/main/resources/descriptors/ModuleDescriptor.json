@@ -28,12 +28,6 @@
         },
         {
           "type": "internal",
-          "methods": [ "GET" ],
-          "pathPattern": "/entitlements/{tenantId}",
-          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.item.get" ]
-        },
-        {
-          "type": "internal",
           "methods": [ "DELETE" ],
           "pathPattern": "/entitlements",
           "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.item.delete" ],
@@ -159,11 +153,6 @@
       "subPermissions": [ "okapi.proxy.tenants.install.post" ]
     },
     {
-      "description": "Retrieve applications installed for tenant",
-      "displayName": "Manager Tenant Entitlements - get tenant entitlements",
-      "permissionName": "mgr-tenant-entitlements.entitlements.item.get"
-    },
-    {
       "description": "Retrieve applications installed for tenants",
       "displayName": "Manager Tenant Entitlements - get tenants entitlements",
       "permissionName": "mgr-tenant-entitlements.entitlements.collection.get"
@@ -211,7 +200,6 @@
       "subPermissions": [
         "mgr-tenant-entitlements.entitlements.item.post",
         "mgr-tenant-entitlements.entitlements.item.put",
-        "mgr-tenant-entitlements.entitlements.item.get",
         "mgr-tenant-entitlements.entitlements.item.delete",
         "mgr-tenant-entitlements.entitlements.collection.get"
       ]
@@ -234,7 +222,6 @@
       "permissionName": "mgr-tenant-entitlements.readonly",
       "visible": true,
       "subPermissions": [
-        "mgr-tenant-entitlements.entitlements.item.get",
         "mgr-tenant-entitlements.entitlements.collection.get",
         "mgr-tenant-entitlements.entitlements.modules.item.get",
         "mgr-tenant-entitlements.flows.item.get",
