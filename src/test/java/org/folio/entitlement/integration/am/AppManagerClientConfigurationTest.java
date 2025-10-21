@@ -43,7 +43,6 @@ class AppManagerClientConfigurationTest {
   @Test
   void applicationManagerRequestInterceptor_positive() {
     var interceptor = appManagerClientConfiguration.applicationManagerRequestInterceptor(tokenProvider);
-    assertThat(interceptor).isNotNull();
-    assertThat(interceptor).isInstanceOf(TokenRefreshRequestInterceptor.class);
+    assertThat(interceptor).isNotNull().isInstanceOf(TokenRefreshRequestInterceptor.class);
   }
 }
