@@ -23,6 +23,7 @@ import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.entitlement.support.TestConstants.systemUserTenantCollectionTopic;
 import static org.folio.entitlement.support.TestConstants.systemUserTenantTopic;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
@@ -35,6 +36,7 @@ import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.UserDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.entitlement.support.TestUtils;
@@ -60,11 +62,13 @@ class SystemUserModuleEventPublisherTest {
   @InjectMocks private SystemUserModuleEventPublisher moduleEventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
   @Mock private SystemUserEventProvider systemUserEventProvider;
+  @Mock private TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
 
   @BeforeEach
   void setUp() {
     System.setProperty("env", "test-env");
     moduleEventPublisher.setKafkaEventPublisher(kafkaEventPublisher);
+    moduleEventPublisher.setTenantEntitlementKafkaProperties(tenantEntitlementKafkaProperties);
   }
 
   @AfterEach
@@ -80,16 +84,38 @@ class SystemUserModuleEventPublisherTest {
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
     var flowParameters = moduleFlowParameters(request, moduleDescriptor);
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
     var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     moduleEventPublisher.execute(stageContext);
 
     var expectedMessageKey = TENANT_ID.toString();
     verify(kafkaEventPublisher).send(systemUserTenantTopic(), expectedMessageKey, resourceEvent(systemUserEvent));
+  }
+
+  @Test
+  void execute_positive_useTenantCollectionTopic() {
+    var userDescriptor = userDescriptor("foo.entities.post");
+    var moduleDescriptor = moduleDescriptor(MODULE_ID, userDescriptor);
+    var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
+    var flowParameters = moduleFlowParameters(request, moduleDescriptor);
+    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+
+    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
+    when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
+
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
+    moduleEventPublisher.execute(stageContext);
+
+    var expectedMessageKey = TENANT_ID.toString();
+    verify(kafkaEventPublisher).send(systemUserTenantCollectionTopic(),
+      expectedMessageKey, resourceEvent(systemUserEvent));
   }
 
   @Test
@@ -98,11 +124,12 @@ class SystemUserModuleEventPublisherTest {
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
     var flowParameters = moduleFlowParameters(request, moduleDescriptor);
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
 
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(empty());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     moduleEventPublisher.execute(stageContext);
 
     verifyNoInteractions(kafkaEventPublisher);
@@ -119,13 +146,14 @@ class SystemUserModuleEventPublisherTest {
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
-    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     var v1UserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
     var v2UserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.v2.entities.post"));
 
     when(systemUserEventProvider.getSystemUserEvent(v1ModuleDescriptor)).thenReturn(of(v1UserEvent));
     when(systemUserEventProvider.getSystemUserEvent(v2ModuleDescriptor)).thenReturn(of(v2UserEvent));
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     moduleEventPublisher.execute(stageContext);
 
     var expectedResourceEvent = ResourceEvent.<SystemUserEvent>builder()
@@ -162,12 +190,13 @@ class SystemUserModuleEventPublisherTest {
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
-    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
     var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     moduleEventPublisher.execute(stageContext);
 
     var expectedResourceEvent = ResourceEvent.<SystemUserEvent>builder()
@@ -188,6 +217,13 @@ class SystemUserModuleEventPublisherTest {
     var result = moduleEventPublisher.getStageName(stageContext);
 
     assertThat(result).isEqualTo("mod-foo-1.0.0-systemUserModuleEventPublisher");
+  }
+
+  @Test
+  void getTopicNameByTenantCollection_positive() {
+    var actual = moduleEventPublisher.getTopicNameByTenantCollection();
+
+    assertThat(actual).isEqualTo("test-env.ALL.mgr-tenant-entitlements.system-user");
   }
 
   private static ModuleDescriptor moduleDescriptor(String moduleId, UserDescriptor userDescriptor) {

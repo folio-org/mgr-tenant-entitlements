@@ -18,6 +18,8 @@ import org.folio.entitlement.integration.kafka.model.ResourceEventType;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class KafkaEventUtils {
 
+  public static final String TOPIC_TENANT_COLLECTION_KEY = "ALL";
+
   public static final String TOPIC_PREFIX = "mgr-tenant-entitlements.";
   public static final String SCHEDULED_JOB_TOPIC = TOPIC_PREFIX + "scheduled-job";
   public static final String CAPABILITIES_TOPIC = TOPIC_PREFIX + "capability";
