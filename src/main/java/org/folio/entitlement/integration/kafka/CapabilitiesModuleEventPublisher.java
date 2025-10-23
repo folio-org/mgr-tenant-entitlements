@@ -12,6 +12,7 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITIES_TOPIC;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITY_RESOURCE_NAME;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.entitlement.utils.RoutingEntryUtils.getMethods;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
@@ -51,8 +52,13 @@ public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublish
   }
 
   @Override
-  protected String getTopicName(String tenantName) {
+  protected String getTopicNameByTenant(String tenantName) {
     return getTenantTopicName(CAPABILITIES_TOPIC, tenantName);
+  }
+
+  @Override
+  protected String getTopicNameByTenantCollection() {
+    return getTenantTopicName(CAPABILITIES_TOPIC, TOPIC_TENANT_COLLECTION_KEY);
   }
 
   @Override

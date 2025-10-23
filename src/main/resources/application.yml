@@ -108,6 +108,7 @@ application:
   environment: ${ENV:folio}
   kafka:
     send-duration-timeout: ${KAFKA_SEND_DURATION_TIMEOUT:10s}
+    producer-tenant-collection: ${KAFKA_PRODUCER_TENANT_COLLECTION:false}
     topics:
       - name: entitlement
         num-partitions: ${KAFKA_ENTITLEMENT_TOPIC_PARTITIONS:1}

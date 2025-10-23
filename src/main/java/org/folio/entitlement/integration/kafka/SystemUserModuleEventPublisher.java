@@ -1,6 +1,8 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SYSTEM_USER_RESOURCE_NAME;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SYSTEM_USER_TOPIC;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
 import java.util.Optional;
@@ -25,8 +27,13 @@ public class SystemUserModuleEventPublisher extends AbstractModuleEventPublisher
   }
 
   @Override
-  protected String getTopicName(String tenantName) {
-    return getTenantTopicName(KafkaEventUtils.SYSTEM_USER_TOPIC, tenantName);
+  protected String getTopicNameByTenant(String tenantName) {
+    return getTenantTopicName(SYSTEM_USER_TOPIC, tenantName);
+  }
+
+  @Override
+  protected String getTopicNameByTenantCollection() {
+    return getTenantTopicName(SYSTEM_USER_TOPIC, TOPIC_TENANT_COLLECTION_KEY);
   }
 
   @Override

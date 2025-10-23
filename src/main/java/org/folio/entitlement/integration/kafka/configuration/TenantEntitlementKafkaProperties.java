@@ -17,4 +17,6 @@ public class TenantEntitlementKafkaProperties {
 
   @NestedConfigurationProperty
   private List<KafkaTopic> tenantTopics;
+
+  private boolean producerTenantCollection;
 }

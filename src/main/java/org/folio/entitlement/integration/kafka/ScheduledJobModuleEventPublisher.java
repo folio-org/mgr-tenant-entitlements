@@ -5,6 +5,7 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SCHEDULED_JOB_RESOURCE_NAME;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SCHEDULED_JOB_TOPIC;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
 import java.util.List;
@@ -28,8 +29,13 @@ public class ScheduledJobModuleEventPublisher extends AbstractModuleEventPublish
   }
 
   @Override
-  protected String getTopicName(String tenantName) {
+  protected String getTopicNameByTenant(String tenantName) {
     return getTenantTopicName(SCHEDULED_JOB_TOPIC, tenantName);
+  }
+
+  @Override
+  protected String getTopicNameByTenantCollection() {
+    return getTenantTopicName(SCHEDULED_JOB_TOPIC, TOPIC_TENANT_COLLECTION_KEY);
   }
 
   @Override

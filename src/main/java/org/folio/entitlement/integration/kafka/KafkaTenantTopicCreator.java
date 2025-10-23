@@ -7,6 +7,7 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
 import java.util.ArrayList;
@@ -37,13 +38,14 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageCon
     if (request.getType() == ENTITLE) {
       var tenant = getTenant(context);
 
-      var createdTopics = createTenantTopics(tenant);
+      var topicTenantValue = getTopicTenantValue(tenant);
+      var createdTopics = createTopics(topicTenantValue);
 
       if (isNotEmpty(createdTopics)) {
         context.put(PARAM_TOPICS_CREATED, true);
-        log.info("Tenant topics created: tenant = {}, topics = {}", tenant, createdTopics);
+        log.info("Tenant topics created: tenant = {}, topics = {}", topicTenantValue, createdTopics);
       } else {
-        log.debug("No new tenant topics created: tenant = {}", tenant);
+        log.debug("No new tenant topics created: tenant = {}", topicTenantValue);
       }
     }
   }
@@ -60,9 +62,9 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageCon
     log.info("Tenant topics removed: tenant = {}", tenant);
   }
 
-  private List<String> createTenantTopics(String tenant) {
+  private List<String> createTopics(String topicTenantValue) {
     var tenantTopicsWithConfig = toStream(tenantEntitlementKafkaProperties.getTenantTopics())
-      .collect(toMap(topic -> getTenantTopicName(topic.getName(), tenant), identity()));
+      .collect(toMap(topic -> getTenantTopicName(topic.getName(), topicTenantValue), identity()));
 
     var existingTenantTopics = kafkaAdminService.findTopics(tenantTopicsWithConfig.keySet());
     log.debug("Existing tenant topics: topicNames = {}", existingTenantTopics);
@@ -92,5 +94,10 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageCon
 
   private static String getTenant(CommonStageContext context) {
     return context.get(CommonStageContext.PARAM_TENANT_NAME);
+  }
+
+  private String getTopicTenantValue(String tenant) {
+    return tenantEntitlementKafkaProperties.isProducerTenantCollection()
+      ? TOPIC_TENANT_COLLECTION_KEY : tenant;
   }
 }

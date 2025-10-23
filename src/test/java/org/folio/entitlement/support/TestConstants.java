@@ -1,5 +1,6 @@
 package org.folio.entitlement.support;
 
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.entitlement.support.TestUtils.httpClientWithDummySslContext;
 import static org.folio.integration.kafka.KafkaUtils.getEnvTopicName;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
@@ -84,11 +85,23 @@ public class TestConstants {
     return getTenantTopicName("mgr-tenant-entitlements.capability", TENANT_NAME);
   }
 
+  public static String capabilitiesTenantCollectionTopic() {
+    return getTenantTopicName("mgr-tenant-entitlements.capability", TOPIC_TENANT_COLLECTION_KEY);
+  }
+
   public static String scheduledJobsTenantTopic() {
     return getTenantTopicName("mgr-tenant-entitlements.scheduled-job", TENANT_NAME);
   }
 
+  public static String scheduledJobsTenantCollectionTopic() {
+    return getTenantTopicName("mgr-tenant-entitlements.scheduled-job", TOPIC_TENANT_COLLECTION_KEY);
+  }
+
   public static String systemUserTenantTopic() {
     return getTenantTopicName("mgr-tenant-entitlements.system-user", TENANT_NAME);
+  }
+
+  public static String systemUserTenantCollectionTopic() {
+    return getTenantTopicName("mgr-tenant-entitlements.system-user", TOPIC_TENANT_COLLECTION_KEY);
   }
 }
