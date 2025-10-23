@@ -9,7 +9,7 @@ import static org.mockito.Mockito.when;
 
 import feign.RequestTemplate;
 import java.util.Collection;
-import org.folio.entitlement.integration.token.TokenProvider;
+import org.folio.entitlement.integration.keycloak.KeycloakAdminTokenProvider;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,18 +23,18 @@ class TokenRefreshRequestInterceptorTest {
 
   private static final String FRESH_TOKEN = "fresh-token";
 
-  @Mock private TokenProvider tokenProvider;
+  @Mock private KeycloakAdminTokenProvider keycloakAdminTokenProvider;
 
   private TokenRefreshRequestInterceptor interceptor;
 
   @BeforeEach
   void setUp() {
-    interceptor = new TokenRefreshRequestInterceptor(tokenProvider);
+    interceptor = new TokenRefreshRequestInterceptor(keycloakAdminTokenProvider);
   }
 
   @Test
   void apply_positive_replacesToken() {
-    when(tokenProvider.getToken(OKAPI_TOKEN)).thenReturn(FRESH_TOKEN);
+    when(keycloakAdminTokenProvider.getToken(OKAPI_TOKEN)).thenReturn(FRESH_TOKEN);
 
     var template = new RequestTemplate();
     template.header(TOKEN, OKAPI_TOKEN);
@@ -43,7 +43,7 @@ class TokenRefreshRequestInterceptorTest {
 
     Collection<String> tokenHeaders = template.headers().get(TOKEN);
     assertThat(tokenHeaders).containsExactly(FRESH_TOKEN);
-    verify(tokenProvider).getToken(OKAPI_TOKEN);
+    verify(keycloakAdminTokenProvider).getToken(OKAPI_TOKEN);
   }
 
   @Test
@@ -54,7 +54,7 @@ class TokenRefreshRequestInterceptorTest {
 
     Collection<String> tokenHeaders = template.headers().get(TOKEN);
     assertThat(tokenHeaders).isNull();
-    verifyNoInteractions(tokenProvider);
+    verifyNoInteractions(keycloakAdminTokenProvider);
   }
 
   @Test
@@ -64,12 +64,12 @@ class TokenRefreshRequestInterceptorTest {
 
     interceptor.apply(template);
 
-    verifyNoInteractions(tokenProvider);
+    verifyNoInteractions(keycloakAdminTokenProvider);
   }
 
   @Test
   void apply_positive_multipleTokenHeaders() {
-    when(tokenProvider.getToken(OKAPI_TOKEN)).thenReturn(FRESH_TOKEN);
+    when(keycloakAdminTokenProvider.getToken(OKAPI_TOKEN)).thenReturn(FRESH_TOKEN);
 
     var template = new RequestTemplate();
     template.header(TOKEN, OKAPI_TOKEN, "another-token");
@@ -79,6 +79,6 @@ class TokenRefreshRequestInterceptorTest {
     // Should only use the first token
     Collection<String> tokenHeaders = template.headers().get(TOKEN);
     assertThat(tokenHeaders).containsExactly(FRESH_TOKEN);
-    verify(tokenProvider).getToken(OKAPI_TOKEN);
+    verify(keycloakAdminTokenProvider).getToken(OKAPI_TOKEN);
   }
 }

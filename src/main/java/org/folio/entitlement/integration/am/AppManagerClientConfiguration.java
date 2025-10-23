@@ -11,7 +11,7 @@ import okhttp3.OkHttpClient;
 import org.folio.common.configuration.properties.TlsProperties;
 import org.folio.common.utils.tls.FeignClientTlsUtils;
 import org.folio.entitlement.integration.interceptor.TokenRefreshRequestInterceptor;
-import org.folio.entitlement.integration.token.TokenProvider;
+import org.folio.entitlement.integration.token.AdminTokenProvider;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.openfeign.FeignClientsConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -45,7 +45,7 @@ public class AppManagerClientConfiguration {
   }
 
   @Bean
-  public RequestInterceptor applicationManagerRequestInterceptor(TokenProvider tokenProvider) {
-    return new TokenRefreshRequestInterceptor(tokenProvider);
+  public RequestInterceptor applicationManagerRequestInterceptor(AdminTokenProvider adminTokenProvider) {
+    return new TokenRefreshRequestInterceptor(adminTokenProvider);
   }
 }

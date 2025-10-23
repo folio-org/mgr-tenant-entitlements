@@ -19,9 +19,9 @@ import org.apache.commons.text.CharacterPredicates;
 import org.apache.commons.text.RandomStringGenerator;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
+import org.folio.entitlement.integration.keycloak.KeycloakAdminTokenProvider;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.integration.tm.model.Tenant;
-import org.folio.entitlement.integration.token.TokenProvider;
 import org.folio.entitlement.repository.EntitlementRepository;
 import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
@@ -49,7 +49,7 @@ class EntitlementApplicationServiceTest {
   @Mock private ApplicationManagerService applicationManagerService;
   @Mock private TenantManagerService tenantManagerService;
   @Mock private EntitlementRepository entitlementRepository;
-  @Mock private TokenProvider tokenProvider;
+  @Mock private KeycloakAdminTokenProvider keycloakAdminTokenProvider;
 
   @InjectMocks
   private EntitlementApplicationService service;
@@ -61,7 +61,7 @@ class EntitlementApplicationServiceTest {
     var appDescriptors = applicationDescriptors(totalRecords);
     var entitlementEntities = entitlementEntities(appDescriptors);
 
-    when(tokenProvider.getToken(OKAPI_TOKEN)).thenReturn(FRESH_TOKEN);
+    when(keycloakAdminTokenProvider.getToken(OKAPI_TOKEN)).thenReturn(FRESH_TOKEN);
     when(tenantManagerService.findTenantByName(anyString(), anyString())).thenReturn(TEST_TENANT);
     when(entitlementRepository.findByTenantId(TEST_TENANT_ID)).thenReturn(entitlementEntities);
     when(applicationManagerService.getApplicationDescriptors(anyList(), anyString())).thenReturn(appDescriptors);
@@ -73,7 +73,7 @@ class EntitlementApplicationServiceTest {
     assertThat(actualAppDescriptors.getApplicationDescriptors())
       .containsExactlyElementsOf(appDescriptors.subList(0, limit));
 
-    verify(tokenProvider).getToken(OKAPI_TOKEN);
+    verify(keycloakAdminTokenProvider).getToken(OKAPI_TOKEN);
     verify(tenantManagerService).findTenantByName(TEST_TENANT_NAME, FRESH_TOKEN);
     verify(entitlementRepository).findByTenantId(TEST_TENANT_ID);
     verify(applicationManagerService)

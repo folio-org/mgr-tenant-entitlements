@@ -5,7 +5,7 @@ import static org.folio.common.utils.tls.FeignClientTlsUtils.getOkHttpClient;
 import feign.RequestInterceptor;
 import feign.okhttp.OkHttpClient;
 import org.folio.entitlement.integration.interceptor.TokenRefreshRequestInterceptor;
-import org.folio.entitlement.integration.token.TokenProvider;
+import org.folio.entitlement.integration.token.AdminTokenProvider;
 import org.springframework.context.annotation.Bean;
 
 public class TenantManagerClientConfiguration {
@@ -16,7 +16,7 @@ public class TenantManagerClientConfiguration {
   }
 
   @Bean
-  public RequestInterceptor tenantManagerRequestInterceptor(TokenProvider tokenProvider) {
-    return new TokenRefreshRequestInterceptor(tokenProvider);
+  public RequestInterceptor tenantManagerRequestInterceptor(AdminTokenProvider adminTokenProvider) {
+    return new TokenRefreshRequestInterceptor(adminTokenProvider);
   }
 }

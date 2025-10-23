@@ -8,7 +8,7 @@ import feign.codec.Decoder;
 import feign.codec.Encoder;
 import okhttp3.OkHttpClient;
 import org.folio.entitlement.integration.interceptor.TokenRefreshRequestInterceptor;
-import org.folio.entitlement.integration.token.TokenProvider;
+import org.folio.entitlement.integration.keycloak.KeycloakAdminTokenProvider;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +25,7 @@ class AppManagerClientConfigurationTest {
   @Mock private Contract contract;
   @Mock private Encoder encoder;
   @Mock private Decoder decoder;
-  @Mock private TokenProvider tokenProvider;
+  @Mock private KeycloakAdminTokenProvider keycloakAdminTokenProvider;
   @Mock private RequestInterceptor requestInterceptor;
 
   @BeforeEach
@@ -42,7 +42,7 @@ class AppManagerClientConfigurationTest {
 
   @Test
   void applicationManagerRequestInterceptor_positive() {
-    var interceptor = appManagerClientConfiguration.applicationManagerRequestInterceptor(tokenProvider);
+    var interceptor = appManagerClientConfiguration.applicationManagerRequestInterceptor(keycloakAdminTokenProvider);
     assertThat(interceptor).isNotNull().isInstanceOf(TokenRefreshRequestInterceptor.class);
   }
 }
