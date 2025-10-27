@@ -6,6 +6,7 @@ import java.util.UUID;
 import lombok.ToString;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.service.stage.ApplicationDescriptorTreeLoader;
+import org.folio.entitlement.service.stage.ApplicationStateTransitionPlanMaker;
 import org.folio.flow.api.StageContext;
 
 @ToString(callSuper = true)
@@ -18,6 +19,7 @@ public class CommonStageContext extends IdentifiableStageContext {
   public static final String PARAM_ENTITLED_APP_DESCRIPTORS = "entitledApplicationDescriptors";
   public static final String PARAM_APP_AND_DEPENDENCY_DESCRIPTORS = "applicationAndDependencyDescriptors";
   public static final String PARAM_TENANT_NAME = "tenantName";
+  public static final String PARAM_APP_STATE_TRANSITION_PLAN = "applicationStateTransitionPlan";
 
   /**
    * Creates {@link CommonStageContext} from {@link StageContext}.
@@ -43,6 +45,15 @@ public class CommonStageContext extends IdentifiableStageContext {
    */
   public static CommonStageContext decorate(StageContext stageContext) {
     return new CommonStageContext(stageContext);
+  }
+
+  /**
+   * Returns loaded tenant name.
+   *
+   * @return tenant name as {@link String}
+   */
+  public String getTenantName() {
+    return context.get(PARAM_TENANT_NAME);
   }
 
   /**
@@ -91,6 +102,16 @@ public class CommonStageContext extends IdentifiableStageContext {
    */
   public List<String> getEntitledApplicationIds() {
     return context.get(PARAM_ENTITLED_APP_IDS);
+  }
+
+  /**
+   * Returns application state transition plan. The transition plan is created during
+   * "Desired State" request processing only by dedicated stage: {@link ApplicationStateTransitionPlanMaker}.
+   *
+   * @return {@link ApplicationStateTransitionPlan} object
+   */
+  public ApplicationStateTransitionPlan getApplicationStateTransitionPlan() {
+    return context.get(PARAM_APP_STATE_TRANSITION_PLAN);
   }
 
   /**
@@ -166,7 +187,19 @@ public class CommonStageContext extends IdentifiableStageContext {
   }
 
   /**
-   * Clears context from application descriptors after preparation of dedicated flow for each application.
+   * Sets application state transition plan.
+   *
+   * @param transitionPlan - application state transition plan
+   * @return {@link CommonStageContext} with application state transition plan set
+   */
+  public CommonStageContext withApplicationStateTransitionPlan(ApplicationStateTransitionPlan transitionPlan) {
+    context.put(PARAM_APP_STATE_TRANSITION_PLAN, transitionPlan);
+    return this;
+  }
+
+  /**
+   * Clears context from application descriptors and other objects
+   * after preparation of dedicated flow for each application.
    */
   public void clearContext() {
     context.remove(PARAM_APP_DESCRIPTORS);
@@ -174,5 +207,6 @@ public class CommonStageContext extends IdentifiableStageContext {
     context.remove(PARAM_ENTITLED_APP_IDS);
     context.remove(PARAM_APP_AND_DEPENDENCY_DESCRIPTORS);
     context.remove(PARAM_ENTITLED_APP_DESCRIPTORS);
+    context.remove(PARAM_APP_STATE_TRANSITION_PLAN);
   }
 }

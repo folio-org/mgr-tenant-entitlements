@@ -43,6 +43,7 @@ public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
   public void cancel(ModuleStageContext context) {
     var request = context.getEntitlementRequest();
     if (request.getType() != ENTITLE) {
+      // TODO (Dima Tkachenko): review code logic for STATE cancellation
       return;
     }
 

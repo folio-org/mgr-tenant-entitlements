@@ -36,6 +36,7 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageCon
   public void execute(CommonStageContext context) {
     var request = context.getEntitlementRequest();
     if (request.getType() == ENTITLE) {
+      // TODO (Dima Tkachenko): review code for STATE type requests
       var tenant = getTenant(context);
 
       var topicTenantValue = getTopicTenantValue(tenant);

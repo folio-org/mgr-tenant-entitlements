@@ -80,6 +80,7 @@ public class ApplicationsFlowProvider {
     return switch (type) {
       case ENTITLE, UPGRADE -> result;
       case REVOKE -> reverseList(result);
+      case STATE -> result; // TODO (Dima Tkachenko): review code path for STATE type
     };
   }
 

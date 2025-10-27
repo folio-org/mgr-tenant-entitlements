@@ -4,5 +4,6 @@ public enum EntityEntitlementType {
 
   ENTITLE,
   REVOKE,
-  UPGRADE
+  UPGRADE,
+  STATE
 }

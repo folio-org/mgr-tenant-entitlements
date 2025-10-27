@@ -125,6 +125,44 @@ paths:
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
 
+  /entitlements/state:
+    put:
+      summary: "Apply a desired state of application entitlements for a tenant"
+      description: |
+        Sets the complete list of applications that should be entitled for a tenant.
+
+        This endpoint is declarative and idempotent. It compares the provided list of applications (the "desired state") with the currently entitled applications and automatically calculates the necessary operations (Entitle, Upgrade, Revoke) to align the tenant's state with the request.
+
+        - Any applications in the desired state that are not currently entitled will be **entitled**.
+        - Any applications in the desired state with a version different from the currently entitled version will be **upgraded**.
+        - Any currently entitled applications that are not present in the desired state list will be **revoked**.
+      operationId: applyState
+      tags:
+        - entitlement
+      parameters:
+        - $ref: '#/components/parameters/x-okapi-token'
+        - $ref: '#/components/parameters/tenantParameters'
+        - $ref: '#/components/parameters/ignoreErrors'
+        - $ref: '#/components/parameters/async'
+        - $ref: '#/components/parameters/purgeOnRollback'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/entitlementRequestBody'
+      responses:
+        '200':
+          description: 'A list with successfully application entitlements'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/extendedEntitlements'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
   /entitlements/{tenantName}/applications:
     get:
       operationId: findEntitledApplicationsByTenantName
@@ -148,6 +186,7 @@ paths:
           $ref: '#/components/responses/badRequestResponse'
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
+
   /entitlements/modules/{moduleId}:
     get:
       operationId: getModuleEntitlements
@@ -169,6 +208,7 @@ paths:
           $ref: '#/components/responses/badRequestResponse'
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
+
   /entitlements/validate:
     post:
       operationId: validate
@@ -321,6 +361,7 @@ paths:
           $ref: '#/components/responses/badRequestResponse'
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
+
   /reinstall/applications:
     post:
       operationId: appReinstall
@@ -348,6 +389,7 @@ paths:
           $ref: '#/components/responses/badRequestResponse'
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
+          
   /reinstall/modules:
     post:
       operationId: moduleReinstall

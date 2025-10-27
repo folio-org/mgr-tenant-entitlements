@@ -170,6 +170,8 @@ application:
             exclude-entitled: ${VALIDATION_INTERFACE_COLLECTOR_EXCLUDE_ENTITLED_REQUIRED:true}
       upgrade:
         enabled: ${VALIDATION_INTERFACE_INTEGRITY_UPGRADE_ENABLED:true}
+      state:
+        enabled: ${VALIDATION_INTERFACE_INTEGRITY_STATE_ENABLED:true}
 
 folio:
   jpa:

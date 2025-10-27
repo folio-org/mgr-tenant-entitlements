@@ -2,6 +2,7 @@ package org.folio.entitlement.service.flow;
 
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementType.STATE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 
 import java.util.Map;
@@ -20,14 +21,16 @@ public class FlowProvider {
    *
    * @param entitleFlowFactory - {@link EntitleFlowFactory} bean from spring context.
    * @param upgradeFlowFactory - {@link UpgradeFlowFactory} bean from spring context.
-   * @param revokeFlowFactory - {@link RevokeFlowFactory} bean from spring context.
+   * @param revokeFlowFactory  - {@link RevokeFlowFactory} bean from spring context.
+   * @param stateFlowFactory - {@link DesiredStateFlowFactory} bean from spring context.
    */
   public FlowProvider(EntitleFlowFactory entitleFlowFactory, UpgradeFlowFactory upgradeFlowFactory,
-    RevokeFlowFactory revokeFlowFactory) {
+    RevokeFlowFactory revokeFlowFactory, DesiredStateFlowFactory stateFlowFactory) {
     this.flowFactories = Map.of(
       ENTITLE, entitleFlowFactory,
       REVOKE, revokeFlowFactory,
-      UPGRADE, upgradeFlowFactory);
+      UPGRADE, upgradeFlowFactory,
+      STATE, stateFlowFactory);
   }
 
   /**
