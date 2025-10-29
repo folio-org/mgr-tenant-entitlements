@@ -22,6 +22,8 @@ import org.apache.commons.collections4.IterableUtils;
 import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
+import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.model.ApplicationStateTransitionType;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.tools.kong.exception.KongIntegrationException;
@@ -161,6 +163,14 @@ public class EntitlementServiceUtils {
     return moduleDesc != null
       && installedModuleDesc != null
       && Objects.equals(moduleDesc.getId(), installedModuleDesc.getId());
+  }
+
+  public static EntitlementType toEntitlementType(ApplicationStateTransitionType type) {
+    return switch (type) {
+      case ENTITLE -> EntitlementType.ENTITLE;
+      case UPGRADE -> EntitlementType.UPGRADE;
+      case REVOKE -> EntitlementType.REVOKE;
+    };
   }
 
   private static List<Parameter> getErrors(Throwable throwable) {

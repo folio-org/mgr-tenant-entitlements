@@ -34,7 +34,7 @@ class ApplicationFlowQueuingStageTest {
   void execute_positive() {
     var applicationFlow = applicationFlow();
     var request = entitlementRequest();
-    when(applicationFlowService.createQueuedApplicationFlow(FLOW_ID, request)).thenReturn(List.of(applicationFlow));
+    when(applicationFlowService.createQueuedApplicationFlows(FLOW_ID, request)).thenReturn(List.of(applicationFlow));
 
     var flowParameters = Map.of(PARAM_REQUEST, request);
     var stageContext = commonStageContext(FLOW_ID, flowParameters, emptyMap());

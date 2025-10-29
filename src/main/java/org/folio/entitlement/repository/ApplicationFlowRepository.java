@@ -30,7 +30,7 @@ public interface ApplicationFlowRepository extends AbstractFlowRepository<Applic
           AND af.tenant_id = laf.tenant_id
           AND af.application_id = laf.application_id""")
   List<ApplicationFlowEntity> findLastFlows(
-    @Param("application_ids") List<String> applicationIds, @Param("tenant_id") UUID tenantId);
+    @Param("application_ids") Collection<String> applicationIds, @Param("tenant_id") UUID tenantId);
 
   @Query(nativeQuery = true, value = """
     SELECT DISTINCT af.* FROM {h-schema}application_flow af

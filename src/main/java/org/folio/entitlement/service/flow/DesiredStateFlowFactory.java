@@ -6,10 +6,10 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.KafkaTenantTopicCreator;
-import org.folio.entitlement.service.stage.ApplicationDescriptorLoader;
 import org.folio.entitlement.service.stage.ApplicationStateTransitionPlanMaker;
 import org.folio.entitlement.service.stage.CancellationFailedFlowFinalizer;
 import org.folio.entitlement.service.stage.CancelledFlowFinalizer;
+import org.folio.entitlement.service.stage.DesiredStateApplicationDescriptorLoader;
 import org.folio.entitlement.service.stage.FailedFlowFinalizer;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
@@ -28,58 +28,41 @@ import org.springframework.stereotype.Component;
 public class DesiredStateFlowFactory implements FlowFactory {
 
   private final TenantLoader tenantLoader;
-  private final ApplicationsFlowProvider applicationsFlowFactory;
+  private final ApplicationStateTransitionPlanMaker applicationStateTransitionPlanMaker;
+  private final DesiredStateApplicationDescriptorLoader applicationDescriptorLoader;
   @Qualifier("stateInterfaceIntegrityValidator")
   private final StageRequestValidator interfaceIntegrityValidator;
   private final DesiredStateApplicationFlowValidator desiredStateApplicationFlowValidator;
   private final DesiredStateWithUpgradeValidator desiredStateWithUpgradeValidator;
   private final DesiredStateWithRevokeValidator desiredStateWithRevokeValidator;
-  private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
-  private final ApplicationDescriptorLoader applicationDescriptorLoader;
+  private final DesiredStateApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final KafkaTenantTopicCreator kafkaTenantTopicCreator;
+  private final ApplicationsFlowProvider applicationsFlowProvider;
 
   private final FinishedFlowFinalizer finishedFlowFinalizer;
   private final FlowInitializer flowInitializer;
   private final FailedFlowFinalizer failedFlowFinalizer;
   private final CancelledFlowFinalizer cancelledFlowFinalizer;
   private final CancellationFailedFlowFinalizer cancellationFailedFlowFinalizer;
-  private final ApplicationStateTransitionPlanMaker applicationStateTransitionPlanMaker;
 
   @Override
   public Flow createFlow(EntitlementRequest request) {
-    /*return Flow.builder()
-      .id(UUID.randomUUID())
-      .stage(flowInitializer)
-      .stage(tenantLoader)
-      .stage(applicationFlowValidator)
-      .stage(applicationDescriptorTreeLoader)
-      .stage(interfaceIntegrityValidator)
-      .stage(applicationFlowQueuingStage)
-      .stage(kafkaTenantTopicCreator)
-      .stage(DynamicStage.of(applicationsFlowFactory.getName(), applicationsFlowFactory::createFlow))
-      .stage(finishedFlowFinalizer)
-      .onFlowError(failedFlowFinalizer)
-      .onFlowCancellation(cancelledFlowFinalizer)
-      .onFlowCancellationError(cancellationFailedFlowFinalizer)
-      .flowParameter(PARAM_REQUEST, request)
-      .executionStrategy(request.getExecutionStrategy())
-      .build();*/
-
     return Flow.builder()
       .id(UUID.randomUUID())
       .stage(flowInitializer)
       .stage(tenantLoader)
-      .stage(applicationDescriptorLoader)
       .stage(applicationStateTransitionPlanMaker)
+      .stage(applicationDescriptorLoader)
+      // validation stages
       .stage(interfaceIntegrityValidator)
-
       .stage(desiredStateApplicationFlowValidator)
       .stage(desiredStateWithUpgradeValidator)
       .stage(desiredStateWithRevokeValidator)
-
+      // preparation stages
       .stage(applicationFlowQueuingStage)
       .stage(kafkaTenantTopicCreator)
-      .stage(DynamicStage.of(applicationsFlowFactory.getName(), applicationsFlowFactory::createFlow))
+      // applications processing stage
+      .stage(DynamicStage.of(applicationsFlowProvider.getName(), applicationsFlowProvider::createFlow))
       .stage(finishedFlowFinalizer)
       .onFlowError(failedFlowFinalizer)
       .onFlowCancellation(cancelledFlowFinalizer)

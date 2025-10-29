@@ -294,7 +294,7 @@ class ApplicationFlowServiceTest {
       when(mapper.map(entity)).thenReturn(applicationFlow);
 
       var request = entitlementRequest(ENTITLE, APPLICATION_ID);
-      var result = applicationFlowService.createQueuedApplicationFlow(FLOW_ID, request);
+      var result = applicationFlowService.createQueuedApplicationFlows(FLOW_ID, request);
 
       assertThat(result).containsExactly(applicationFlow);
     }

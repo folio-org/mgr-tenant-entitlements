@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.UUID;
 import lombok.ToString;
 import org.folio.common.domain.model.ApplicationDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.service.stage.ApplicationDescriptorTreeLoader;
 import org.folio.entitlement.service.stage.ApplicationStateTransitionPlanMaker;
 import org.folio.flow.api.StageContext;
@@ -20,6 +21,7 @@ public class CommonStageContext extends IdentifiableStageContext {
   public static final String PARAM_APP_AND_DEPENDENCY_DESCRIPTORS = "applicationAndDependencyDescriptors";
   public static final String PARAM_TENANT_NAME = "tenantName";
   public static final String PARAM_APP_STATE_TRANSITION_PLAN = "applicationStateTransitionPlan";
+  public static final String PARAM_APP_STATE_TRANSITION_DESCRIPTORS = "applicationStateTransitionDescriptors";
 
   /**
    * Creates {@link CommonStageContext} from {@link StageContext}.
@@ -115,6 +117,15 @@ public class CommonStageContext extends IdentifiableStageContext {
   }
 
   /**
+   * Returns application descriptors per entitlement type for "Desired State" request processing.
+   *
+   * @return map where key is entitlement type, value is list of application descriptors
+   */
+  public Map<EntitlementType, List<ApplicationDescriptor>> getApplicationStateTransitionDescriptors() {
+    return context.get(PARAM_APP_STATE_TRANSITION_DESCRIPTORS);
+  }
+
+  /**
    * Adds loaded tenant name to {@link StageContext}.
    *
    * @param tenantName - loaded tenant name from {@code mgr-tenants}
@@ -198,6 +209,18 @@ public class CommonStageContext extends IdentifiableStageContext {
   }
 
   /**
+   * Sets application descriptors per entitlement type for "Desired State" request processing.
+   *
+   * @param descriptors - map where key is entitlement type, value is list of application descriptors
+   * @return {@link CommonStageContext} with application state transition descriptors set
+   */
+  public CommonStageContext withApplicationStateTransitionDescriptors(
+    Map<EntitlementType, List<ApplicationDescriptor>> descriptors) {
+    context.put(PARAM_APP_STATE_TRANSITION_DESCRIPTORS, descriptors);
+    return this;
+  }
+
+  /**
    * Clears context from application descriptors and other objects
    * after preparation of dedicated flow for each application.
    */
@@ -208,5 +231,6 @@ public class CommonStageContext extends IdentifiableStageContext {
     context.remove(PARAM_APP_AND_DEPENDENCY_DESCRIPTORS);
     context.remove(PARAM_ENTITLED_APP_DESCRIPTORS);
     context.remove(PARAM_APP_STATE_TRANSITION_PLAN);
+    context.remove(PARAM_APP_STATE_TRANSITION_DESCRIPTORS);
   }
 }

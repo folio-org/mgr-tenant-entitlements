@@ -19,6 +19,7 @@ import org.folio.common.domain.model.OffsetRequest;
 import org.folio.common.domain.model.SearchResult;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.entity.ApplicationDependencyEntity;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.mapper.ApplicationFlowMapper;
@@ -85,7 +86,7 @@ public class ApplicationFlowService {
    * @return {@link List} with entitled dependent {@link Entitlement} objects
    */
   @Transactional(readOnly = true)
-  public List<ApplicationFlow> findLastFlows(List<String> applicationIds, UUID tenantId) {
+  public List<ApplicationFlow> findLastFlows(Collection<String> applicationIds, UUID tenantId) {
     if (isEmpty(applicationIds)) {
       return Collections.emptyList();
     }
@@ -176,11 +177,17 @@ public class ApplicationFlowService {
    * @return {@link List} with created {@link ApplicationFlow} entities
    */
   @Transactional
-  public List<ApplicationFlow> createQueuedApplicationFlow(UUID flowId, EntitlementRequest request) {
+  public List<ApplicationFlow> createQueuedApplicationFlows(UUID flowId, EntitlementRequest request) {
     var type = request.getType();
     var tenantId = request.getTenantId();
     var applicationIds = request.getApplications();
 
+    return createQueuedApplicationFlows(flowId, applicationIds, type, tenantId);
+  }
+
+  @Transactional
+  public List<ApplicationFlow> createQueuedApplicationFlows(UUID flowId, Collection<String> applicationIds,
+    EntitlementType type, UUID tenantId) {
     var flowEntities = mapItems(applicationIds, appId ->
       applicationFlowMapper.mapWithStatusQueued(tenantId, appId, flowId, type));
     var savedFlowEntities = applicationFlowRepository.saveAll(flowEntities);
