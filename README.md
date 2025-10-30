@@ -23,8 +23,6 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
     * [Keycloak Security](#keycloak-security)
     * [Keycloak specific environment variables](#keycloak-specific-environment-variables)
   * [Retry configuration](#retry-configuration)
-  * [Kong Service Registration](#kong-service-registration)
-  * [Kong Route Registration](#kong-route-registration)
 * [Kafka Integration](#kafka-integration)
   * [Events upon application being enabled/disabled](#events-upon-application-being-enableddisabled)
     * [Naming convention](#naming-convention)
@@ -296,47 +294,12 @@ with `mgr-tenants` and `mgr-applications` services.
 |:------------------------------------|:--------------|:-----------:|:--------------------------------------------------|
 | RETRIES_MODULE_MAX                  | 3             |    false    | Maximum number of retries for FOLIO module calls  |
 | RETRIES_KEYCLOAK_MAX                | 3             |    false    | Maximum number of retries for Keycloak calls      |
-| RETRIES_KONG_MAX                    | 3             |    false    | Maximum number of retries for Kong calls          |
 | RETRIES_MODULE_BACKOFF_DELAY        | 1000          |    false    | FOLIO module calls retries initial delay millisec |
 | RETRIES_MODULE_BACKOFF_MAXDELAY     | 30000         |    false    | FOLIO module calls retries maximum delay millisec |
 | RETRIES_MODULE_BACKOFF_MULTIPLIER   | 5             |    false    | FOLIO module calls retries delay multiplier       |
 | RETRIES_KEYCLOAK_BACKOFF_DELAY      | 1000          |    false    | Keycloak calls retries initial delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MAXDELAY   | 30000         |    false    | Keycloak calls retries maximum delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER | 5             |    false    | Keycloak calls retries delay multiplier           |
-| RETRIES_KONG_BACKOFF_DELAY          | 1000          |    false    | Kong calls retries initial delay millisec         |
-| RETRIES_KONG_BACKOFF_MAXDELAY       | 30000         |    false    | Kong calls retries maximum delay millisec         |
-
-### Kong Service Registration
-
-The Kong Gateway services are added on service discovery registration per application. Each Kong Service has tag equal
-to `applicationId` to improve observability. Tags can be used to filter core entities, via the `?tags` querystring
-parameter.
-
-### Kong Route Registration
-
-The Kong routes registered per-tenant using header filter:
-
-```json
-{
-  "headers": {
-    "x-okapi-tenant": [ "$tenantId" ]
-  }
-}
-```
-
-Routes as well populated with tags: `moduleId` and `tenantId` to be filtered.
-
-Routes per tenant can be found with:
-
-```shell
-curl -XGET "$KONG_ADMIN_URL/routes?tags=$moduleId,$tenantId"
-```
-
-or
-
-```shell
-curl -XGET "$KONG_ADMIN_URL/services/$moduleId/routes?tags=$tenantId"
-```
 
 ## Kafka Integration
 
