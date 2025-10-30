@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 public class UpgradeFlowFactory implements FlowFactory {
 
   private final TenantLoader tenantLoader;
-  private final ApplicationsFlowProvider applicationsFlowFactory;
+  private final BaseApplicationsFlowProvider applicationsFlowFactory;
   private final UpgradeRequestValidator upgradeRequestValidator;
   private final ApplicationFlowValidator applicationFlowValidator;
   @Qualifier("upgradeInterfaceIntegrityValidator")

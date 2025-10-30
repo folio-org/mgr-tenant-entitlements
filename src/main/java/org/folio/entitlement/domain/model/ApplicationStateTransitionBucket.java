@@ -1,5 +1,8 @@
 package org.folio.entitlement.domain.model;
 
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,8 +16,9 @@ public final class ApplicationStateTransitionBucket {
 
   private ApplicationStateTransitionBucket(ApplicationStateTransitionType transitionType,
     Collection<String> applicationIds) {
+    requireNonNull(transitionType, "Transition type must not be null");
     this.transitionType = transitionType;
-    this.applicationIds.addAll(applicationIds);
+    this.applicationIds.addAll(emptyIfNull(applicationIds));
   }
 
   public static ApplicationStateTransitionBucket entitle(Collection<String> applicationIds) {

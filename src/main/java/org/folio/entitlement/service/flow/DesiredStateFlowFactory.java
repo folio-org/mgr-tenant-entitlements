@@ -37,7 +37,7 @@ public class DesiredStateFlowFactory implements FlowFactory {
   private final DesiredStateWithRevokeValidator desiredStateWithRevokeValidator;
   private final DesiredStateApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final KafkaTenantTopicCreator kafkaTenantTopicCreator;
-  private final ApplicationsFlowProvider applicationsFlowProvider;
+  private final DesiredStateApplicationsFlowProvider applicationsFlowProvider;
 
   private final FinishedFlowFinalizer finishedFlowFinalizer;
   private final FlowInitializer flowInitializer;

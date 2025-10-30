@@ -32,10 +32,6 @@ public class DesiredStateWithUpgradeValidator extends DatabaseLoggingStage<Commo
 
     var tenantEntitlements = loadEntitlementsByApplicationNames(tenantId, applicationIds);
     validateUpdatingApps(applicationIds, tenantEntitlements);
-
-    // TODO (Dima Tkachenko): review code
-    /*var entitledApplicationIds = mapItems(tenantEntitlements, Entitlement::getApplicationId);
-    context.withEntitledApplicationIds(entitledApplicationIds);*/
   }
 
   private List<Entitlement> loadEntitlementsByApplicationNames(UUID tenantId, Collection<String> applicationIds) {

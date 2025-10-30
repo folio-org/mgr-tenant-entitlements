@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 public class EntitleFlowFactory implements FlowFactory {
 
   private final TenantLoader tenantLoader;
-  private final ApplicationsFlowProvider applicationsFlowFactory;
+  private final BaseApplicationsFlowProvider applicationsFlowFactory;
   private final ApplicationFlowValidator applicationFlowValidator;
   @Qualifier("entitlementInterfaceIntegrityValidator")
   private final StageRequestValidator interfaceIntegrityValidator;
