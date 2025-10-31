@@ -42,20 +42,18 @@ public class OkapiModulesFlowProvider implements ModulesFlowProvider {
 
   @Override
   public Flow createFlow(StageContext context) {
-    var appStageContext = ApplicationStageContext.decorate(context);
-    var request = appStageContext.getEntitlementRequest();
-    var flowParameters = getFlowParameters(appStageContext);
+    var ctx = ApplicationStageContext.decorate(context);
+    var flowParameters = getFlowParameters(ctx);
 
-    var factory = requireNonNull(okapiFlowFactories.get(request.getType()));
-    return factory.createFlow(appStageContext, flowParameters);
+    var factory = requireNonNull(okapiFlowFactories.get(ctx.getEntitlementType()));
+    return factory.createFlow(ctx, flowParameters);
   }
 
   private Map<String, Object> getFlowParameters(ApplicationStageContext stageContext) {
     var descriptorSequence = moduleSequenceProvider.getSequence(stageContext, MODULE);
     var uiDescriptorSequence = moduleSequenceProvider.getSequence(stageContext, UI_MODULE);
 
-    var request = stageContext.getEntitlementRequest();
-    if (request.getType() == UPGRADE) {
+    if (stageContext.getEntitlementType() == UPGRADE) {
       return Map.of(
         PARAM_MODULE_DESCRIPTOR_HOLDERS, toFlatList(descriptorSequence.moduleDescriptors()),
         PARAM_DEPRECATED_MODULE_DESCRIPTORS, toFlatList(descriptorSequence.deprecatedModuleDescriptors()),

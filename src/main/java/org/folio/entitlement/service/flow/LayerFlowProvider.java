@@ -6,6 +6,7 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.reverseList;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_DESCRIPTOR;
@@ -137,6 +138,7 @@ public class LayerFlowProvider {
       if (applicationEntitlement.type() == UPGRADE) {
         var entitledApplicationDescriptor = requireNonNull(entitledApplicationDescriptors.get(applicationName));
         return Map.of(
+          PARAM_APPLICATION_ENTITLEMENT_TYPE, applicationEntitlement.type(),
           PARAM_APPLICATION_ID, descriptor.getId(),
           PARAM_APPLICATION_DESCRIPTOR, descriptor,
           PARAM_ENTITLED_APPLICATION_DESCRIPTOR, entitledApplicationDescriptor,
@@ -145,6 +147,7 @@ public class LayerFlowProvider {
       }
 
       return Map.of(
+        PARAM_APPLICATION_ENTITLEMENT_TYPE, applicationEntitlement.type(),
         PARAM_APPLICATION_ID, descriptor.getId(),
         PARAM_APPLICATION_DESCRIPTOR, descriptor,
         PARAM_APPLICATION_FLOW_ID, applicationFlowId);

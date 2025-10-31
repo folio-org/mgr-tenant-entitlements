@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 @Log4j2
 @Component
 @RequiredArgsConstructor
-public class ApplicationStateTransitionPlanMaker extends DatabaseLoggingStage<CommonStageContext> {
+public class ApplicationStateTransitionPlanner extends DatabaseLoggingStage<CommonStageContext> {
 
   private final EntitlementCrudService entitlementService;
 

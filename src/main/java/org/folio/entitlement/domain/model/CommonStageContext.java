@@ -7,7 +7,7 @@ import lombok.ToString;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.service.stage.ApplicationDescriptorTreeLoader;
-import org.folio.entitlement.service.stage.ApplicationStateTransitionPlanMaker;
+import org.folio.entitlement.service.stage.ApplicationStateTransitionPlanner;
 import org.folio.flow.api.StageContext;
 
 @ToString(callSuper = true)
@@ -108,7 +108,7 @@ public class CommonStageContext extends IdentifiableStageContext {
 
   /**
    * Returns application state transition plan. The transition plan is created during
-   * "Desired State" request processing only by dedicated stage: {@link ApplicationStateTransitionPlanMaker}.
+   * "Desired State" request processing only by dedicated stage: {@link ApplicationStateTransitionPlanner}.
    *
    * @return {@link ApplicationStateTransitionPlan} object
    */

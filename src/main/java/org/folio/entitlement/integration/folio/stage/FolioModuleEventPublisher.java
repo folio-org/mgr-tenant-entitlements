@@ -20,7 +20,6 @@ public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
-    var request = context.getEntitlementRequest();
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
 
@@ -33,7 +32,7 @@ public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
       return;
     }
 
-    publishEvent(getEntitlementEvent(moduleDescriptor.getId(), context, request.getType()));
+    publishEvent(getEntitlementEvent(moduleDescriptor.getId(), context, context.getEntitlementType()));
     if (installedModuleDescriptor != null) {
       publishEvent(getEntitlementEvent(installedModuleDescriptor.getId(), context, REVOKE));
     }
@@ -41,9 +40,7 @@ public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
 
   @Override
   public void cancel(ModuleStageContext context) {
-    var request = context.getEntitlementRequest();
-    if (request.getType() != ENTITLE) {
-      // TODO (Dima Tkachenko): review code logic for STATE cancellation
+    if (context.getEntitlementType() != ENTITLE) {
       return;
     }
 

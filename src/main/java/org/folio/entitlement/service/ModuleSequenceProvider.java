@@ -34,7 +34,7 @@ public class ModuleSequenceProvider {
    */
   public ModulesSequence getSequence(ApplicationStageContext stageContext, ModuleType moduleType) {
     var helper = new ModulesHelper(stageContext, moduleType);
-    var entitlementType = stageContext.getEntitlementRequest().getType();
+    var entitlementType = stageContext.getEntitlementType();
     return new ModulesSequence(
       getModuleDescriptorHolders(entitlementType, helper),
       getDeprecatedModuleDescriptors(helper));

@@ -6,7 +6,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.KafkaTenantTopicCreator;
-import org.folio.entitlement.service.stage.ApplicationStateTransitionPlanMaker;
+import org.folio.entitlement.service.stage.ApplicationStateTransitionPlanner;
 import org.folio.entitlement.service.stage.CancellationFailedFlowFinalizer;
 import org.folio.entitlement.service.stage.CancelledFlowFinalizer;
 import org.folio.entitlement.service.stage.DesiredStateApplicationDescriptorLoader;
@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 public class DesiredStateFlowFactory implements FlowFactory {
 
   private final TenantLoader tenantLoader;
-  private final ApplicationStateTransitionPlanMaker applicationStateTransitionPlanMaker;
+  private final ApplicationStateTransitionPlanner applicationStateTransitionPlanner;
   private final DesiredStateApplicationDescriptorLoader applicationDescriptorLoader;
   @Qualifier("stateInterfaceIntegrityValidator")
   private final StageRequestValidator interfaceIntegrityValidator;
@@ -51,7 +51,7 @@ public class DesiredStateFlowFactory implements FlowFactory {
       .id(UUID.randomUUID())
       .stage(flowInitializer)
       .stage(tenantLoader)
-      .stage(applicationStateTransitionPlanMaker)
+      .stage(applicationStateTransitionPlanner)
       .stage(applicationDescriptorLoader)
       // validation stages
       .stage(interfaceIntegrityValidator)

@@ -1,6 +1,6 @@
 package org.folio.entitlement.integration.okapi.flow;
 
-import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.folio.entitlement.utils.FlowUtils.combineStages;
 
 import java.util.List;
@@ -29,7 +29,7 @@ public class OkapiModulesUpgradeFlowFactory implements OkapiModulesFlowFactory {
     var request = context.getEntitlementRequest();
     return Flow.builder()
       .id(context.flowId() + "/OkapiModulesUpgradeFlow")
-      .stage(combineStages("ParallelResourcesUpdater", asList(keycloakAuthResourceUpdater)))
+      .stage(combineStages("ParallelResourcesUpdater", singletonList(keycloakAuthResourceUpdater)))
       .stage(combineStages("EventPublishingParallelStage",
         List.of(systemUserEventPublisher, scheduledJobEventPublisher, capabilitiesEventPublisher)))
       .executionStrategy(request.getExecutionStrategy())
