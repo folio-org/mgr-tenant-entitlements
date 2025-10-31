@@ -127,8 +127,8 @@ class FlowUtilsTest {
 
     var result = FlowUtils.combineStages("test-stage", List.of(stage), customExecutor);
 
-    assertThat(result).isSameAs(stage);
-    assertThat(result).isNotInstanceOf(ParallelStage.class);
+    assertThat(result).isSameAs(stage)
+      .isNotInstanceOf(ParallelStage.class);
   }
 
   @Test
