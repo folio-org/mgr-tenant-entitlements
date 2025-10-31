@@ -4,6 +4,7 @@ import static org.folio.entitlement.domain.model.ModuleStageContext.ATTR_RETRY_I
 
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -36,6 +37,27 @@ public class FlowUtils {
   @SuppressWarnings("java:S1452")
   public static Stage<? extends StageContext> combineStages(String parallelStageName,
     List<? extends Stage<? extends StageContext>> stages) {
+    return combineStages(parallelStageName, stages, null);
+  }
+
+  /**
+   * Combines list of nullable stages and returns them as single or parallel stage with a custom executor.
+   *
+   * <p>It firstly filter list of stages to select only non-null values and then:</p>
+   * <ul>
+   *   <li>Creates a {@link ParallelStage} with custom executor for multiple non-null stages</li>
+   *   <li>Returns a single stage, if it's only one found</li>
+   *   <li>Returns a {@link NoOpStage} instance if all stages is null</li>
+   * </ul>
+   *
+   * @param parallelStageName - name for the parallel stage
+   * @param stages - list of stages to analyze
+   * @param customExecutor - custom executor for parallel stage execution, can be null
+   * @return created {@link Stage} object.
+   */
+  @SuppressWarnings("java:S1452")
+  public static Stage<? extends StageContext> combineStages(String parallelStageName,
+    List<? extends Stage<? extends StageContext>> stages, Executor customExecutor) {
     if (CollectionUtils.isEmpty(stages)) {
       return NoOpStage.getInstance();
     }
@@ -49,7 +71,13 @@ public class FlowUtils {
       return NoOpStage.getInstance();
     }
 
-    return conditionalStagesSize == 1 ? nonNullStages.get(0) : ParallelStage.of(parallelStageName, nonNullStages);
+    if (conditionalStagesSize == 1) {
+      return nonNullStages.getFirst();
+    }
+
+    return customExecutor != null
+      ? ParallelStage.of(parallelStageName, nonNullStages, customExecutor)
+      : ParallelStage.of(parallelStageName, nonNullStages);
   }
 
   public static void addErrorInformation(String error, ThreadLocalModuleStageContext threadLocalModuleStageContext) {

@@ -36,4 +36,13 @@ class FlowEngineConfigurationTest {
 
     assertThat(flowEngine).isNotNull();
   }
+
+  @Test
+  void moduleInstallerExecutor_positive() {
+    when(configurationProperties.getModuleInstallerThreads()).thenReturn(4);
+
+    var executor = flowEngineConfiguration.moduleInstallerExecutor(configurationProperties);
+
+    assertThat(executor).isNotNull();
+  }
 }
