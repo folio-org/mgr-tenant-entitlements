@@ -37,6 +37,20 @@ public class FlowEngineConfiguration {
       .build();
   }
 
+  /**
+   * Creates a module installer executor bean.
+   *
+   * @param configuration - flow engine configuration properties
+   * @return {@link Executor} bean for module installation
+   */
+  @Bean("moduleInstallerExecutor")
+  public Executor moduleInstallerExecutor(FlowEngineConfigurationProperties configuration) {
+    var threadsNumber = configuration.getModuleInstallerThreads();
+    log.info("Creating module installer executor with {} threads", threadsNumber);
+    var fixedThreadPool = Executors.newFixedThreadPool(threadsNumber);
+    return new DelegatingSecurityContextExecutor(fixedThreadPool, SecurityContextHolder.getContext());
+  }
+
   private static Executor inheritedClassLoaderPool(int threadsNumber) {
     log.info("Creating Flow engine fixed pool with {} threads", threadsNumber);
     var fixedThreadPool = Executors.newFixedThreadPool(threadsNumber);
