@@ -4,8 +4,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
@@ -25,7 +25,7 @@ import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.domain.model.ModulesSequence;
@@ -140,7 +140,7 @@ class ModuleSequenceProviderTest {
     assertThat(sequence).isEqualTo(new ModulesSequence(List.of(expectedLayer1, expectedLayer2), emptyList()));
   }
 
-  private static EntitlementRequest request(EntitlementType type) {
+  private static EntitlementRequest request(EntitlementRequestType type) {
     return EntitlementRequest.builder()
       .applications(List.of(APPLICATION_ID))
       .tenantId(TENANT_ID)

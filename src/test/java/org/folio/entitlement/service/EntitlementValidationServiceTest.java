@@ -2,7 +2,7 @@ package org.folio.entitlement.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.mockito.Mockito.doThrow;

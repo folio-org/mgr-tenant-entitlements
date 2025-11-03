@@ -2,7 +2,7 @@ package org.folio.entitlement.service.stage;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;

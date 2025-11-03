@@ -16,7 +16,7 @@ import static org.mockito.Mockito.doNothing;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.Dependency;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.ApplicationDependencyService;
@@ -38,8 +38,8 @@ class ApplicationDependencyCleanerTest {
   @Mock private ApplicationDependencyService applicationDependencyService;
 
   @ParameterizedTest
-  @EnumSource(EntitlementType.class)
-  void execute_positive(EntitlementType type) {
+  @EnumSource(EntitlementRequestType.class)
+  void execute_positive(EntitlementRequestType type) {
     var stageContext = stageContext(type);
 
     doNothing().when(applicationDependencyService)
@@ -49,8 +49,8 @@ class ApplicationDependencyCleanerTest {
   }
 
   @ParameterizedTest
-  @EnumSource(EntitlementType.class)
-  void cancel_positive(EntitlementType type) {
+  @EnumSource(EntitlementRequestType.class)
+  void cancel_positive(EntitlementRequestType type) {
     var stageContext = stageContext(type);
 
     doNothing().when(applicationDependencyService)
@@ -59,7 +59,7 @@ class ApplicationDependencyCleanerTest {
     applicationDependencyCleaner.cancel(stageContext);
   }
 
-  private static ApplicationStageContext stageContext(EntitlementType type) {
+  private static ApplicationStageContext stageContext(EntitlementRequestType type) {
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(type).okapiToken(OKAPI_TOKEN).build();
     var flowParameters = Map.of(
       PARAM_APPLICATION_ID, APPLICATION_ID,

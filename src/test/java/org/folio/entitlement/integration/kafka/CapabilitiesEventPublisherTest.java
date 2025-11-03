@@ -1,8 +1,8 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;

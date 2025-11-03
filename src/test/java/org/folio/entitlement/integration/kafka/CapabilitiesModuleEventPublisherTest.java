@@ -2,8 +2,8 @@ package org.folio.entitlement.integration.kafka;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;

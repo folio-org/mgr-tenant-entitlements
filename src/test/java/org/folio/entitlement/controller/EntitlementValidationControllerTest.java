@@ -1,6 +1,6 @@
 package org.folio.entitlement.controller;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
@@ -20,7 +20,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.controller.converter.EntitlementTypeConverters;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementValidationService;
 import org.folio.entitlement.service.FlowStageService;
@@ -58,8 +58,8 @@ class EntitlementValidationControllerTest {
   @MockitoBean private EntitlementValidationService validationService;
 
   @ParameterizedTest
-  @EnumSource(EntitlementType.class)
-  void validate_positive(EntitlementType type) throws Exception {
+  @EnumSource(EntitlementRequestType.class)
+  void validate_positive(EntitlementRequestType type) throws Exception {
     var requestBody = new EntitlementRequestBody().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
 
     doNothing().when(validationService).validate(entitlementRequest(type));
@@ -119,7 +119,7 @@ class EntitlementValidationControllerTest {
     return entitlementRequest(ENTITLE);
   }
 
-  private static EntitlementRequest entitlementRequest(EntitlementType type) {
+  private static EntitlementRequest entitlementRequest(EntitlementRequestType type) {
     return EntitlementRequest.builder()
       .type(type)
       .tenantId(TENANT_ID)

@@ -1,6 +1,6 @@
 package org.folio.entitlement.integration.okapi.stage;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
@@ -14,6 +14,7 @@ import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
 import org.folio.entitlement.support.TestUtils;
@@ -48,6 +49,7 @@ class OkapiModulesEventPublisherTest {
 
     eventPublisher.execute(stageContext);
 
-    verify(entitlementEventPublisher).publish(entitlementEvent(ENTITLE, moduleId, TENANT_NAME, TENANT_ID));
+    verify(entitlementEventPublisher).publish(
+      entitlementEvent(EntitlementType.ENTITLE, moduleId, TENANT_NAME, TENANT_ID));
   }
 }

@@ -4,7 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.kafka.clients.admin.NewTopic;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
@@ -123,8 +123,8 @@ class KafkaTenantTopicCreatorTest {
   }
 
   @ParameterizedTest
-  @EnumSource(value = EntitlementType.class, names = {"ENTITLE"}, mode = EnumSource.Mode.EXCLUDE)
-  void execute_positive_notEntitleType(EntitlementType type) {
+  @EnumSource(value = EntitlementRequestType.class, names = {"ENTITLE"}, mode = EnumSource.Mode.EXCLUDE)
+  void execute_positive_notEntitleType(EntitlementRequestType type) {
     var entitlementRequest = entitlementRequest(type);
     var stageContext = stageContext(entitlementRequest);
 
@@ -161,7 +161,7 @@ class KafkaTenantTopicCreatorTest {
     return props;
   }
 
-  private static EntitlementRequest entitlementRequest(EntitlementType type) {
+  private static EntitlementRequest entitlementRequest(EntitlementRequestType type) {
     return EntitlementRequest.builder()
       .tenantId(TENANT_ID)
       .type(type)

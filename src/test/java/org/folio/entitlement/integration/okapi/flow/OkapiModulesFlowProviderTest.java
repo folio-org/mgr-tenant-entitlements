@@ -3,9 +3,9 @@ package org.folio.entitlement.integration.okapi.flow;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_APP_DESCRIPTORS;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.ModuleSequenceProvider;
@@ -55,9 +56,9 @@ class OkapiModulesFlowProviderTest {
 
   @BeforeEach
   void setUp() {
-    when(revokeFlowFactory.getEntitlementType()).thenReturn(REVOKE);
-    when(entitleFlowFactory.getEntitlementType()).thenReturn(ENTITLE);
-    when(upgradeFlowFactory.getEntitlementType()).thenReturn(UPGRADE);
+    when(revokeFlowFactory.getEntitlementType()).thenReturn(EntitlementType.REVOKE);
+    when(entitleFlowFactory.getEntitlementType()).thenReturn(EntitlementType.ENTITLE);
+    when(upgradeFlowFactory.getEntitlementType()).thenReturn(EntitlementType.UPGRADE);
 
     var factories = List.of(revokeFlowFactory, entitleFlowFactory, upgradeFlowFactory);
     okapiModulesFlowProvider = new OkapiModulesFlowProvider(moduleSequenceProvider, factories);

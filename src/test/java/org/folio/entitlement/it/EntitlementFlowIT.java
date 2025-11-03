@@ -1,7 +1,7 @@
 package org.folio.entitlement.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
@@ -22,6 +22,7 @@ import java.util.UUID;
 import org.folio.common.utils.OkapiHeaders;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.ApplicationFlows;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.Flow;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.dto.FlowStages;
@@ -203,7 +204,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .applicationId("test-app1-1.0.0")
       .tenantId(TENANT_ID_1)
       .flowId(FLOW_ID_1)
-      .type(ENTITLE)
+      .type(EntitlementType.ENTITLE)
       .status(FINISHED)
       .startedAt(timestampFrom("2023-01-01T12:01:00"))
       .finishedAt(timestampFrom("2023-01-01T12:01:59"));
@@ -242,7 +243,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .applicationId("test-app2-1.0.0")
       .tenantId(TENANT_ID_1)
       .flowId(FLOW_ID_1)
-      .type(ENTITLE)
+      .type(EntitlementType.ENTITLE)
       .status(FINISHED)
       .startedAt(timestampFrom("2023-01-01T12:02:00"))
       .finishedAt(timestampFrom("2023-01-01T12:02:59"));
@@ -254,7 +255,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .applicationId("test-app3-1.0.0")
       .tenantId(TENANT_ID_2)
       .flowId(FLOW_ID_2)
-      .type(ENTITLE)
+      .type(EntitlementType.ENTITLE)
       .status(FINISHED)
       .startedAt(timestampFrom("2023-01-01T13:01:00"))
       .finishedAt(timestampFrom("2023-01-01T13:01:59"));
@@ -266,7 +267,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .applicationId("test-app4-1.0.0")
       .tenantId(TENANT_ID_2)
       .flowId(FLOW_ID_2)
-      .type(ENTITLE)
+      .type(EntitlementType.ENTITLE)
       .status(FAILED)
       .startedAt(timestampFrom("2023-01-01T13:02:00"))
       .finishedAt(timestampFrom("2023-01-01T13:02:59"));

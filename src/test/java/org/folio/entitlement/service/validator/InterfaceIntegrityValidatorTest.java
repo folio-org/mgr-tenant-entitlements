@@ -5,7 +5,6 @@ import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_APP_DESCRIPTORS;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
@@ -24,7 +23,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.error.Parameter;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
@@ -60,7 +59,7 @@ class InterfaceIntegrityValidatorTest {
 
   @BeforeEach
   void setUp() {
-    interfaceIntegrityValidator = new InterfaceIntegrityValidator(EntitlementType.ENTITLE, interfaceCollector,
+    interfaceIntegrityValidator = new InterfaceIntegrityValidator(EntitlementRequestType.ENTITLE, interfaceCollector,
       applicationDescriptorProvider);
   }
 
@@ -169,7 +168,7 @@ class InterfaceIntegrityValidatorTest {
   @ParameterizedTest
   @DisplayName("shouldValidate_parameterized")
   @CsvSource({"ENTITLE,true", "REVOKE,false", "UPGRADE,false", ",false"})
-  void shouldValidate_parameterized(EntitlementType type, boolean expected) {
+  void shouldValidate_parameterized(EntitlementRequestType type, boolean expected) {
     var request = EntitlementRequest.builder().type(type).build();
     var result = interfaceIntegrityValidator.shouldValidate(request);
     assertThat(result).isEqualTo(expected);
@@ -218,7 +217,7 @@ class InterfaceIntegrityValidatorTest {
       .applications(List.of(applicationIds))
       .tenantId(TENANT_ID)
       .okapiToken(OKAPI_TOKEN)
-      .type(ENTITLE)
+      .type(EntitlementRequestType.ENTITLE)
       .build();
   }
 

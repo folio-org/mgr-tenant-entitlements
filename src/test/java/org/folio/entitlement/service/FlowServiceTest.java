@@ -2,7 +2,7 @@ package org.folio.entitlement.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.service.FlowServiceTest.TestValues.applicationFlow;
 import static org.folio.entitlement.service.FlowServiceTest.TestValues.flow;
@@ -24,6 +24,7 @@ import java.util.UUID;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.common.domain.model.SearchResult;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.Flow;
 import org.folio.entitlement.domain.dto.FlowStage;
@@ -203,7 +204,7 @@ class FlowServiceTest {
     static ApplicationFlow applicationFlow() {
       return new ApplicationFlow()
         .id(FLOW_ID)
-        .type(ENTITLE)
+        .type(EntitlementType.ENTITLE)
         .applicationId(APPLICATION_ID)
         .tenantId(TENANT_ID)
         .status(FINISHED);

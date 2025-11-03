@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.kafka;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
@@ -28,7 +28,7 @@ import java.util.Map;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
@@ -173,7 +173,7 @@ class ScheduledJobEventPublisherTest {
     return new RoutingEntry().pathPattern("/bar/expire").methods(List.of("POST"));
   }
 
-  private static EntitlementRequest request(EntitlementType type) {
+  private static EntitlementRequest request(EntitlementRequestType type) {
     return EntitlementRequest.builder()
       .tenantId(TENANT_ID)
       .applications(List.of(APPLICATION_ID))

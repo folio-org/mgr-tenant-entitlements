@@ -1,6 +1,6 @@
 package org.folio.entitlement.integration.keycloak;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
