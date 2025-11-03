@@ -3,6 +3,8 @@ package org.folio.entitlement.domain.entity;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.util.UUID;
@@ -10,6 +12,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import org.folio.common.utils.SemverUtils;
+import org.folio.entitlement.domain.entity.type.EntityApplicationFlowEntitlementType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Data
 @Entity
@@ -48,6 +53,14 @@ public class ApplicationFlowEntity extends AbstractFlowEntity {
    */
   @Column(name = "flow_id")
   private UUID flowId;
+
+  /**
+   * An entitlement request type for tenant.
+   */
+  @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+  @Column(name = "type", columnDefinition = "entitlement_flow_type")
+  private EntityApplicationFlowEntitlementType type;
 
   /**
    * Sets application name and version from application id.

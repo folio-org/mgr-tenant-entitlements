@@ -1,6 +1,6 @@
 package org.folio.entitlement.domain.entity.type;
 
-public enum EntityEntitlementType {
+public enum EntityFlowEntitlementType {
 
   ENTITLE,
   REVOKE,

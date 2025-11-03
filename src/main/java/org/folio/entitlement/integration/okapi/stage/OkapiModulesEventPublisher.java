@@ -13,10 +13,9 @@ public class OkapiModulesEventPublisher extends DatabaseLoggingStage<OkapiStageC
 
   @Override
   public void execute(OkapiStageContext context) {
-    var request = context.getEntitlementRequest();
     var tenantName = context.getTenantName();
     var tenantId = context.getTenantId();
-    var requestType = request.getType().name();
+    var requestType = context.getEntitlementType().name();
 
     for (var module : context.getModuleDescriptors()) {
       var event = new EntitlementEvent(requestType, module.getId(), tenantName, tenantId);

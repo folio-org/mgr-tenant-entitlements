@@ -6,6 +6,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -178,7 +179,7 @@ public class ApplicationFlowService {
    */
   @Transactional
   public List<ApplicationFlow> createQueuedApplicationFlows(UUID flowId, EntitlementRequest request) {
-    var type = request.getType();
+    var type = toEntitlementType(request.getType());
     var tenantId = request.getTenantId();
     var applicationIds = request.getApplications();
 

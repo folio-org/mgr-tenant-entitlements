@@ -32,8 +32,8 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.entity.ApplicationFlowEntity;
-import org.folio.entitlement.domain.entity.type.EntityEntitlementType;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
+import org.folio.entitlement.domain.entity.type.EntityFlowEntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.mapper.ApplicationFlowMapper;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
@@ -327,7 +327,7 @@ class ApplicationFlowServiceTest {
       entity.setFlowId(FLOW_ID);
       entity.setApplicationId(APPLICATION_ID);
       entity.setTenantId(TENANT_ID);
-      entity.setType(EntityEntitlementType.ENTITLE);
+      entity.setType(EntityFlowEntitlementType.ENTITLE);
       entity.setStatus(EntityExecutionStatus.FINISHED);
       entity.setStartedAt(startedAt);
       entity.setFinishedAt(finishedAt);

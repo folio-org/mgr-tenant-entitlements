@@ -2,7 +2,6 @@ package org.folio.entitlement.service.stage;
 
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.SemverUtils.getNames;
-import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -55,7 +54,7 @@ public class DesiredStateApplicationDescriptorLoader extends DatabaseLoggingStag
 
     transitionPlan.nonEmptyBuckets().forEach(tb -> {
       var descriptors = applicationManagerService.getApplicationDescriptors(tb.getApplicationIds(), authToken);
-      descriptorsByType.put(toEntitlementType(tb.getTransitionType()), descriptors);
+      descriptorsByType.put(tb.getEntitlementType(), descriptors);
     });
 
     return descriptorsByType;

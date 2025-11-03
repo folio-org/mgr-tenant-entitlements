@@ -4,7 +4,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.rest.resource.EntitlementValidationApi;
 import org.folio.entitlement.service.EntitlementValidationService;
@@ -18,10 +18,10 @@ public class EntitlementValidationController extends BaseController implements E
   private final EntitlementValidationService validationService;
 
   @Override
-  public ResponseEntity<Void> validate(EntitlementType entitlementType, EntitlementRequestBody request,
+  public ResponseEntity<Void> validate(EntitlementRequestType entitlementRequestType, EntitlementRequestBody request,
     String validator, String token) {
     var entitlementRequest = EntitlementRequest.builder()
-      .type(entitlementType)
+      .type(entitlementRequestType)
       .okapiToken(token)
       .tenantId(request.getTenantId())
       .applications(request.getApplications())

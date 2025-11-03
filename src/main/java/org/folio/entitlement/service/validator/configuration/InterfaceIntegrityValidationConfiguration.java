@@ -3,7 +3,7 @@ package org.folio.entitlement.service.validator.configuration;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
 import org.folio.entitlement.service.validator.StageRequestValidator;
@@ -89,7 +89,7 @@ public class InterfaceIntegrityValidationConfiguration {
       ApplicationAndDependencyDescriptorProvider applicationDescriptorProvider) {
 
       return new InterfaceIntegrityValidator(
-        EntitlementType.ENTITLE,
+        EntitlementRequestType.ENTITLE,
         interfaceCollector,
         applicationDescriptorProvider);
     }
@@ -144,7 +144,7 @@ public class InterfaceIntegrityValidationConfiguration {
       ApplicationAndEntitledDescriptorProvider applicationDescriptorProvider) {
 
       return new InterfaceIntegrityValidator(
-        EntitlementType.UPGRADE,
+        EntitlementRequestType.UPGRADE,
         interfaceCollector,
         applicationDescriptorProvider);
     }
@@ -201,7 +201,7 @@ public class InterfaceIntegrityValidationConfiguration {
       ApplicationOnlyDescriptorProvider applicationDescriptorProvider) {
 
       return new InterfaceIntegrityValidator(
-        EntitlementType.STATE,
+        EntitlementRequestType.STATE,
         interfaceCollector,
         applicationDescriptorProvider);
     }

@@ -4,6 +4,7 @@ import static org.folio.common.utils.SemverUtils.getNames;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.APPLICATION_FLOW;
 import static org.folio.entitlement.service.validator.ValidatorUtils.validateApplicationFlow;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -45,14 +46,14 @@ public class ApplicationFlowValidator extends DatabaseLoggingStage<CommonStageCo
    */
   @Override
   public void validate(EntitlementRequest request) {
-    var requestType = request.getType();
     var applicationIds = request.getApplications();
-    var applicationFlows = requestType.equals(REVOKE)
+    var entitlementType = toEntitlementType(request.getType());
+    var applicationFlows = entitlementType == REVOKE
       ? applicationFlowService.findLastFlows(applicationIds, request.getTenantId())
       : applicationFlowService.findLastFlowsByNames(getNames(applicationIds), request.getTenantId());
 
     var validationErrors = applicationFlows.stream()
-      .map(applicationFlow -> validateApplicationFlow(applicationFlow, requestType))
+      .map(applicationFlow -> validateApplicationFlow(applicationFlow, entitlementType))
       .flatMap(Optional::stream)
       .toList();
 

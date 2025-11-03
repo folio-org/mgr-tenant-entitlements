@@ -2,7 +2,7 @@ package org.folio.entitlement.service.validator;
 
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.SemverUtils.getNames;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.UPGRADE_REQUEST;
 import static org.folio.entitlement.service.validator.ValidatorUtils.validateUpdatingApps;
 

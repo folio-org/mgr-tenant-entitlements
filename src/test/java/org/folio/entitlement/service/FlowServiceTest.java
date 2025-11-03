@@ -28,8 +28,8 @@ import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.Flow;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.entity.FlowEntity;
-import org.folio.entitlement.domain.entity.type.EntityEntitlementType;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
+import org.folio.entitlement.domain.entity.type.EntityFlowEntitlementType;
 import org.folio.entitlement.mapper.FlowMapper;
 import org.folio.entitlement.repository.FlowRepository;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
@@ -180,7 +180,7 @@ class FlowServiceTest {
     static FlowEntity flowEntity(ZonedDateTime startedAt, ZonedDateTime finishedAt) {
       var entity = new FlowEntity();
       entity.setId(FLOW_ID);
-      entity.setType(EntityEntitlementType.ENTITLE);
+      entity.setType(EntityFlowEntitlementType.ENTITLE);
       entity.setStatus(EntityExecutionStatus.FINISHED);
       entity.setStartedAt(startedAt);
       entity.setFinishedAt(finishedAt);

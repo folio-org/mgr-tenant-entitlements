@@ -224,7 +224,7 @@ paths:
             schema:
               $ref: '#/components/schemas/entitlementRequestBody'
       parameters:
-        - $ref: '#/components/parameters/entitlementType'
+        - $ref: '#/components/parameters/entitlementRequestType'
         - $ref: '#/components/parameters/entitlementValidator'
         - $ref: '#/components/parameters/x-okapi-token'
       responses:
@@ -444,6 +444,8 @@ components:
       $ref: schemas/applicationFlows.json
     errorResponse:
       $ref: schemas/common/errors.json
+    entitlementRequestType:
+      $ref: schemas/types/entitlementRequestType.json
     entitlementType:
       $ref: schemas/types/entitlementType.json
     appReinstallRequestBody:
@@ -645,6 +647,13 @@ components:
       description: Entitlement type
       schema:
         $ref: '#/components/schemas/entitlementType'
+    entitlementRequestType:
+      name: entitlementRequestType
+      in: query
+      required: true
+      description: Entitlement request type
+      schema:
+        $ref: '#/components/schemas/entitlementRequestType'
     entitlementValidator:
       name: validator
       in: query

@@ -1,7 +1,6 @@
 package org.folio.entitlement.service.flow;
 
 import static java.util.stream.Collectors.toMap;
-import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
@@ -26,7 +25,7 @@ public class DesiredStateApplicationFlowQueuingStage extends DatabaseLoggingStag
     var applicationFlowsMap =  transitionPlan.nonEmptyBuckets()
       .flatMap(tb -> applicationFlowService.createQueuedApplicationFlows(
         currentFlowId, tb.getApplicationIds(),
-        toEntitlementType(tb.getTransitionType()), tenantId).stream()
+        tb.getEntitlementType(), tenantId).stream()
       )
       .collect(toMap(ApplicationFlow::getApplicationId, ApplicationFlow::getId));
     

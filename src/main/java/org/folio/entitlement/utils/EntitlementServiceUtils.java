@@ -22,8 +22,8 @@ import org.apache.commons.collections4.IterableUtils;
 import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.dto.EntitlementType;
-import org.folio.entitlement.domain.model.ApplicationStateTransitionType;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.tools.kong.exception.KongIntegrationException;
@@ -165,11 +165,13 @@ public class EntitlementServiceUtils {
       && Objects.equals(moduleDesc.getId(), installedModuleDesc.getId());
   }
 
-  public static EntitlementType toEntitlementType(ApplicationStateTransitionType type) {
+  public static EntitlementType toEntitlementType(EntitlementRequestType type) {
     return switch (type) {
       case ENTITLE -> EntitlementType.ENTITLE;
       case UPGRADE -> EntitlementType.UPGRADE;
       case REVOKE -> EntitlementType.REVOKE;
+      default -> throw new IllegalArgumentException("Entitlement type cannot be mapped from entitlement request type: "
+        + type);
     };
   }
 

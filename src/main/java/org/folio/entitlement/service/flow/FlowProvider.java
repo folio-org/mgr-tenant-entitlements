@@ -1,12 +1,12 @@
 package org.folio.entitlement.service.flow;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.domain.dto.EntitlementType.STATE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 
 import java.util.Map;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.flow.api.Flow;
 import org.springframework.stereotype.Component;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class FlowProvider {
 
-  private final Map<EntitlementType, FlowFactory> flowFactories;
+  private final Map<EntitlementRequestType, FlowFactory> flowFactories;
 
   /**
    * Creates {@link FlowProvider} for provided factories.

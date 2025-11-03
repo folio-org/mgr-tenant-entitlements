@@ -97,8 +97,7 @@ public abstract class AbstractEventPublisher<T> extends DatabaseLoggingStage<Oka
   private Stream<ResourceEvent<T>> getEventsStream(OkapiStageContext context, ModuleType moduleType) {
     var tenantName = context.getTenantName();
     var applicationId = context.getApplicationId();
-    var request = context.getEntitlementRequest();
-    if (request.getType() == UPGRADE) {
+    if (context.getEntitlementType() == UPGRADE) {
       return toStream(context.getModuleDescriptorHolders(moduleType))
         .map(moduleDescriptorHolder -> getEvent(moduleDescriptorHolder, moduleType, context))
         .flatMap(Optional::stream);

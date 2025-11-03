@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.InterfaceItem;
@@ -39,7 +39,7 @@ public class InterfaceIntegrityValidator extends StageRequestValidator {
   /**
    * The type of entitlement request this validator is responsible for.
    */
-  private final EntitlementType entitlementType;
+  private final EntitlementRequestType entitlementType;
   private final ApplicationInterfaceCollector interfaceCollector;
   private final ApplicationDescriptorProvider applicationDescriptorProvider;
 

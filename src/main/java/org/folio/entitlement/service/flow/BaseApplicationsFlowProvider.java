@@ -1,7 +1,8 @@
 package org.folio.entitlement.service.flow;
 
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 
 import java.util.List;
 import org.folio.entitlement.domain.model.ApplicationEntitlement;
@@ -20,12 +21,13 @@ public class BaseApplicationsFlowProvider extends AbstractApplicationsFlowProvid
   @Override
   protected List<? extends Stage<? extends StageContext>> createApplicationFlows(CommonStageContext ctx) {
     var request = ctx.getEntitlementRequest();
-    var entitlementType = request.getType();
+    var entitlementRequestType = request.getType();
 
     var descriptors = ctx.getApplicationDescriptors();
-    var appEntitlements = mapItems(descriptors, d -> new ApplicationEntitlement(entitlementType, d));
+    var appEntitlements = mapItems(descriptors, d ->
+      new ApplicationEntitlement(toEntitlementType(entitlementRequestType), d));
 
-    return entitlementType != REVOKE
+    return entitlementRequestType != REVOKE
       ? layerFlowProvider.prepareLayeredFlows(ctx, appEntitlements)
       : layerFlowProvider.prepareLayeredFlowsReversed(ctx, appEntitlements);
   }

@@ -1,15 +1,15 @@
 package org.folio.entitlement.controller;
 
 import static java.lang.Boolean.TRUE;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.domain.dto.EntitlementType.STATE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.springframework.http.HttpStatus.CREATED;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -71,8 +71,8 @@ public class EntitlementController extends BaseController implements Entitlement
     return ResponseEntity.ok(entitlements);
   }
 
-  private static EntitlementRequest createRequest(EntitlementType type, EntitlementRequestBody request, String token,
-    String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purgeOnRollback) {
+  private static EntitlementRequest createRequest(EntitlementRequestType type, EntitlementRequestBody request,
+    String token, String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purgeOnRollback) {
     return EntitlementRequest.builder()
       .type(type)
       .okapiToken(token)

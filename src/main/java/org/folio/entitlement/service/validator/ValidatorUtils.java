@@ -19,6 +19,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
+import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.semver4j.Semver;
@@ -27,7 +28,7 @@ import org.semver4j.Semver;
 @UtilityClass
 class ValidatorUtils {
 
-  static void validateUpdatingApps(Collection<String> applicationIds, List<org.folio.entitlement.domain.dto.Entitlement> tenantEntitlements) {
+  static void validateUpdatingApps(Collection<String> applicationIds, List<Entitlement> tenantEntitlements) {
     var entitlementsByAppNames = tenantEntitlements.stream()
       .collect(toMap(entitlement -> {
         try {
@@ -70,7 +71,7 @@ class ValidatorUtils {
     };
   }
 
-  private static Optional<Parameter> validateApplicationId(String applicationId, Map<String, org.folio.entitlement.domain.dto.Entitlement> appNames) {
+  private static Optional<Parameter> validateApplicationId(String applicationId, Map<String, Entitlement> appNames) {
     var applicationName = SemverUtils.getName(applicationId);
     var entitlementByName = appNames.get(applicationName);
     if (entitlementByName == null) {
