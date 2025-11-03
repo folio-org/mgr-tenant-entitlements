@@ -23,6 +23,9 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
     * [Keycloak Security](#keycloak-security)
     * [Keycloak specific environment variables](#keycloak-specific-environment-variables)
   * [Retry configuration](#retry-configuration)
+  * [Flow Engine configuration](#flow-engine-configuration)
+  * [Kong Service Registration](#kong-service-registration)
+  * [Kong Route Registration](#kong-route-registration)
 * [Kafka Integration](#kafka-integration)
   * [Events upon application being enabled/disabled](#events-upon-application-being-enableddisabled)
     * [Naming convention](#naming-convention)
@@ -98,6 +101,8 @@ docker run \
 | DB_USERNAME                            | postgres                            |  false   | Postgres username                                                                                                                                                                                          |
 | DB_PASSWORD                            | postgres                            |  false   | Postgres username password                                                                                                                                                                                 |
 | DB_DATABASE                            | okapi_modules                       |  false   | Postgres database name                                                                                                                                                                                     |
+| FLOW_ENGINE_THREADS_NUM                | 4                                   |  false   | Number of threads for the main flow engine executor pool                                                                                                                                                   |
+| FLOW_ENGINE_MODULE_INSTALLER_THREADS   | 4                                   |  false   | Number of threads for parallel module installation. Controls how many modules are being installed concurrently during entitlement operations                                                               |
 | MODULE_URL                             | http://mgr-tenant-entitlements:8081 |  false   | Module URL (module cannot define url for Kong registration by itself, because it can be under Load Balancer, so this value must be provided manually)                                                      |
 | okapi.url                              | -                                   |  false   | Okapi URL used to perform HTTP requests by `OkapiClient`.                                                                                                                                                  |
 | tenant.url                             | -                                   |   true   | Tenant URL used to perform HTTP requests by `TenantManagerClient`.                                                                                                                                         |
@@ -300,6 +305,72 @@ with `mgr-tenants` and `mgr-applications` services.
 | RETRIES_KEYCLOAK_BACKOFF_DELAY      | 1000          |    false    | Keycloak calls retries initial delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MAXDELAY   | 30000         |    false    | Keycloak calls retries maximum delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER | 5             |    false    | Keycloak calls retries delay multiplier           |
+| RETRIES_KONG_BACKOFF_DELAY          | 1000          |    false    | Kong calls retries initial delay millisec         |
+| RETRIES_KONG_BACKOFF_MAXDELAY       | 30000         |    false    | Kong calls retries maximum delay millisec         |
+
+### Flow Engine configuration
+
+The Flow Engine is responsible for orchestrating the entitlement process stages. It uses thread pools to execute stages in parallel when possible.
+
+| Name                                    | Default value |  Required   | Description                                                                                                                                      |
+|:----------------------------------------|:--------------|:-----------:|:-------------------------------------------------------------------------------------------------------------------------------------------------|
+| FLOW_ENGINE_THREADS_NUM                 | 4             |    false    | Number of threads in the main flow engine executor pool. Controls overall parallelism for flow stages                                            |
+| FLOW_ENGINE_MODULE_INSTALLER_THREADS    | 4             |    false    | Number of threads dedicated to module installation. Controls how many modules can be installed concurrently during entitlement operations        |
+| FLOW_ENGINE_EXECUTION_TIMEOUT           | 30m           |    false    | Maximum execution timeout for flow operations                                                                                                     |
+| FLOW_ENGINE_PRINT_FLOW_RESULTS          | false         |    false    | Whether to print flow execution results to logs                                                                                                   |
+| FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE  | 25            |    false    | Maximum number of flow execution statuses to cache                                                                                                |
+
+**Performance Tuning:**
+* `FLOW_ENGINE_MODULE_INSTALLER_THREADS` should typically be less than or equal to `FLOW_ENGINE_THREADS_NUM`
+* Consider database connection pool size when configuring thread counts
+* For environments with many modules, increase `FLOW_ENGINE_MODULE_INSTALLER_THREADS` for better parallelism
+* Monitor system resources (CPU, memory, database connections) when adjusting thread counts
+
+**Example configurations:**
+
+Development:
+```bash
+FLOW_ENGINE_THREADS_NUM=5
+FLOW_ENGINE_MODULE_INSTALLER_THREADS=2
+```
+
+Production:
+```bash
+FLOW_ENGINE_THREADS_NUM=10
+FLOW_ENGINE_MODULE_INSTALLER_THREADS=6
+```
+
+### Kong Service Registration
+
+The Kong Gateway services are added on service discovery registration per application. Each Kong Service has tag equal
+to `applicationId` to improve observability. Tags can be used to filter core entities, via the `?tags` querystring
+parameter.
+
+### Kong Route Registration
+
+The Kong routes registered per-tenant using header filter:
+
+```json
+{
+  "headers": {
+    "x-okapi-tenant": [ "$tenantId" ]
+  }
+}
+```
+
+Routes as well populated with tags: `moduleId` and `tenantId` to be filtered.
+
+Routes per tenant can be found with:
+
+```shell
+curl -XGET "$KONG_ADMIN_URL/routes?tags=$moduleId,$tenantId"
+```
+
+or
+
+```shell
+curl -XGET "$KONG_ADMIN_URL/services/$moduleId/routes?tags=$tenantId"
+```
 
 ## Kafka Integration
 
