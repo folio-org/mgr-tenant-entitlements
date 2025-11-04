@@ -14,6 +14,7 @@ import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_M
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DISCOVERY;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_ID;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_TYPE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
@@ -58,7 +59,6 @@ import org.folio.flow.api.FlowEngine;
 import org.folio.flow.api.Stage;
 import org.folio.flow.api.StageContext;
 import org.folio.test.types.UnitTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -119,7 +119,7 @@ class FolioModulesFlowProviderTest {
     flowEngine.execute(flow);
 
     var fooFlowId = getEntitleStageFlowId(EntitlementType.ENTITLE, 0, MOD_FOO_ID);
-    var fooFlowParams = fooFlowParams();
+    var fooFlowParams = fooFlowParams(EntitlementType.ENTITLE);
     var inOrder = inOrder(moduleEntitleFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
     inOrder.verify(moduleEntitleFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
@@ -147,7 +147,7 @@ class FolioModulesFlowProviderTest {
     flowEngine.execute(flow);
 
     var fooFlowId = getEntitleStageFlowId(EntitlementType.REVOKE, 0, MOD_FOO_ID);
-    var fooFlowParams = fooFlowParams();
+    var fooFlowParams = fooFlowParams(EntitlementType.REVOKE);
     var inOrder = inOrder(moduleRevokeFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
     inOrder.verify(moduleRevokeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
@@ -175,7 +175,7 @@ class FolioModulesFlowProviderTest {
     flowEngine.execute(flow);
 
     var fooFlowId = getEntitleStageFlowId(EntitlementType.UPGRADE, 0, MOD_FOO_V2_ID);
-    var fooFlowParameters = upgradeModFooV2Params();
+    var fooFlowParameters = upgradeModFooV2Params(EntitlementType.UPGRADE);
 
     var inOrder = inOrder(moduleUpgradeFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
@@ -207,6 +207,7 @@ class FolioModulesFlowProviderTest {
 
     var fooFlowId = getEntitleStageFlowId(EntitlementType.UPGRADE, 0, MOD_FOO_ID);
     var fooFlowParameters = Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.UPGRADE,
       PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
@@ -216,6 +217,7 @@ class FolioModulesFlowProviderTest {
 
     var uiFlowId = getEntitleStageFlowId(EntitlementType.UPGRADE, 1, UI_FOO_ID);
     var uiFooFlowParameters = Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.UPGRADE,
       PARAM_MODULE_TYPE, UI_MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
@@ -254,6 +256,7 @@ class FolioModulesFlowProviderTest {
 
     var fooFlowId = getDeprecatedStageFlowId(0, MOD_FOO_ID);
     var fooFlowParameters = Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.UPGRADE,
       PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
@@ -262,7 +265,7 @@ class FolioModulesFlowProviderTest {
       PARAM_MODULE_DISCOVERY, "https://mod-foo:8443");
 
     var uiFooFlowId = getDeprecatedStageFlowId(1, UI_FOO_ID);
-    var uiFlowParameters = deprecatedUiFooParams();
+    var uiFlowParameters = deprecatedUiFooParams(EntitlementType.UPGRADE);
 
     var inOrder = inOrder(moduleUpgradeFlowFactory, moduleStage, moduleSequenceProvider);
     inOrder.verify(moduleSequenceProvider).getSequence(context, MODULE);
@@ -300,16 +303,16 @@ class FolioModulesFlowProviderTest {
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
 
     var fooFlowId = getEntitleStageFlowId(EntitlementType.ENTITLE, 0, MOD_FOO_ID);
-    var fooFlowParams = fooFlowParams();
+    var fooFlowParams = fooFlowParams(EntitlementType.ENTITLE);
     inOrder.verify(moduleEntitleFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
 
     var barFlowId = getEntitleStageFlowId(EntitlementType.ENTITLE, 1, MOD_BAR_ID);
-    var barFlowParams = barFlowParams();
+    var barFlowParams = barFlowParams(EntitlementType.ENTITLE);
     inOrder.verify(moduleEntitleFlowFactory).createModuleFlow(barFlowId, IGNORE_ON_ERROR, barFlowParams);
 
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     var uiFooFlowId = getEntitleStageFlowId(EntitlementType.ENTITLE, 2, UI_FOO_ID);
-    var uiFooFlowParams = uiFooFlowParams();
+    var uiFooFlowParams = uiFooFlowParams(EntitlementType.ENTITLE);
     inOrder.verify(moduleEntitleFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
 
     inOrder.verify(moduleStage).execute(StageContext.of(fooFlowId, fooFlowParams, emptyMap()));
@@ -344,16 +347,16 @@ class FolioModulesFlowProviderTest {
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
 
     var barFlowId = getEntitleStageFlowId(EntitlementType.REVOKE, 0, MOD_BAR_ID);
-    var barFlowParams = barFlowParams();
+    var barFlowParams = barFlowParams(EntitlementType.REVOKE);
     inOrder.verify(moduleRevokeFlowFactory).createModuleFlow(barFlowId, IGNORE_ON_ERROR, barFlowParams);
 
     var fooFlowId = getEntitleStageFlowId(EntitlementType.REVOKE, 1, MOD_FOO_ID);
-    var fooFlowParams = fooFlowParams();
+    var fooFlowParams = fooFlowParams(EntitlementType.REVOKE);
     inOrder.verify(moduleRevokeFlowFactory).createModuleFlow(fooFlowId, IGNORE_ON_ERROR, fooFlowParams);
 
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     var uiFooFlowId = getEntitleStageFlowId(EntitlementType.REVOKE, 2, UI_FOO_ID);
-    var uiFooFlowParams = uiFooFlowParams();
+    var uiFooFlowParams = uiFooFlowParams(EntitlementType.REVOKE);
     inOrder.verify(moduleRevokeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
 
     inOrder.verify(moduleStage).execute(StageContext.of(barFlowId, barFlowParams, emptyMap()));
@@ -390,20 +393,20 @@ class FolioModulesFlowProviderTest {
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, MODULE);
 
     var fooV2FlowId = getEntitleStageFlowId(EntitlementType.UPGRADE, 0, MOD_FOO_V2_ID);
-    var fooV2FlowParams = upgradeModFooV2Params();
+    var fooV2FlowParams = upgradeModFooV2Params(EntitlementType.UPGRADE);
     inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(fooV2FlowId, IGNORE_ON_ERROR, fooV2FlowParams);
 
     var barFlowId = getEntitleStageFlowId(EntitlementType.UPGRADE, 1, MOD_BAR_ID);
-    var barFlowParams = upgradeModBarParams();
+    var barFlowParams = upgradeModBarParams(EntitlementType.UPGRADE);
     inOrder.verify(moduleUpgradeFlowFactory).createModuleFlow(barFlowId, IGNORE_ON_ERROR, barFlowParams);
 
     inOrder.verify(moduleSequenceProvider).getSequence(stageContext, UI_MODULE);
     var uiBarFlowId = getEntitleStageFlowId(EntitlementType.UPGRADE, 2, UI_BAR_ID);
-    var uiBarFlowParams = uiBarFlowParams();
+    var uiBarFlowParams = uiBarFlowParams(EntitlementType.UPGRADE);
     inOrder.verify(moduleUpgradeFlowFactory).createUiModuleFlow(uiBarFlowId, IGNORE_ON_ERROR, uiBarFlowParams);
 
     var uiFooFlowId = getDeprecatedStageFlowId(0, UI_FOO_ID);
-    var uiFooFlowParams = deprecatedUiFooParams();
+    var uiFooFlowParams = deprecatedUiFooParams(EntitlementType.UPGRADE);
     inOrder.verify(moduleUpgradeFlowFactory).createUiModuleFlow(uiFooFlowId, IGNORE_ON_ERROR, uiFooFlowParams);
 
     inOrder.verify(moduleStage).execute(StageContext.of(fooV2FlowId, fooV2FlowParams, emptyMap()));
@@ -472,8 +475,9 @@ class FolioModulesFlowProviderTest {
         new RoutingEntry().methods(List.of("GET")).pathPattern("/bar-api/items")))));
   }
 
-  private static Map<String, Object> fooFlowParams() {
+  private static Map<String, Object> fooFlowParams(EntitlementType entitlementType) {
     return Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, entitlementType,
       PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
@@ -482,8 +486,9 @@ class FolioModulesFlowProviderTest {
       PARAM_MODULE_DISCOVERY, "https://mod-foo:8443");
   }
 
-  private static Map<String, Object> uiFooFlowParams() {
+  private static Map<String, Object> uiFooFlowParams(EntitlementType entitlementType) {
     return Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, entitlementType,
       PARAM_MODULE_TYPE, ModuleType.UI_MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
@@ -491,8 +496,9 @@ class FolioModulesFlowProviderTest {
       PARAM_MODULE_DESCRIPTOR, uiFooModuleDesc());
   }
 
-  private static Map<String, Object> barFlowParams() {
+  private static Map<String, Object> barFlowParams(EntitlementType entitlementType) {
     return Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, entitlementType,
       PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
@@ -501,8 +507,9 @@ class FolioModulesFlowProviderTest {
       PARAM_MODULE_DISCOVERY, "https://mod-bar:8443");
   }
 
-  private static Map<String, Object> deprecatedUiFooParams() {
+  private static Map<String, Object> deprecatedUiFooParams(EntitlementType entitlementType) {
     return Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, entitlementType,
       PARAM_MODULE_TYPE, UI_MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
@@ -510,8 +517,9 @@ class FolioModulesFlowProviderTest {
       PARAM_INSTALLED_MODULE_DESCRIPTOR, uiFooModuleDesc());
   }
 
-  private static Map<String, Object> upgradeModFooV2Params() {
+  private static Map<String, Object> upgradeModFooV2Params(EntitlementType entitlementType) {
     return Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, entitlementType,
       PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
@@ -521,8 +529,9 @@ class FolioModulesFlowProviderTest {
       PARAM_MODULE_DISCOVERY, "https://mod-foo-v2:8443");
   }
 
-  private static Map<String, Object> upgradeModBarParams() {
+  private static Map<String, Object> upgradeModBarParams(EntitlementType entitlementType) {
     return Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, entitlementType,
       PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,
@@ -532,8 +541,9 @@ class FolioModulesFlowProviderTest {
       PARAM_MODULE_DISCOVERY, "https://mod-bar:8443");
   }
 
-  private static @NotNull Map<String, Object> uiBarFlowParams() {
+  private static Map<String, Object> uiBarFlowParams(EntitlementType entitlementType) {
     return Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, entitlementType,
       PARAM_MODULE_TYPE, UI_MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID,

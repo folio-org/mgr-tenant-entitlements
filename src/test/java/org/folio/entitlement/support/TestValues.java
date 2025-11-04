@@ -281,6 +281,7 @@ public class TestValues {
     ApplicationDescriptor descriptor, ApplicationDescriptor entitledDescriptor) {
     return Map.of(
       PARAM_REQUEST, request,
+      PARAM_APPLICATION_ENTITLEMENT_TYPE, toEntitlementType(request.getType()),
       PARAM_APPLICATION_DESCRIPTOR, descriptor,
       PARAM_ENTITLED_APPLICATION_DESCRIPTOR, entitledDescriptor,
       PARAM_APPLICATION_ID, descriptor.getId(),
