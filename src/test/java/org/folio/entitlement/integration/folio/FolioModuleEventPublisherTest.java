@@ -11,6 +11,7 @@ import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUES
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_ID;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import java.util.Map;
 import java.util.UUID;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
@@ -55,7 +57,8 @@ class FolioModuleEventPublisherTest {
     var tenantName = "tenantName";
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(tenantId).build();
     var desc = new ModuleDescriptor().id(MODULE_ID);
-    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.ENTITLE,
+      PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
 
     folioModuleEventPublisher.execute(stageContext);
@@ -70,6 +73,7 @@ class FolioModuleEventPublisherTest {
     var tenantName = "tenantName";
     var flowParameters = Map.of(
       PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(tenantId).build(),
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.UPGRADE,
       PARAM_MODULE_ID, MODULE_ID,
       PARAM_MODULE_DESCRIPTOR, new ModuleDescriptor().id(MODULE_ID),
       PARAM_INSTALLED_MODULE_DESCRIPTOR, new ModuleDescriptor().id(MODULE_ID));
@@ -87,6 +91,7 @@ class FolioModuleEventPublisherTest {
     var installedModuleId = "mod-foo-0.0.9";
     var flowParameters = Map.of(
       PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(tenantId).build(),
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.UPGRADE,
       PARAM_MODULE_ID, MODULE_ID,
       PARAM_MODULE_DESCRIPTOR, new ModuleDescriptor().id(MODULE_ID),
       PARAM_INSTALLED_MODULE_DESCRIPTOR, new ModuleDescriptor().id(installedModuleId));
@@ -107,6 +112,7 @@ class FolioModuleEventPublisherTest {
     var tenantName = "tenantName";
     var flowParameters = Map.of(
       PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(tenantId).build(),
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.UPGRADE,
       PARAM_MODULE_ID, MODULE_ID,
       PARAM_INSTALLED_MODULE_DESCRIPTOR, new ModuleDescriptor().id(MODULE_ID));
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
@@ -124,7 +130,8 @@ class FolioModuleEventPublisherTest {
 
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(randomUUID()).build();
     var desc = new ModuleDescriptor().id(MODULE_ID);
-    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.ENTITLE,
+      PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
     var contextParameters = Map.of(PARAM_TENANT_NAME, PARAM_TENANT_NAME);
     var context = moduleStageContext(FLOW_ID, flowParameters, contextParameters);
 
@@ -139,7 +146,8 @@ class FolioModuleEventPublisherTest {
     var tenantName = "tenantName";
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(tenantId).build();
     var desc = new ModuleDescriptor().id(MODULE_ID);
-    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.ENTITLE,
+      PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
 
     folioModuleEventPublisher.cancel(stageContext);
@@ -153,7 +161,8 @@ class FolioModuleEventPublisherTest {
     var tenantName = "tenantName";
     var request = EntitlementRequest.builder().type(REVOKE).tenantId(tenantId).build();
     var desc = new ModuleDescriptor().id(MODULE_ID);
-    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.REVOKE,
+      PARAM_MODULE_ID, MODULE_ID, PARAM_MODULE_DESCRIPTOR, desc);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
 
     folioModuleEventPublisher.cancel(stageContext);

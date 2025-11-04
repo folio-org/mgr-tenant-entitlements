@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.UUID;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.folio.common.utils.OkapiHeaders;
-import org.folio.entitlement.controller.converter.EntitlementTypeConverters;
+import org.folio.entitlement.controller.converter.EntitlementRequestTypeConverters;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -42,7 +42,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @UnitTest
 @Import({ControllerTestConfiguration.class,
   EntitlementValidationController.class,
-  EntitlementTypeConverters.FromString.class})
+  EntitlementRequestTypeConverters.FromString.class})
 @MockitoBean(types = {FlowStageService.class, KeycloakAuthClient.class})
 @WebMvcTest(EntitlementValidationController.class)
 @EnableKeycloakSecurity
@@ -69,7 +69,7 @@ class EntitlementValidationControllerTest {
 
     mockMvc.perform(post("/entitlements/validate")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
-        .queryParam("entitlementType", type.getValue())
+        .queryParam("entitlementRequestType", type.getValue())
         .content(asJsonString(requestBody))
         .contentType(APPLICATION_JSON))
       .andExpect(status().isNoContent());
@@ -87,7 +87,7 @@ class EntitlementValidationControllerTest {
 
     mockMvc.perform(post("/entitlements/validate")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
-        .queryParam("entitlementType", ENTITLE.getValue())
+        .queryParam("entitlementRequestType", ENTITLE.getValue())
         .queryParam("validator", validator)
         .content(asJsonString(requestBody))
         .contentType(APPLICATION_JSON))
@@ -104,7 +104,7 @@ class EntitlementValidationControllerTest {
     String invalidType = "invalidType";
     mockMvc.perform(post("/entitlements/validate")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
-        .queryParam("entitlementType", invalidType)
+        .queryParam("entitlementRequestType", invalidType)
         .content(asJsonString(requestBody))
         .contentType(APPLICATION_JSON))
       .andExpect(status().isBadRequest())

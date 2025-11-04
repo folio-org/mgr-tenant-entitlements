@@ -7,6 +7,7 @@ import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
 import static org.folio.common.utils.SemverUtils.getName;
 import static org.folio.common.utils.SemverUtils.getVersion;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_DESCRIPTOR;
@@ -27,6 +28,7 @@ import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_I
 import static org.folio.entitlement.support.TestConstants.TENANT_DESC;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 
 import java.util.List;
 import java.util.Map;
@@ -268,6 +270,7 @@ public class TestValues {
   public static Map<?, ?> flowParameters(EntitlementRequest request, ApplicationDescriptor descriptor) {
     return Map.of(
       PARAM_REQUEST, request,
+      PARAM_APPLICATION_ENTITLEMENT_TYPE, toEntitlementType(request.getType()),
       PARAM_APPLICATION_DESCRIPTOR, descriptor,
       PARAM_APPLICATION_ID, descriptor.getId(),
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
