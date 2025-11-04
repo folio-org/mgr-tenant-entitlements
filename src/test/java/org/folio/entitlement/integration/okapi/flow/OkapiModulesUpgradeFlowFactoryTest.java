@@ -12,6 +12,7 @@ import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.integration.kafka.CapabilitiesEventPublisher;
@@ -93,7 +94,7 @@ class OkapiModulesUpgradeFlowFactoryTest {
   @Test
   void getEntitlementType_positive() {
     var result = upgradeFlowFactory.getEntitlementType();
-    assertThat(result).isEqualTo(UPGRADE);
+    assertThat(result).isEqualTo(EntitlementType.UPGRADE);
   }
 
   private static <T extends IdentifiableStageContext> void verifyStageExecution(InOrder inOrder,

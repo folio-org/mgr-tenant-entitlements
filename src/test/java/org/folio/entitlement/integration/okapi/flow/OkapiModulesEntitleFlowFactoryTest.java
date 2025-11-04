@@ -12,6 +12,7 @@ import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.integration.kafka.CapabilitiesEventPublisher;
@@ -108,7 +109,7 @@ class OkapiModulesEntitleFlowFactoryTest {
   @Test
   void getEntitlementType_positive() {
     var result = entitleFlowFactory.getEntitlementType();
-    assertThat(result).isEqualTo(ENTITLE);
+    assertThat(result).isEqualTo(EntitlementType.ENTITLE);
   }
 
   private static <T extends IdentifiableStageContext> void verifyStageExecution(InOrder inOrder,

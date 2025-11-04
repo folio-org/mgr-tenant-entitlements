@@ -6,6 +6,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_APP_DESCRIPTORS;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
@@ -15,6 +16,7 @@ import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PA
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_DEPRECATED_UI_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTOR_HOLDERS;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_UI_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_UI_MODULE_DESCRIPTOR_HOLDERS;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
@@ -72,7 +74,8 @@ class OkapiModulesFlowProviderTest {
   @Test
   void createFlow_positive_entitleFlow() {
     var request = EntitlementRequest.builder().type(ENTITLE).ignoreErrors(true).build();
-    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_APP_DESCRIPTORS, applicationDescriptor());
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_APPLICATION_ENTITLEMENT_TYPE, EntitlementType.ENTITLE,
+      PARAM_APP_DESCRIPTORS, applicationDescriptor());
     var context = StageContext.of(FLOW_STAGE_ID, flowParameters, emptyMap());
     var appContext = ApplicationStageContext.decorate(context);
 
@@ -81,6 +84,7 @@ class OkapiModulesFlowProviderTest {
     var expectedFlowId = FLOW_STAGE_ID + "/OkapiModuleEntitleFlow";
     var expectedFlow = Flow.builder().id(expectedFlowId).executionStrategy(IGNORE_ON_ERROR).build();
     var expectedFlowParameters = Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.ENTITLE,
       PARAM_MODULE_DESCRIPTORS, List.of(fooModuleDescriptor()),
       PARAM_UI_MODULE_DESCRIPTORS, List.of(uiFooModuleDescriptor()));
 
@@ -96,11 +100,13 @@ class OkapiModulesFlowProviderTest {
   @Test
   void createFlow_positive_revokeFlow() {
     var request = EntitlementRequest.builder().type(REVOKE).ignoreErrors(true).build();
-    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_APP_DESCRIPTORS, applicationDescriptor());
+    var flowParameters = Map.of(PARAM_REQUEST, request, PARAM_APPLICATION_ENTITLEMENT_TYPE, EntitlementType.REVOKE,
+      PARAM_APP_DESCRIPTORS, applicationDescriptor());
 
     var expectedFlowId = FLOW_STAGE_ID + "/OkapiModuleEntitleFlow";
     var expectedFlow = Flow.builder().id(expectedFlowId).executionStrategy(IGNORE_ON_ERROR).build();
     var expectedFlowParameters = Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.REVOKE,
       PARAM_MODULE_DESCRIPTORS, List.of(fooModuleDescriptor()),
       PARAM_UI_MODULE_DESCRIPTORS, List.of(uiFooModuleDescriptor()));
 
@@ -121,7 +127,7 @@ class OkapiModulesFlowProviderTest {
   void createFlow_positive_upgradeFlow() {
     var request = EntitlementRequest.builder().type(UPGRADE).ignoreErrors(true).build();
     var flowParameters = Map.of(
-      PARAM_REQUEST, request,
+      PARAM_REQUEST, request, PARAM_APPLICATION_ENTITLEMENT_TYPE, EntitlementType.UPGRADE,
       PARAM_APP_DESCRIPTORS, applicationDescriptorV2(),
       PARAM_ENTITLED_APPLICATION_DESCRIPTOR, applicationDescriptor());
     var context = StageContext.of(FLOW_STAGE_ID, flowParameters, emptyMap());
@@ -136,6 +142,7 @@ class OkapiModulesFlowProviderTest {
     when(moduleSequenceProvider.getSequence(appContext, UI_MODULE)).thenReturn(modulesSequence(uiLayer));
 
     var expectedFlowParameters = Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.UPGRADE,
       PARAM_MODULE_DESCRIPTOR_HOLDERS, beLayer,
       PARAM_UI_MODULE_DESCRIPTOR_HOLDERS, uiLayer,
       PARAM_DEPRECATED_MODULE_DESCRIPTORS, emptyList(),

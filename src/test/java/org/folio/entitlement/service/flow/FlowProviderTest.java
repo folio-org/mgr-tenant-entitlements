@@ -3,6 +3,7 @@ package org.folio.entitlement.service.flow;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.mockito.Mockito.when;
 
@@ -25,6 +26,7 @@ class FlowProviderTest {
   @Mock private EntitleFlowFactory entitleFlowFactory;
   @Mock private RevokeFlowFactory revokeFlowFactory;
   @Mock private UpgradeFlowFactory upgradeFlowFactory;
+  @Mock private DesiredStateFlowFactory stateFlowFactory;
 
   @AfterEach
   void tearDown() {
@@ -58,6 +60,17 @@ class FlowProviderTest {
     var request = EntitlementRequest.builder().type(UPGRADE).build();
     var flow = Flow.builder().id("test-flow").build();
     when(upgradeFlowFactory.createFlow(request)).thenReturn(flow);
+
+    var result = flowProvider.createFlow(request);
+
+    assertThat(result).isEqualTo(flow);
+  }
+
+  @Test
+  void createFlow_positive_stateFlow() {
+    var request = EntitlementRequest.builder().type(STATE).build();
+    var flow = Flow.builder().id("test-flow").build();
+    when(stateFlowFactory.createFlow(request)).thenReturn(flow);
 
     var result = flowProvider.createFlow(request);
 
