@@ -13,6 +13,7 @@ import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 import static org.folio.flow.model.FlowExecutionStrategy.IGNORE_ON_ERROR;
 
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
@@ -89,7 +90,7 @@ class FolioModuleRevokeFlowFactoryTest {
   @Test
   void getEntitlementType_positive() {
     var result = revokeFlowFactory.getEntitlementType();
-    assertThat(result).isEqualTo(REVOKE);
+    assertThat(result).isEqualTo(EntitlementType.REVOKE);
   }
 
   private static ModuleDescriptor moduleDescriptor() {

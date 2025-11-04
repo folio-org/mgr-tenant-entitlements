@@ -7,6 +7,7 @@ import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_A
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.DISABLE;
 import static org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor.ActionType.ENABLE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor;
 import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
@@ -58,6 +60,7 @@ class OkapiModulesInstallerTest {
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var flowParameters = Map.of(
       PARAM_REQUEST, entitlementRequest(),
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.ENTITLE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_MODULE_DESCRIPTORS, List.of(moduleDescriptor()));
     var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, contextData);
@@ -93,6 +96,7 @@ class OkapiModulesInstallerTest {
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var flowParameters = Map.of(
       PARAM_REQUEST, entitlementRequest(),
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.ENTITLE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_MODULE_DESCRIPTORS, List.of(moduleDescriptor()));
 

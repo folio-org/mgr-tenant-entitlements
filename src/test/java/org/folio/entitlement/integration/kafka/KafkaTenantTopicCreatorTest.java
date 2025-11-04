@@ -123,8 +123,8 @@ class KafkaTenantTopicCreatorTest {
   }
 
   @ParameterizedTest
-  @EnumSource(value = EntitlementRequestType.class, names = {"ENTITLE"}, mode = EnumSource.Mode.EXCLUDE)
-  void execute_positive_notEntitleType(EntitlementRequestType type) {
+  @EnumSource(value = EntitlementRequestType.class, names = {"ENTITLE", "STATE"}, mode = EnumSource.Mode.EXCLUDE)
+  void execute_positive_notEntitleOrStateType(EntitlementRequestType type) {
     var entitlementRequest = entitlementRequest(type);
     var stageContext = stageContext(entitlementRequest);
 

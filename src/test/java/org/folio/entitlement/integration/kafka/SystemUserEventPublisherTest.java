@@ -14,6 +14,7 @@ import static org.folio.entitlement.integration.kafka.model.ResourceEventType.UP
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_DEPRECATED_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTOR_HOLDERS;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
@@ -31,6 +32,7 @@ import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.UserDescriptor;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
@@ -101,6 +103,7 @@ class SystemUserEventPublisherTest {
 
     var flowParameters = Map.of(
       PARAM_REQUEST, request(UPGRADE),
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.UPGRADE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(modFooV2, modFooV1)),
