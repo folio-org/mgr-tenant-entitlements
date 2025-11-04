@@ -9,7 +9,7 @@ import static org.folio.entitlement.support.TestValues.flowParameters;
 import static org.mockito.Mockito.verify;
 
 import java.util.Map;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.support.TestValues;
@@ -29,7 +29,7 @@ class ApplicationDescriptorValidatorTest {
 
   @Test
   void execute_entitleRequest() {
-    var request = EntitlementRequest.builder().type(EntitlementType.ENTITLE).okapiToken(OKAPI_TOKEN).build();
+    var request = EntitlementRequest.builder().type(EntitlementRequestType.ENTITLE).okapiToken(OKAPI_TOKEN).build();
     var flowParameters = flowParameters(request, TestValues.appDescriptor());
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 

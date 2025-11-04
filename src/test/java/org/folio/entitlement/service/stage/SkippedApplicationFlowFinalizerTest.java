@@ -1,6 +1,6 @@
 package org.folio.entitlement.service.stage;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.QUEUED;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;

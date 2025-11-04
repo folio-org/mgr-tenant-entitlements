@@ -4,7 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.error.Parameter;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.EntitlementCrudService;
@@ -315,7 +315,7 @@ class UpgradeRequestValidatorTest {
   @ParameterizedTest
   @DisplayName("shouldValidate_parameterized")
   @CsvSource({"ENTITLE, false", "REVOKE, false", "UPGRADE, true", ", false"})
-  void shouldValidate_parameterized(EntitlementType type, boolean expected) {
+  void shouldValidate_parameterized(EntitlementRequestType type, boolean expected) {
     var request = EntitlementRequest.builder().type(type).build();
     var result = upgradeRequestValidator.shouldValidate(request);
     assertThat(result).isEqualTo(expected);

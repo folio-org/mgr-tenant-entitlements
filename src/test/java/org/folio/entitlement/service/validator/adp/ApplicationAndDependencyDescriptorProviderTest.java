@@ -3,7 +3,7 @@ package org.folio.entitlement.service.validator.adp;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_APP_AND_DEPENDENCY_DESCRIPTORS;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
