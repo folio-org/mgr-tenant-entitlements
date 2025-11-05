@@ -144,6 +144,7 @@ paths:
         - $ref: '#/components/parameters/tenantParameters'
         - $ref: '#/components/parameters/ignoreErrors'
         - $ref: '#/components/parameters/async'
+        - $ref: '#/components/parameters/purge'
         - $ref: '#/components/parameters/purgeOnRollback'
       requestBody:
         required: true
