@@ -39,4 +39,11 @@ public class FlowEngineConfigurationProperties {
    */
   @Positive
   private int lastExecutionsStatusCacheSize = 25;
+
+  /**
+   * Number of threads for parallel module installation.
+   */
+  @Min(1)
+  @Max(12)
+  private int moduleInstallerThreads = 4;
 }

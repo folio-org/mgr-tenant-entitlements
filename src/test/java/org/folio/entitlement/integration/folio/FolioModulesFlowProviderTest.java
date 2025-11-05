@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.InterfaceDescriptor;
@@ -83,6 +84,7 @@ class FolioModulesFlowProviderTest {
   @Mock private FolioModuleEntitleFlowFactory moduleEntitleFlowFactory;
   @Mock private FolioModuleUpgradeFlowFactory moduleUpgradeFlowFactory;
   @Mock private Stage<StageContext> moduleStage;
+  @Mock private Executor moduleInstallerExecutor;
 
   private final FlowEngine flowEngine = singleThreadFlowEngine("folio-module-installer-flow-engine", false);
 
@@ -92,7 +94,7 @@ class FolioModulesFlowProviderTest {
     when(moduleRevokeFlowFactory.getEntitlementType()).thenReturn(EntitlementType.REVOKE);
     when(moduleUpgradeFlowFactory.getEntitlementType()).thenReturn(EntitlementType.UPGRADE);
     var moduleFlowFactories = List.of(moduleEntitleFlowFactory, moduleRevokeFlowFactory, moduleUpgradeFlowFactory);
-    flowProvider = new FolioModulesFlowProvider(moduleFlowFactories, moduleSequenceProvider);
+    flowProvider = new FolioModulesFlowProvider(moduleFlowFactories, moduleSequenceProvider, moduleInstallerExecutor);
   }
 
   @AfterEach
@@ -571,5 +573,26 @@ class FolioModulesFlowProviderTest {
     var matcher = pattern.matcher(moduleDescriptor.getId());
     assertThat(matcher.matches()).isTrue();
     return module(matcher.group(1), matcher.group(2));
+  }
+
+  @Test
+  void createFlow_shouldProvideModuleInstallerExecutor() {
+    var request = EntitlementRequest.builder().type(ENTITLE).ignoreErrors(true).build();
+    var applicationDescriptor = appDescriptor(List.of(fooModuleDesc(), barModuleDesc()), emptyList());
+    var flowParameters = flowParameters(request, applicationDescriptor);
+    var stageParameters = Map.of(PARAM_MODULE_DISCOVERY_DATA, moduleDiscoveryTable());
+    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, stageParameters);
+
+    mockStageNames(moduleStage);
+    when(moduleEntitleFlowFactory.createModuleFlow(any(), any(), any())).then(this::createFlow);
+
+    var layer1 = List.of(moduleDescriptorHolder(fooModuleDesc(), null), moduleDescriptorHolder(barModuleDesc(), null));
+    when(moduleSequenceProvider.getSequence(stageContext, MODULE)).thenReturn(modulesSequence(layer1));
+    when(moduleSequenceProvider.getSequence(stageContext, UI_MODULE)).thenReturn(modulesSequence());
+
+    var flow = flowProvider.createFlow(stageContext);
+
+    assertThat(flow).isNotNull();
+    assertThat(flow.getStages()).hasSize(1);
   }
 }

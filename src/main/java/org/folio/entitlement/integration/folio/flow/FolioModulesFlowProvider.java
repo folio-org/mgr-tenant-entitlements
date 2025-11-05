@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
@@ -37,16 +38,20 @@ public class FolioModulesFlowProvider implements ModulesFlowProvider {
 
   private final Map<EntitlementType, ModuleFlowFactory> moduleFlowFactories;
   private final ModuleSequenceProvider moduleSequenceProvider;
+  private final Executor moduleInstallerExecutor;
 
   /**
    * Creates {@link FolioModulesFlowProvider} from list of {@link ModuleFlowFactory} beans.
    *
    * @param moduleFlowFactories - {@link ModuleFlowFactory} beans
+   * @param moduleSequenceProvider - module sequence provider
+   * @param moduleInstallerExecutor - executor for module installation parallel stages
    */
   public FolioModulesFlowProvider(List<ModuleFlowFactory> moduleFlowFactories,
-    ModuleSequenceProvider moduleSequenceProvider) {
+    ModuleSequenceProvider moduleSequenceProvider, Executor moduleInstallerExecutor) {
     this.moduleSequenceProvider = moduleSequenceProvider;
     this.moduleFlowFactories = toUnmodifiableMap(moduleFlowFactories, ModuleFlowFactory::getEntitlementType);
+    this.moduleInstallerExecutor = moduleInstallerExecutor;
   }
 
   @Override
@@ -83,7 +88,7 @@ public class FolioModulesFlowProvider implements ModulesFlowProvider {
         .map(h -> getModuleFlow(stageId, ctx, moduleType, h.moduleDescriptor(), h.installedModuleDescriptor()))
         .toList();
 
-      result.add(combineStages(stageId, stages));
+      result.add(combineStages(stageId, stages, moduleInstallerExecutor));
     }
 
     return result;
@@ -111,7 +116,7 @@ public class FolioModulesFlowProvider implements ModulesFlowProvider {
     ModuleType moduleType, List<ModuleDescriptor> descriptors) {
     var stageId = sequence.nextValue();
     var deprecatedModuleFlows = mapItems(descriptors, md -> getModuleFlow(stageId, context, moduleType, null, md));
-    return combineStages(stageId, deprecatedModuleFlows);
+    return combineStages(stageId, deprecatedModuleFlows, moduleInstallerExecutor);
   }
 
   private static Map<String, Object> getModuleFlowParameters(ApplicationStageContext context, ModuleType moduleType,

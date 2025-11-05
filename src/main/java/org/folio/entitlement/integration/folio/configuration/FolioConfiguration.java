@@ -4,6 +4,7 @@ import static java.util.Arrays.asList;
 import static org.folio.common.utils.tls.FeignClientTlsUtils.getHttpClientBuilder;
 
 import java.net.http.HttpClient;
+import java.util.concurrent.Executor;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.integration.folio.FolioTenantApiClient;
@@ -22,6 +23,7 @@ import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.ModuleSequenceProvider;
 import org.folio.entitlement.utils.JsonConverter;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -108,14 +110,17 @@ public class FolioConfiguration {
    * @param entitleFlowFactory - {@link FolioModuleEntitleFlowFactory} bean from spring context
    * @param revokeFlowFactory - {@link FolioModuleRevokeFlowFactory} bean from spring context
    * @param upgradeFlowFactory - {@link FolioModuleUpgradeFlowFactory} bean from spring context
+   * @param moduleSequenceProvider - {@link ModuleSequenceProvider} bean from spring context
+   * @param moduleInstallerExecutor - {@link Executor} bean for module installation
    * @return created {@link FolioModulesFlowProvider} flow provider
    */
   @Bean
   public FolioModulesFlowProvider folioModulesFlowProvider(FolioModuleEntitleFlowFactory entitleFlowFactory,
     FolioModuleRevokeFlowFactory revokeFlowFactory, FolioModuleUpgradeFlowFactory upgradeFlowFactory,
-    ModuleSequenceProvider moduleSequenceProvider) {
+    ModuleSequenceProvider moduleSequenceProvider,
+    @Qualifier("moduleInstallerExecutor") Executor moduleInstallerExecutor) {
     var factories = asList(entitleFlowFactory, revokeFlowFactory, upgradeFlowFactory);
-    return new FolioModulesFlowProvider(factories, moduleSequenceProvider);
+    return new FolioModulesFlowProvider(factories, moduleSequenceProvider, moduleInstallerExecutor);
   }
 
 
