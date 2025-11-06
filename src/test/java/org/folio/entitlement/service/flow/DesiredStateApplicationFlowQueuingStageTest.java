@@ -102,6 +102,7 @@ class DesiredStateApplicationFlowQueuingStageTest {
   }
 
   @Test
+  @SuppressWarnings("VariableDeclarationUsageDistance")
   void execute_positive_multipleBuckets() {
     var plan = createPlan(entitle(Set.of(APP1_ID)), upgrade(Set.of(APP2_ID)), revoke(Set.of(APP3_ID)));
     var context = createContext(plan);

@@ -18,8 +18,8 @@ public record ApplicationStateTransitionPlan(
   public static ApplicationStateTransitionPlan of(Set<String> entitleIds, Set<String> upgradeIds,
     Set<String> revokeIds) {
     var entitleBucket = isNotEmpty(entitleIds) ? entitle(entitleIds) : null;
-    var upgradeBucket = isNotEmpty(upgradeIds) ? upgrade(upgradeIds): null;
-    var revokeBucket = isNotEmpty(revokeIds) ? revoke(revokeIds): null;
+    var upgradeBucket = isNotEmpty(upgradeIds) ? upgrade(upgradeIds) : null;
+    var revokeBucket = isNotEmpty(revokeIds) ? revoke(revokeIds) : null;
     return new ApplicationStateTransitionPlan(entitleBucket, upgradeBucket, revokeBucket);
   }
 
