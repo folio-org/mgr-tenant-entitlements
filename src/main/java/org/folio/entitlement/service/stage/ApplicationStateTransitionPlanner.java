@@ -6,9 +6,6 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.SetUtils.difference;
 import static org.apache.commons.collections4.SetUtils.intersection;
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.domain.model.ApplicationStateTransitionBucket.entitle;
-import static org.folio.entitlement.domain.model.ApplicationStateTransitionBucket.revoke;
-import static org.folio.entitlement.domain.model.ApplicationStateTransitionBucket.upgrade;
 
 import java.util.HashSet;
 import java.util.List;
@@ -46,10 +43,10 @@ public class ApplicationStateTransitionPlanner extends DatabaseLoggingStage<Comm
     log.debug("Application differences evaluated for tenant: tenant = {}, difference = {}",
       context.getTenantName(), difference);
 
-    context.withApplicationStateTransitionPlan(new ApplicationStateTransitionPlan(
-      entitle(difference.toEntitle()),
-      upgrade(difference.toUpgrade()),
-      revoke(difference.toRevoke()))
+    context.withApplicationStateTransitionPlan(ApplicationStateTransitionPlan.of(
+      difference.toEntitle(),
+      difference.toUpgrade(),
+      difference.toRevoke())
     );
   }
 
