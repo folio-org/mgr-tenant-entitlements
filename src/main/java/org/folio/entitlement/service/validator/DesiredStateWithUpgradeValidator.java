@@ -23,7 +23,7 @@ public class DesiredStateWithUpgradeValidator extends DatabaseLoggingStage<Commo
   @Override
   public void execute(CommonStageContext context) {
     var upgradeBucket = context.getApplicationStateTransitionPlan().upgradeBucket();
-    if (upgradeBucket.isEmpty()) {
+    if (upgradeBucket == null || upgradeBucket.isEmpty()) {
       return;
     }
 
