@@ -178,6 +178,7 @@ public class ApplicationFlowService {
    * @return {@link List} with created {@link ApplicationFlow} entities
    */
   @Transactional
+  @SuppressWarnings("java:S6809")
   public List<ApplicationFlow> createQueuedApplicationFlows(UUID flowId, EntitlementRequest request) {
     var type = toEntitlementType(request.getType());
     var tenantId = request.getTenantId();

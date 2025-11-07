@@ -2,6 +2,7 @@ package org.folio.entitlement.service.validator;
 
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
@@ -61,7 +62,7 @@ class DesiredStateApplicationFlowValidatorTest {
     when(applicationFlowService.findLastFlowsByNames(List.of("app1"), TENANT_ID))
       .thenReturn(Collections.emptyList());
 
-    validator.execute(context);
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
 
   @Test
@@ -73,7 +74,7 @@ class DesiredStateApplicationFlowValidatorTest {
     when(applicationFlowService.findLastFlows(Set.of(APP1_ID), TENANT_ID))
       .thenReturn(List.of(existingFlow));
 
-    validator.execute(context);
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
 
   @Test
@@ -85,7 +86,7 @@ class DesiredStateApplicationFlowValidatorTest {
     when(applicationFlowService.findLastFlowsByNames(List.of("app1"), TENANT_ID))
       .thenReturn(List.of(existingFlow));
 
-    validator.execute(context);
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
 
   @Test
@@ -99,7 +100,7 @@ class DesiredStateApplicationFlowValidatorTest {
     when(applicationFlowService.findLastFlowsByNames(List.of("app2"), TENANT_ID))
       .thenReturn(List.of(app2ExistingFlow));
 
-    validator.execute(context);
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
 
   @Test
@@ -107,7 +108,7 @@ class DesiredStateApplicationFlowValidatorTest {
     var plan = ApplicationStateTransitionPlan.of(emptySet(), emptySet(), emptySet());
     var context = createContext(plan);
 
-    validator.execute(context);
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
 
   @Test

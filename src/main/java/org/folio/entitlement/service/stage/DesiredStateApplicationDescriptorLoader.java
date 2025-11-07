@@ -3,7 +3,7 @@ package org.folio.entitlement.service.stage;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.SemverUtils.getNames;
 
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -48,9 +48,9 @@ public class DesiredStateApplicationDescriptorLoader extends DatabaseLoggingStag
     return mapItems(tenantEntitlements, Entitlement::getApplicationId);
   }
 
-  private HashMap<EntitlementType, List<ApplicationDescriptor>> getDescriptorsByType(
+  private EnumMap<EntitlementType, List<ApplicationDescriptor>> getDescriptorsByType(
     ApplicationStateTransitionPlan transitionPlan, String authToken) {
-    var descriptorsByType = new HashMap<EntitlementType, List<ApplicationDescriptor>>();
+    var descriptorsByType = new EnumMap<EntitlementType, List<ApplicationDescriptor>>(EntitlementType.class);
 
     transitionPlan.nonEmptyBuckets().forEach(tb -> {
       var descriptors = applicationManagerService.getApplicationDescriptors(tb.getApplicationIds(), authToken);
