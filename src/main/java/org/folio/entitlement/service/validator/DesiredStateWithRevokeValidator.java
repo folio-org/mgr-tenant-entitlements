@@ -20,7 +20,7 @@ public class DesiredStateWithRevokeValidator extends DatabaseLoggingStage<Common
   @Override
   public void execute(CommonStageContext context) {
     var revokeBucket = context.getApplicationStateTransitionPlan().revokeBucket();
-    if (revokeBucket == null || revokeBucket.isEmpty()) {
+    if (revokeBucket.isEmpty()) {
       return;
     }
 

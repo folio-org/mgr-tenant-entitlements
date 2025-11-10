@@ -68,6 +68,9 @@ class DesiredStateApplicationDescriptorLoaderTest {
 
     var descriptorsByType = context.getApplicationStateTransitionDescriptors();
     assertThat(descriptorsByType).containsOnly(entry(ENTITLE, List.of(descriptor)));
+
+    var requestDescriptors = context.getApplicationDescriptors();
+    assertThat(requestDescriptors).containsOnly(descriptor);
   }
 
   @Test
@@ -83,6 +86,9 @@ class DesiredStateApplicationDescriptorLoaderTest {
 
     var descriptorsByType = context.getApplicationStateTransitionDescriptors();
     assertThat(descriptorsByType).containsOnly(entry(REVOKE, List.of(descriptor)));
+
+    var requestDescriptors = context.getApplicationDescriptors();
+    assertThat(requestDescriptors).isEmpty();
   }
 
   @Test
@@ -111,6 +117,9 @@ class DesiredStateApplicationDescriptorLoaderTest {
 
     var entitledAppDescriptors = context.getEntitledApplicationDescriptors();
     assertThat(entitledAppDescriptors).containsExactly(entitledDescriptor);
+
+    var requestDescriptors = context.getApplicationDescriptors();
+    assertThat(requestDescriptors).containsOnly(descriptor);
   }
 
   @Test
@@ -150,6 +159,9 @@ class DesiredStateApplicationDescriptorLoaderTest {
 
     var entitledAppDescriptors = context.getEntitledApplicationDescriptors();
     assertThat(entitledAppDescriptors).containsExactly(entitledDescriptor);
+
+    var requestDescriptors = context.getApplicationDescriptors();
+    assertThat(requestDescriptors).containsOnly(entitleDescriptor, upgradeDescriptor);
   }
 
   @Test
@@ -161,6 +173,9 @@ class DesiredStateApplicationDescriptorLoaderTest {
 
     var descriptorsByType = context.getApplicationStateTransitionDescriptors();
     assertThat(descriptorsByType).isEmpty();
+
+    var requestDescriptors = context.getApplicationDescriptors();
+    assertThat(requestDescriptors).isEmpty();
   }
 
   @Test
@@ -190,6 +205,9 @@ class DesiredStateApplicationDescriptorLoaderTest {
 
     var entitledAppDescriptors = context.getEntitledApplicationDescriptors();
     assertThat(entitledAppDescriptors).containsExactlyInAnyOrder(entitledDescriptor1, entitledDescriptor2);
+
+    var requestDescriptors = context.getApplicationDescriptors();
+    assertThat(requestDescriptors).containsOnly(descriptor);
   }
 
   private static CommonStageContext createContext(ApplicationStateTransitionPlan plan) {

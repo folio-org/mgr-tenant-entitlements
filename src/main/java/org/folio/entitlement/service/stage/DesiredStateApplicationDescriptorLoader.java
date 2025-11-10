@@ -1,7 +1,11 @@
 package org.folio.entitlement.service.stage;
 
+import static java.util.Collections.emptyList;
+import static org.apache.commons.collections4.ListUtils.union;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.SemverUtils.getNames;
+import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -32,6 +36,11 @@ public class DesiredStateApplicationDescriptorLoader extends DatabaseLoggingStag
 
     var descriptorsByType = getDescriptorsByType(transitionPlan, authToken);
     context.withApplicationStateTransitionDescriptors(descriptorsByType);
+
+    var requestedDescriptors = union(
+      descriptorsByType.getOrDefault(ENTITLE, emptyList()),
+      descriptorsByType.getOrDefault(UPGRADE, emptyList()));
+    context.withApplicationDescriptors(requestedDescriptors);
 
     var upgradeBucket = transitionPlan.upgradeBucket();
     if (!upgradeBucket.isEmpty()) {

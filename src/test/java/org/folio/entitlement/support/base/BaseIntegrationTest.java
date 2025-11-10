@@ -7,6 +7,7 @@ import static org.folio.entitlement.support.TestUtils.parseResponse;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS;
 import static org.springframework.test.context.TestExecutionListeners.MergeMode.MERGE_WITH_DEFAULTS;
+import static org.springframework.test.json.JsonCompareMode.LENIENT;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -19,6 +20,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.log4j.Log4j2;
+import org.folio.entitlement.domain.dto.DesiredStateRequestBody;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
@@ -101,7 +103,7 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
     var mvcResult = mockMvc.perform(request)
       .andExpect(status().isCreated())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(content().json(asJsonString(expectedEntitlements), false))
+      .andExpect(content().json(asJsonString(expectedEntitlements), LENIENT))
       .andReturn();
 
     verifyExtendedEntitlements(mvcResult, expectedEntitlements);
@@ -120,7 +122,7 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
     var mvcResult = mockMvc.perform(request)
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(content().json(asJsonString(expectedEntitlements), false))
+      .andExpect(content().json(asJsonString(expectedEntitlements), LENIENT))
       .andReturn();
 
     verifyExtendedEntitlements(mvcResult, expectedEntitlements);
@@ -139,10 +141,29 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
     var mvcResult = mockMvc.perform(request)
       .andExpect(status().isOk())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(content().json(asJsonString(expectedEntitlements), false))
+      .andExpect(content().json(asJsonString(expectedEntitlements), LENIENT))
       .andReturn();
 
     verifyExtendedEntitlements(mvcResult, expectedEntitlements);
+  }
+
+  protected static MvcResult stateOfApplications(DesiredStateRequestBody desiredStateRequest,
+    Map<String, String> queryParams, ExtendedEntitlements expectedEntitlements) throws Exception {
+    var request = put(updatePathWithPrefix("/entitlements/state"))
+      .contentType(APPLICATION_JSON)
+      .header(TOKEN, getSystemAccessToken())
+      .content(asJsonString(desiredStateRequest));
+    queryParams.forEach(request::queryParam);
+
+    var mvcResult = mockMvc.perform(request)
+      .andExpect(status().isOk())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(content().json(asJsonString(expectedEntitlements), LENIENT))
+      .andReturn();
+
+    verifyExtendedEntitlements(mvcResult, expectedEntitlements);
+
+    return mvcResult;
   }
 
   protected static void getEntitlementsByQuery(String cqlQuery, Entitlements expected) throws Exception {

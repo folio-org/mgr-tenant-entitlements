@@ -41,6 +41,7 @@ import org.folio.common.domain.model.Dependency;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.DesiredStateRequestBody;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.EntitlementType;
@@ -228,6 +229,14 @@ public class TestValues {
 
   public static EntitlementRequestBody entitlementRequest(UUID tenantId, String... applicationIds) {
     return new EntitlementRequestBody().applications(List.of(applicationIds)).tenantId(tenantId);
+  }
+
+  public static DesiredStateRequestBody desiredStateRequest(String applicationId) {
+    return desiredStateRequest(TENANT_ID, applicationId);
+  }
+
+  public static DesiredStateRequestBody desiredStateRequest(UUID tenantId, String applicationId) {
+    return new DesiredStateRequestBody().applications(List.of(applicationId)).tenantId(tenantId);
   }
 
   public static String queryByTenantAndAppId() {

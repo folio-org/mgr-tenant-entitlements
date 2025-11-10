@@ -20,6 +20,7 @@ import static org.folio.entitlement.support.TestConstants.entitlementTopic;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
 import static org.folio.entitlement.support.TestConstants.systemUserTenantTopic;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
+import static org.folio.entitlement.support.TestValues.desiredStateRequest;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementEvent;
@@ -621,6 +622,34 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
 
     assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).isEmpty();
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json",
+    "/wiremock/folio-module1/install.json"
+  })
+  void desiredState_positive_freshInstallation() throws Exception {
+    var desiredStateRequest = desiredStateRequest(FOLIO_APP1_ID);
+    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+    stateOfApplications(desiredStateRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP1_ID)));
+
+    var modules = List.of(FOLIO_MODULE1_ID);
+    var expected = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP1_ID, modules));
+    var expectedModuleEntitlements = entitlements(entitlement(TENANT_ID, FOLIO_APP1_ID));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP1_ID), expected);
+    assertModuleEntitlements(FOLIO_MODULE1_ID, expectedModuleEntitlements);
+    assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID));
+    assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
+    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
+      authResource("/folio-module1/events", "GET", "POST"), authResource("/folio-module1/events/{id}", "GET"));
+
+    verifyEntitledApplicationsByTenantName(FOLIO_APP1_ID);
   }
 
   @SneakyThrows
