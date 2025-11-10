@@ -7,7 +7,10 @@ import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.springframework.http.HttpStatus.CREATED;
 
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.folio.entitlement.domain.dto.DesiredStateRequestBody;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.dto.Entitlements;
@@ -36,8 +39,8 @@ public class EntitlementController extends BaseController implements Entitlement
   @Override
   public ResponseEntity<ExtendedEntitlements> create(EntitlementRequestBody request, String token,
     String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purgeOnRollback) {
-    var entitlementRequest = createRequest(ENTITLE, request, token, tenantParameters, ignoreErrors, async, false,
-      purgeOnRollback);
+    var entitlementRequest = createRequest(ENTITLE, request.getTenantId(), request.getApplications(), token,
+      tenantParameters, ignoreErrors, async, false, purgeOnRollback);
 
     var entitlements = entitlementService.performRequest(entitlementRequest);
     return ResponseEntity.status(CREATED).body(entitlements);
@@ -46,7 +49,8 @@ public class EntitlementController extends BaseController implements Entitlement
   @Override
   public ResponseEntity<ExtendedEntitlements> upgrade(EntitlementRequestBody request, String token,
     String tenantParameters, Boolean async) {
-    var entitlementRequest = createRequest(UPGRADE, request, token, tenantParameters, true, async, false, false);
+    var entitlementRequest = createRequest(UPGRADE, request.getTenantId(), request.getApplications(), token,
+      tenantParameters, true, async, false, false);
 
     var entitlements = entitlementService.performRequest(entitlementRequest);
     return ResponseEntity.ok(entitlements);
@@ -55,31 +59,32 @@ public class EntitlementController extends BaseController implements Entitlement
   @Override
   public ResponseEntity<ExtendedEntitlements> delete(EntitlementRequestBody request, String token,
     String tenantParameters, Boolean ignoreErrors, Boolean purge, Boolean async) {
-    var entitlementRequest = createRequest(REVOKE, request, token, tenantParameters, true, async, purge, false);
+    var entitlementRequest = createRequest(REVOKE, request.getTenantId(), request.getApplications(), token,
+      tenantParameters, true, async, purge, false);
 
     var entitlements = entitlementService.performRequest(entitlementRequest);
     return ResponseEntity.ok(entitlements);
   }
 
   @Override
-  public ResponseEntity<ExtendedEntitlements> applyState(EntitlementRequestBody request, String token,
+  public ResponseEntity<ExtendedEntitlements> applyState(DesiredStateRequestBody request, String token,
     String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purge, Boolean purgeOnRollback) {
-    var entitlementRequest = createRequest(STATE, request, token, tenantParameters, ignoreErrors, async,
-      purge, purgeOnRollback);
+    var entitlementRequest = createRequest(STATE, request.getTenantId(), request.getApplications(), token,
+      tenantParameters, ignoreErrors, async, purge, purgeOnRollback);
 
     var entitlements = entitlementService.performRequest(entitlementRequest);
     return ResponseEntity.ok(entitlements);
   }
 
-  private static EntitlementRequest createRequest(EntitlementRequestType type, EntitlementRequestBody request,
+  private static EntitlementRequest createRequest(EntitlementRequestType type, UUID tenantId, List<String> applications,
     String token, String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purge,
     Boolean purgeOnRollback) {
     return EntitlementRequest.builder()
       .type(type)
       .okapiToken(token)
       .tenantParameters(tenantParameters)
-      .tenantId(request.getTenantId())
-      .applications(request.getApplications())
+      .tenantId(tenantId)
+      .applications(applications)
       .ignoreErrors(TRUE.equals(ignoreErrors))
       .async(TRUE.equals(async))
       .purge(TRUE.equals(purge))

@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "id": "desiredStateRequest.json",
+  "title": "Tenant Desired State Request Schema",
+  "description": "A collection of application ids which represent the desired state for the tenant",
+  "properties": {
+    "tenantId": {
+      "description": "Tenant id",
+      "type": "string",
+      "format": "uuid"
+    },
+    "applications": {
+      "description": "List of application ids",
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 150,
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [ "applications", "tenantId" ]
+}

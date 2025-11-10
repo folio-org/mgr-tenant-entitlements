@@ -151,7 +151,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/entitlementRequestBody'
+              $ref: '#/components/schemas/desiredStateRequestBody'
       responses:
         '200':
           description: 'A list with successfully application entitlements'
@@ -423,6 +423,8 @@ components:
   schemas:
     entitlementRequestBody:
       $ref: schemas/entitlementRequestBody.json
+    desiredStateRequestBody:
+      $ref: schemas/desiredStateRequestBody.json
     entitlements:
       $ref: schemas/entitlements.json
     applicationDescriptors:
