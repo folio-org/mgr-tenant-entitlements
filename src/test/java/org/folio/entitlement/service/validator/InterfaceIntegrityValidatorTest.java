@@ -3,6 +3,7 @@ package org.folio.entitlement.service.validator;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_APP_DESCRIPTORS;
@@ -103,18 +104,13 @@ class InterfaceIntegrityValidatorTest {
   }
 
   @Test
-  void execute_negative_noDescriptorsProvided() {
+  void execute_positive_noDescriptorsProvided() {
     var applicationDescriptors = List.of(appDescriptor(APP_FOO_ID), appDescriptor(APP_BAR_ID));
     var stageContext = stageContext(applicationDescriptors, entitlementRequest(APP_FOO_ID, APP_BAR_ID));
 
     when(applicationDescriptorProvider.getDescriptors(stageContext)).thenReturn(emptyList());
 
-    assertThatThrownBy(() -> interfaceIntegrityValidator.execute(stageContext))
-      .isInstanceOf(RequestValidationException.class)
-      .hasMessage("No application descriptors provided")
-      .satisfies(error ->
-        assertThat(((RequestValidationException) error).getErrorParameters())
-          .containsExactly(new Parameter().key("descriptors").value(null)));
+    assertThatCode(() -> interfaceIntegrityValidator.execute(stageContext)).doesNotThrowAnyException();
   }
 
   @ParameterizedTest(name = "[{index}] {0}")
@@ -152,17 +148,12 @@ class InterfaceIntegrityValidatorTest {
   }
 
   @Test
-  void validate_negative_noDescriptorsProvided() {
+  void validate_positive_noDescriptorsProvided() {
     var entitlementRequest = entitlementRequest(APP_BAR_ID);
 
     when(applicationDescriptorProvider.getDescriptors(entitlementRequest)).thenReturn(emptyList());
 
-    assertThatThrownBy(() -> interfaceIntegrityValidator.validate(entitlementRequest))
-      .isInstanceOf(RequestValidationException.class)
-      .hasMessage("No application descriptors provided")
-      .satisfies(error ->
-        assertThat(((RequestValidationException) error).getErrorParameters())
-          .containsExactly(new Parameter().key("descriptors").value(null)));
+    assertThatCode(() -> interfaceIntegrityValidator.validate(entitlementRequest)).doesNotThrowAnyException();
   }
 
   @ParameterizedTest

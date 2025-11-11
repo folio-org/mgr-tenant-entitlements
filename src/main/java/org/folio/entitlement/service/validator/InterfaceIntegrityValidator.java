@@ -66,8 +66,10 @@ public class InterfaceIntegrityValidator extends StageRequestValidator {
 
   private void validateDescriptors(List<ApplicationDescriptor> descriptors, UUID tenantId) {
     if (isEmpty(descriptors)) {
-      throw new RequestValidationException("No application descriptors provided", "descriptors", null);
+      log.info("No application descriptors provided. Skipping interface integrity validation");
+      return;
     }
+
     log.info("Validating dependencies between application descriptors: appIds = [{}], tenantId = {}",
       () -> descriptors.stream().map(ApplicationDescriptor::getId).collect(joining(", ")),
       () -> tenantId);

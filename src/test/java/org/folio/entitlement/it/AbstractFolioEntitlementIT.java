@@ -22,6 +22,7 @@ import static org.folio.entitlement.support.TestConstants.systemUserTenantTopic;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.desiredStateRequest;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
+import static org.folio.entitlement.support.TestValues.emptyExtendedEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementEvent;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
@@ -59,6 +60,7 @@ import java.util.Map;
 import lombok.SneakyThrows;
 import org.awaitility.Awaitility;
 import org.folio.common.utils.OkapiHeaders;
+import org.folio.entitlement.domain.dto.DesiredStateRequestBody;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.support.KeycloakTestClientConfiguration;
@@ -650,6 +652,33 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
       authResource("/folio-module1/events", "GET", "POST"), authResource("/folio-module1/events/{id}", "GET"));
 
     verifyEntitledApplicationsByTenantName(FOLIO_APP1_ID);
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @Sql("classpath:/sql/folio-entitlement-dependent.sql")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app-mixed/get-by-ids-13-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+    "/wiremock/mgr-applications/folio-app3/get-discovery.json",
+    "/wiremock/folio-module1/uninstall.json",
+    "/wiremock/folio-module3/uninstall.json"
+  })
+  void desiredState_positive_uninstallDependentApps() throws Exception {
+    var desiredStateRequest = new DesiredStateRequestBody().tenantId(TENANT_ID);
+    var queryParams = Map.of("purge", "true", "ignoreErrors", "true");
+    var expectedEntitlements = emptyExtendedEntitlements();
+
+    stateOfApplications(desiredStateRequest, queryParams, expectedEntitlements);
+
+    assertEntitlementEvents(entitlementEvent(REVOKE, FOLIO_MODULE3_ID), entitlementEvent(REVOKE, FOLIO_MODULE1_ID));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP1_ID), emptyEntitlements());
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP3_ID), emptyEntitlements());
+
+    assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).isEmpty();
+    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
   }
 
   @SneakyThrows

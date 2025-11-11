@@ -164,6 +164,10 @@ public class TestValues {
     return new ExtendedEntitlements().totalRecords(entitlements.length).entitlements(asList(entitlements));
   }
 
+  public static ExtendedEntitlements emptyExtendedEntitlements() {
+    return new ExtendedEntitlements().totalRecords(0).entitlements(emptyList());
+  }
+
   public static EntitlementModuleEntity entitlementModuleEntity() {
     var entity = new EntitlementModuleEntity();
     entity.setApplicationId(APPLICATION_ID);
@@ -237,6 +241,10 @@ public class TestValues {
 
   public static DesiredStateRequestBody desiredStateRequest(UUID tenantId, String applicationId) {
     return new DesiredStateRequestBody().applications(List.of(applicationId)).tenantId(tenantId);
+  }
+
+  public static DesiredStateRequestBody desiredStateRequest(UUID tenantId, String... applicationIds) {
+    return new DesiredStateRequestBody().applications(List.of(applicationIds)).tenantId(tenantId);
   }
 
   public static String queryByTenantAndAppId() {
