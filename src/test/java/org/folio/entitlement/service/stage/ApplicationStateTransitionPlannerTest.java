@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
+import org.folio.entitlement.domain.model.ApplicationStateTransitionBucket;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementCrudService;
@@ -63,8 +64,8 @@ class ApplicationStateTransitionPlannerTest {
     assertThat(plan).isNotNull();
     assertThat(plan.entitleBucket()).isNotNull();
     assertThat(plan.entitleBucket().getApplicationIds()).containsExactlyInAnyOrder(APP_FOO_V1_ID, APP_BAR_V1_ID);
-    assertThat(plan.upgradeBucket()).isNull();
-    assertThat(plan.revokeBucket()).isNull();
+    assertIsEmpty(plan.upgradeBucket());
+    assertIsEmpty(plan.revokeBucket());
   }
 
   @Test
@@ -79,10 +80,10 @@ class ApplicationStateTransitionPlannerTest {
 
     var plan = context.getApplicationStateTransitionPlan();
     assertThat(plan).isNotNull();
-    assertThat(plan.entitleBucket()).isNull();
+    assertIsEmpty(plan.entitleBucket());
     assertThat(plan.upgradeBucket()).isNotNull();
     assertThat(plan.upgradeBucket().getApplicationIds()).containsExactlyInAnyOrder(APP_FOO_V2_ID);
-    assertThat(plan.revokeBucket()).isNull();
+    assertIsEmpty(plan.revokeBucket());
   }
 
   @Test
@@ -97,8 +98,8 @@ class ApplicationStateTransitionPlannerTest {
 
     var plan = context.getApplicationStateTransitionPlan();
     assertThat(plan).isNotNull();
-    assertThat(plan.entitleBucket()).isNull();
-    assertThat(plan.upgradeBucket()).isNull();
+    assertIsEmpty(plan.entitleBucket());
+    assertIsEmpty(plan.upgradeBucket());
     assertThat(plan.revokeBucket()).isNotNull();
     assertThat(plan.revokeBucket().getApplicationIds()).containsExactlyInAnyOrder(APP_FOO_V1_ID, APP_BAR_V1_ID);
   }
@@ -135,9 +136,9 @@ class ApplicationStateTransitionPlannerTest {
 
     var plan = context.getApplicationStateTransitionPlan();
     assertThat(plan).isNotNull();
-    assertThat(plan.entitleBucket()).isNull();
-    assertThat(plan.upgradeBucket()).isNull();
-    assertThat(plan.revokeBucket()).isNull();
+    assertIsEmpty(plan.entitleBucket());
+    assertIsEmpty(plan.upgradeBucket());
+    assertIsEmpty(plan.revokeBucket());
   }
 
   @Test
@@ -152,10 +153,10 @@ class ApplicationStateTransitionPlannerTest {
 
     var plan = context.getApplicationStateTransitionPlan();
     assertThat(plan).isNotNull();
-    assertThat(plan.entitleBucket()).isNull();
+    assertIsEmpty(plan.entitleBucket());
     assertThat(plan.upgradeBucket()).isNotNull();
     assertThat(plan.upgradeBucket().getApplicationIds()).containsExactlyInAnyOrder(APP_FOO_V2_ID, APP_BAR_V2_ID);
-    assertThat(plan.revokeBucket()).isNull();
+    assertIsEmpty(plan.revokeBucket());
   }
 
   @Test
@@ -172,7 +173,7 @@ class ApplicationStateTransitionPlannerTest {
     assertThat(plan).isNotNull();
     assertThat(plan.entitleBucket()).isNotNull();
     assertThat(plan.entitleBucket().getApplicationIds()).containsExactlyInAnyOrder(APP_BAZ_V1_ID, APP_QUX_V1_ID);
-    assertThat(plan.upgradeBucket()).isNull();
+    assertIsEmpty(plan.upgradeBucket());
     assertThat(plan.revokeBucket()).isNotNull();
     assertThat(plan.revokeBucket().getApplicationIds()).containsExactlyInAnyOrder(APP_FOO_V1_ID, APP_BAR_V1_ID);
   }
@@ -192,21 +193,21 @@ class ApplicationStateTransitionPlannerTest {
     assertThat(plan).isNotNull();
 
     if (expectedEntitle.isEmpty()) {
-      assertThat(plan.entitleBucket()).isNull();
+      assertIsEmpty(plan.entitleBucket());
     } else {
       assertThat(plan.entitleBucket()).isNotNull();
       assertThat(plan.entitleBucket().getApplicationIds()).containsExactlyInAnyOrderElementsOf(expectedEntitle);
     }
 
     if (expectedUpgrade.isEmpty()) {
-      assertThat(plan.upgradeBucket()).isNull();
+      assertIsEmpty(plan.upgradeBucket());
     } else {
       assertThat(plan.upgradeBucket()).isNotNull();
       assertThat(plan.upgradeBucket().getApplicationIds()).containsExactlyInAnyOrderElementsOf(expectedUpgrade);
     }
 
     if (expectedRevoke.isEmpty()) {
-      assertThat(plan.revokeBucket()).isNull();
+      assertIsEmpty(plan.revokeBucket());
     } else {
       assertThat(plan.revokeBucket()).isNotNull();
       assertThat(plan.revokeBucket().getApplicationIds()).containsExactlyInAnyOrderElementsOf(expectedRevoke);
@@ -255,5 +256,10 @@ class ApplicationStateTransitionPlannerTest {
 
     var flowParams = Map.of(PARAM_REQUEST, request);
     return commonStageContext(FLOW_ID, flowParams, emptyMap());
+  }
+
+  private static void assertIsEmpty(ApplicationStateTransitionBucket bucket) {
+    assertThat(bucket).isNotNull();
+    assertThat(bucket.isEmpty()).isTrue();
   }
 }
