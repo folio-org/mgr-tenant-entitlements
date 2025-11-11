@@ -98,6 +98,8 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   private static final String FOLIO_APP5_ID = "folio-app5-5.0.0";
   private static final String FOLIO_APP6_V1_ID = "folio-app6-6.0.0";
   private static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
+  private static final String FOLIO_APP8_ID = "folio-app8-8.0.0";
+  private static final String FOLIO_APP9_ID = "folio-app9-9.0.0";
 
   @Autowired private KeycloakTestClient kcClient;
 
@@ -656,6 +658,57 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
 
   @Test
   @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app6/v1-get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app6/v1-get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json",
+    "/wiremock/folio-module1/install.json",
+    "/wiremock/folio-module2/install.json",
+    "/wiremock/folio-module3/install.json",
+
+    "/wiremock/mgr-applications/folio-app6/v2-get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app6/v2-get-discovery.json",
+    "/wiremock/folio-module2-1/install.json",
+    "/wiremock/folio-module4/install.json",
+  })
+  void desiredState_positive_upgradeApp() throws Exception {
+    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+    var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
+    entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
+
+    var modules = List.of(FOLIO_MODULE1_ID, FOLIO_MODULE2_ID, FOLIO_MODULE3_ID);
+    var entitlements = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP6_V1_ID, modules));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP6_V1_ID), entitlements);
+
+    assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
+    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactlyElementsOf(kcResourcesBeforeUpgrade());
+
+    assertEntitlementEvents(entitlementEventsBeforeUpgrade());
+    assertScheduledJobEvents(scheduledTimerEventsBeforeUpgrade());
+    assertCapabilityEvents(capabilityEventsBeforeUpgrade());
+    assertSystemUserEvents(systemUserEventsBeforeUpgrade());
+
+    var desiredStateRequest = desiredStateRequest(FOLIO_APP6_V2_ID);
+    stateOfApplications(desiredStateRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V2_ID)));
+    getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V2_ID, entitlements(entitlement(FOLIO_APP6_V2_ID)));
+    getEntitlementsByQuery("applicationId == " + FOLIO_APP6_V1_ID, emptyEntitlements());
+
+    var upgradedModules = List.of(FOLIO_MODULE1_ID, FOLIO_MODULE2_V2_ID, FOLIO_MODULE4_ID);
+    var upgradedEntitlements = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP6_V2_ID, upgradedModules));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP6_V2_ID), upgradedEntitlements);
+
+    assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
+    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactlyElementsOf(kcResourcesAfterUpgrade());
+
+    assertEntitlementEvents(entitlementEventsAfterUpgrade());
+    assertScheduledJobEvents(scheduledTimerEventsAfterUpgrade());
+    assertCapabilityEvents(capabilityEventsAfterUpgrade());
+    assertSystemUserEvents(systemUserEventsAfterUpgrade());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
   @Sql("classpath:/sql/folio-entitlement-dependent.sql")
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
@@ -679,6 +732,77 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
 
     assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).isEmpty();
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
+  }
+
+  @Test
+  @Sql("classpath:/sql/folio-entitlement-app9.sql")
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app6/v1-get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app6/v1-get-discovery.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json",
+    "/wiremock/folio-module1/install.json",
+    "/wiremock/folio-module2/install.json",
+    "/wiremock/folio-module3/install.json",
+    // for upgrading app6
+    "/wiremock/mgr-applications/folio-app6/v2-get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app6/v2-get-discovery.json",
+    "/wiremock/folio-module2-1/install.json",
+    "/wiremock/folio-module4/install.json",
+    // for uninstalling app9
+    "/wiremock/mgr-applications/folio-app9/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app9/get-discovery.json",
+    "/wiremock/folio-module9/uninstall.json",
+    // for installing app8
+    "/wiremock/mgr-applications/folio-app8/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app8/get-discovery.json",
+    "/wiremock/folio-module8/install.json"
+  })
+  void desiredState_positive_installUpgradeUninstall() throws Exception {
+    // entitle application to be upgraded later
+    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+    var entitlementRequest = entitlementRequest(FOLIO_APP6_V1_ID);
+    entitleApplications(entitlementRequest, queryParams, extendedEntitlements(entitlement(FOLIO_APP6_V1_ID)));
+
+    var modules = List.of(FOLIO_MODULE1_ID, FOLIO_MODULE2_ID, FOLIO_MODULE3_ID);
+    var entitlements = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP6_V1_ID, modules));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP6_V1_ID), entitlements);
+
+    assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
+    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactlyElementsOf(kcResourcesBeforeUpgrade());
+
+    assertEntitlementEvents(entitlementEventsBeforeUpgrade());
+    assertScheduledJobEvents(scheduledTimerEventsBeforeUpgrade());
+    assertCapabilityEvents(capabilityEventsBeforeUpgrade());
+    assertSystemUserEvents(systemUserEventsBeforeUpgrade());
+
+    // prepare desired state with one new app to install, one app to upgrade (app to uninstall is absent here)
+    var dsQueryParams = Map.of("tenantParameters", "loadReference=true", "purge", "true", "ignoreErrors", "true");
+    var desiredStateRequest = desiredStateRequest(TENANT_ID, FOLIO_APP8_ID, FOLIO_APP6_V2_ID);
+    stateOfApplications(desiredStateRequest, dsQueryParams, extendedEntitlements(entitlement(FOLIO_APP8_ID),
+      entitlement(FOLIO_APP6_V2_ID)));
+
+    // installed app
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP8_ID), entitlements(entitlement(FOLIO_APP8_ID)));
+    // upgraded app
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP6_V2_ID), entitlements(entitlement(FOLIO_APP6_V2_ID)));
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP6_V1_ID), emptyEntitlements());
+    // removed app
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP9_ID), emptyEntitlements());
+
+    var upgradedModules = List.of(FOLIO_MODULE1_ID, FOLIO_MODULE2_V2_ID, FOLIO_MODULE4_ID);
+    var upgradedEntitlements = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP6_V2_ID, upgradedModules));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP6_V2_ID), upgradedEntitlements);
+
+    /*assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
+    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactlyElementsOf(kcResourcesAfterUpgrade());
+
+    assertEntitlementEvents(entitlementEventsAfterUpgrade());
+    assertScheduledJobEvents(scheduledTimerEventsAfterUpgrade());
+    assertCapabilityEvents(capabilityEventsAfterUpgrade());
+    assertSystemUserEvents(systemUserEventsAfterUpgrade());*/
   }
 
   @SneakyThrows

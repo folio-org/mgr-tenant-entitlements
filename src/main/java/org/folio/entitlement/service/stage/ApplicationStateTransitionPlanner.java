@@ -40,7 +40,7 @@ public class ApplicationStateTransitionPlanner extends DatabaseLoggingStage<Comm
     var applicationByName = applicationNameToId(toStream(request.getApplications()));
 
     var difference = evaluateDiff(applicationByName, entitledApplicationByName);
-    log.debug("Application differences evaluated for tenant: tenant = {}, difference = {}",
+    log.info("Application differences evaluated for tenant: tenant = {}, difference = {}",
       context.getTenantName(), difference);
 
     context.withApplicationStateTransitionPlan(ApplicationStateTransitionPlan.of(
