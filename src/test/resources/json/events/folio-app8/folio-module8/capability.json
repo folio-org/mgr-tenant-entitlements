@@ -1,0 +1,46 @@
+{
+  "type": "CREATE",
+  "tenant": "test",
+  "resourceName": "Capability",
+  "new": {
+    "moduleId": "folio-module8-8.0.0",
+    "moduleType": "module",
+    "applicationId": "folio-app8-8.0.0",
+    "resources": [
+      {
+        "permission": {
+          "permissionName": "folio-module8.events.item.post",
+          "replaces": [
+          ],
+          "displayName": "Folio Module #8 - Save an event",
+          "description": "Save an folio-module8 event",
+          "subPermissions": [
+          ]
+        },
+        "endpoints": [
+          {
+            "path": "/folio-module8/events",
+            "method": "POST"
+          }
+        ]
+      },
+      {
+        "permission": {
+          "permissionName": "folio-module8.events.item.get",
+          "replaces": [
+          ],
+          "displayName": "Folio Module #8 - Get event by id",
+          "description": "Get folio-module8 event by id",
+          "subPermissions": [
+          ]
+        },
+        "endpoints": [
+          {
+            "path": "/folio-module8/events/{id}",
+            "method": "GET"
+          }
+        ]
+      }
+    ]
+  }
+}

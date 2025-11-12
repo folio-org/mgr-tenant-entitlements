@@ -3,6 +3,10 @@ package org.folio.entitlement.it;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.support.DesiredStateTestValues.FOLIO_MODULE8_ID;
+import static org.folio.entitlement.support.DesiredStateTestValues.capabilityEventsAfterComplexState;
+import static org.folio.entitlement.support.DesiredStateTestValues.entitlementEventsAfterComplexState;
+import static org.folio.entitlement.support.DesiredStateTestValues.kcResourcesAfterComplexState;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertCapabilityEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertScheduledJobEvents;
@@ -786,23 +790,28 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
 
     // installed app
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP8_ID), entitlements(entitlement(FOLIO_APP8_ID)));
+    var installedModules = List.of(FOLIO_MODULE8_ID);
+    var installedEntitlements = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP8_ID, installedModules));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP8_ID), installedEntitlements);
+
     // upgraded app
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP6_V2_ID), entitlements(entitlement(FOLIO_APP6_V2_ID)));
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP6_V1_ID), emptyEntitlements());
-    // removed app
-    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP9_ID), emptyEntitlements());
-
     var upgradedModules = List.of(FOLIO_MODULE1_ID, FOLIO_MODULE2_V2_ID, FOLIO_MODULE4_ID);
     var upgradedEntitlements = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP6_V2_ID, upgradedModules));
     assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP6_V2_ID), upgradedEntitlements);
 
-    /*assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
-    assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactlyElementsOf(kcResourcesAfterUpgrade());
+    // removed app
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP9_ID), emptyEntitlements());
 
-    assertEntitlementEvents(entitlementEventsAfterUpgrade());
+    assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
+    assertThat(kcClient.getAuthorizationResources(TENANT_NAME))
+      .containsExactlyElementsOf(kcResourcesAfterComplexState());
+
+    assertEntitlementEvents(entitlementEventsAfterComplexState());
+    assertCapabilityEvents(capabilityEventsAfterComplexState());
     assertScheduledJobEvents(scheduledTimerEventsAfterUpgrade());
-    assertCapabilityEvents(capabilityEventsAfterUpgrade());
-    assertSystemUserEvents(systemUserEventsAfterUpgrade());*/
+    assertSystemUserEvents(systemUserEventsAfterUpgrade());
   }
 
   @SneakyThrows

@@ -50,9 +50,14 @@
                   "version": "8.0.0",
                   "handlers": [
                     {
-                      "methods": [ "GET" ],
+                      "methods": [ "POST" ],
                       "pathPattern": "/folio-module8/events",
-                      "permissionsRequired": [ "folio-module8.events.collection.get" ]
+                      "permissionsRequired": [ "folio-module8.events.item.post" ]
+                    },
+                    {
+                      "methods": [ "GET" ],
+                      "pathPattern": "/folio-module8/events/{id}",
+                      "permissionsRequired": [ "folio-module8.events.item.get" ]
                     }
                   ]
                 },
@@ -74,9 +79,14 @@
               ],
               "permissionSets": [
                 {
+                  "permissionName": "folio-module8.events.item.post",
+                  "displayName": "Folio Module #8 - Save an event",
+                  "description": "Save an folio-module8 event"
+                },
+                {
                   "permissionName": "folio-module8.events.item.get",
                   "displayName": "Folio Module #8 - Get event by id",
-                  "description": "Get folio-module3 event by id"
+                  "description": "Get folio-module8 event by id"
                 }
               ]
             }
