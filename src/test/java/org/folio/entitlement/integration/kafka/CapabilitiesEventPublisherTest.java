@@ -1,8 +1,8 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_ID;
@@ -12,6 +12,7 @@ import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PA
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_DEPRECATED_UI_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTOR_HOLDERS;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_UI_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_UI_MODULE_DESCRIPTOR_HOLDERS;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
@@ -26,6 +27,7 @@ import static org.folio.entitlement.support.TestUtils.readCapabilityEvent;
 import static org.folio.entitlement.support.TestUtils.readModuleDescriptor;
 import static org.folio.entitlement.support.TestValues.moduleDescriptorHolder;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -109,8 +111,10 @@ class CapabilitiesEventPublisherTest {
     var installedUiModuleDesc = readModuleDescriptor("json/events/capabilities/ui-module-desc.json");
 
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var request = EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).build();
     var flowParameters = Map.of(
-      PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).build(),
+      PARAM_REQUEST, request,
+      PARAM_MODULE_ENTITLEMENT_TYPE, toEntitlementType(request.getType()),
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(moduleDesc, installedModuleDesc)),
@@ -130,8 +134,10 @@ class CapabilitiesEventPublisherTest {
   @Test
   void execute_positive_updateRequestModuleNotChanged() {
     var moduleDesc = readModuleDescriptor("json/events/capabilities/be-module-desc.json");
+    var request = EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).build();
     var flowParameters = Map.of(
-      PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).build(),
+      PARAM_REQUEST, request,
+      PARAM_MODULE_ENTITLEMENT_TYPE, toEntitlementType(request.getType()),
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(moduleDesc, moduleDesc)));
@@ -166,8 +172,10 @@ class CapabilitiesEventPublisherTest {
     var uiModuleDescriptor = readModuleDescriptor("json/events/capabilities/ui-module-desc.json");
 
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var request = EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).build();
     var flowParameters = Map.of(
-      PARAM_REQUEST, EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).build(),
+      PARAM_REQUEST, request,
+      PARAM_MODULE_ENTITLEMENT_TYPE, toEntitlementType(request.getType()),
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_MODULE_DESCRIPTOR_HOLDERS, List.of(moduleDescriptorHolder(moduleDescriptor, null)),
@@ -211,6 +219,7 @@ class CapabilitiesEventPublisherTest {
   private static Map<String, Object> flowParameters(EntitlementRequest request, ApplicationDescriptor descriptor) {
     var flowParameters = new HashMap<String, Object>();
     flowParameters.put(PARAM_REQUEST, request);
+    flowParameters.put(PARAM_MODULE_ENTITLEMENT_TYPE, toEntitlementType(request.getType()));
     flowParameters.put(PARAM_APPLICATION_ID, descriptor.getId());
     flowParameters.put(PARAM_APPLICATION_DESCRIPTOR, descriptor);
     flowParameters.put(PARAM_MODULE_DESCRIPTORS, descriptor.getModuleDescriptors());

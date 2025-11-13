@@ -7,6 +7,7 @@ import static org.folio.common.utils.OkapiHeaders.MODULE_ID;
 import static org.folio.common.utils.SemverUtils.getName;
 import static org.folio.common.utils.SemverUtils.getVersion;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_FLOW_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_ENTITLED_APPLICATION_DESCRIPTOR;
@@ -27,6 +28,7 @@ import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_I
 import static org.folio.entitlement.support.TestConstants.TENANT_DESC;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,7 @@ import org.folio.common.domain.model.Dependency;
 import org.folio.common.domain.model.InterfaceReference;
 import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.DesiredStateRequestBody;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
 import org.folio.entitlement.domain.dto.EntitlementType;
@@ -161,6 +164,10 @@ public class TestValues {
     return new ExtendedEntitlements().totalRecords(entitlements.length).entitlements(asList(entitlements));
   }
 
+  public static ExtendedEntitlements emptyExtendedEntitlements() {
+    return new ExtendedEntitlements().totalRecords(0).entitlements(emptyList());
+  }
+
   public static EntitlementModuleEntity entitlementModuleEntity() {
     var entity = new EntitlementModuleEntity();
     entity.setApplicationId(APPLICATION_ID);
@@ -228,6 +235,18 @@ public class TestValues {
     return new EntitlementRequestBody().applications(List.of(applicationIds)).tenantId(tenantId);
   }
 
+  public static DesiredStateRequestBody desiredStateRequest(String applicationId) {
+    return desiredStateRequest(TENANT_ID, applicationId);
+  }
+
+  public static DesiredStateRequestBody desiredStateRequest(UUID tenantId, String applicationId) {
+    return new DesiredStateRequestBody().applications(List.of(applicationId)).tenantId(tenantId);
+  }
+
+  public static DesiredStateRequestBody desiredStateRequest(UUID tenantId, String... applicationIds) {
+    return new DesiredStateRequestBody().applications(List.of(applicationIds)).tenantId(tenantId);
+  }
+
   public static String queryByTenantAndAppId() {
     return queryByTenantAndAppId(TENANT_ID, APPLICATION_ID);
   }
@@ -268,6 +287,7 @@ public class TestValues {
   public static Map<?, ?> flowParameters(EntitlementRequest request, ApplicationDescriptor descriptor) {
     return Map.of(
       PARAM_REQUEST, request,
+      PARAM_APPLICATION_ENTITLEMENT_TYPE, toEntitlementType(request.getType()),
       PARAM_APPLICATION_DESCRIPTOR, descriptor,
       PARAM_APPLICATION_ID, descriptor.getId(),
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID
@@ -278,6 +298,7 @@ public class TestValues {
     ApplicationDescriptor descriptor, ApplicationDescriptor entitledDescriptor) {
     return Map.of(
       PARAM_REQUEST, request,
+      PARAM_APPLICATION_ENTITLEMENT_TYPE, toEntitlementType(request.getType()),
       PARAM_APPLICATION_DESCRIPTOR, descriptor,
       PARAM_ENTITLED_APPLICATION_DESCRIPTOR, entitledDescriptor,
       PARAM_APPLICATION_ID, descriptor.getId(),

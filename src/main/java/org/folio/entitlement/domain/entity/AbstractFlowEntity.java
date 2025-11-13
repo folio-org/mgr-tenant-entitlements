@@ -10,7 +10,6 @@ import jakarta.persistence.TemporalType;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.Data;
-import org.folio.entitlement.domain.entity.type.EntityEntitlementType;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -27,14 +26,6 @@ public class AbstractFlowEntity {
   @Id
   @Column(name = "flow_id")
   private UUID id;
-
-  /**
-   * An entitlement request type for tenant.
-   */
-  @Enumerated(EnumType.STRING)
-  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-  @Column(name = "type", columnDefinition = "entitlement_flow_type")
-  private EntityEntitlementType type;
 
   /**
    * An entitlement execution status (can change through granting entitlement for tenant).

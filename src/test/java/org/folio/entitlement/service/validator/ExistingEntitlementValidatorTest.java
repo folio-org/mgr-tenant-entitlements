@@ -4,7 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import java.util.Map;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.test.types.UnitTest;
@@ -81,7 +81,7 @@ class ExistingEntitlementValidatorTest {
   @ParameterizedTest
   @DisplayName("shouldValidate_parameterized")
   @CsvSource({"ENTITLE,false", "REVOKE,true", "UPGRADE,false", ",false"})
-  void shouldValidate_parameterized(EntitlementType type, boolean expected) {
+  void shouldValidate_parameterized(EntitlementRequestType type, boolean expected) {
     var request = EntitlementRequest.builder().type(type).build();
     var result = validator.shouldValidate(request);
     assertThat(result).isEqualTo(expected);

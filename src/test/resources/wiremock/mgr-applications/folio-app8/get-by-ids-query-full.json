@@ -1,0 +1,105 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      },
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"folio-app8-8.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "folio-app8-8.0.0",
+          "name": "folio-app8",
+          "version": "8.0.0",
+          "modules": [
+            {
+              "id": "folio-module8-8.0.0",
+              "name": "folio-module8",
+              "version": "8.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module8-8.0.0",
+              "name": "Test Folio Module #8",
+              "requires": [
+                {
+                  "id": "folio-module2-api",
+                  "version": "2.0"
+                }
+              ],
+              "provides": [
+                {
+                  "id": "folio-module8-api",
+                  "version": "8.0.0",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module8/events",
+                      "permissionsRequired": [ "folio-module8.events.item.post" ]
+                    },
+                    {
+                      "methods": [ "GET" ],
+                      "pathPattern": "/folio-module8/events/{id}",
+                      "permissionsRequired": [ "folio-module8.events.item.get" ]
+                    }
+                  ]
+                },
+                {
+                  "id": "_tenant",
+                  "version": "2.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/_/tenant"
+                    },
+                    {
+                      "methods": [ "GET", "DELETE" ],
+                      "pathPattern": "/_/tenant/{id}"
+                    }
+                  ]
+                }
+              ],
+              "permissionSets": [
+                {
+                  "permissionName": "folio-module8.events.item.post",
+                  "displayName": "Folio Module #8 - Save an event",
+                  "description": "Save an folio-module8 event"
+                },
+                {
+                  "permissionName": "folio-module8.events.item.get",
+                  "displayName": "Folio Module #8 - Get event by id",
+                  "description": "Get folio-module8 event by id"
+                }
+              ]
+            }
+          ],
+          "dependencies": [
+            {
+              "name": "folio-app6",
+              "version": "6.x"
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

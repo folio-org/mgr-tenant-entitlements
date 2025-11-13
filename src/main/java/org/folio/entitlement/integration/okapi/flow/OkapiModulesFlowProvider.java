@@ -9,6 +9,7 @@ import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PA
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_DEPRECATED_UI_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTOR_HOLDERS;
+import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_UI_MODULE_DESCRIPTORS;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_UI_MODULE_DESCRIPTOR_HOLDERS;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.toUnmodifiableMap;
@@ -42,21 +43,20 @@ public class OkapiModulesFlowProvider implements ModulesFlowProvider {
 
   @Override
   public Flow createFlow(StageContext context) {
-    var appStageContext = ApplicationStageContext.decorate(context);
-    var request = appStageContext.getEntitlementRequest();
-    var flowParameters = getFlowParameters(appStageContext);
+    var ctx = ApplicationStageContext.decorate(context);
+    var flowParameters = getFlowParameters(ctx);
 
-    var factory = requireNonNull(okapiFlowFactories.get(request.getType()));
-    return factory.createFlow(appStageContext, flowParameters);
+    var factory = requireNonNull(okapiFlowFactories.get(ctx.getEntitlementType()));
+    return factory.createFlow(ctx, flowParameters);
   }
 
   private Map<String, Object> getFlowParameters(ApplicationStageContext stageContext) {
     var descriptorSequence = moduleSequenceProvider.getSequence(stageContext, MODULE);
     var uiDescriptorSequence = moduleSequenceProvider.getSequence(stageContext, UI_MODULE);
 
-    var request = stageContext.getEntitlementRequest();
-    if (request.getType() == UPGRADE) {
+    if (stageContext.getEntitlementType() == UPGRADE) {
       return Map.of(
+        PARAM_MODULE_ENTITLEMENT_TYPE, stageContext.getEntitlementType(),
         PARAM_MODULE_DESCRIPTOR_HOLDERS, toFlatList(descriptorSequence.moduleDescriptors()),
         PARAM_DEPRECATED_MODULE_DESCRIPTORS, toFlatList(descriptorSequence.deprecatedModuleDescriptors()),
         PARAM_UI_MODULE_DESCRIPTOR_HOLDERS, toFlatList(uiDescriptorSequence.moduleDescriptors()),
@@ -64,6 +64,7 @@ public class OkapiModulesFlowProvider implements ModulesFlowProvider {
     }
 
     return Map.of(
+      PARAM_MODULE_ENTITLEMENT_TYPE, stageContext.getEntitlementType(),
       PARAM_MODULE_DESCRIPTORS, getModuleDescriptors(descriptorSequence.moduleDescriptors()),
       PARAM_UI_MODULE_DESCRIPTORS, getModuleDescriptors(uiDescriptorSequence.moduleDescriptors()));
   }

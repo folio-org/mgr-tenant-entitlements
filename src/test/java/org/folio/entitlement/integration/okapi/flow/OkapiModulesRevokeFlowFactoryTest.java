@@ -2,7 +2,7 @@ package org.folio.entitlement.integration.okapi.flow;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestUtils.mockStageNames;
@@ -11,6 +11,7 @@ import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
 import static org.folio.entitlement.support.TestValues.singleThreadFlowEngine;
 
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
@@ -87,7 +88,7 @@ class OkapiModulesRevokeFlowFactoryTest {
   @Test
   void getEntitlementType_positive() {
     var result = revokeFlowFactory.getEntitlementType();
-    assertThat(result).isEqualTo(REVOKE);
+    assertThat(result).isEqualTo(EntitlementType.REVOKE);
   }
 
   private static <T extends IdentifiableStageContext> void verifyStageExecution(InOrder inOrder,

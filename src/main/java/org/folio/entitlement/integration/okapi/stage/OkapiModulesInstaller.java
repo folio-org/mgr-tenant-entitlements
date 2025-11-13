@@ -26,7 +26,7 @@ public class OkapiModulesInstaller extends DatabaseLoggingStage<OkapiStageContex
   @Override
   public void execute(OkapiStageContext context) {
     var request = context.getEntitlementRequest();
-    var action = request.getType() == ENTITLE ? ENABLE : DISABLE;
+    var action = context.getEntitlementType() == ENTITLE ? ENABLE : DISABLE;
     var moduleDescriptors = context.getModuleDescriptors();
     updateModuleEntitlements(context, action, moduleDescriptors);
 

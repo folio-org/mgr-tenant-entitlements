@@ -4,6 +4,7 @@ import static org.apache.commons.lang3.BooleanUtils.isTrue;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -79,7 +80,7 @@ public class EntitlementCrudService {
    * @return list with found tenant {@link Entitlement} objects
    */
   @Transactional(readOnly = true)
-  public List<Entitlement> findByApplicationNames(UUID tenantId, List<String> applicationNames) {
+  public List<Entitlement> findByApplicationNames(UUID tenantId, Collection<String> applicationNames) {
     var entitlementEntities = entitlementRepository.findByTenantIdAndApplicationNameIn(tenantId, applicationNames);
     return mapItems(entitlementEntities, entitlementMapper::map);
   }
@@ -92,7 +93,7 @@ public class EntitlementCrudService {
    * @return list with found tenant {@link Entitlement} objects
    */
   @Transactional(readOnly = true)
-  public List<Entitlement> findByApplicationIds(UUID tenantId, List<String> applicationIds) {
+  public List<Entitlement> findByApplicationIds(UUID tenantId, Collection<String> applicationIds) {
     var entitlementEntities = entitlementRepository.findByTenantIdAndApplicationIdIn(tenantId, applicationIds);
     return mapItems(entitlementEntities, entitlementMapper::map);
   }

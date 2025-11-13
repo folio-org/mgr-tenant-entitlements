@@ -27,9 +27,8 @@ public class ApplicationDiscoveryLoader extends DatabaseLoggingStage<Application
       return;
     }
 
-    var entitlementRequest = context.getEntitlementRequest();
     var applicationId = context.getApplicationId();
-    var token = entitlementRequest.getOkapiToken();
+    var token = context.getEntitlementRequest().getOkapiToken();
 
     var moduleDiscoveries = applicationManagerService.getModuleDiscoveries(applicationId, token).getRecords();
     if (isEmpty(moduleDiscoveries)) {

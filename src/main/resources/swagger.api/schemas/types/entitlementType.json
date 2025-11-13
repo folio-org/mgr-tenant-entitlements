@@ -4,5 +4,5 @@
   "title": "Tenant Entitlement Type Schema",
   "description": "A tenant entitlement type",
   "type": "string",
-  "enum": [ "entitle", "revoke", "upgrade" ]
+  "enum": [ "entitle", "revoke", "upgrade"]
 }

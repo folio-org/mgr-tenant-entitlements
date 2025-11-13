@@ -1,13 +1,18 @@
 package org.folio.entitlement.controller;
 
 import static java.lang.Boolean.TRUE;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.springframework.http.HttpStatus.CREATED;
 
+import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.folio.entitlement.domain.dto.DesiredStateRequestBody;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -34,16 +39,8 @@ public class EntitlementController extends BaseController implements Entitlement
   @Override
   public ResponseEntity<ExtendedEntitlements> create(EntitlementRequestBody request, String token,
     String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purgeOnRollback) {
-    var entitlementRequest = EntitlementRequest.builder()
-      .type(ENTITLE)
-      .okapiToken(token)
-      .tenantParameters(tenantParameters)
-      .tenantId(request.getTenantId())
-      .applications(request.getApplications())
-      .ignoreErrors(TRUE.equals(ignoreErrors))
-      .async(TRUE.equals(async))
-      .purgeOnRollback(TRUE.equals(purgeOnRollback))
-      .build();
+    var entitlementRequest = createRequest(ENTITLE, request.getTenantId(), request.getApplications(), token,
+      tenantParameters, ignoreErrors, async, false, purgeOnRollback);
 
     var entitlements = entitlementService.performRequest(entitlementRequest);
     return ResponseEntity.status(CREATED).body(entitlements);
@@ -52,15 +49,8 @@ public class EntitlementController extends BaseController implements Entitlement
   @Override
   public ResponseEntity<ExtendedEntitlements> upgrade(EntitlementRequestBody request, String token,
     String tenantParameters, Boolean async) {
-    var entitlementRequest = EntitlementRequest.builder()
-      .type(UPGRADE)
-      .okapiToken(token)
-      .tenantParameters(tenantParameters)
-      .tenantId(request.getTenantId())
-      .applications(request.getApplications())
-      .ignoreErrors(true)
-      .async(TRUE.equals(async))
-      .build();
+    var entitlementRequest = createRequest(UPGRADE, request.getTenantId(), request.getApplications(), token,
+      tenantParameters, true, async, false, false);
 
     var entitlements = entitlementService.performRequest(entitlementRequest);
     return ResponseEntity.ok(entitlements);
@@ -69,18 +59,36 @@ public class EntitlementController extends BaseController implements Entitlement
   @Override
   public ResponseEntity<ExtendedEntitlements> delete(EntitlementRequestBody request, String token,
     String tenantParameters, Boolean ignoreErrors, Boolean purge, Boolean async) {
-    var entitlementRequest = EntitlementRequest.builder()
-      .type(REVOKE)
-      .async(TRUE.equals(async))
-      .okapiToken(token)
-      .tenantParameters(tenantParameters)
-      .tenantId(request.getTenantId())
-      .applications(request.getApplications())
-      .ignoreErrors(true)
-      .purge(TRUE.equals(purge))
-      .build();
+    var entitlementRequest = createRequest(REVOKE, request.getTenantId(), request.getApplications(), token,
+      tenantParameters, true, async, purge, false);
 
     var entitlements = entitlementService.performRequest(entitlementRequest);
     return ResponseEntity.ok(entitlements);
+  }
+
+  @Override
+  public ResponseEntity<ExtendedEntitlements> applyState(DesiredStateRequestBody request, String token,
+    String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purge, Boolean purgeOnRollback) {
+    var entitlementRequest = createRequest(STATE, request.getTenantId(), request.getApplications(), token,
+      tenantParameters, ignoreErrors, async, purge, purgeOnRollback);
+
+    var entitlements = entitlementService.performRequest(entitlementRequest);
+    return ResponseEntity.ok(entitlements);
+  }
+
+  private static EntitlementRequest createRequest(EntitlementRequestType type, UUID tenantId, List<String> applications,
+    String token, String tenantParameters, Boolean ignoreErrors, Boolean async, Boolean purge,
+    Boolean purgeOnRollback) {
+    return EntitlementRequest.builder()
+      .type(type)
+      .okapiToken(token)
+      .tenantParameters(tenantParameters)
+      .tenantId(tenantId)
+      .applications(applications)
+      .ignoreErrors(TRUE.equals(ignoreErrors))
+      .async(TRUE.equals(async))
+      .purge(TRUE.equals(purge))
+      .purgeOnRollback(TRUE.equals(purgeOnRollback))
+      .build();
   }
 }

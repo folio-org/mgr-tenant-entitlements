@@ -1,0 +1,37 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications/folio-app9-9.0.0/discovery",
+    "queryParameters": {
+      "limit": {
+        "equalTo": "100"
+      }
+    },
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      },
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "discovery": [
+        {
+          "id": "folio-module9-9.0.0",
+          "name": "folio-module9",
+          "version": "9.0.0",
+          "location": "{{request.baseUrl}}/folio-module9"
+        }
+      ],
+      "totalRecords": 1
+    },
+    "transformers": [ "response-template" ]
+  }
+}

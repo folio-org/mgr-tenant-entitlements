@@ -11,6 +11,7 @@
 * Implement automatic token refresh for long-running operations to prevent token expiration issues (MGRENTITLE-141)
 * Implement Kafka Tenant Collection Topics (MGRENTITLE-41)
 * Implement configurable thread pool for module installation to control entitlement concurrency independently from main flow engine (MGRENTITLE-141)
+* Implement Desired State Management for Application Entitlements in MTE (MGRENTITLE-140)
 
 ---
 

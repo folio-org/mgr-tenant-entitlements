@@ -75,10 +75,9 @@ public class EntitlementService {
   private void executeFlow(EntitlementRequest request, Flow flow) {
     if (request.isAsync()) {
       flowEngine.executeAsync(flow);
-      return;
+    } else {
+      flowEngine.execute(flow);
     }
-
-    flowEngine.execute(flow);
   }
 
   private static Entitlement buildEntitlement(UUID tenantId, String appId) {

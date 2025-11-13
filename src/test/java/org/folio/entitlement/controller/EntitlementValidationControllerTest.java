@@ -1,6 +1,6 @@
 package org.folio.entitlement.controller;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
@@ -18,9 +18,9 @@ import java.util.List;
 import java.util.UUID;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.folio.common.utils.OkapiHeaders;
-import org.folio.entitlement.controller.converter.EntitlementTypeConverters;
+import org.folio.entitlement.controller.converter.EntitlementRequestTypeConverters;
 import org.folio.entitlement.domain.dto.EntitlementRequestBody;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementValidationService;
 import org.folio.entitlement.service.FlowStageService;
@@ -42,7 +42,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @UnitTest
 @Import({ControllerTestConfiguration.class,
   EntitlementValidationController.class,
-  EntitlementTypeConverters.FromString.class})
+  EntitlementRequestTypeConverters.FromString.class})
 @MockitoBean(types = {FlowStageService.class, KeycloakAuthClient.class})
 @WebMvcTest(EntitlementValidationController.class)
 @EnableKeycloakSecurity
@@ -58,8 +58,8 @@ class EntitlementValidationControllerTest {
   @MockitoBean private EntitlementValidationService validationService;
 
   @ParameterizedTest
-  @EnumSource(EntitlementType.class)
-  void validate_positive(EntitlementType type) throws Exception {
+  @EnumSource(EntitlementRequestType.class)
+  void validate_positive(EntitlementRequestType type) throws Exception {
     var requestBody = new EntitlementRequestBody().tenantId(TENANT_ID).applications(List.of(APPLICATION_ID));
 
     doNothing().when(validationService).validate(entitlementRequest(type));
@@ -69,7 +69,7 @@ class EntitlementValidationControllerTest {
 
     mockMvc.perform(post("/entitlements/validate")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
-        .queryParam("entitlementType", type.getValue())
+        .queryParam("entitlementRequestType", type.getValue())
         .content(asJsonString(requestBody))
         .contentType(APPLICATION_JSON))
       .andExpect(status().isNoContent());
@@ -87,7 +87,7 @@ class EntitlementValidationControllerTest {
 
     mockMvc.perform(post("/entitlements/validate")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
-        .queryParam("entitlementType", ENTITLE.getValue())
+        .queryParam("entitlementRequestType", ENTITLE.getValue())
         .queryParam("validator", validator)
         .content(asJsonString(requestBody))
         .contentType(APPLICATION_JSON))
@@ -104,7 +104,7 @@ class EntitlementValidationControllerTest {
     String invalidType = "invalidType";
     mockMvc.perform(post("/entitlements/validate")
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
-        .queryParam("entitlementType", invalidType)
+        .queryParam("entitlementRequestType", invalidType)
         .content(asJsonString(requestBody))
         .contentType(APPLICATION_JSON))
       .andExpect(status().isBadRequest())
@@ -119,7 +119,7 @@ class EntitlementValidationControllerTest {
     return entitlementRequest(ENTITLE);
   }
 
-  private static EntitlementRequest entitlementRequest(EntitlementType type) {
+  private static EntitlementRequest entitlementRequest(EntitlementRequestType type) {
     return EntitlementRequest.builder()
       .type(type)
       .tenantId(TENANT_ID)

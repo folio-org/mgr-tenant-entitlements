@@ -12,6 +12,7 @@ import java.util.UUID;
 import lombok.ToString;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
@@ -22,6 +23,7 @@ import org.folio.flow.api.StageContext;
 @ToString(callSuper = true)
 public class OkapiStageContext extends IdentifiableStageContext {
 
+  public static final String PARAM_MODULE_ENTITLEMENT_TYPE = "moduleEntitlementType";
   public static final String PARAM_MODULE_DESCRIPTORS = "moduleDescriptors";
   public static final String PARAM_MODULE_DESCRIPTOR_HOLDERS = "moduleDescriptorHolders";
   public static final String PARAM_UI_MODULE_DESCRIPTOR_HOLDERS = "uiModuleDescriptorHolders";
@@ -56,6 +58,15 @@ public class OkapiStageContext extends IdentifiableStageContext {
   @Override
   public UUID getCurrentFlowId() {
     return context.getFlowParameter(PARAM_APPLICATION_FLOW_ID);
+  }
+
+  /**
+   * Returns current module entitlement type.
+   *
+   * @return {@link EntitlementType} object
+   */
+  public EntitlementType getEntitlementType() {
+    return context.getFlowParameter(PARAM_MODULE_ENTITLEMENT_TYPE);
   }
 
   /**

@@ -7,12 +7,14 @@ import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_E
 import java.util.UUID;
 import lombok.ToString;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.flow.api.StageContext;
 
 @ToString(callSuper = true)
 public class ModuleStageContext extends IdentifiableStageContext {
 
+  public static final String PARAM_MODULE_ENTITLEMENT_TYPE = "moduleEntitlementType";
   public static final String PARAM_MODULE_ID = "moduleId";
   public static final String PARAM_MODULE_NAME = "moduleName";
   public static final String PARAM_MODULE_TYPE = "moduleType";
@@ -48,6 +50,15 @@ public class ModuleStageContext extends IdentifiableStageContext {
   @Override
   public UUID getCurrentFlowId() {
     return context.getFlowParameter(PARAM_APPLICATION_FLOW_ID);
+  }
+
+  /**
+   * Returns current module entitlement type.
+   *
+   * @return {@link EntitlementType} object
+   */
+  public EntitlementType getEntitlementType() {
+    return context.getFlowParameter(PARAM_MODULE_ENTITLEMENT_TYPE);
   }
 
   /**

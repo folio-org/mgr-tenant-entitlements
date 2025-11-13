@@ -16,7 +16,7 @@
     },
     "type": {
       "description": "Flow entitlement type",
-      "$ref": "types/entitlementType.json"
+      "$ref": "types/entitlementRequestType.json"
     },
     "tenantId": {
       "description": "A tenant identifier",

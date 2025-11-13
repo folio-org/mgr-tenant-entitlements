@@ -3,7 +3,7 @@ package org.folio.entitlement.service;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.QUEUED;
 import static org.folio.entitlement.service.ApplicationFlowServiceTest.TestValues.applicationFlow;
@@ -28,11 +28,12 @@ import java.util.Map;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.common.domain.model.SearchResult;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.entity.ApplicationFlowEntity;
-import org.folio.entitlement.domain.entity.type.EntityEntitlementType;
+import org.folio.entitlement.domain.entity.type.EntityApplicationFlowEntitlementType;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.mapper.ApplicationFlowMapper;
@@ -289,12 +290,12 @@ class ApplicationFlowServiceTest {
       var entities = List.of(entity);
       var applicationFlow = applicationFlow(QUEUED);
 
-      when(mapper.mapWithStatusQueued(TENANT_ID, APPLICATION_ID, FLOW_ID, ENTITLE)).thenReturn(entity);
+      when(mapper.mapWithStatusQueued(TENANT_ID, APPLICATION_ID, FLOW_ID, EntitlementType.ENTITLE)).thenReturn(entity);
       when(repository.saveAll(entities)).thenReturn(entities);
       when(mapper.map(entity)).thenReturn(applicationFlow);
 
       var request = entitlementRequest(ENTITLE, APPLICATION_ID);
-      var result = applicationFlowService.createQueuedApplicationFlow(FLOW_ID, request);
+      var result = applicationFlowService.createQueuedApplicationFlows(FLOW_ID, request);
 
       assertThat(result).containsExactly(applicationFlow);
     }
@@ -302,7 +303,7 @@ class ApplicationFlowServiceTest {
 
   static class TestValues {
 
-    static EntitlementRequest entitlementRequest(EntitlementType type, String... applicationIds) {
+    static EntitlementRequest entitlementRequest(EntitlementRequestType type, String... applicationIds) {
       return EntitlementRequest.builder()
         .type(type)
         .ignoreErrors(true)
@@ -327,7 +328,7 @@ class ApplicationFlowServiceTest {
       entity.setFlowId(FLOW_ID);
       entity.setApplicationId(APPLICATION_ID);
       entity.setTenantId(TENANT_ID);
-      entity.setType(EntityEntitlementType.ENTITLE);
+      entity.setType(EntityApplicationFlowEntitlementType.ENTITLE);
       entity.setStatus(EntityExecutionStatus.FINISHED);
       entity.setStartedAt(startedAt);
       entity.setFinishedAt(finishedAt);
@@ -348,7 +349,7 @@ class ApplicationFlowServiceTest {
         .flowId(FLOW_ID)
         .applicationId(APPLICATION_ID)
         .tenantId(TENANT_ID)
-        .type(ENTITLE)
+        .type(EntitlementType.ENTITLE)
         .status(status)
         .startedAt(startedAt)
         .finishedAt(finishedAt);

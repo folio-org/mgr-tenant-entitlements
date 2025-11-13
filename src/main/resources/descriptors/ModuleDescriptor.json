@@ -4,21 +4,33 @@
   "provides": [
     {
       "id": "entitlements",
-      "version": "1.0",
+      "version": "1.1",
       "handlers": [
         {
           "type": "internal",
           "methods": [ "POST" ],
           "pathPattern": "/entitlements",
           "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.item.post" ],
-          "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
+          "modulePermissions": [
+            "mgr-tenants.tenants.item.get",
+            "mgr-tenants.tenants.collection.get",
+            "mgr-applications.applications.collection.get",
+            "mgr-applications.app-discoveries.collection.get",
+            "mgr-applications.applications.item.validate"
+          ]
         },
         {
           "type": "internal",
           "methods": [ "PUT" ],
           "pathPattern": "/entitlements",
           "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.item.put" ],
-          "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
+          "modulePermissions": [
+            "mgr-tenants.tenants.item.get",
+            "mgr-tenants.tenants.collection.get",
+            "mgr-applications.applications.collection.get",
+            "mgr-applications.app-discoveries.collection.get",
+            "mgr-applications.applications.item.validate"
+          ]
         },
         {
           "type": "internal",
@@ -31,7 +43,26 @@
           "methods": [ "DELETE" ],
           "pathPattern": "/entitlements",
           "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.item.delete" ],
-          "modulePermissions": [ "mgr-tenants.tenants.item.get" ]
+          "modulePermissions": [
+            "mgr-tenants.tenants.item.get",
+            "mgr-tenants.tenants.collection.get",
+            "mgr-applications.applications.collection.get",
+            "mgr-applications.app-discoveries.collection.get",
+            "mgr-applications.applications.item.validate"
+          ]
+        },
+        {
+          "type": "internal",
+          "methods": [ "PUT" ],
+          "pathPattern": "/entitlements/state",
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.state.item.put" ],
+          "modulePermissions": [
+            "mgr-tenants.tenants.item.get",
+            "mgr-tenants.tenants.collection.get",
+            "mgr-applications.applications.collection.get",
+            "mgr-applications.app-discoveries.collection.get",
+            "mgr-applications.applications.item.validate"
+          ]
         },
         {
           "type": "internal",
@@ -153,6 +184,12 @@
       "subPermissions": [ "okapi.proxy.tenants.install.post" ]
     },
     {
+      "description": "Set the desired state of applications for tenant",
+      "displayName": "Manager Tenant Entitlements - desired state of application",
+      "permissionName": "mgr-tenant-entitlements.entitlements.state.item.put",
+      "subPermissions": [ "okapi.proxy.tenants.install.post" ]
+    },
+    {
       "description": "Retrieve applications installed for tenants",
       "displayName": "Manager Tenant Entitlements - get tenants entitlements",
       "permissionName": "mgr-tenant-entitlements.entitlements.collection.get"
@@ -201,6 +238,7 @@
         "mgr-tenant-entitlements.entitlements.item.post",
         "mgr-tenant-entitlements.entitlements.item.put",
         "mgr-tenant-entitlements.entitlements.item.delete",
+        "mgr-tenant-entitlements.entitlements.state.item.put",
         "mgr-tenant-entitlements.entitlements.collection.get"
       ]
     },

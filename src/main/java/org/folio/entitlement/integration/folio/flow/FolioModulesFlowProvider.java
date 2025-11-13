@@ -7,6 +7,7 @@ import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_A
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DISCOVERY;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_ENTITLEMENT_TYPE;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_ID;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_TYPE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
@@ -57,7 +58,7 @@ public class FolioModulesFlowProvider implements ModulesFlowProvider {
   public Flow createFlow(StageContext stageContext) {
     var ctx = new ApplicationStageContext(stageContext);
     var request = ctx.getEntitlementRequest();
-    var type = capitalize(request.getType().getValue());
+    var type = capitalize(ctx.getEntitlementType().getValue());
     var flowId = ctx.flowId() + "/FolioModules" + capitalize(type) + "Flow";
     var flowBuilder = Flow.builder().id(flowId).executionStrategy(request.getExecutionStrategy());
 
@@ -95,10 +96,10 @@ public class FolioModulesFlowProvider implements ModulesFlowProvider {
 
   private Flow getModuleFlow(String flowId, ApplicationStageContext ctx, ModuleType moduleType,
     ModuleDescriptor descriptor, ModuleDescriptor installedModuleDescriptor) {
-    var request = ctx.getEntitlementRequest();
-    var moduleFlowFactory = Objects.requireNonNull(moduleFlowFactories.get(request.getType()));
+    var moduleFlowFactory = Objects.requireNonNull(moduleFlowFactories.get(ctx.getEntitlementType()));
     var flowParameters = getModuleFlowParameters(ctx, moduleType, descriptor, installedModuleDescriptor);
     var moduleFlowId = flowId + "/" + flowParameters.get(PARAM_MODULE_ID);
+    var request = ctx.getEntitlementRequest();
     return moduleType == MODULE
       ? moduleFlowFactory.createModuleFlow(moduleFlowId, request.getExecutionStrategy(), flowParameters)
       : moduleFlowFactory.createUiModuleFlow(moduleFlowId, request.getExecutionStrategy(), flowParameters);
@@ -122,6 +123,7 @@ public class FolioModulesFlowProvider implements ModulesFlowProvider {
     ModuleDescriptor descriptor, ModuleDescriptor installedDescriptor) {
     var flowParameters = new HashMap<String, Object>();
 
+    flowParameters.put(PARAM_MODULE_ENTITLEMENT_TYPE, context.getEntitlementType());
     flowParameters.put(PARAM_MODULE_TYPE, moduleType);
     flowParameters.put(PARAM_APPLICATION_ID, context.getApplicationId());
     flowParameters.put(PARAM_APPLICATION_FLOW_ID, context.getCurrentFlowId());

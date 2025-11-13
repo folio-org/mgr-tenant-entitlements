@@ -2,7 +2,7 @@ package org.folio.entitlement.service.flow;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.test.types.UnitTest;
@@ -34,7 +35,7 @@ class ApplicationFlowQueuingStageTest {
   void execute_positive() {
     var applicationFlow = applicationFlow();
     var request = entitlementRequest();
-    when(applicationFlowService.createQueuedApplicationFlow(FLOW_ID, request)).thenReturn(List.of(applicationFlow));
+    when(applicationFlowService.createQueuedApplicationFlows(FLOW_ID, request)).thenReturn(List.of(applicationFlow));
 
     var flowParameters = Map.of(PARAM_REQUEST, request);
     var stageContext = commonStageContext(FLOW_ID, flowParameters, emptyMap());
@@ -51,7 +52,7 @@ class ApplicationFlowQueuingStageTest {
       .applicationId(APPLICATION_ID)
       .tenantId(TENANT_ID)
       .status(ExecutionStatus.QUEUED)
-      .type(ENTITLE);
+      .type(EntitlementType.ENTITLE);
   }
 
   static EntitlementRequest entitlementRequest() {

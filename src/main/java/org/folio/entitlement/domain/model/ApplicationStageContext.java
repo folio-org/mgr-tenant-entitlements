@@ -5,11 +5,13 @@ import java.util.UUID;
 import lombok.ToString;
 import org.apache.commons.collections4.MapUtils;
 import org.folio.common.domain.model.ApplicationDescriptor;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.flow.api.StageContext;
 
 @ToString(callSuper = true)
 public class ApplicationStageContext extends IdentifiableStageContext {
 
+  public static final String PARAM_APPLICATION_ENTITLEMENT_TYPE = "applicationEntitlementType";
   public static final String PARAM_APPLICATION_FLOW_ID = "applicationFlowId";
   public static final String PARAM_APPLICATION_ID = "applicationId";
   public static final String PARAM_APPLICATION_DESCRIPTOR = "applicationDescriptor";
@@ -54,6 +56,15 @@ public class ApplicationStageContext extends IdentifiableStageContext {
    */
   public EntitlementRequest getEntitlementRequest() {
     return context.getFlowParameter(CommonStageContext.PARAM_REQUEST);
+  }
+
+  /**
+   * Returns current application entitlement type.
+   *
+   * @return {@link EntitlementType} object
+   */
+  public EntitlementType getEntitlementType() {
+    return context.getFlowParameter(PARAM_APPLICATION_ENTITLEMENT_TYPE);
   }
 
   /**

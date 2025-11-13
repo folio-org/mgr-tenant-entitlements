@@ -1,13 +1,13 @@
 package org.folio.entitlement.service.validator;
 
 import static java.util.stream.Collectors.toSet;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.EXISTING_ENTITLEMENT;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.LinkedHashSet;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.Entitlement;
-import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementCrudService;
@@ -41,6 +41,6 @@ public class ExistingEntitlementValidator extends DatabaseLoggingStage<CommonSta
 
   @Override
   public boolean shouldValidate(EntitlementRequest entitlementRequest) {
-    return entitlementRequest.getType() == EntitlementType.REVOKE;
+    return entitlementRequest.getType() == REVOKE;
   }
 }

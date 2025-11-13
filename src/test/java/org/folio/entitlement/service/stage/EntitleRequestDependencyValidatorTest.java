@@ -2,9 +2,7 @@ package org.folio.entitlement.service.stage;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
@@ -56,7 +54,8 @@ class EntitleRequestDependencyValidatorTest {
   void execute_positive() {
     var dependencyIds = List.of("app-foo-1.2.0", "app-bar-2.3.9", "app-baz-4.2.1");
     var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
-    var expectedEntitlements = mapItems(dependencyIds, applicationId -> flow(applicationId, ENTITLE, FINISHED));
+    var expectedEntitlements = mapItems(dependencyIds,
+      applicationId -> flow(applicationId, EntitlementType.ENTITLE, FINISHED));
     when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(expectedEntitlements);
 
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
@@ -72,7 +71,8 @@ class EntitleRequestDependencyValidatorTest {
   void execute_entitle_on_upgrade_positive() {
     var dependencyIds = List.of("app-foo-1.2.0", "app-bar-2.3.9", "app-baz-4.2.1");
     var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
-    var expectedEntitlements = mapItems(dependencyIds, applicationId -> flow(applicationId, UPGRADE, FINISHED));
+    var expectedEntitlements = mapItems(dependencyIds,
+      applicationId -> flow(applicationId, EntitlementType.UPGRADE, FINISHED));
     when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(expectedEntitlements);
 
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
@@ -98,7 +98,8 @@ class EntitleRequestDependencyValidatorTest {
   @Test
   void execute_negative_unsatisfiedDependencies() {
     var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
-    var expectedEntitlements = List.of(flow("app-foo-1.2.0", ENTITLE, FAILED), flow("app-foo-1.2.0", REVOKE, FINISHED));
+    var expectedEntitlements = List.of(flow("app-foo-1.2.0", EntitlementType.ENTITLE, FAILED),
+      flow("app-foo-1.2.0", EntitlementType.REVOKE, FINISHED));
     when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(expectedEntitlements);
 
     var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();

@@ -17,7 +17,7 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.InterfaceItem;
@@ -39,7 +39,7 @@ public class InterfaceIntegrityValidator extends StageRequestValidator {
   /**
    * The type of entitlement request this validator is responsible for.
    */
-  private final EntitlementType entitlementType;
+  private final EntitlementRequestType entitlementType;
   private final ApplicationInterfaceCollector interfaceCollector;
   private final ApplicationDescriptorProvider applicationDescriptorProvider;
 
@@ -66,8 +66,10 @@ public class InterfaceIntegrityValidator extends StageRequestValidator {
 
   private void validateDescriptors(List<ApplicationDescriptor> descriptors, UUID tenantId) {
     if (isEmpty(descriptors)) {
-      throw new RequestValidationException("No application descriptors provided", "descriptors", null);
+      log.info("No application descriptors provided. Skipping interface integrity validation");
+      return;
     }
+
     log.info("Validating dependencies between application descriptors: appIds = [{}], tenantId = {}",
       () -> descriptors.stream().map(ApplicationDescriptor::getId).collect(joining(", ")),
       () -> tenantId);

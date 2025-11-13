@@ -1,6 +1,6 @@
 package org.folio.entitlement.it;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
@@ -52,7 +52,7 @@ class EntitlementValidationInterfaceIntegrityIT {
     void validate_positive_correctDependencies() throws Exception {
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_1, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isNoContent());
     }
@@ -64,7 +64,7 @@ class EntitlementValidationInterfaceIntegrityIT {
     void validate_negative_missingDependencyInApp3() throws Exception {
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_1, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.errors[0].message", containsString("Missing interfaces found for the applications")))
@@ -95,7 +95,7 @@ class EntitlementValidationInterfaceIntegrityIT {
     void validate_positive_correctDependencies() throws Exception {
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_1, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isNoContent());
     }
@@ -107,7 +107,7 @@ class EntitlementValidationInterfaceIntegrityIT {
     void validate_positive_missingDependencyInApp3() throws Exception {
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_1, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isNoContent());
     }
@@ -140,7 +140,7 @@ class EntitlementValidationInterfaceIntegrityIT {
 
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isNoContent());
     }
@@ -152,7 +152,7 @@ class EntitlementValidationInterfaceIntegrityIT {
     void validate_negative_entitledNotFound() throws Exception {
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpectAll(requestValidationErr(
           "Entitled application(s) is not found", "applicationName(s)", FOLIO_APP_NAME_1));
@@ -174,7 +174,7 @@ class EntitlementValidationInterfaceIntegrityIT {
 
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.errors[0].message", containsString(
@@ -204,7 +204,7 @@ class EntitlementValidationInterfaceIntegrityIT {
 
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.errors[0].message", containsString("Missing interfaces found for the applications")))

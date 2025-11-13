@@ -6,7 +6,8 @@ import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
 
@@ -34,8 +35,7 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageCon
 
   @Override
   public void execute(CommonStageContext context) {
-    var request = context.getEntitlementRequest();
-    if (request.getType() == ENTITLE) {
+    if (isEntitleOrDesiredStateWithEntitle(context)) {
       var tenant = getTenant(context);
 
       var topicTenantValue = getTopicTenantValue(tenant);
@@ -92,12 +92,18 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageCon
     kafkaAdminService.deleteTopics(topicsToPurge);
   }
 
-  private static String getTenant(CommonStageContext context) {
-    return context.get(CommonStageContext.PARAM_TENANT_NAME);
-  }
-
   private String getTopicTenantValue(String tenant) {
     return tenantEntitlementKafkaProperties.isProducerTenantCollection()
       ? TOPIC_TENANT_COLLECTION_KEY : tenant;
+  }
+
+  private static boolean isEntitleOrDesiredStateWithEntitle(CommonStageContext context) {
+    var request = context.getEntitlementRequest();
+    return request.getType() == ENTITLE
+      || request.getType() == STATE && !context.getApplicationStateTransitionPlan().entitleBucket().isEmpty();
+  }
+
+  private static String getTenant(CommonStageContext context) {
+    return context.get(CommonStageContext.PARAM_TENANT_NAME);
   }
 }

@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 public class RevokeFlowFactory implements FlowFactory {
 
   private final TenantLoader tenantLoader;
-  private final ApplicationsFlowProvider applicationsFlowFactory;
+  private final BaseApplicationsFlowProvider applicationsFlowFactory;
   private final ApplicationFlowValidator applicationFlowValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorLoader applicationDescriptorLoader;

@@ -3,12 +3,13 @@ package org.folio.entitlement.service.validator.configuration;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
 import org.folio.entitlement.service.validator.StageRequestValidator;
 import org.folio.entitlement.service.validator.adp.ApplicationAndDependencyDescriptorProvider;
 import org.folio.entitlement.service.validator.adp.ApplicationAndEntitledDescriptorProvider;
+import org.folio.entitlement.service.validator.adp.ApplicationOnlyDescriptorProvider;
 import org.folio.entitlement.service.validator.icollector.ApplicationInterfaceCollector;
 import org.folio.entitlement.service.validator.icollector.CombinedApplicationInterfaceCollector;
 import org.folio.entitlement.service.validator.icollector.ScopedApplicationInterfaceCollector;
@@ -26,6 +27,8 @@ public class InterfaceIntegrityValidationConfiguration {
     "application.validation.interface-integrity.entitlement.enabled";
   private static final String PROP_UPGRADE_VALIDATION_ENABLED =
     "application.validation.interface-integrity.upgrade.enabled";
+  private static final String PROP_STATE_VALIDATION_ENABLED =
+    "application.validation.interface-integrity.state.enabled";
 
   /**
    * Configuration for interface integrity validation for entitlement requests when the validation is enabled.
@@ -86,7 +89,7 @@ public class InterfaceIntegrityValidationConfiguration {
       ApplicationAndDependencyDescriptorProvider applicationDescriptorProvider) {
 
       return new InterfaceIntegrityValidator(
-        EntitlementType.ENTITLE,
+        EntitlementRequestType.ENTITLE,
         interfaceCollector,
         applicationDescriptorProvider);
     }
@@ -141,7 +144,7 @@ public class InterfaceIntegrityValidationConfiguration {
       ApplicationAndEntitledDescriptorProvider applicationDescriptorProvider) {
 
       return new InterfaceIntegrityValidator(
-        EntitlementType.UPGRADE,
+        EntitlementRequestType.UPGRADE,
         interfaceCollector,
         applicationDescriptorProvider);
     }
@@ -163,6 +166,63 @@ public class InterfaceIntegrityValidationConfiguration {
     @Bean
     public StageRequestValidator upgradeInterfaceIntegrityValidator() {
       log.info("Interface integrity validation for Upgrade requests is disabled");
+      return InterfaceIntegrityValidator.NO_OP;
+    }
+  }
+
+  /**
+   * Configuration for interface integrity validation for desired state requests when the validation is enabled.
+   * It provides beans for application interface collector and interface integrity validator.
+   *
+   * <p>The validation is enabled by default, but can be disabled by setting the property
+   * {@code application.validation.interface-integrity.state.enabled} to {@code false}.
+   *
+   * <p>The interface collector is always 'combined' for desired state requests with the turned-off ability to exclude
+   * required interfaces of entitled applications from the validation. Actually, for desired state requests, there is no
+   * need to take into account entitled applications only ones provided in the request, and the combined collector
+   * provides the necessary functionality when working in this mode.
+   */
+  @Configuration
+  @ConditionalOnProperty(
+    name = PROP_STATE_VALIDATION_ENABLED,
+    havingValue = "true", matchIfMissing = true)
+  public static class EnabledValidationForState {
+
+    @Bean(name = "stateApplicationInterfaceCollector")
+    public ApplicationInterfaceCollector combinedApplicationInterfaceCollectorForState(
+      EntitlementCrudService entitlementCrudService) {
+
+      return new CombinedApplicationInterfaceCollector(entitlementCrudService, false);
+    }
+
+    @Bean
+    public InterfaceIntegrityValidator stateInterfaceIntegrityValidator(
+      @Qualifier("stateApplicationInterfaceCollector") ApplicationInterfaceCollector interfaceCollector,
+      ApplicationOnlyDescriptorProvider applicationDescriptorProvider) {
+
+      return new InterfaceIntegrityValidator(
+        EntitlementRequestType.STATE,
+        interfaceCollector,
+        applicationDescriptorProvider);
+    }
+  }
+
+  /**
+   * Configuration for interface integrity validation for desired state requests when the validation is disabled.
+   * It provides a no-op validator that does not perform any validation.
+   *
+   * <p>The validation is disabled by setting the property
+   * {@code application.validation.interface-integrity.state.enabled} to {@code false}.
+   */
+  @Configuration
+  @ConditionalOnProperty(
+    name = PROP_STATE_VALIDATION_ENABLED,
+    havingValue = "false")
+  public static class DisabledValidationForState {
+
+    @Bean
+    public StageRequestValidator stateInterfaceIntegrityValidator() {
+      log.info("Interface integrity validation for Desired State requests is disabled");
       return InterfaceIntegrityValidator.NO_OP;
     }
   }

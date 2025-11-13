@@ -1,6 +1,6 @@
 package org.folio.entitlement.it;
 
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
@@ -64,7 +64,7 @@ class UpgradeValidationInterfaceIntegrityIT {
 
       var request = entitlementRequest(TENANT_ID, FOLIO_APP2_V2_ID, FOLIO_APP3_ID, FOLIO_APP7_ID);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, UPGRADE.getValue(), VALIDATOR)
         .andExpect(status().isNoContent());
     }
@@ -88,7 +88,7 @@ class UpgradeValidationInterfaceIntegrityIT {
 
       var request = entitlementRequest(TENANT_ID, FOLIO_APP2_V2_ID, FOLIO_APP3_ID, FOLIO_APP7_ID);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, UPGRADE.getValue(), VALIDATOR)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.errors[0].message", containsString("Missing interfaces found for the applications")))
@@ -119,7 +119,7 @@ class UpgradeValidationInterfaceIntegrityIT {
     void validate_positive_incorrectDependencies() throws Exception {
       var request = entitlementRequest(TENANT_ID, FOLIO_APP2_V2_ID, FOLIO_APP3_ID, FOLIO_APP7_ID);
 
-      attemptPost("/entitlements/validate?entitlementType={type}&validator={validator}",
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, UPGRADE.getValue(), VALIDATOR)
         .andExpect(status().isNoContent());
     }

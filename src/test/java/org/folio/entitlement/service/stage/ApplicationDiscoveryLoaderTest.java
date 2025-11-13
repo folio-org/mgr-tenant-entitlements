@@ -2,6 +2,7 @@ package org.folio.entitlement.service.stage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_MODULE_DISCOVERY_DATA;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
@@ -85,7 +86,9 @@ class ApplicationDiscoveryLoaderTest {
   }
 
   private static ApplicationStageContext stageContext(ApplicationDescriptor applicationDescriptor) {
-    var entitlementRequest = EntitlementRequest.builder().tenantId(TENANT_ID).okapiToken(OKAPI_TOKEN).build();
+    var entitlementRequest = EntitlementRequest.builder()
+      .type(ENTITLE).tenantId(TENANT_ID).okapiToken(OKAPI_TOKEN)
+      .build();
     var contextParameters = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var flowParams = flowParameters(entitlementRequest, applicationDescriptor);
     return appStageContext(FLOW_STAGE_ID, flowParams, contextParameters);

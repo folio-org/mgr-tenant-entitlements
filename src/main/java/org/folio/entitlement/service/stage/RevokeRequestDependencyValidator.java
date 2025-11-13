@@ -22,8 +22,7 @@ public class RevokeRequestDependencyValidator extends DatabaseLoggingStage<Appli
   @Transactional
   public void execute(ApplicationStageContext context) {
     var applicationId = context.getApplicationId();
-    var entitlementRequest = context.getEntitlementRequest();
-    var tenantId = entitlementRequest.getTenantId();
+    var tenantId = context.getEntitlementRequest().getTenantId();
 
     var installedDependentApplications = findInstalledDependentApplications(applicationId, tenantId);
     if (isNotEmpty(installedDependentApplications)) {

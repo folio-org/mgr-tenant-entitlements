@@ -37,9 +37,8 @@ public class EntitleRequestDependencyValidator extends DatabaseLoggingStage<Appl
   @Override
   @Transactional
   public void execute(ApplicationStageContext context) {
-    var entitlementRequest = context.getEntitlementRequest();
     var applicationDescriptor = context.getApplicationDescriptor();
-    var tenantId = entitlementRequest.getTenantId();
+    var tenantId = context.getEntitlementRequest().getTenantId();
 
     var notInstalledApplications = findNotEntitledAppDependencies(applicationDescriptor.getDependencies(), tenantId);
     if (isNotEmpty(notInstalledApplications)) {

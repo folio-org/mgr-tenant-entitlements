@@ -10,7 +10,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.flow.model.FlowExecutionStrategy;
 
 @Data
@@ -26,7 +26,7 @@ public class EntitlementRequest {
   /**
    * Entitlement request type.
    */
-  private final EntitlementType type;
+  private final EntitlementRequestType type;
 
   /**
    * List of applications to install.
