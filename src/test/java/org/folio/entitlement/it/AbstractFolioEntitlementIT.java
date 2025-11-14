@@ -750,6 +750,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/folio-module1/install.json",
     "/wiremock/folio-module2/install.json",
     "/wiremock/folio-module3/install.json",
+    "/wiremock/mgr-applications/folio-app-mixed/get-by-ids-68-query-full.json",
     // for upgrading app6
     "/wiremock/mgr-applications/folio-app6/v2-get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app6/v2-get-discovery.json",
