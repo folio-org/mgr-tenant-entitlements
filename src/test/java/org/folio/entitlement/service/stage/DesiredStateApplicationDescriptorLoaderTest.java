@@ -59,9 +59,11 @@ class DesiredStateApplicationDescriptorLoaderTest {
   void execute_positive_entitleBucketOnly() {
     var descriptor = appDescriptor(APPLICATION_ID);
     var plan = createPlan(entitle(Set.of(APPLICATION_ID)), upgrade(emptySet()), revoke(emptySet()));
-    var context = createContext(plan);
+    var context = createContext(plan, List.of(APPLICATION_ID));
 
     when(applicationManagerService.getApplicationDescriptors(Set.of(APPLICATION_ID), OKAPI_TOKEN))
+      .thenReturn(List.of(descriptor));
+    when(applicationManagerService.getApplicationDescriptors(List.of(APPLICATION_ID), OKAPI_TOKEN))
       .thenReturn(List.of(descriptor));
 
     loader.execute(context);
@@ -77,9 +79,11 @@ class DesiredStateApplicationDescriptorLoaderTest {
   void execute_positive_revokeBucketOnly() {
     var descriptor = appDescriptor(APPLICATION_ID);
     var plan = createPlan(entitle(emptySet()), upgrade(emptySet()), revoke(Set.of(APPLICATION_ID)));
-    var context = createContext(plan);
+    var context = createContext(plan, List.of(APPLICATION_ID));
 
     when(applicationManagerService.getApplicationDescriptors(Set.of(APPLICATION_ID), OKAPI_TOKEN))
+      .thenReturn(List.of(descriptor));
+    when(applicationManagerService.getApplicationDescriptors(List.of(APPLICATION_ID), OKAPI_TOKEN))
       .thenReturn(List.of(descriptor));
 
     loader.execute(context);
@@ -88,7 +92,7 @@ class DesiredStateApplicationDescriptorLoaderTest {
     assertThat(descriptorsByType).containsOnly(entry(REVOKE, List.of(descriptor)));
 
     var requestDescriptors = context.getApplicationDescriptors();
-    assertThat(requestDescriptors).isEmpty();
+    assertThat(requestDescriptors).containsOnly(descriptor);
   }
 
   @Test
@@ -98,9 +102,11 @@ class DesiredStateApplicationDescriptorLoaderTest {
     var entitledDescriptor = appDescriptor(ENTITLED_APPLICATION_ID);
     var entitlement = entitlement(ENTITLED_APPLICATION_ID);
     var plan = createPlan(entitle(emptySet()), upgrade(Set.of(APPLICATION_V2_ID)), revoke(emptySet()));
-    var context = createContext(plan);
+    var context = createContext(plan, List.of(APPLICATION_V2_ID));
 
     when(applicationManagerService.getApplicationDescriptors(Set.of(APPLICATION_V2_ID), OKAPI_TOKEN))
+      .thenReturn(List.of(descriptor));
+    when(applicationManagerService.getApplicationDescriptors(List.of(APPLICATION_V2_ID), OKAPI_TOKEN))
       .thenReturn(List.of(descriptor));
     when(entitlementService.findByApplicationNames(TENANT_ID, List.of("test-app")))
       .thenReturn(List.of(entitlement));
@@ -133,7 +139,7 @@ class DesiredStateApplicationDescriptorLoaderTest {
 
     var plan = createPlan(entitle(Set.of(APPLICATION_ID)), upgrade(Set.of(APPLICATION_V2_ID)),
       revoke(Set.of("revoke-app-1.0.0")));
-    var context = createContext(plan);
+    var context = createContext(plan, List.of(APPLICATION_ID, APPLICATION_V2_ID, "revoke-app-1.0.0"));
 
     when(applicationManagerService.getApplicationDescriptors(Set.of(APPLICATION_ID), OKAPI_TOKEN))
       .thenReturn(List.of(entitleDescriptor));
@@ -141,6 +147,9 @@ class DesiredStateApplicationDescriptorLoaderTest {
       .thenReturn(List.of(upgradeDescriptor));
     when(applicationManagerService.getApplicationDescriptors(Set.of("revoke-app-1.0.0"), OKAPI_TOKEN))
       .thenReturn(List.of(revokeDescriptor));
+    when(applicationManagerService.getApplicationDescriptors(
+      List.of(APPLICATION_ID, APPLICATION_V2_ID, "revoke-app-1.0.0"), OKAPI_TOKEN))
+      .thenReturn(List.of(entitleDescriptor, upgradeDescriptor, revokeDescriptor));
     when(entitlementService.findByApplicationNames(TENANT_ID, List.of("test-app")))
       .thenReturn(List.of(entitlement));
     when(applicationManagerService.getApplicationDescriptors(List.of(ENTITLED_APPLICATION_ID), OKAPI_TOKEN))
@@ -161,13 +170,16 @@ class DesiredStateApplicationDescriptorLoaderTest {
     assertThat(entitledAppDescriptors).containsExactly(entitledDescriptor);
 
     var requestDescriptors = context.getApplicationDescriptors();
-    assertThat(requestDescriptors).containsOnly(entitleDescriptor, upgradeDescriptor);
+    assertThat(requestDescriptors).containsOnly(entitleDescriptor, upgradeDescriptor, revokeDescriptor);
   }
 
   @Test
   void execute_positive_allBucketsEmpty() {
     var plan = createPlan(entitle(emptySet()), upgrade(emptySet()), revoke(emptySet()));
-    var context = createContext(plan);
+    var context = createContext(plan, Collections.emptyList());
+
+    when(applicationManagerService.getApplicationDescriptors(Collections.emptyList(), OKAPI_TOKEN))
+      .thenReturn(Collections.emptyList());
 
     loader.execute(context);
 
@@ -188,9 +200,11 @@ class DesiredStateApplicationDescriptorLoaderTest {
     var entitledDescriptor2 = appDescriptor(ENTITLED_APPLICATION_ID);
 
     var plan = createPlan(entitle(emptySet()), upgrade(Set.of(APPLICATION_V2_ID)), revoke(emptySet()));
-    var context = createContext(plan);
+    var context = createContext(plan, List.of(APPLICATION_V2_ID));
 
     when(applicationManagerService.getApplicationDescriptors(Set.of(APPLICATION_V2_ID), OKAPI_TOKEN))
+      .thenReturn(List.of(descriptor));
+    when(applicationManagerService.getApplicationDescriptors(List.of(APPLICATION_V2_ID), OKAPI_TOKEN))
       .thenReturn(List.of(descriptor));
     when(entitlementService.findByApplicationNames(TENANT_ID, List.of("test-app")))
       .thenReturn(List.of(entitlement1, entitlement2));
@@ -210,11 +224,12 @@ class DesiredStateApplicationDescriptorLoaderTest {
     assertThat(requestDescriptors).containsOnly(descriptor);
   }
 
-  private static CommonStageContext createContext(ApplicationStateTransitionPlan plan) {
+  private static CommonStageContext createContext(ApplicationStateTransitionPlan plan, List<String> applications) {
     var request = EntitlementRequest.builder()
       .type(EntitlementRequestType.STATE)
       .tenantId(TENANT_ID)
       .okapiToken(OKAPI_TOKEN)
+      .applications(applications)
       .build();
 
     var flowParams = Map.of(PARAM_REQUEST, request);

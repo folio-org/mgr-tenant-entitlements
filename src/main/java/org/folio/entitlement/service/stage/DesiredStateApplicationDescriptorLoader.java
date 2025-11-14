@@ -1,12 +1,9 @@
 package org.folio.entitlement.service.stage;
 
-import static java.util.Collections.emptyList;
-import static org.apache.commons.collections4.ListUtils.union;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.SemverUtils.getNames;
-import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Set;
@@ -37,17 +34,15 @@ public class DesiredStateApplicationDescriptorLoader extends DatabaseLoggingStag
     var descriptorsByType = getDescriptorsByType(transitionPlan, authToken);
     context.withApplicationStateTransitionDescriptors(descriptorsByType);
 
-    var requestedDescriptors = union(
-      descriptorsByType.getOrDefault(ENTITLE, emptyList()),
-      descriptorsByType.getOrDefault(UPGRADE, emptyList()));
-    context.withApplicationDescriptors(requestedDescriptors);
+    var requestDescriptors = getApplicationDescriptors(request.getApplications(), authToken);
+    context.withApplicationDescriptors(requestDescriptors);
 
     var upgradeBucket = transitionPlan.upgradeBucket();
     if (!upgradeBucket.isEmpty()) {
       var entitledAppIds = getEntitledApplicationIds(upgradeBucket.getApplicationIds(), request.getTenantId());
       context.withEntitledApplicationIds(entitledAppIds);
 
-      var entitledAppDescriptors = applicationManagerService.getApplicationDescriptors(entitledAppIds, authToken);
+      var entitledAppDescriptors = getApplicationDescriptors(entitledAppIds, authToken);
       context.withEntitledApplicationDescriptors(entitledAppDescriptors);
     }
   }
@@ -62,10 +57,14 @@ public class DesiredStateApplicationDescriptorLoader extends DatabaseLoggingStag
     var descriptorsByType = new EnumMap<EntitlementType, List<ApplicationDescriptor>>(EntitlementType.class);
 
     transitionPlan.nonEmptyBuckets().forEach(tb -> {
-      var descriptors = applicationManagerService.getApplicationDescriptors(tb.getApplicationIds(), authToken);
+      var descriptors = getApplicationDescriptors(tb.getApplicationIds(), authToken);
       descriptorsByType.put(tb.getEntitlementType(), descriptors);
     });
 
     return descriptorsByType;
+  }
+
+  private List<ApplicationDescriptor> getApplicationDescriptors(Collection<String> applicationIds, String authToken) {
+    return applicationManagerService.getApplicationDescriptors(applicationIds, authToken);
   }
 }
