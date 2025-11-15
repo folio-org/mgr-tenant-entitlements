@@ -1,0 +1,433 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"folio-app6-6.1.0\" or \"folio-app8-8.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "folio-app6-6.1.0",
+          "name": "folio-app6",
+          "version": "6.1.0",
+          "modules": [
+            {
+              "id": "folio-module1-1.0.0",
+              "name": "folio-module1",
+              "version": "1.0.0"
+            },
+            {
+              "id": "folio-module2-2.1.0",
+              "name": "folio-module2",
+              "version": "2.1.0"
+            },
+            {
+              "id": "folio-module4-4.0.0",
+              "name": "folio-module4",
+              "version": "4.0.0"
+            }
+          ],
+          "uiModules": [
+            {
+              "id": "ui-module1-1.0.0",
+              "name": "ui-module1",
+              "version": "1.0.0"
+            },
+            {
+              "id": "ui-module2-2.1.0",
+              "name": "ui-module2",
+              "version": "2.0.0"
+            },
+            {
+              "id": "ui-module4-4.0.0",
+              "name": "ui-module4",
+              "version": "4.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module1-1.0.0",
+              "name": "Test Folio Module #1",
+              "provides": [
+                {
+                  "id": "folio-module1-api",
+                  "version": "1.0",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module1/entities",
+                      "permissionsRequired": [ "folio-module1.entity.item.post" ]
+                    },
+                    {
+                      "methods": [ "GET" ],
+                      "pathPattern": "/folio-module1/entities",
+                      "permissionsRequired": [ "folio-module1.entity.collection.get" ]
+                    },
+                    {
+                      "methods": [ "GET" ],
+                      "pathPattern": "/folio-module1/entities/{id}",
+                      "permissionsRequired": [ "folio-module1.entity.item.get" ]
+                    }
+                  ]
+                },
+                {
+                  "id": "_tenant",
+                  "version": "2.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/_/tenant"
+                    },
+                    {
+                      "methods": [ "GET", "DELETE" ],
+                      "pathPattern": "/_/tenant/{id}"
+                    }
+                  ]
+                },
+                {
+                  "id": "_timer",
+                  "version": "1.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module1/v1/scheduled-timer"
+                    }
+                  ]
+                }
+              ],
+              "permissionSets": [
+                {
+                  "permissionName": "folio-module1.entity.item.post",
+                  "displayName": "Folio Module #1 - Save an entity",
+                  "description": "Save a folio-module1 entity"
+                },
+                {
+                  "permissionName": "folio-module1.entity.collection.get",
+                  "displayName": "Folio Module #1 - Get list of entities by query",
+                  "description": "Get a list of folio-module1 entities by query"
+                },
+                {
+                  "permissionName": "folio-module1.entity.item.get",
+                  "displayName": "Folio Module #1 - Get entity by id",
+                  "description": "Get a folio-module1 entity by id"
+                }
+              ]
+            },
+            {
+              "id": "folio-module2-2.1.0",
+              "name": "Test Folio Module #2",
+              "requires": [
+                {
+                  "id": "folio-module1-api",
+                  "version": "1.0"
+                }
+              ],
+              "provides": [
+                {
+                  "id": "folio-module2-api",
+                  "version": "2.0",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module2/v2/entities",
+                      "permissionsRequired": [ "folio-module2.entity.item.post" ]
+                    },
+                    {
+                      "methods": [ "PUT" ],
+                      "pathPattern": "/folio-module2/entities",
+                      "permissionsRequired": [ "folio-module2.entity.collection.put" ]
+                    },
+                    {
+                      "methods": [ "GET" ],
+                      "pathPattern": "/folio-module2/entities",
+                      "permissionsRequired": [ "folio-module2.entity.collection.get" ]
+                    },
+                    {
+                      "methods": [ "GET" ],
+                      "pathPattern": "/folio-module2/entities/{id}",
+                      "permissionsRequired": [ "folio-module2.entity.item.get" ]
+                    }
+                  ]
+                },
+                {
+                  "id": "_tenant",
+                  "version": "2.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/_/tenant"
+                    },
+                    {
+                      "methods": [ "GET", "DELETE" ],
+                      "pathPattern": "/_/tenant/{id}"
+                    }
+                  ]
+                },
+                {
+                  "id": "_timer",
+                  "version": "1.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module2/v1/scheduled-timer2"
+                    },
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module2/v2/scheduled-timer1"
+                    }
+                  ]
+                }
+              ],
+              "permissionSets": [
+                {
+                  "permissionName": "folio-module2.v2.entity.item.post",
+                  "displayName": "Test Okapi Module #2 - Save an entity (Version #2)",
+                  "description": "Save a folio-module2 entity"
+                },
+                {
+                  "permissionName": "folio-module2.entity.item.put",
+                  "displayName": "Test Okapi Module #2 - Update an entity by id",
+                  "description": "Update an folio-module2 entity"
+                },
+                {
+                  "permissionName": "folio-module2.entity.collection.get",
+                  "displayName": "Test Okapi Module #2 - Get list of entity by query",
+                  "description": "Get list of folio-module2 entities by query"
+                },
+                {
+                  "permissionName": "folio-module2.entity.item.get",
+                  "displayName": "Test Okapi Module #2 - Get an entity by id",
+                  "description": "Get a folio-module2 entity by id"
+                }
+              ],
+              "metadata": {
+                "user": {
+                  "type": "module",
+                  "permissions": [
+                    "folio-module1.entity.item.post",
+                    "folio-module1.entity.collection.get",
+                    "folio-module1.entity.item.get"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "folio-module4-4.0.0",
+              "name": "Test Folio Module #4",
+              "requires": [
+                {
+                  "id": "folio-module1-api",
+                  "version": "1.0"
+                }
+              ],
+              "provides": [
+                {
+                  "id": "folio-module4-api",
+                  "version": "4.0",
+                  "handlers": [
+                    {
+                      "methods": [ "GET" ],
+                      "pathPattern": "/folio-module4/entities/{id}",
+                      "permissionsRequired": [ "folio-module4.entity.item.get" ]
+                    }
+                  ]
+                },
+                {
+                  "id": "_tenant",
+                  "version": "2.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/_/tenant"
+                    },
+                    {
+                      "methods": [ "GET", "DELETE" ],
+                      "pathPattern": "/_/tenant/{id}"
+                    }
+                  ]
+                },
+                {
+                  "id": "_timer",
+                  "version": "1.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module4/scheduled-timer"
+                    }
+                  ]
+                }
+              ],
+              "permissionSets": [
+                {
+                  "permissionName": "folio-module4.entity.item.get",
+                  "displayName": "Test Okapi Module #4 - Get an entity by id",
+                  "description": "Get a folio-module4 entity by id"
+                }
+              ],
+              "metadata": {
+                "user": {
+                  "type": "module",
+                  "permissions": [ "folio-module1.entity.item.post" ]
+                }
+              }
+            }
+          ],
+          "uiModuleDescriptors": [
+            {
+              "id": "ui-module1-1.0.0",
+              "permissionSets": [
+                {
+                  "permissionName": "ui-module1.settings.enabled",
+                  "displayName": "Settings (Authorization policies): display list of settings pages",
+                  "subPermissions": [ "settings.enabled" ]
+                },
+                {
+                  "permissionName": "ui-module1.items.view",
+                  "displayName": "UI-Module1: display list of entities",
+                  "subPermissions": [
+                    "folio-module1.entity.item.get",
+                    "folio-module1.entity.collection.get"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "ui-module2-2.1.0",
+              "permissionSets": [
+                {
+                  "permissionName": "ui-module2.settings.enabled",
+                  "displayName": "UI-Module#2: display list of settings pages",
+                  "subPermissions": [ "settings.enabled" ]
+                },
+                {
+                  "permissionName": "ui-module2.entities.manage",
+                  "displayName": "UI-Module#2: manage a collection of entities",
+                  "subPermissions": [
+                    "folio-module2.v2.entity.item.post",
+                    "folio-module2.entity.item.put",
+                    "folio-module2.entity.item.get",
+                    "folio-module2.entity.collection.get"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "ui-module4-4.0.0",
+              "permissionSets": [
+                {
+                  "permissionName": "ui-module3.settings.enabled",
+                  "displayName": "UI-Module#3: display list of settings pages",
+                  "subPermissions": [ "settings.enabled" ]
+                },
+                {
+                  "permissionName": "ui-module3.entities.view",
+                  "displayName": "UI-Module#3: display list of entities",
+                  "subPermissions": [
+                    "folio-module1.entity.item.get",
+                    "folio-module1.entity.collection.get"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "folio-app8-8.0.0",
+          "name": "folio-app8",
+          "version": "8.0.0",
+          "modules": [
+            {
+              "id": "folio-module8-8.0.0",
+              "name": "folio-module8",
+              "version": "8.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module8-8.0.0",
+              "name": "Test Folio Module #8",
+              "requires": [
+                {
+                  "id": "folio-module2-api",
+                  "version": "2.0"
+                }
+              ],
+              "provides": [
+                {
+                  "id": "folio-module8-api",
+                  "version": "8.0.0",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/folio-module8/events",
+                      "permissionsRequired": [ "folio-module8.events.item.post" ]
+                    },
+                    {
+                      "methods": [ "GET" ],
+                      "pathPattern": "/folio-module8/events/{id}",
+                      "permissionsRequired": [ "folio-module8.events.item.get" ]
+                    }
+                  ]
+                },
+                {
+                  "id": "_tenant",
+                  "version": "2.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": [ "POST" ],
+                      "pathPattern": "/_/tenant"
+                    },
+                    {
+                      "methods": [ "GET", "DELETE" ],
+                      "pathPattern": "/_/tenant/{id}"
+                    }
+                  ]
+                }
+              ],
+              "permissionSets": [
+                {
+                  "permissionName": "folio-module8.events.item.post",
+                  "displayName": "Folio Module #8 - Save an event",
+                  "description": "Save an folio-module8 event"
+                },
+                {
+                  "permissionName": "folio-module8.events.item.get",
+                  "displayName": "Folio Module #8 - Get event by id",
+                  "description": "Get folio-module8 event by id"
+                }
+              ]
+            }
+          ],
+          "dependencies": [
+            {
+              "name": "folio-app6",
+              "version": "6.x"
+            }
+          ]
+        }
+      ],
+      "totalRecords": 2
+    }
+  }
+}
