@@ -25,7 +25,7 @@ public class TenantManagerService {
    * @return found {@link Tenant} object
    */
   public Tenant findTenant(UUID tenantId, String authToken) {
-    log.info("Retrieving tenant [tenantId: {}]", tenantId);
+    log.debug("Retrieving tenant [tenantId: {}]", tenantId);
     try {
       return tenantManagerClient.getTenantById(tenantId, authToken);
     } catch (NotFound notFound) {
@@ -43,7 +43,7 @@ public class TenantManagerService {
    * @return found {@link Tenant} object
    */
   public Tenant findTenantByName(String tenantName, String authToken) {
-    log.info("Querying tenant [tenantName: {}]", tenantName);
+    log.debug("Querying tenant [tenantName: {}]", tenantName);
     try {
       var result = tenantManagerClient.queryTenantsByName(tenantName, authToken);
       if (result == null || result.isEmpty()) {
