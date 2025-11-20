@@ -22,7 +22,7 @@ public class EntitlementValidationService {
   }
 
   public void validate(EntitlementRequest request) {
-    log.info("Validating entitlement request: {}", request);
+    log.debug("Validating entitlement request: {}", request);
 
     entitlementRequestValidators.stream()
       .filter(validator -> validator.shouldValidate(request))
@@ -37,7 +37,7 @@ public class EntitlementValidationService {
       throw new RequestValidationException("Validator name is empty", "validator", null);
     }
 
-    log.info("Validating entitlement request by specific validator: validator = {}, request = {}",
+    log.debug("Validating entitlement request by specific validator: validator = {}, request = {}",
       validatorName, request);
 
     for (var validator : getValidatorsByName(validatorName)) {
