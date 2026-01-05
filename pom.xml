@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>4.0.1</version>
+    <version>3.5.7</version>
     <relativePath />
   </parent>
 
@@ -48,8 +48,8 @@
     </mgr-tenant-entitlements.yaml-file>
 
     <!-- Test dependencies versions -->
-    <mockito.version>5.21.0</mockito.version>
-    <testcontainer.version>2.0.3</testcontainer.version>
+    <mockito.version>5.20.0</mockito.version>
+    <testcontainer.version>2.0.1</testcontainer.version>
     <awaitility.version>4.3.0</awaitility.version>
     <wiremock.version>2.35.2</wiremock.version>
 
