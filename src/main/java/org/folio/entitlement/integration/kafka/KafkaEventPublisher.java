@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
@@ -13,6 +14,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
+@Log4j2
 @RequiredArgsConstructor
 public class KafkaEventPublisher {
 
@@ -29,7 +31,11 @@ public class KafkaEventPublisher {
   public void send(String topic, String key, Object body) {
     var sendDurationTimeoutInMillis = tenantEntitlementKafkaProperties.getSendDurationTimeout().toMillis();
     try {
-      kafkaTemplate.send(topic, key, body).get(sendDurationTimeoutInMillis, MILLISECONDS);
+      kafkaTemplate.send(topic, key, body).thenAccept(sendResult ->
+        log.info("Message sent to Kafka topic: topic = {}, key = {}, partition = {}, offset = {}. Thread = {}",
+          topic, key, sendResult.getRecordMetadata().partition(), sendResult.getRecordMetadata().offset(),
+          Thread.currentThread().getName())
+      ).get(sendDurationTimeoutInMillis, MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IntegrationException("Failed to send event", getErrorParameters(topic, key), e);
