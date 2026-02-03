@@ -23,6 +23,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantCollectionTopic;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
+import static org.folio.entitlement.support.TestUtils.buildMessageKey;
 import static org.folio.entitlement.support.TestUtils.readCapabilityEvent;
 import static org.folio.entitlement.support.TestUtils.readModuleDescriptor;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
@@ -90,7 +91,8 @@ class CapabilitiesModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+    var moduleId = descriptor != null ? descriptor.getId() : "empty_module";
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME + "_" + moduleId);
   }
 
   @DisplayName("execute_positive_parameterized_useTenantCollectionTopic")
@@ -110,7 +112,7 @@ class CapabilitiesModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(buildMessageKey(TENANT_NAME, descriptor));
   }
 
   @Test
@@ -130,9 +132,10 @@ class CapabilitiesModuleEventPublisherTest {
 
   @Test
   void execute_positive_upgradeRequestWithNotChangedModule() {
+    var descriptor = readModuleDescriptor("json/events/capabilities/be-module-desc.json");
     var flowParameters = Map.of(
       PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
-      PARAM_MODULE_DESCRIPTOR, readModuleDescriptor("json/events/capabilities/be-module-desc.json"),
+      PARAM_MODULE_DESCRIPTOR, descriptor,
       PARAM_INSTALLED_MODULE_DESCRIPTOR, readModuleDescriptor("json/events/capabilities/be-module-desc.json"),
       PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
@@ -148,7 +151,7 @@ class CapabilitiesModuleEventPublisherTest {
 
     var expectedEvents = List.of(readCapabilityEvent("json/events/capabilities/unchanged-module-event.json"));
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(buildMessageKey(TENANT_NAME, descriptor));
   }
 
   @Test

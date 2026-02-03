@@ -25,6 +25,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.systemUserTenantCollectionTopic;
 import static org.folio.entitlement.support.TestConstants.systemUserTenantTopic;
+import static org.folio.entitlement.support.TestUtils.buildMessageKey;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
@@ -93,8 +94,8 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     moduleEventPublisher.execute(stageContext);
 
-    var expectedMessageKey = TENANT_ID.toString();
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), expectedMessageKey, resourceEvent(systemUserEvent));
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), buildMessageKey(TENANT_NAME, MODULE_ID),
+      resourceEvent(systemUserEvent));
   }
 
   @Test
@@ -113,9 +114,8 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     moduleEventPublisher.execute(stageContext);
 
-    var expectedMessageKey = TENANT_ID.toString();
-    verify(kafkaEventPublisher).send(systemUserTenantCollectionTopic(),
-      expectedMessageKey, resourceEvent(systemUserEvent));
+    verify(kafkaEventPublisher).send(systemUserTenantCollectionTopic(), buildMessageKey(TENANT_NAME, MODULE_ID),
+      resourceEvent(systemUserEvent));
   }
 
   @Test
@@ -162,7 +162,8 @@ class SystemUserModuleEventPublisherTest {
       .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
       .build();
 
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_ID.toString(), expectedResourceEvent);
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), buildMessageKey(TENANT_NAME, MODULE_ID_V2),
+      expectedResourceEvent);
   }
 
   @Test
@@ -204,7 +205,8 @@ class SystemUserModuleEventPublisherTest {
       .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
       .build();
 
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_ID.toString(), expectedResourceEvent);
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), buildMessageKey(TENANT_NAME, (String) null),
+      expectedResourceEvent);
   }
 
   @Test

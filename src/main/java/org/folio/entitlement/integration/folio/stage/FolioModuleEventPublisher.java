@@ -32,10 +32,10 @@ public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
       return;
     }
 
-    publishEvent(getEntitlementEvent(moduleDescriptor.getId(), context, context.getEntitlementType()));
     if (installedModuleDescriptor != null) {
       publishEvent(getEntitlementEvent(installedModuleDescriptor.getId(), context, REVOKE));
     }
+    publishEvent(getEntitlementEvent(moduleDescriptor.getId(), context, context.getEntitlementType()));
   }
 
   @Override

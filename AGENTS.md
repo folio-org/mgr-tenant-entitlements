@@ -1,0 +1,245 @@
+# mgr-tenant-entitlements - Copilot Instructions
+
+This is a FOLIO module that manages tenant entitlements, handling application installation, upgrades, and dependency management using a flow-based execution engine.
+
+## Build, Test, and Lint Commands
+
+### Building
+```bash
+# Full build with tests
+mvn clean install
+
+# Skip tests
+mvn clean install -DskipTests
+
+# Build with coverage
+mvn clean install -Pcoverage
+```
+
+### Testing
+Tests are separated into unit and integration tests using JUnit 5 tags:
+
+```bash
+# Run unit tests only (tagged with @UnitTest)
+mvn test
+
+# Run integration tests only (tagged with @integration)
+mvn verify
+
+# Run both
+mvn clean install
+
+# Run a single test class
+mvn test -Dtest=EntitlementServiceTest
+
+# Run a single test method
+mvn test -Dtest=EntitlementServiceTest#shouldReturnEntitlements
+
+# Run with coverage report
+mvn clean install -Pcoverage
+# Coverage report: target/site/jacoco-aggregate/index.html
+```
+
+**Test Requirements:**
+- Integration tests (classes ending in `IT.java`) must be tagged with `@Tag("integration")`
+- Unit tests must be tagged with `@UnitTest`
+- Integration tests use Testcontainers for PostgreSQL and Kafka
+
+### Linting
+```bash
+# Run checkstyle (runs automatically during build)
+mvn checkstyle:check
+
+# Generate checkstyle report
+mvn checkstyle:checkstyle
+```
+
+**Checkstyle Rules:**
+- Configuration: `checkstyle/checkstyle-checker.properties`
+- Suppressions: `checkstyle/checkstyle-suppressions.xml`
+- Base config: `folio-checkstyle/checkstyle.xml` (from folio-java-checkstyle dependency)
+- Max method length: 23 lines
+
+### Docker
+```bash
+# Build Docker image
+docker build -t mgr-tenant-entitlements .
+
+# Run Docker container
+docker run \
+  --name mgr-tenant-entitlements \
+  -e DB_HOST=postgres \
+  -e okapi.url=http://okapi:9130 \
+  -e tenant.url=http://mgr-tenants:8081 \
+  -e am.url=http://mgr-applications:8081 \
+  -p 8081:8081 \
+  -d mgr-tenant-entitlements
+```
+
+## Architecture
+
+### High-Level Flow Engine Architecture
+
+The application is built around the **Flow Engine** (`folio-flow-engine` library), which orchestrates multi-stage entitlement operations:
+
+1. **Flow Types** (in `service/flow/`):
+   - **Entitle Flow**: Install new applications with dependencies
+   - **Upgrade Flow**: Upgrade applications to new versions
+   - **Revoke Flow**: Uninstall applications
+   - **Desired State Flow**: Reconcile actual state with desired state
+
+2. **Stage-Based Execution** (in `service/stage/`):
+   - Flows are composed of sequential stages (e.g., `ApplicationDescriptorLoader`, `TenantLoader`, `DatabaseLoggingStage`)
+   - Each stage is a discrete unit of work that can succeed, fail, or be retried
+   - Stages can be parallelized (e.g., module installation via `FLOW_ENGINE_MODULE_INSTALLER_THREADS`)
+   - Finalizers run at the end of flows regardless of success/failure
+
+3. **Flow Lifecycle**:
+   ```
+   FlowInitializer → Stage1 → Stage2 → ... → StageN → FlowFinalizer
+                                                    ↓ (on failure)
+                                              FailedFlowFinalizer
+   ```
+
+4. **Application Dependency Management**:
+   - Builds dependency graphs (`ApplicationInstallationGraph`, `ModuleInstallationGraph`)
+   - Validates interface integrity across applications
+   - Handles optional vs. required dependencies
+   - Manages cross-application module dependencies
+
+5. **Integration Points** (in `integration/`):
+   - **Application Manager** (`am/`): Retrieves application descriptors
+   - **Tenant Manager** (`tm/`): Manages tenant information
+   - **Keycloak** (`keycloak/`): Authentication and authorization
+   - **Kong** (via `folio-integration-kong`): API gateway registration
+   - **Kafka** (`kafka/`): Event publishing for entitlement changes
+   - **FOLIO Modules** (`folio/`): Module installation endpoints
+
+### Key Domain Concepts
+
+- **Entitlement**: A tenant's right to use a specific application and its modules
+- **Application**: A collection of modules and dependencies (from Application Manager)
+- **Module**: The atomic unit of deployment (FOLIO modules)
+- **Flow Execution**: A tracked execution of a flow with stages, stored in database
+- **Stage Context**: Thread-local context for sharing data between stages
+
+## Key Conventions
+
+### Code Organization
+
+- **Package Structure**:
+  - `controller/`: REST API controllers (implement OpenAPI-generated interfaces)
+  - `service/`: Business logic
+    - `service/flow/`: Flow providers and factories
+    - `service/stage/`: Individual flow stages
+    - `service/validator/`: Interface integrity and request validators
+  - `integration/`: External service clients (Feign clients)
+  - `repository/`: JPA repositories
+  - `domain/`: Domain models
+    - `domain/entity/`: JPA entities
+    - `domain/dto/`: OpenAPI-generated DTOs
+    - `domain/model/`: Internal domain models
+  - `mapper/`: MapStruct mappers
+
+### Code Generation
+
+**OpenAPI Generator:**
+- Spec location: `src/main/resources/swagger.api/mgr-tenant-entitlements.yaml`
+- Generated code: `target/generated-sources/`
+- Generated packages:
+  - API interfaces: `org.folio.entitlement.rest.resource`
+  - DTOs: `org.folio.entitlement.domain.dto`
+- **Convention**: Controllers implement generated API interfaces but add `@RestController` and `@RequestMapping` annotations
+
+**MapStruct:**
+- All mappers are interfaces annotated with `@Mapper(componentModel = "spring", injectionStrategy = CONSTRUCTOR)`
+- Located in `mapper/` package
+- Processors run during compilation via Maven compiler plugin
+
+### Lombok Configuration
+
+From `lombok.config`:
+- `@Generated` annotation added automatically
+- Constructor properties enabled
+- Copies `@Qualifier` and `@Lazy` annotations to generated code
+
+### Testing Conventions
+
+- **Test class naming**:
+  - Unit tests: `*Test.java` (tagged with `@UnitTest`)
+  - Integration tests: `*IT.java` (tagged with `@Tag("integration")`)
+- **Base test classes**:
+  - Integration tests extend `BaseIntegrationTest` (in `support/base/`)
+  - Common test utilities in `support/` package
+- **Mocking**: Use Mockito for unit tests
+- **Integration tests**: Use Testcontainers, WireMock for external services
+
+### Database
+
+- **Schema management**: Liquibase (changelogs in `src/main/resources/changelog/`)
+- **Versioning**: Changelogs organized by version (e.g., `changes/v1.0.0/`, `changes.v4.0.0/`)
+- **Main changelog**: `changelog/changelog-4.0.0.xml`
+
+### Dependency Injection
+
+- Constructor injection (enabled via Lombok `@RequiredArgsConstructor`)
+- Spring Boot 3.x with Java 21
+- Configuration properties use `@ConfigurationPropertiesScan`
+
+### Security
+
+- Keycloak integration via `@EnableMgrSecurity` (from `folio-security`)
+- JWT token validation
+- Token caching (Caffeine cache) for long-running operations
+- Automatic token refresh for operations that exceed token TTL
+
+### Environment Variables
+
+Critical environment variables (see README for full list):
+- `okapi.url`: Okapi gateway URL
+- `tenant.url`: Tenant Manager URL (required)
+- `am.url`: Application Manager URL (required)
+- `kong.url`: Kong Admin API URL (required if KONG_INTEGRATION_ENABLED=true)
+- `SECRET_STORE_TYPE`: Secure storage type (EPHEMERAL, AWS_SSM, VAULT, FSSP)
+- `FLOW_ENGINE_THREADS_NUM`: Flow engine thread pool size (default: 4)
+- `FLOW_ENGINE_MODULE_INSTALLER_THREADS`: Parallel module installation threads (default: 4)
+- `ENV`: Logical deployment name (kafka topic prefix)
+
+### API Design
+
+- OpenAPI 3.0 spec driven
+- Async operations supported via `async` query parameter
+- Pagination via standard query params (`offset`, `limit`)
+- CQL (Contextual Query Language) for complex queries via `folio-spring-cql`
+
+### Sonar Exclusions
+
+From `pom.xml`, these are excluded from code coverage:
+- `domain/**/*` - DTOs and entities (mostly Lombok-generated)
+- `cql/**/*` - CQL classes
+- `mapper/**/*` - MapStruct mappers
+- `integration/**/model/**/*` - Integration model classes
+- `rest/resource/**/*` - Generated API interfaces
+- `TenantEntitlementApplication.java` - Main class
+
+### Retry Logic
+
+- Configurable retries for external calls (Kong, Keycloak, FOLIO modules)
+- Retry configuration in `retry/` package
+- Stage-level retry support in flow engine
+
+### Common Pitfalls
+
+1. **Generated code**: Don't modify generated DTOs or API interfaces in `target/generated-sources/`
+2. **Test tags**: Always tag tests with `@UnitTest` or `@Tag("integration")`
+3. **Flow stages**: Stages must be idempotent where possible (may be retried)
+4. **Thread safety**: Be aware of ThreadLocal usage in `ThreadLocalModuleStageContext`
+5. **Kafka topics**: Topic names are prefixed with `ENV` variable
+6. **Long operations**: Token refresh is automatic but ensure operations are cancellable
+
+## Additional Resources
+
+- Main README: `README.md` (comprehensive environment variable documentation)
+- Release notes: `NEWS.md`
+- OpenAPI spec: `src/main/resources/swagger.api/mgr-tenant-entitlements.yaml`
+- Jenkinsfile: Uses `folio_jenkins_shared_libs` with Java 21 agent

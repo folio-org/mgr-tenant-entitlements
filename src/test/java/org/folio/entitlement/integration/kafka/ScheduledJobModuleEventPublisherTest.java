@@ -24,6 +24,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantCollectionTopic;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
+import static org.folio.entitlement.support.TestUtils.buildMessageKey;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
@@ -88,7 +89,8 @@ class ScheduledJobModuleEventPublisherTest {
       .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, expectedNewHandlers))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), buildMessageKey(TENANT_NAME, MODULE_ID),
+      fooTimerEvent);
   }
 
   @Test
@@ -108,7 +110,8 @@ class ScheduledJobModuleEventPublisherTest {
       .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, expectedNewHandlers))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantCollectionTopic(), TENANT_ID.toString(), fooTimerEvent);
+    verify(kafkaEventPublisher).send(scheduledJobsTenantCollectionTopic(), buildMessageKey(TENANT_NAME, MODULE_ID),
+      fooTimerEvent);
   }
 
   @Test
@@ -147,7 +150,8 @@ class ScheduledJobModuleEventPublisherTest {
       .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), buildMessageKey(TENANT_NAME, MODULE_ID_V2),
+      fooTimerEvent);
   }
 
   @Test
@@ -185,7 +189,8 @@ class ScheduledJobModuleEventPublisherTest {
       .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), buildMessageKey(TENANT_NAME, (String) null),
+      fooTimerEvent);
   }
 
   @Test
