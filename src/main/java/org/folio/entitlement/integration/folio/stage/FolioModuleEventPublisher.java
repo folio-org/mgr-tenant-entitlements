@@ -20,7 +20,7 @@ public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
-    var request = context.getEntitlementRequest();
+    final var request = context.getEntitlementRequest();
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
 
@@ -33,10 +33,10 @@ public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
       return;
     }
 
-    publishEvent(getEntitlementEvent(moduleDescriptor.getId(), context, request.getType()));
     if (installedModuleDescriptor != null) {
       publishEvent(getEntitlementEvent(installedModuleDescriptor.getId(), context, REVOKE));
     }
+    publishEvent(getEntitlementEvent(moduleDescriptor.getId(), context, request.getType()));
   }
 
   @Override

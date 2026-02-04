@@ -26,7 +26,7 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
     var installedModuleDesc = ctx.getInstalledModuleDescriptor();
     var applicationId = ctx.getApplicationId();
     var entitledApplicationId = ctx.getEntitledApplicationId();
-    var messageKey = ctx.getTenantId().toString();
+    var messageKey = ctx.getTenantName();
 
     if (!isModuleUpdated(moduleDesc, installedModuleDesc)) {
       if (isModuleVersionChanged(moduleDesc, installedModuleDesc)) {

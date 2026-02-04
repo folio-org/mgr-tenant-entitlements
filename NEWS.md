@@ -1,6 +1,6 @@
 ## Version `v3.1.10` (30.01.2026)
 * Upgrade Spring Boot from 3.4.4 to 3.4.11 fixing vuln (MGRENTITLE-164)
-
+* Half of timers are disabled after recent bugfest update for 1 tenant (MGRENTITLE-165)
 ---
 
 ## Version `v3.1.9` (12.12.2025)
@@ -49,6 +49,19 @@
 ## Version `v3.1.1` (14.05.2025)
 * Not able to entitle application due to dependency issue (MGRENTITLE-118)
 * mgr-tenant-entitlements does not check the cross-application module dependencies as expected (MGRENTITLE-113)
+* Introduce optional application dependencies (MGRAPPS-57)
+* Introduce configuration for FSSP (APPPOCTOOL-59)
+* Reinstall endpoint responding with 403 error (MGRENTITLE-134)
+* Validate that upgrade of application does not affect other installed applications (MGRENTITLE-68)
+* Concurrent Kafka topic creation at application flow level causes intermittent errors (MGRENTITLE-135)
+* Use SECURE_STORE_ENV, not ENV, for secure store key (MGRENTITLE-139)
+* Add support for custom Keycloak base URL for JWKS endpoint, new ENV variable `KC_JWKS_BASE_URL` (MODSIDECAR-148)
+* Implement automatic token refresh for long-running operations to prevent token expiration issues (MGRENTITLE-141)
+* Implement Kafka Tenant Collection Topics (MGRENTITLE-41)
+* Implement configurable thread pool for module installation to control entitlement concurrency independently from main flow engine (MGRENTITLE-141)
+* Implement Desired State Management for Application Entitlements in MTE (MGRENTITLE-140)
+* Review and clean up logs in mgr-tenant-entitlements (MGRENTITLE-152)
+* Half of timers are disabled after recent bugfest update for 1 tenant (MGRENTITLE-165)
 
 ---
 

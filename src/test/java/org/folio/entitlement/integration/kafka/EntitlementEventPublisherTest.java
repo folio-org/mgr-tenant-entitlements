@@ -39,6 +39,6 @@ class EntitlementEventPublisherTest {
   void publish_positive() {
     var event = new EntitlementEvent(ENTITLE.name(), MODULE_ID, TENANT, TENANT_ID);
     entitlementEventPublisher.publish(event);
-    verify(kafkaEventPublisher).send("tst.entitlement", MODULE_ID, event);
+    verify(kafkaEventPublisher).send("tst.entitlement", TENANT + "_" + MODULE_ID, event);
   }
 }
