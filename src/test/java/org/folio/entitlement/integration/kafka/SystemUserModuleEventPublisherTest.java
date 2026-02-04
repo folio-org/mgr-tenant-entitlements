@@ -25,7 +25,6 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.systemUserTenantCollectionTopic;
 import static org.folio.entitlement.support.TestConstants.systemUserTenantTopic;
-import static org.folio.entitlement.support.TestUtils.buildMessageKey;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.mockito.Mockito.verify;
@@ -94,7 +93,7 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     moduleEventPublisher.execute(stageContext);
 
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), buildMessageKey(TENANT_NAME, MODULE_ID),
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_NAME,
       resourceEvent(systemUserEvent));
   }
 
@@ -114,7 +113,7 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     moduleEventPublisher.execute(stageContext);
 
-    verify(kafkaEventPublisher).send(systemUserTenantCollectionTopic(), buildMessageKey(TENANT_NAME, MODULE_ID),
+    verify(kafkaEventPublisher).send(systemUserTenantCollectionTopic(), TENANT_NAME,
       resourceEvent(systemUserEvent));
   }
 
@@ -162,7 +161,7 @@ class SystemUserModuleEventPublisherTest {
       .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
       .build();
 
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), buildMessageKey(TENANT_NAME, MODULE_ID_V2),
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_NAME,
       expectedResourceEvent);
   }
 
@@ -205,7 +204,7 @@ class SystemUserModuleEventPublisherTest {
       .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
       .build();
 
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), buildMessageKey(TENANT_NAME, (String) null),
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_NAME,
       expectedResourceEvent);
   }
 

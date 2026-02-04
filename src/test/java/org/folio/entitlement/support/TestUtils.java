@@ -239,13 +239,4 @@ public class TestUtils {
     sslContext.init(null, new TrustManager[] {dummyTrustManager}, new SecureRandom());
     return sslContext;
   }
-
-  public static String buildMessageKey(String tenantName, String moduleId) {
-    return tenantName + "_" + (moduleId != null ? moduleId : "empty_module");
-  }
-
-  public static String buildMessageKey(String tenantName, ModuleDescriptor moduleDescriptor) {
-    var moduleId = moduleDescriptor != null ? moduleDescriptor.getId() : null;
-    return buildMessageKey(tenantName, moduleId);
-  }
 }

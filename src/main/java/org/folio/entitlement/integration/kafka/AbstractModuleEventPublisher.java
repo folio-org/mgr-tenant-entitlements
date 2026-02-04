@@ -1,6 +1,5 @@
 package org.folio.entitlement.integration.kafka;
 
-import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
 
@@ -29,7 +28,7 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
     var installedModuleDesc = ctx.getInstalledModuleDescriptor();
     var applicationId = ctx.getApplicationId();
     var entitledApplicationId = ctx.getEntitledApplicationId();
-    var messageKey = buildKey(tenant, moduleDesc);
+    var messageKey = ctx.getTenantName();
 
     if (!isModuleUpdated(moduleDesc, installedModuleDesc)) {
       if (isModuleVersionChanged(moduleDesc, installedModuleDesc)) {
@@ -119,10 +118,5 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
   private String getTopicName(String tenantName) {
     return tenantEntitlementKafkaProperties.isProducerTenantCollection()
       ? getTopicNameByTenantCollection() : getTopicNameByTenant(tenantName);
-  }
-
-  private String buildKey(String tenantId, ModuleDescriptor md) {
-    var moduleId = md != null ? md.getId() : null;
-    return tenantId + "_" + defaultIfBlank(moduleId, "empty_module");
   }
 }

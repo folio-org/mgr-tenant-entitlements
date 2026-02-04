@@ -23,7 +23,6 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantCollectionTopic;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
-import static org.folio.entitlement.support.TestUtils.buildMessageKey;
 import static org.folio.entitlement.support.TestUtils.readCapabilityEvent;
 import static org.folio.entitlement.support.TestUtils.readModuleDescriptor;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
@@ -91,8 +90,7 @@ class CapabilitiesModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    var moduleId = descriptor != null ? descriptor.getId() : "empty_module";
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME + "_" + moduleId);
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME);
   }
 
   @DisplayName("execute_positive_parameterized_useTenantCollectionTopic")
@@ -112,7 +110,7 @@ class CapabilitiesModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(buildMessageKey(TENANT_NAME, descriptor));
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME);
   }
 
   @Test
@@ -151,7 +149,7 @@ class CapabilitiesModuleEventPublisherTest {
 
     var expectedEvents = List.of(readCapabilityEvent("json/events/capabilities/unchanged-module-event.json"));
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(buildMessageKey(TENANT_NAME, descriptor));
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME);
   }
 
   @Test

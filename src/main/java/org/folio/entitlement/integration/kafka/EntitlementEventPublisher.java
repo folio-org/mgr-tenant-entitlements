@@ -19,6 +19,6 @@ public class EntitlementEventPublisher {
    */
   public void publish(EntitlementEvent event) {
     var entitlementTopic = getEnvTopicName("entitlement");
-    kafkaEventPublisher.send(entitlementTopic, event.getModuleId(), event);
+    kafkaEventPublisher.send(entitlementTopic, event.getTenantName() + "_" + event.getModuleId(), event);
   }
 }

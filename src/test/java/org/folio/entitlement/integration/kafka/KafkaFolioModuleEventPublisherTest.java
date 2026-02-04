@@ -28,11 +28,13 @@ class KafkaFolioModuleEventPublisherTest {
   @Test
   void publish_positive() {
     var moduleId = "moduleId";
+    var tenantName = "tenant";
     var event = new EntitlementEvent();
     event.setModuleId(moduleId);
+    event.setTenantName(tenantName);
 
     entitlementEventPublisher.publish(event);
 
-    verify(kafkaEventPublisher).send(entitlementTopic(), moduleId, event);
+    verify(kafkaEventPublisher).send(entitlementTopic(), tenantName + "_" + moduleId, event);
   }
 }
