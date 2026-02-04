@@ -90,7 +90,7 @@ class CapabilitiesModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME);
   }
 
   @DisplayName("execute_positive_parameterized_useTenantCollectionTopic")
@@ -110,7 +110,7 @@ class CapabilitiesModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME);
   }
 
   @Test
@@ -130,9 +130,10 @@ class CapabilitiesModuleEventPublisherTest {
 
   @Test
   void execute_positive_upgradeRequestWithNotChangedModule() {
+    var descriptor = readModuleDescriptor("json/events/capabilities/be-module-desc.json");
     var flowParameters = Map.of(
       PARAM_REQUEST, EntitlementRequest.builder().tenantId(TENANT_ID).type(UPGRADE).build(),
-      PARAM_MODULE_DESCRIPTOR, readModuleDescriptor("json/events/capabilities/be-module-desc.json"),
+      PARAM_MODULE_DESCRIPTOR, descriptor,
       PARAM_INSTALLED_MODULE_DESCRIPTOR, readModuleDescriptor("json/events/capabilities/be-module-desc.json"),
       PARAM_MODULE_TYPE, MODULE,
       PARAM_APPLICATION_ID, APPLICATION_ID,
@@ -148,7 +149,7 @@ class CapabilitiesModuleEventPublisherTest {
 
     var expectedEvents = List.of(readCapabilityEvent("json/events/capabilities/unchanged-module-event.json"));
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME);
   }
 
   @Test

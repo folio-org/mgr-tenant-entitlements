@@ -93,8 +93,8 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     moduleEventPublisher.execute(stageContext);
 
-    var expectedMessageKey = TENANT_ID.toString();
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), expectedMessageKey, resourceEvent(systemUserEvent));
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_NAME,
+      resourceEvent(systemUserEvent));
   }
 
   @Test
@@ -113,9 +113,8 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     moduleEventPublisher.execute(stageContext);
 
-    var expectedMessageKey = TENANT_ID.toString();
-    verify(kafkaEventPublisher).send(systemUserTenantCollectionTopic(),
-      expectedMessageKey, resourceEvent(systemUserEvent));
+    verify(kafkaEventPublisher).send(systemUserTenantCollectionTopic(), TENANT_NAME,
+      resourceEvent(systemUserEvent));
   }
 
   @Test
@@ -162,7 +161,8 @@ class SystemUserModuleEventPublisherTest {
       .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
       .build();
 
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_ID.toString(), expectedResourceEvent);
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_NAME,
+      expectedResourceEvent);
   }
 
   @Test
@@ -204,7 +204,8 @@ class SystemUserModuleEventPublisherTest {
       .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
       .build();
 
-    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_ID.toString(), expectedResourceEvent);
+    verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_NAME,
+      expectedResourceEvent);
   }
 
   @Test
