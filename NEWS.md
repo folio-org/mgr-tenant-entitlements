@@ -1,3 +1,8 @@
+## Version `v3.1.10` (30.01.2026)
+* Upgrade Spring Boot from 3.4.4 to 3.4.11 fixing vuln (MGRENTITLE-164)
+
+---
+
 ## Version `v3.1.9` (12.12.2025)
 * bump applications-poc-tools version to 3.0.9
 
