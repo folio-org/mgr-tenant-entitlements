@@ -82,7 +82,7 @@ class ScheduledJobModuleEventPublisherTest {
       .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, expectedNewHandlers))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_NAME, fooTimerEvent);
   }
 
   @Test
@@ -117,7 +117,7 @@ class ScheduledJobModuleEventPublisherTest {
       .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_NAME, fooTimerEvent);
   }
 
   @Test
@@ -153,7 +153,7 @@ class ScheduledJobModuleEventPublisherTest {
       .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
+    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_NAME, fooTimerEvent);
   }
 
   @Test

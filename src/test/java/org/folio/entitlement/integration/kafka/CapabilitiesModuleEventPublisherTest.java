@@ -85,7 +85,7 @@ class CapabilitiesModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME);
   }
 
   @Test
@@ -121,7 +121,7 @@ class CapabilitiesModuleEventPublisherTest {
 
     var expectedEvents = List.of(readCapabilityEvent("json/events/capabilities/unchanged-module-event.json"));
     assertThat(eventCaptor.getAllValues()).containsExactlyElementsOf(expectedEvents);
-    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_ID.toString());
+    assertThat(messageKeyCaptor.getAllValues()).containsOnly(TENANT_NAME);
   }
 
   @Test
