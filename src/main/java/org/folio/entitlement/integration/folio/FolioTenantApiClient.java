@@ -87,8 +87,14 @@ public class FolioTenantApiClient {
     var httpResponse = sendRequest(httpRequest);
     var statusCode = httpResponse.statusCode();
     if (statusCode > 300) {
+      var responseBody = httpResponse.body();
+      log.info("Module responded with error code: uri = {}, code = {}, responseBody = {},\n"
+        + "moduleId = {}, applicationId = {}, tenant = {}",
+        httpRequest.uri().getPath(), statusCode, responseBody,
+        request.getModuleId(), request.getApplicationId(), request.getTenantName());
+
       throw new IntegrationException("Failed to perform doPostTenant call",
-        List.of(new Parameter().key("cause").value(format("%s: %s", statusCode, httpResponse.body()))), statusCode);
+        List.of(new Parameter().key("cause").value(format("%s: %s", statusCode, responseBody))), statusCode);
     }
 
     if (statusCode != NO_CONTENT.value()) {

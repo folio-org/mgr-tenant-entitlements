@@ -1,6 +1,5 @@
 package org.folio.entitlement.integration.folio;
 
-import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.folio.entitlement.utils.TenantApiUtils.isLegacyApi;
 import static org.folio.entitlement.utils.TenantApiUtils.supportsDisable;
@@ -97,13 +96,15 @@ public class FolioModuleService {
       return;
     }
 
-    if (FALSE.equals(moduleRequest.isPurge())) {
+    if (!moduleRequest.isPurge()) {
       log.debug("Ignoring module uninstallation stage, "
           + "since tenant API 2.0 does not require a call if purge==false: moduleId = {}, tenantId = {}",
         moduleRequest.getModuleId(), moduleRequest.getTenantId());
       return;
     }
 
+    log.info("Unstalling module: moduleId = {}, applicationId = {}, tenant = {}", moduleRequest.getModuleId(),
+      moduleRequest.getApplicationId(), moduleRequest.getTenantName());
     folioTenantApiClient.uninstall(moduleRequest);
   }
 
