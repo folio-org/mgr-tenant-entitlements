@@ -66,6 +66,9 @@ public class EntitlementService {
    * @return a {@link ResultList} object with {@link EntitlementRequest} values
    */
   public ExtendedEntitlements performRequest(EntitlementRequest request) {
+    log.info("Performing entitlement request: type = {}, tenantId = {}, applications = {}",
+      request.getType(), request.getTenantId(), request.getApplications());
+
     var flow = flowProvider.createFlow(request);
     executeFlow(request, flow);
     var entitlements = mapItems(request.getApplications(), appId -> buildEntitlement(request.getTenantId(), appId));

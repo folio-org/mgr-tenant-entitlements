@@ -1,6 +1,6 @@
 package org.folio.entitlement.service.validator;
 
-import static java.util.stream.Collectors.toSet;
+import static org.folio.common.utils.CollectionUtils.mapItemsToSet;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.EXISTING_ENTITLEMENT;
 
@@ -34,7 +34,7 @@ public class ExistingEntitlementValidator extends DatabaseLoggingStage<CommonSta
     var applicationIds = entitlementRequest.getApplications();
     if (entitlements.size() != applicationIds.size()) {
       var notFoundEntitlements = new LinkedHashSet<>(applicationIds);
-      notFoundEntitlements.removeAll(entitlements.stream().map(Entitlement::getApplicationId).collect(toSet()));
+      notFoundEntitlements.removeAll(mapItemsToSet(entitlements, Entitlement::getApplicationId));
       throw new EntityNotFoundException("Entitlements are not found for applications: " + notFoundEntitlements);
     }
   }

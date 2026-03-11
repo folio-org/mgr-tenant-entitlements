@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.entity.ApplicationDependencyEntity;
@@ -22,6 +23,7 @@ import org.folio.entitlement.repository.EntitlementRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class EntitlementCrudService {
@@ -108,6 +110,8 @@ public class EntitlementCrudService {
   public Entitlement save(Entitlement entitlement) {
     var entitlementEntity = entitlementMapper.map(entitlement);
     var savedEntity = entitlementRepository.save(entitlementEntity);
+    log.info("Entitlement is saved: tenantId = {}, applicationId = {}", entitlement.getTenantId(),
+      entitlement.getApplicationId());
     return entitlementMapper.map(savedEntity);
   }
 
@@ -121,6 +125,8 @@ public class EntitlementCrudService {
     var entitlementKey = EntitlementKey.of(entitlement.getTenantId(), entitlement.getApplicationId());
     var entitlementById = entitlementRepository.getReferenceById(entitlementKey);
     entitlementRepository.delete(entitlementById);
+    log.info("Entitlement is deleted: tenantId = {}, applicationId = {}", entitlement.getTenantId(),
+      entitlement.getApplicationId());
   }
 
   /**

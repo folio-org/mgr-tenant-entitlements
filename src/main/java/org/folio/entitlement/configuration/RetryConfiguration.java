@@ -6,9 +6,12 @@ import static org.folio.entitlement.utils.FlowUtils.addErrorInformation;
 import jakarta.ws.rs.WebApplicationException;
 import java.util.function.Predicate;
 import lombok.extern.log4j.Log4j2;
+import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryBackoffConfigProps;
+import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryConfigProps;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.RetryContext;
@@ -33,12 +36,8 @@ public class RetryConfiguration {
   public RetryOperationsInterceptor folioModuleCallsRetryInterceptor(RetryConfigurationProperties configProps,
     ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     return createRetryInterceptor(IntegrationException.class,
-      integrationException -> integrationException.getCauseHttpStatus() != null
-        && integrationException.getCauseHttpStatus() >= 400,
-      configProps.getModule().getMax(),
-      BackOffPolicyBuilder.newBuilder().delay(configProps.getModule().getBackoff().getDelay())
-        .maxDelay(configProps.getModule().getBackoff().getMaxdelay())
-        .multiplier(configProps.getModule().getBackoff().getMultiplier()).build(), "Folio Module call",
+      integrationError(),
+      configProps.getModule(), "Folio Module call",
       threadLocalModuleStageContext);
   }
 
@@ -51,34 +50,47 @@ public class RetryConfiguration {
   public RetryOperationsInterceptor keycloakCallsRetryInterceptor(RetryConfigurationProperties configProps,
     ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     return createRetryInterceptor(WebApplicationException.class,
-      webAppException -> webAppException.getResponse() != null && webAppException.getResponse().getStatus() >= 500,
-      configProps.getKeycloak().getMax(),
-      BackOffPolicyBuilder.newBuilder().delay(configProps.getModule().getBackoff().getDelay())
-        .maxDelay(configProps.getModule().getBackoff().getMaxdelay())
-        .multiplier(configProps.getModule().getBackoff().getMultiplier()).build(), "Keycloak access",
+      webApplicationError(),
+      configProps.getKeycloak(), "Keycloak access",
       threadLocalModuleStageContext);
+  }
+
+  private static @NonNull Predicate<IntegrationException> integrationError() {
+    return exception -> exception.getCauseHttpStatus() != null && exception.getCauseHttpStatus() >= 400;
+  }
+
+  private static @NonNull Predicate<WebApplicationException> webApplicationError() {
+    return exception -> exception.getResponse() != null && exception.getResponse().getStatus() >= 500;
   }
 
   private <T extends Exception> RetryOperationsInterceptor createRetryInterceptor(Class<T> exceptionClass,
-    Predicate<T> shouldRetry, int numberOfRetries, BackOffPolicy backOffPolicy, String operationDescription,
+    Predicate<T> shouldRetry, RetryConfigProps retryConfig, String operationDescription,
     ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     var retryTemplate = new RetryTemplate();
-    var retryPolicy = createRetryPolicy(exceptionClass, shouldRetry, numberOfRetries, operationDescription,
-      threadLocalModuleStageContext);
-    retryTemplate.setRetryPolicy(retryPolicy);
-    retryTemplate.setBackOffPolicy(backOffPolicy);
+
+    retryTemplate.setRetryPolicy(createRetryPolicy(exceptionClass, shouldRetry, retryConfig.getMax(),
+      operationDescription, threadLocalModuleStageContext));
+    retryTemplate.setBackOffPolicy(createBackOffPolicy(retryConfig.getBackoff()));
+
     var result = new RetryOperationsInterceptor();
     result.setRetryOperations(retryTemplate);
+
     return result;
   }
 
-  private <T extends Exception> @NotNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
+  private static <T extends Exception> @NotNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
     Predicate<T> shouldRetry, int numberOfRetries, String operationDescription,
     ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     var retryPolicy = new CustomRetryPolicy<>(numberOfRetries, exceptionClass, shouldRetry, operationDescription,
       threadLocalModuleStageContext);
     retryPolicy.setMaxAttempts(numberOfRetries);
     return retryPolicy;
+  }
+
+  private static BackOffPolicy createBackOffPolicy(RetryBackoffConfigProps configProps) {
+    return BackOffPolicyBuilder.newBuilder().delay(configProps.getDelay())
+      .maxDelay(configProps.getMaxdelay())
+      .multiplier(configProps.getMultiplier()).build();
   }
 
   private static class CustomRetryPolicy<T extends Exception> extends SimpleRetryPolicy {
