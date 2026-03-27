@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
-    <version>3.5.7</version>
+    <version>4.0.4</version>
     <relativePath />
   </parent>
 
@@ -30,18 +30,16 @@
     <lombok.version>1.18.42</lombok.version>
     <cqlparser.version>1.13</cqlparser.version>
     <mapstruct.version>1.6.3</mapstruct.version>
-    <hypersistence-utils-hibernate-63.version>3.14.1</hypersistence-utils-hibernate-63.version>
-    <swagger-annotations.version>2.2.41</swagger-annotations.version>
-    <apache-commons-lang3.version>3.17.0</apache-commons-lang3.version>
+    <hypersistence-utils-hibernate-73.version>3.15.2</hypersistence-utils-hibernate-73.version>
+    <swagger-annotations.version>2.2.44</swagger-annotations.version>
+    <apache-commons-lang3.version>3.20.0</apache-commons-lang3.version>
     <apache-commons-collections4.version>4.5.0</apache-commons-collections4.version>
     <cql2pgjson.version>35.4.2</cql2pgjson.version>
-    <spring-cloud-bom.version>2025.0.0</spring-cloud-bom.version>
-    <openapi-tools.jackson-databind-nullable.version>0.2.8</openapi-tools.jackson-databind-nullable.version>
-    <folio-spring-cql.version>9.1.0</folio-spring-cql.version>
-    <applications-poc-tools.version>3.1.0-SNAPSHOT</applications-poc-tools.version>
+    <openapi-tools.jackson-databind-nullable.version>0.2.9</openapi-tools.jackson-databind-nullable.version>
+    <folio-spring-cql.version>10.0.0-RC1</folio-spring-cql.version>
+    <applications-poc-tools.version>4.0.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.2.0</folio-java-checkstyle.version>
-    <folio-flow-engine.version>3.1.0-SNAPSHOT</folio-flow-engine.version>
-    <jackson-bom.version>2.17.2</jackson-bom.version>
+    <folio-flow-engine.version>4.0.0-SNAPSHOT</folio-flow-engine.version>
     <caffeine.version>3.1.8</caffeine.version>
 
     <mgr-tenant-entitlements.yaml-file>${project.basedir}/src/main/resources/swagger.api/mgr-tenant-entitlements.yaml
@@ -49,16 +47,16 @@
 
     <!-- Test dependencies versions -->
     <mockito.version>5.20.0</mockito.version>
-    <testcontainer.version>2.0.1</testcontainer.version>
+    <testcontainer.version>2.0.4</testcontainer.version>
     <awaitility.version>4.3.0</awaitility.version>
-    <wiremock.version>2.35.2</wiremock.version>
+    <wiremock.version>3.13.2</wiremock.version>
 
     <!-- Plugins versions -->
     <maven-checkstyle.version>12.3.0</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <openapi-generator.version>7.19.0</openapi-generator.version>
 
-    <sonar.exclusions>
+    <sonar.coverage.exclusions>
       <!--
         exclude:
          - exclude domain classes, which are essentially simple POJO classes
@@ -71,19 +69,12 @@
       src/main/java/**/integration/**/model/**/*,
       src/main/java/**/rest/resource/**/*,
       src/main/java/**/TenantEntitlementApplication.java
-    </sonar.exclusions>
+    </sonar.coverage.exclusions>
     <argLine/>
   </properties>
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>org.springframework.cloud</groupId>
-        <artifactId>spring-cloud-dependencies</artifactId>
-        <version>${spring-cloud-bom.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
       <dependency>
         <groupId>org.testcontainers</groupId>
         <artifactId>testcontainers-bom</artifactId>
@@ -108,17 +99,6 @@
     </dependency>
 
     <dependency>
-      <groupId>org.springframework.cloud</groupId>
-      <artifactId>spring-cloud-starter-openfeign</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcprov-jdk18on</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-
-    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter</artifactId>
       <exclusions>
@@ -137,6 +117,12 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-data-jpa</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
@@ -162,13 +148,13 @@
     </dependency>
 
     <dependency>
-      <groupId>org.springframework.kafka</groupId>
-      <artifactId>spring-kafka</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-kafka</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>org.liquibase</groupId>
-      <artifactId>liquibase-core</artifactId>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-liquibase</artifactId>
     </dependency>
 
     <dependency>
@@ -215,8 +201,8 @@
 
     <dependency>
       <groupId>io.hypersistence</groupId>
-      <artifactId>hypersistence-utils-hibernate-63</artifactId>
-      <version>${hypersistence-utils-hibernate-63.version}</version>
+      <artifactId>hypersistence-utils-hibernate-73</artifactId>
+      <version>${hypersistence-utils-hibernate-73.version}</version>
     </dependency>
 
     <dependency>
@@ -264,6 +250,17 @@
       <groupId>org.folio</groupId>
       <artifactId>folio-tls-utils</artifactId>
       <version>${applications-poc-tools.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.retry</groupId>
+      <artifactId>spring-retry</artifactId>
+      <version>2.0.12</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-aspects</artifactId>
     </dependency>
 
     <dependency>
@@ -317,6 +314,19 @@
     </dependency>
 
     <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-webmvc-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.wiremock</groupId>
+      <artifactId>wiremock</artifactId>
+      <version>${wiremock.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
@@ -360,12 +370,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>com.github.tomakehurst</groupId>
-      <artifactId>wiremock-jre8</artifactId>
-      <version>${wiremock.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
@@ -483,12 +487,24 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
           <useSystemClassLoader>false</useSystemClassLoader>
           <groups>unit</groups>
-          <argLine>@{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
+          <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar}</argLine>
         </configuration>
       </plugin>
 
@@ -498,7 +514,7 @@
         <version>${maven-failsafe-plugin.version}</version>
         <configuration>
           <groups>integration</groups>
-          <argLine>@{argLine} -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar</argLine>
+          <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -Djdk.internal.httpclient.disableHostnameVerification=true</argLine>
         </configuration>
       </plugin>
 
@@ -570,7 +586,8 @@
                 <interfaceOnly>true</interfaceOnly>
                 <serializableModel>true</serializableModel>
                 <useTags>true</useTags>
-                <useSpringBoot3>true</useSpringBoot3>
+                <useSpringBoot4>true</useSpringBoot4>
+                <useJakartaEe>true</useJakartaEe>
               </configOptions>
             </configuration>
           </execution>
@@ -641,7 +658,7 @@
       <id>coverage</id>
 
       <properties>
-        <sonar.exclusions>
+        <sonar.coverage.exclusions>
           <!--
             exclude:
              - exclude domain classes, which are essentially simple POJO classes
@@ -654,7 +671,7 @@
           src/main/java/**/integration/**/model/**/*,
           src/main/java/**/rest/resource/**/*,
           src/main/java/**/TenantEntitlementApplication.java
-        </sonar.exclusions>
+        </sonar.coverage.exclusions>
         <sonar.coverage.jacoco.xmlReportPaths>
           target/site/jacoco-aggregate/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
