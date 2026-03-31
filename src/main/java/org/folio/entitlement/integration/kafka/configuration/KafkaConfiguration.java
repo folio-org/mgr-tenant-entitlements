@@ -16,7 +16,7 @@ public class KafkaConfiguration {
    * @return {@link DefaultKafkaProducerFactoryCustomizer} object
    */
   @Bean
-  public DefaultKafkaProducerFactoryCustomizer customizeJsonDeserializer(JsonMapper jsonMapper) {
+  public DefaultKafkaProducerFactoryCustomizer customizeJsonSerializer(JsonMapper jsonMapper) {
     return factory -> factory.setValueSerializerSupplier(() -> new JacksonJsonSerializer<>(jsonMapper));
   }
 }

@@ -8,6 +8,7 @@ import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.integration.tm.model.Tenant;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.service.annotation.GetExchange;
 import org.springframework.web.service.annotation.HttpExchange;
 
@@ -25,12 +26,12 @@ public interface TenantManagerClient {
   Tenant getTenantById(@PathVariable UUID id, @RequestHeader(TOKEN) String token);
 
   /**
-   * Queries tenant by name from mgr-tenants.
+   * Queries tenants by CQL query from mgr-tenants.
    *
-   * @param tenantName - tenant name
+   * @param query - CQL query string
    * @param token - optional x-okapi-token header value for authorization in Okapi
-   * @return found {@link Tenant} object
+   * @return found {@link Tenant} objects as {@link ResultList}
    */
-  @GetExchange("/tenants?query=name=={tenantName}")
-  ResultList<Tenant> queryTenantsByName(@PathVariable String tenantName, @RequestHeader(TOKEN) String token);
+  @GetExchange("/tenants")
+  ResultList<Tenant> queryTenants(@RequestParam("query") String query, @RequestHeader(TOKEN) String token);
 }

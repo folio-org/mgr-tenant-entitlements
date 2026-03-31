@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEventType;
+import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -74,14 +75,18 @@ public class KafkaEventUtils {
   //  load permission mappings from a JSON file
   static {
     JsonMapper jsonMapper = JsonMapper.builder().build();
-    try {
-      InputStream mappingFileAsStream = KafkaEventUtils.class.getClassLoader()
-        .getResourceAsStream("permissionmappings/mapping.json");
-      permissionMapping = jsonMapper.readValue(
-        mappingFileAsStream, new TypeReference<>() {
-        });
-    } catch (Exception e) {
-      log.error("Can't initialize Permission mapping", e);
+    InputStream mappingFileAsStream = KafkaEventUtils.class.getClassLoader()
+      .getResourceAsStream("permissionmappings/mapping.json");
+    if (mappingFileAsStream == null) {
+      log.error("Permission mapping file not found: permissionmappings/mapping.json");
+    } else {
+      try {
+        permissionMapping = jsonMapper.readValue(
+          mappingFileAsStream, new TypeReference<>() {
+          });
+      } catch (JacksonException e) {
+        log.error("Can't initialize Permission mapping", e);
+      }
     }
   }
 

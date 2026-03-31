@@ -60,14 +60,14 @@ class TenantManagerServiceTest {
 
   @Test
   void findTenantByName_positive() {
-    when(tenantManagerClient.queryTenantsByName(TENANT_NAME, OKAPI_TOKEN)).thenReturn(asSinglePage(tenant()));
+    when(tenantManagerClient.queryTenants("name==" + TENANT_NAME, OKAPI_TOKEN)).thenReturn(asSinglePage(tenant()));
     var found = tenantManagerService.findTenantByName(TENANT_NAME, OKAPI_TOKEN);
     assertThat(found).isEqualTo(tenant());
   }
 
   @Test
   void findTenantByName_negative_tenantNotFound() {
-    when(tenantManagerClient.queryTenantsByName(TENANT_NAME, OKAPI_TOKEN)).thenReturn(empty());
+    when(tenantManagerClient.queryTenants("name==" + TENANT_NAME, OKAPI_TOKEN)).thenReturn(empty());
     assertThatThrownBy(() -> tenantManagerService.findTenantByName(TENANT_NAME, OKAPI_TOKEN))
       .isInstanceOf(EntityNotFoundException.class)
       .hasMessage("Tenant is not found by name: " + TENANT_NAME);
@@ -75,7 +75,8 @@ class TenantManagerServiceTest {
 
   @Test
   void findTenantByName_negative_multipleTenantsFound() {
-    when(tenantManagerClient.queryTenantsByName(TENANT_NAME, OKAPI_TOKEN)).thenReturn(asSinglePage(tenant(), tenant()));
+    when(tenantManagerClient.queryTenants("name==" + TENANT_NAME, OKAPI_TOKEN))
+      .thenReturn(asSinglePage(tenant(), tenant()));
     assertThatThrownBy(() -> tenantManagerService.findTenantByName(TENANT_NAME, OKAPI_TOKEN))
       .isInstanceOf(EntityNotFoundException.class)
       .hasMessage("Multiple tenants found by name: " + TENANT_NAME);
@@ -83,7 +84,7 @@ class TenantManagerServiceTest {
 
   @Test
   void findTenantByName_negative_badRequestError() {
-    when(tenantManagerClient.queryTenantsByName(TENANT_NAME, OKAPI_TOKEN))
+    when(tenantManagerClient.queryTenants("name==" + TENANT_NAME, OKAPI_TOKEN))
       .thenThrow(HttpClientErrorException.BadRequest.class);
     assertThatThrownBy(() -> tenantManagerService.findTenantByName(TENANT_NAME, OKAPI_TOKEN))
       .isInstanceOf(IntegrationException.class)

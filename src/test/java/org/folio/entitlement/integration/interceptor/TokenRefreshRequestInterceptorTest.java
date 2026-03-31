@@ -1,5 +1,6 @@
 package org.folio.entitlement.integration.interceptor;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.common.utils.OkapiHeaders.TOKEN;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.mockito.Mockito.verify;
@@ -50,6 +51,7 @@ class TokenRefreshRequestInterceptorTest {
 
     verify(keycloakAdminTokenProvider).getToken(OKAPI_TOKEN);
     verify(execution).execute(request, new byte[0]);
+    assertThat(headers.getFirst(TOKEN)).isEqualTo(FRESH_TOKEN);
   }
 
   @Test

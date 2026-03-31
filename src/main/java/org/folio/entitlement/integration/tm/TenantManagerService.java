@@ -45,7 +45,7 @@ public class TenantManagerService {
   public Tenant findTenantByName(String tenantName, String authToken) {
     log.debug("Querying tenant [tenantName: {}]", tenantName);
     try {
-      var result = tenantManagerClient.queryTenantsByName(tenantName, authToken);
+      var result = tenantManagerClient.queryTenants("name==" + tenantName, authToken);
       if (result == null || result.isEmpty()) {
         throw new EntityNotFoundException("Tenant is not found by name: " + tenantName);
       }
