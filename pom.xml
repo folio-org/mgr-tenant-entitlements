@@ -54,7 +54,7 @@
     <!-- Plugins versions -->
     <maven-checkstyle.version>12.3.0</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-    <openapi-generator.version>7.19.0</openapi-generator.version>
+    <openapi-generator.version>7.21.0</openapi-generator.version>
 
     <sonar.coverage.exclusions>
       <!--
