@@ -1,11 +1,10 @@
 package org.folio.entitlement.integration.kafka.configuration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.boot.autoconfigure.kafka.DefaultKafkaConsumerFactoryCustomizer;
-import org.springframework.boot.autoconfigure.kafka.DefaultKafkaProducerFactoryCustomizer;
+import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
+import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
 public class KafkaConfiguration {
@@ -13,11 +12,11 @@ public class KafkaConfiguration {
   /**
    * Customizes json serializer for apache kafka.
    *
-   * @param objectMapper - {@link ObjectMapper} bean from spring context
-   * @return {@link DefaultKafkaConsumerFactoryCustomizer} object
+   * @param jsonMapper - {@link JsonMapper} bean from spring context
+   * @return {@link DefaultKafkaProducerFactoryCustomizer} object
    */
   @Bean
-  public DefaultKafkaProducerFactoryCustomizer customizeJsonDeserializer(ObjectMapper objectMapper) {
-    return factory -> factory.setValueSerializerSupplier(() -> new JsonSerializer<>(objectMapper));
+  public DefaultKafkaProducerFactoryCustomizer customizeJsonDeserializer(JsonMapper jsonMapper) {
+    return factory -> factory.setValueSerializerSupplier(() -> new JacksonJsonSerializer<>(jsonMapper));
   }
 }

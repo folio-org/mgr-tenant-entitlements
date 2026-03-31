@@ -8,9 +8,6 @@
       }
     },
     "headers": {
-      "content-type": {
-        "equalTo": "application/json"
-      },
       "x-okapi-token": {
         "matches": ".+"
       }
@@ -32,6 +29,8 @@
       ],
       "totalRecords": 1
     },
-    "transformers": [ "response-template" ]
+    "transformers": [
+      "response-template"
+    ]
   }
 }

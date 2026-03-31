@@ -5,4 +5,5 @@
   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
 
   <include file="changes.v4.0.0/add-state-entitlement-type.xml" relativeToChangelogFile="true"/>
+  <include file="changes.v4.0.0/create-f-unaccent-function.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

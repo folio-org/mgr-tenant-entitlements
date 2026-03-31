@@ -1,10 +1,10 @@
 package org.folio.entitlement.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.SerializationException;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class JsonConverter {
 
     try {
       return objectMapper.writeValueAsString(value);
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       throw new SerializationException(String.format(SERIALIZATION_ERROR_MSG_TEMPLATE, e.getMessage()));
     }
   }

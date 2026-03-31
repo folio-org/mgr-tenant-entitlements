@@ -42,7 +42,8 @@
             "id": "folio-module3-3.0.0",
             "action": "enable"
           }
-        ]
+        ],
+        "ignoreExtraElements": true
       }
     ]
   },

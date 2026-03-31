@@ -15,11 +15,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import feign.FeignException.BadRequest;
-import feign.FeignException.InternalServerError;
-import feign.FeignException.NotFound;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import org.folio.common.domain.model.error.ErrorResponse;
@@ -36,6 +31,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
@@ -55,7 +54,8 @@ class ApplicationManagerServiceTest {
 
   @Test
   void getApplicationDescriptor_negative_applicationDescriptorNotFound() {
-    when(client.getApplicationDescriptor(APPLICATION_ID, true, OKAPI_TOKEN)).thenThrow(NotFound.class);
+    when(client.getApplicationDescriptor(APPLICATION_ID, true, OKAPI_TOKEN))
+      .thenThrow(HttpClientErrorException.NotFound.class);
     assertThatThrownBy(() -> applicationManagerService.getApplicationDescriptor(APPLICATION_ID, OKAPI_TOKEN))
       .isInstanceOf(EntityNotFoundException.class)
       .hasMessage("Application descriptor is not found: " + APPLICATION_ID);
@@ -63,11 +63,12 @@ class ApplicationManagerServiceTest {
 
   @Test
   void getApplicationDescriptor_negative_integrationError() {
-    when(client.getApplicationDescriptor(APPLICATION_ID, true, OKAPI_TOKEN)).thenThrow(InternalServerError.class);
+    when(client.getApplicationDescriptor(APPLICATION_ID, true, OKAPI_TOKEN))
+      .thenThrow(HttpServerErrorException.InternalServerError.class);
     assertThatThrownBy(() -> applicationManagerService.getApplicationDescriptor(APPLICATION_ID, OKAPI_TOKEN))
       .isInstanceOf(IntegrationException.class)
       .hasMessage("Failed to retrieve application descriptor: " + APPLICATION_ID)
-      .hasCauseInstanceOf(InternalServerError.class);
+      .hasCauseInstanceOf(HttpServerErrorException.InternalServerError.class);
   }
 
   @Test
@@ -83,11 +84,13 @@ class ApplicationManagerServiceTest {
   @Test
   void getApplicationDescriptors_negative_integrationError() {
     var query = CqlQuery.exactMatchAny("id", List.of(APPLICATION_ID));
-    when(client.queryApplicationDescriptors(query, true, 50, 0, OKAPI_TOKEN)).thenThrow(InternalServerError.class);
-    assertThatThrownBy(() -> applicationManagerService.getApplicationDescriptors(List.of(APPLICATION_ID), OKAPI_TOKEN))
+    when(client.queryApplicationDescriptors(query, true, 50, 0, OKAPI_TOKEN))
+      .thenThrow(HttpServerErrorException.InternalServerError.class);
+    assertThatThrownBy(
+      () -> applicationManagerService.getApplicationDescriptors(List.of(APPLICATION_ID), OKAPI_TOKEN))
       .isInstanceOf(IntegrationException.class)
       .hasMessage("Failed to query application descriptors")
-      .hasCauseInstanceOf(InternalServerError.class);
+      .hasCauseInstanceOf(HttpServerErrorException.InternalServerError.class);
   }
 
   @Test
@@ -113,11 +116,13 @@ class ApplicationManagerServiceTest {
 
   @Test
   void getModuleDiscoveries_negative_integrationError() {
-    when(client.getModuleDiscoveries(APPLICATION_ID, 100, OKAPI_TOKEN)).thenThrow(InternalServerError.class);
-    assertThatThrownBy(() -> applicationManagerService.getModuleDiscoveries(APPLICATION_ID, OKAPI_TOKEN))
+    when(client.getModuleDiscoveries(APPLICATION_ID, 100, OKAPI_TOKEN))
+      .thenThrow(HttpServerErrorException.InternalServerError.class);
+    assertThatThrownBy(
+      () -> applicationManagerService.getModuleDiscoveries(APPLICATION_ID, OKAPI_TOKEN))
       .isInstanceOf(IntegrationException.class)
       .hasMessage("Failed to retrieve module discovery descriptors: " + APPLICATION_ID)
-      .hasCauseInstanceOf(InternalServerError.class);
+      .hasCauseInstanceOf(HttpServerErrorException.InternalServerError.class);
   }
 
   @Test
@@ -131,7 +136,7 @@ class ApplicationManagerServiceTest {
   @Test
   void validate_negative_validationException() {
     var descriptor = TestValues.appDescriptor();
-    doThrow(BadRequest.class).when(client).validate(descriptor, OKAPI_TOKEN);
+    doThrow(HttpClientErrorException.BadRequest.class).when(client).validate(descriptor, OKAPI_TOKEN);
     assertThatThrownBy(() -> applicationManagerService.validate(descriptor, OKAPI_TOKEN))
       .isInstanceOf(RequestValidationException.class)
       .hasMessageContaining("Invalid application descriptor");
@@ -139,7 +144,7 @@ class ApplicationManagerServiceTest {
   }
 
   @Test
-  void validate_negative_validationExceptionWithErrorResponse() throws JsonProcessingException {
+  void validate_negative_validationExceptionWithErrorResponse() {
     var descriptor = TestValues.appDescriptor();
 
     var rve = new RequestValidationException("Application name is invalid", "name", "xxx");
@@ -161,13 +166,13 @@ class ApplicationManagerServiceTest {
   }
 
   @Test
-  void validate_negative_validationExceptionWithBadErrorResponse() throws JsonProcessingException {
+  void validate_negative_validationExceptionWithBadErrorResponse() {
     var descriptor = TestValues.appDescriptor();
 
     var badRequest = createBadRequest("Not a valid ErrorResponse json");
 
     doThrow(badRequest).when(client).validate(descriptor, OKAPI_TOKEN);
-    doThrow(JsonProcessingException.class).when(objectMapper).readValue(anyString(), eq(ErrorResponse.class));
+    doThrow(JacksonException.class).when(objectMapper).readValue(anyString(), eq(ErrorResponse.class));
 
     assertThatThrownBy(() -> applicationManagerService.validate(descriptor, OKAPI_TOKEN))
       .isInstanceOf(RequestValidationException.class)
@@ -183,7 +188,7 @@ class ApplicationManagerServiceTest {
   @Test
   void validate_negative_internalServerError() {
     var descriptor = TestValues.appDescriptor();
-    doThrow(InternalServerError.class).when(client).validate(descriptor, OKAPI_TOKEN);
+    doThrow(HttpServerErrorException.InternalServerError.class).when(client).validate(descriptor, OKAPI_TOKEN);
     assertThatThrownBy(() -> applicationManagerService.validate(descriptor, OKAPI_TOKEN))
       .isInstanceOf(IntegrationException.class)
       .hasMessage("Failed to validate application descriptor: " + APPLICATION_ID);

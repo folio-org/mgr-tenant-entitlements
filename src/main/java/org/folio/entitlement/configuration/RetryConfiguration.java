@@ -10,7 +10,6 @@ import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryBac
 import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryConfigProps;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
-import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -78,7 +77,7 @@ public class RetryConfiguration {
     return result;
   }
 
-  private static <T extends Exception> @NotNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
+  private static <T extends Exception> @NonNull SimpleRetryPolicy createRetryPolicy(Class<T> exceptionClass,
     Predicate<T> shouldRetry, int numberOfRetries, String operationDescription,
     ThreadLocalModuleStageContext threadLocalModuleStageContext) {
     var retryPolicy = new CustomRetryPolicy<>(numberOfRetries, exceptionClass, shouldRetry, operationDescription,

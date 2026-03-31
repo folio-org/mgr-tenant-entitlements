@@ -1,6 +1,5 @@
 package org.folio.entitlement.utils;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections4.MapUtils;
@@ -9,6 +8,7 @@ import org.folio.common.domain.model.UserDescriptor;
 import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor

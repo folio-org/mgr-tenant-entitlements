@@ -11,8 +11,6 @@ import static org.folio.entitlement.support.TestValues.tenant;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import feign.FeignException.BadRequest;
-import feign.FeignException.NotFound;
 import jakarta.persistence.EntityNotFoundException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.test.types.UnitTest;
@@ -22,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.client.HttpClientErrorException;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
@@ -44,7 +43,7 @@ class TenantManagerServiceTest {
 
   @Test
   void findTenant_negative_tenantNotFound() {
-    when(tenantManagerClient.getTenantById(TENANT_ID, OKAPI_TOKEN)).thenThrow(NotFound.class);
+    when(tenantManagerClient.getTenantById(TENANT_ID, OKAPI_TOKEN)).thenThrow(HttpClientErrorException.NotFound.class);
     assertThatThrownBy(() -> tenantManagerService.findTenant(TENANT_ID, OKAPI_TOKEN))
       .isInstanceOf(EntityNotFoundException.class)
       .hasMessage("Tenant is not found: " + TENANT_ID);
@@ -52,7 +51,8 @@ class TenantManagerServiceTest {
 
   @Test
   void findTenant_negative_badRequestError() {
-    when(tenantManagerClient.getTenantById(TENANT_ID, OKAPI_TOKEN)).thenThrow(BadRequest.class);
+    when(tenantManagerClient.getTenantById(TENANT_ID, OKAPI_TOKEN))
+      .thenThrow(HttpClientErrorException.BadRequest.class);
     assertThatThrownBy(() -> tenantManagerService.findTenant(TENANT_ID, OKAPI_TOKEN))
       .isInstanceOf(IntegrationException.class)
       .hasMessage("Failed to retrieve tenant: " + TENANT_ID);
@@ -83,7 +83,8 @@ class TenantManagerServiceTest {
 
   @Test
   void findTenantByName_negative_badRequestError() {
-    when(tenantManagerClient.queryTenantsByName(TENANT_NAME, OKAPI_TOKEN)).thenThrow(BadRequest.class);
+    when(tenantManagerClient.queryTenantsByName(TENANT_NAME, OKAPI_TOKEN))
+      .thenThrow(HttpClientErrorException.BadRequest.class);
     assertThatThrownBy(() -> tenantManagerService.findTenantByName(TENANT_NAME, OKAPI_TOKEN))
       .isInstanceOf(IntegrationException.class)
       .hasMessage("Failed to query tenant by name: " + TENANT_NAME);

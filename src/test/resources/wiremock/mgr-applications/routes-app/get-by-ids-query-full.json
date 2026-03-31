@@ -9,11 +9,6 @@
       "full": {
         "equalTo": "true"
       }
-    },
-    "headers": {
-      "content-type": {
-        "equalTo": "application/json"
-      }
     }
   },
   "response": {
@@ -49,23 +44,34 @@
                   "version": "0.1.0",
                   "handlers": [
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/foo/entities"
                     },
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/foo/entities/{id}"
                     },
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/foo/entities"
                     },
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/foo/{fooId}/sub-entities"
                     },
                     {
-                      "methods": [ "PUT", "PATCH" ],
+                      "methods": [
+                        "PUT",
+                        "PATCH"
+                      ],
                       "pathPattern": "/foo/{id}/entities"
                     }
                   ]
@@ -75,7 +81,9 @@
                   "version": "0.3.0",
                   "handlers": [
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/foo2*"
                     }
                   ]
@@ -86,7 +94,9 @@
                   "interfaceType": "system",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/foo/expire/timer",
                       "unit": "minute",
                       "delay": "1"
@@ -99,7 +109,9 @@
                   "interfaceType": "multiple",
                   "handlers": [
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/mult-sample/entities"
                     }
                   ]
@@ -115,15 +127,21 @@
                   "version": "1.0.0",
                   "handlers": [
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/bar/{barId}/baz/{bazId}"
                     },
                     {
-                      "methods": [ "*" ],
+                      "methods": [
+                        "*"
+                      ],
                       "pathPattern": "/bar/baz*"
                     },
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/foo/entities/bar"
                     }
                   ]
@@ -134,11 +152,16 @@
                   "interfaceType": "system",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/_/tenant"
                     },
                     {
-                      "methods": [ "GET", "DELETE" ],
+                      "methods": [
+                        "GET",
+                        "DELETE"
+                      ],
                       "pathPattern": "/_/tenant/{id}"
                     }
                   ]
@@ -149,7 +172,9 @@
                   "interfaceType": "multiple",
                   "handlers": [
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/mult-sample/entities"
                     }
                   ]

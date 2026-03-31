@@ -1,8 +1,5 @@
 package org.folio.entitlement.integration.kafka;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
@@ -13,6 +10,8 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEventType;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.json.JsonMapper;
 
 @Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -74,14 +73,14 @@ public class KafkaEventUtils {
 
   //  load permission mappings from a JSON file
   static {
-    ObjectMapper objectMapper = new ObjectMapper();
+    JsonMapper jsonMapper = JsonMapper.builder().build();
     try {
       InputStream mappingFileAsStream = KafkaEventUtils.class.getClassLoader()
         .getResourceAsStream("permissionmappings/mapping.json");
-      permissionMapping = objectMapper.readValue(
+      permissionMapping = jsonMapper.readValue(
         mappingFileAsStream, new TypeReference<>() {
         });
-    } catch (IOException e) {
+    } catch (Exception e) {
       log.error("Can't initialize Permission mapping", e);
     }
   }

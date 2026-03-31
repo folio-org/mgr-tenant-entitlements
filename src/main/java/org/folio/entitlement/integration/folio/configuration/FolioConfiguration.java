@@ -1,11 +1,11 @@
 package org.folio.entitlement.integration.folio.configuration;
 
 import static java.util.Arrays.asList;
-import static org.folio.common.utils.tls.FeignClientTlsUtils.getHttpClientBuilder;
 
 import java.net.http.HttpClient;
 import java.util.concurrent.Executor;
 import lombok.RequiredArgsConstructor;
+import org.folio.common.utils.tls.Utils;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.integration.folio.FolioTenantApiClient;
 import org.folio.entitlement.integration.folio.flow.FolioModuleEntitleFlowFactory;
@@ -40,9 +40,15 @@ public class FolioConfiguration {
    */
   @Bean
   public HttpClient httpClient(FolioClientConfigurationProperties folioClientConfigurationProperties) {
-    return getHttpClientBuilder(folioClientConfigurationProperties.getTls())
-      .connectTimeout(folioClientConfigurationProperties.getConnectTimeout())
-      .build();
+    var builder = HttpClient.newBuilder()
+      .connectTimeout(folioClientConfigurationProperties.getConnectTimeout());
+
+    var tlsProperties = folioClientConfigurationProperties.getTls();
+    if (tlsProperties != null && tlsProperties.isEnabled()) {
+      builder.sslContext(Utils.buildSslContext(tlsProperties));
+    }
+
+    return builder.build();
   }
 
   /**

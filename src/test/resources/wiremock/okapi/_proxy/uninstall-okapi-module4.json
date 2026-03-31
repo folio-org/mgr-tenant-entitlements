@@ -25,7 +25,8 @@
             "id": "okapi-module4-4.0.0",
             "action": "disable"
           }
-        ]
+        ],
+        "ignoreExtraElements": true
       }
     ]
   },

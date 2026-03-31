@@ -19,7 +19,7 @@ import static org.folio.entitlement.support.TestUtils.parseResponse;
 import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -49,15 +49,18 @@ import org.folio.security.integration.keycloak.client.KeycloakAuthClient;
 import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @UnitTest
+@ExtendWith(MockitoExtension.class)
 @Import({ControllerTestConfiguration.class, EntitlementController.class})
 @MockitoBean(types = FlowStageService.class)
 @WebMvcTest(EntitlementController.class)
@@ -214,7 +217,7 @@ class EntitlementControllerTest {
   @Test
   void delete_negative_unauthorized() throws Exception {
     when(entitlementService.performRequest(entitlementRequest())).thenReturn(entitlements());
-    when(authClient.evaluatePermissions(anyMap(), anyString())).thenThrow(new NotAuthorizedException("test"));
+    when(authClient.evaluatePermissions(any(), anyString())).thenThrow(new NotAuthorizedException("test"));
 
     mockMvc.perform(delete("/entitlements")
         .contentType(APPLICATION_JSON)

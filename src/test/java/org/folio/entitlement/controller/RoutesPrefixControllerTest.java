@@ -19,8 +19,7 @@ import org.folio.test.extensions.EnableKeycloakSecurity;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.cloud.openfeign.FeignAutoConfiguration;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -28,7 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @UnitTest
 @EnableKeycloakSecurity
-@Import({ControllerTestConfiguration.class, EntitlementController.class, FeignAutoConfiguration.class})
+@Import({ControllerTestConfiguration.class, EntitlementController.class})
 @MockitoBean(types = FlowStageService.class)
 @WebMvcTest(EntitlementController.class)
 @TestPropertySource(properties = "application.router.path-prefix=mgr-tenant-entitlements")

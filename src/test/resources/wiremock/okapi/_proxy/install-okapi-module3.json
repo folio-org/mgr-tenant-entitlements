@@ -25,7 +25,8 @@
             "id": "test-module3-1.0.0",
             "action": "enable"
           }
-        ]
+        ],
+        "ignoreExtraElements": true
       }
     ]
   },

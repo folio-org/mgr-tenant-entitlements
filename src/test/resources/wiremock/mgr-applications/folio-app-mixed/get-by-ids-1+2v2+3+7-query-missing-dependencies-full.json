@@ -2,11 +2,6 @@
   "request": {
     "method": "GET",
     "urlPath": "/applications",
-    "headers": {
-      "content-type": {
-        "equalTo": "application/json"
-      }
-    },
     "queryParameters": {
       "query": {
         "contains": "id==(\"folio-app1-1.0.0\" or \"folio-app2-3.0.0\" or \"folio-app3-3.0.0\" or \"folio-app7-7.0.0\")"
@@ -41,19 +36,31 @@
                   "version": "1.0.0",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/folio-module1/events",
-                      "permissionsRequired": [ "folio-module1.events.item.post" ]
+                      "permissionsRequired": [
+                        "folio-module1.events.item.post"
+                      ]
                     },
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/folio-module1/events",
-                      "permissionsRequired": [ "folio-module1.events.collection.get" ]
+                      "permissionsRequired": [
+                        "folio-module1.events.collection.get"
+                      ]
                     },
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/folio-module1/events/{id}",
-                      "permissionsRequired": [ "folio-module1.events.item.get" ]
+                      "permissionsRequired": [
+                        "folio-module1.events.item.get"
+                      ]
                     }
                   ]
                 },
@@ -63,11 +70,16 @@
                   "interfaceType": "system",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/_/tenant"
                     },
                     {
-                      "methods": [ "GET", "DELETE" ],
+                      "methods": [
+                        "GET",
+                        "DELETE"
+                      ],
                       "pathPattern": "/_/tenant/{id}"
                     }
                   ]
@@ -120,19 +132,31 @@
                   "version": "2.0.0",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/folio-module2/events",
-                      "permissionsRequired": [ "folio-module2.events.item.post" ]
+                      "permissionsRequired": [
+                        "folio-module2.events.item.post"
+                      ]
                     },
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/folio-module2/events",
-                      "permissionsRequired": [ "folio-module2.events.collection.get" ]
+                      "permissionsRequired": [
+                        "folio-module2.events.collection.get"
+                      ]
                     },
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/folio-module2/events/{id}",
-                      "permissionsRequired": [ "folio-module2.events.item.get" ]
+                      "permissionsRequired": [
+                        "folio-module2.events.item.get"
+                      ]
                     }
                   ]
                 },
@@ -142,11 +166,16 @@
                   "interfaceType": "system",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/_/tenant"
                     },
                     {
-                      "methods": [ "GET", "DELETE" ],
+                      "methods": [
+                        "GET",
+                        "DELETE"
+                      ],
                       "pathPattern": "/_/tenant/{id}"
                     }
                   ]
@@ -205,9 +234,13 @@
                   "version": "1.0.0",
                   "handlers": [
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/folio-module3/events",
-                      "permissionsRequired": [ "folio-module1.events.collection.get" ]
+                      "permissionsRequired": [
+                        "folio-module1.events.collection.get"
+                      ]
                     }
                   ]
                 },
@@ -217,11 +250,16 @@
                   "interfaceType": "system",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/_/tenant"
                     },
                     {
-                      "methods": [ "GET", "DELETE" ],
+                      "methods": [
+                        "GET",
+                        "DELETE"
+                      ],
                       "pathPattern": "/_/tenant/{id}"
                     }
                   ]
@@ -270,9 +308,13 @@
                   "version": "1.0.0",
                   "handlers": [
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/folio-module7/events",
-                      "permissionsRequired": [ "folio-module7.events.collection.get" ]
+                      "permissionsRequired": [
+                        "folio-module7.events.collection.get"
+                      ]
                     }
                   ]
                 },
@@ -282,11 +324,16 @@
                   "interfaceType": "system",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/_/tenant"
                     },
                     {
-                      "methods": [ "GET", "DELETE" ],
+                      "methods": [
+                        "GET",
+                        "DELETE"
+                      ],
                       "pathPattern": "/_/tenant/{id}"
                     }
                   ]

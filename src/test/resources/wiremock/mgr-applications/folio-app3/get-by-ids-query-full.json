@@ -1,12 +1,7 @@
 {
   "request": {
     "method": "GET",
-    "url": "/applications/folio-app3-3.0.0?full=true",
-    "headers": {
-      "content-type": {
-        "equalTo": "application/json"
-      }
-    }
+    "url": "/applications/folio-app3-3.0.0?full=true"
   },
   "response": {
     "status": 200,
@@ -42,9 +37,13 @@
                   "version": "1.0.0",
                   "handlers": [
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/folio-module3/events",
-                      "permissionsRequired": [ "folio-module3.events.collection.get" ]
+                      "permissionsRequired": [
+                        "folio-module3.events.collection.get"
+                      ]
                     }
                   ]
                 },
@@ -54,11 +53,16 @@
                   "interfaceType": "system",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/_/tenant"
                     },
                     {
-                      "methods": [ "GET", "DELETE" ],
+                      "methods": [
+                        "GET",
+                        "DELETE"
+                      ],
                       "pathPattern": "/_/tenant/{id}"
                     }
                   ]

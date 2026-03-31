@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.common.utils.OkapiHeaders.TENANT;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
-import static org.folio.entitlement.support.TestUtils.OBJECT_MAPPER;
+import static org.folio.entitlement.support.TestUtils.JACKSON3_OBJECT_MAPPER;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -33,7 +33,7 @@ import org.folio.entitlement.integration.folio.model.TenantAttributes;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.entitlement.utils.JsonConverter;
 import org.folio.test.types.UnitTest;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,7 +56,7 @@ class FolioTenantApiClientTest {
   @Mock private HttpResponse<String> httpResponse;
   @Mock private FolioClientConfigurationProperties folioClientConfigurationProperties;
   @Captor private ArgumentCaptor<HttpRequest> httpRequestCaptor;
-  @Spy private final JsonConverter jsonConverter = new JsonConverter(OBJECT_MAPPER);
+  @Spy private final JsonConverter jsonConverter = new JsonConverter(JACKSON3_OBJECT_MAPPER);
 
   @AfterEach
   void tearDown() {
@@ -259,7 +259,7 @@ class FolioTenantApiClientTest {
       .build();
   }
 
-  @NotNull
+  @NonNull
   private static TenantAttributes tenantAttributesForInstall() {
     var tenantAttributes = new TenantAttributes();
     tenantAttributes.setModuleTo(MODULE_ID);
