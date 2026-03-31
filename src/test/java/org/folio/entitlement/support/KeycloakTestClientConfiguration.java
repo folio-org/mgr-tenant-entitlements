@@ -147,7 +147,6 @@ public class KeycloakTestClientConfiguration {
         "client_secret", credentials.getValue(),
         "grant_type", "client_credentials");
 
-
       var keycloakBaseUrl = Strings.CS.removeEnd(keycloakConfiguration.getUrl(), "/");
       var uri = URI.create(String.format("%s/realms/%s/protocol/openid-connect/token", keycloakBaseUrl, tenant));
       var request = HttpRequest.newBuilder(uri)

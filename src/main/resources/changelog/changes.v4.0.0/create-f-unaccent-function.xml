@@ -12,9 +12,10 @@
 
   <changeSet id="create-f-unaccent-function" author="o.kuzminov" runOnChange="true">
     <sql splitStatements="false">
-      CREATE OR REPLACE FUNCTION f_unaccent(text)
-        RETURNS text AS $$ SELECT public.unaccent('public.unaccent'::regdictionary, $1) $$
-                                          LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT;
+      CREATE
+      OR REPLACE FUNCTION f_unaccent(text)
+        RETURNS text AS $$
+      SELECT public.unaccent('public.unaccent'::regdictionary, $1) $$ LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT;
     </sql>
   </changeSet>
 
