@@ -117,7 +117,7 @@ public class ApplicationManagerService {
 
   private Error extractError(HttpClientErrorException.BadRequest badRequest) {
     var responseBody = badRequest.getResponseBodyAsByteArray();
-    if (responseBody == null || responseBody.length == 0) {
+    if (responseBody.length == 0) {
       return null;
     }
     return parseErrors(badRequest.getResponseBodyAsString())

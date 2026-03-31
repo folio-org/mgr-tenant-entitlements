@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.List;
 import org.folio.entitlement.integration.okapi.model.DeploymentDescriptor;
 import org.folio.entitlement.integration.okapi.model.TenantModuleDescriptor;
-import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -24,12 +23,13 @@ public interface OkapiClient {
     @PathVariable("srvId") String srvId,
     @RequestHeader(TOKEN) String token);
 
+  @SuppressWarnings("java:S107")
   @PostExchange("/_/proxy/tenants/{tenant}/install")
   List<TenantModuleDescriptor> installTenantModules(
     @PathVariable(name = "tenant") String tenantId,
     @RequestParam("reinstall") boolean reinstall,
     @RequestParam("purge") boolean purge,
-    @Nullable @RequestParam("tenantParameters") String tenantParameters,
+    @RequestParam("tenantParameters") String tenantParameters,
     @RequestParam("ignoreErrors") boolean ignoreErrors,
     @RequestParam("async") boolean async,
     @RequestBody Collection<TenantModuleDescriptor> descriptors,
