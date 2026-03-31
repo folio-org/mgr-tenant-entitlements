@@ -27,11 +27,11 @@ public interface OkapiClient {
   @PostExchange("/_/proxy/tenants/{tenant}/install")
   List<TenantModuleDescriptor> installTenantModules(
     @PathVariable(name = "tenant") String tenantId,
-    @RequestParam("reinstall") boolean reinstall,
-    @RequestParam("purge") boolean purge,
-    @RequestParam("tenantParameters") String tenantParameters,
-    @RequestParam("ignoreErrors") boolean ignoreErrors,
-    @RequestParam("async") boolean async,
+    @RequestParam(value = "reinstall", required = false) Boolean reinstall,
+    @RequestParam(value = "purge", required = false) Boolean purge,
+    @RequestParam(value = "tenantParameters", required = false) String tenantParameters,
+    @RequestParam(value = "ignoreErrors", required = false) Boolean ignoreErrors,
+    @RequestParam(value = "async", required = false) Boolean async,
     @RequestBody Collection<TenantModuleDescriptor> descriptors,
     @RequestHeader(TOKEN) String token);
 }
