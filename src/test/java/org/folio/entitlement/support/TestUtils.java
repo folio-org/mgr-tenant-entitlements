@@ -12,11 +12,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import feign.FeignException;
-import feign.FeignException.BadRequest;
-import feign.Request;
-import feign.RequestTemplate;
-import feign.Response;
 import java.io.File;
 import java.io.InputStream;
 import java.net.Socket;
@@ -25,7 +20,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import javax.net.ssl.HostnameVerifier;
@@ -52,17 +46,27 @@ import org.folio.flow.model.StageResult;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.client.HttpClientErrorException;
 
 @Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TestUtils {
 
   public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-    .setSerializationInclusion(Include.NON_NULL)
+    .setDefaultPropertyInclusion(Include.NON_NULL)
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     .configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+
+  public static final tools.jackson.databind.json.JsonMapper JACKSON3_OBJECT_MAPPER =
+    tools.jackson.databind.json.JsonMapper.builder()
+      .changeDefaultPropertyInclusion(v -> v.withValueInclusion(Include.NON_NULL))
+      .disable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+      .enable(tools.jackson.databind.DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+      .build();
 
   private static final ClassLoader CLASS_LOADER = TestUtils.class.getClassLoader();
 
@@ -160,21 +164,18 @@ public class TestUtils {
     Mockito.verifyNoMoreInteractions(mocks);
   }
 
-  public static BadRequest createBadRequest(RequestValidationException rve) {
+  public static HttpClientErrorException.BadRequest createBadRequest(RequestValidationException rve) {
     var errorResponse = buildValidationError(rve, rve.getErrorParameters());
     return createBadRequest(asJsonString(errorResponse));
   }
 
-  public static BadRequest createBadRequest(String body) {
-    var response = Response.builder()
-      .request(getRequest("http://localhost"))
-      .body(body, StandardCharsets.UTF_8)
-      .headers(Collections.emptyMap())
-      .status(HttpStatus.BAD_REQUEST.value())
-      .reason(HttpStatus.BAD_REQUEST.getReasonPhrase())
-      .build();
-
-    return (BadRequest) FeignException.errorStatus("someMethod", response);
+  public static HttpClientErrorException.BadRequest createBadRequest(String body) {
+    return (HttpClientErrorException.BadRequest) HttpClientErrorException.create(
+      HttpStatusCode.valueOf(HttpStatus.BAD_REQUEST.value()),
+      HttpStatus.BAD_REQUEST.getReasonPhrase(),
+      HttpHeaders.EMPTY,
+      body.getBytes(StandardCharsets.UTF_8),
+      StandardCharsets.UTF_8);
   }
 
   public static void disableSslVerification() {
@@ -195,10 +196,6 @@ public class TestUtils {
 
   public static HttpClient httpClientWithDummySslContext() {
     return HttpClient.newBuilder().sslContext(dummySslContext()).build();
-  }
-
-  private static Request getRequest(String url) {
-    return Request.create(Request.HttpMethod.GET, url, Collections.emptyMap(), null, (RequestTemplate) null);
   }
 
   @SneakyThrows

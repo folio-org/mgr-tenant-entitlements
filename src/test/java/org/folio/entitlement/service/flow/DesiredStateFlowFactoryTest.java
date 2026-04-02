@@ -23,7 +23,7 @@ import org.folio.entitlement.service.stage.TenantLoader;
 import org.folio.entitlement.service.validator.DesiredStateApplicationFlowValidator;
 import org.folio.entitlement.service.validator.DesiredStateWithRevokeValidator;
 import org.folio.entitlement.service.validator.DesiredStateWithUpgradeValidator;
-import org.folio.entitlement.service.validator.StageRequestValidator;
+import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class DesiredStateFlowFactoryTest {
   @Mock private TenantLoader tenantLoader;
   @Mock private ApplicationStateTransitionPlanner applicationStateTransitionPlanner;
   @Mock private DesiredStateApplicationDescriptorLoader applicationDescriptorLoader;
-  @Mock private StageRequestValidator interfaceIntegrityValidator;
+  @Mock private InterfaceIntegrityValidator interfaceIntegrityValidator;
   @Mock private DesiredStateApplicationFlowValidator desiredStateApplicationFlowValidator;
   @Mock private DesiredStateWithUpgradeValidator desiredStateWithUpgradeValidator;
   @Mock private DesiredStateWithRevokeValidator desiredStateWithRevokeValidator;

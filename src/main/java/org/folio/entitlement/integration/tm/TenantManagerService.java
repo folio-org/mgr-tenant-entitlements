@@ -1,7 +1,5 @@
 package org.folio.entitlement.integration.tm;
 
-import feign.FeignException;
-import feign.FeignException.NotFound;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +7,8 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.tm.model.Tenant;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientResponseException;
 
 @Log4j2
 @Service
@@ -28,9 +28,9 @@ public class TenantManagerService {
     log.debug("Retrieving tenant [tenantId: {}]", tenantId);
     try {
       return tenantManagerClient.getTenantById(tenantId, authToken);
-    } catch (NotFound notFound) {
+    } catch (HttpClientErrorException.NotFound notFound) {
       throw new EntityNotFoundException("Tenant is not found: " + tenantId);
-    } catch (FeignException cause) {
+    } catch (RestClientResponseException cause) {
       throw new IntegrationException("Failed to retrieve tenant: " + tenantId, cause);
     }
   }
@@ -45,7 +45,7 @@ public class TenantManagerService {
   public Tenant findTenantByName(String tenantName, String authToken) {
     log.debug("Querying tenant [tenantName: {}]", tenantName);
     try {
-      var result = tenantManagerClient.queryTenantsByName(tenantName, authToken);
+      var result = tenantManagerClient.queryTenants("name==" + tenantName, authToken);
       if (result == null || result.isEmpty()) {
         throw new EntityNotFoundException("Tenant is not found by name: " + tenantName);
       }
@@ -53,7 +53,7 @@ public class TenantManagerService {
         throw new EntityNotFoundException("Multiple tenants found by name: " + tenantName);
       }
       return result.getRecords().get(0);
-    } catch (FeignException cause) {
+    } catch (RestClientResponseException cause) {
       throw new IntegrationException("Failed to query tenant by name: " + tenantName, cause);
     }
   }

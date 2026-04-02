@@ -6,11 +6,6 @@
       "limit": {
         "equalTo": "100"
       }
-    },
-    "headers": {
-      "content-type": {
-        "equalTo": "application/json"
-      }
     }
   },
   "response": {
@@ -41,6 +36,8 @@
       ],
       "totalRecords": 2
     },
-    "transformers": [ "response-template" ]
+    "transformers": [
+      "response-template"
+    ]
   }
 }

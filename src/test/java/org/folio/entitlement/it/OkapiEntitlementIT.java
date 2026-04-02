@@ -1,7 +1,5 @@
 package org.folio.entitlement.it;
 
-import static java.lang.Boolean.TRUE;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Duration.ofMillis;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,9 +64,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.testcontainers.shaded.org.awaitility.Awaitility.await;
 
-import feign.FeignException.BadGateway;
-import feign.Request;
-import feign.Request.HttpMethod;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -95,9 +90,12 @@ import org.mockito.invocation.InvocationOnMock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.web.client.HttpServerErrorException;
 
 @IntegrationTest
 @EnableOkapiSecurity
@@ -448,7 +446,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(jsonPath("$.errors[0].message", containsString("Cannot construct instance of `java.util.ArrayList`")))
+      .andExpect(jsonPath("$.errors[0].message",
+        containsString("Cannot deserialize value of type `java.util.ArrayList")))
       .andExpect(jsonPath("$.errors[0].type", is("HttpMessageNotReadableException")))
       .andExpect(jsonPath("$.errors[0].code", is("validation_error")));
 
@@ -527,7 +526,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
       .andExpect(jsonPath("$.errors[0].parameters[0].key", is("OkapiModulesInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
-        "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
+        "FAILED: [BadRequest] 400 Bad Request")));
 
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
@@ -556,7 +555,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
       .andExpect(jsonPath("$.errors[0].parameters[0].key", is("OkapiModulesInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
-        "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
+        "FAILED: [BadRequest] 400 Bad Request")));
 
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/okapi-module/entities", "GET"),
@@ -587,7 +586,7 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
       .andExpect(jsonPath("$.errors[0].parameters[0].key", is("OkapiModulesInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
-        "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
+        "FAILED: [BadRequest] 400 Bad Request")));
 
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).isEmpty();
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
@@ -612,13 +611,14 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
   void uninstall_negative_applicationsNotArray() throws Exception {
     var entitlementRequest = Map.of("tenantId", TENANT_ID, "applications", "test-app-2.0.0");
     mockMvc.perform(delete("/entitlements")
-        .queryParam("purge", TRUE.toString())
+        .queryParam("purge", "true")
         .contentType(APPLICATION_JSON)
         .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(jsonPath("$.errors[0].message", containsString("Cannot construct instance of `java.util.ArrayList`")))
+      .andExpect(jsonPath("$.errors[0].message",
+        containsString("Cannot deserialize value of type `java.util.ArrayList")))
       .andExpect(jsonPath("$.errors[0].type", is("HttpMessageNotReadableException")))
       .andExpect(jsonPath("$.errors[0].code", is("validation_error")));
   }
@@ -704,11 +704,8 @@ class OkapiEntitlementIT extends BaseIntegrationTest {
 
   @SneakyThrows
   private static Object badGatewayErr(InvocationOnMock invocation) {
-    var routeId = invocation.<String>getArgument(1);
-    var serviceId = invocation.<String>getArgument(0);
-    var url = String.format("/services/%s/routes/%s", serviceId, routeId);
-    var request = Request.create(HttpMethod.PUT, url, emptyMap(), null, UTF_8, null);
-    throw new BadGateway("502 Bad Gateway", request, null, emptyMap());
+    throw HttpServerErrorException.create(
+      HttpStatusCode.valueOf(502), "Bad Gateway", HttpHeaders.EMPTY, null, null);
   }
 
   private static void checkApplicationContextBeans(ApplicationContext appContext) {

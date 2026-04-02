@@ -7,20 +7,13 @@ import static org.apache.commons.lang3.ClassUtils.getSimpleName;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.common.utils.PaginationUtils.loadInBatches;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import feign.FeignException;
-import feign.FeignException.BadRequest;
-import feign.FeignException.NotFound;
 import jakarta.persistence.EntityNotFoundException;
-import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections4.ListUtils;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.error.Error;
 import org.folio.common.domain.model.error.ErrorResponse;
@@ -31,6 +24,10 @@ import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.am.ApplicationManagerClient;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientResponseException;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 @Log4j2
 @Service
@@ -55,9 +52,9 @@ public class ApplicationManagerService {
   public ApplicationDescriptor getApplicationDescriptor(String applicationId, String token) {
     try {
       return applicationManagerClient.getApplicationDescriptor(applicationId, true, token);
-    } catch (NotFound notFound) {
+    } catch (HttpClientErrorException.NotFound notFound) {
       throw new EntityNotFoundException("Application descriptor is not found: " + applicationId);
-    } catch (FeignException cause) {
+    } catch (RestClientResponseException cause) {
       throw new IntegrationException("Failed to retrieve application descriptor: " + applicationId, cause);
     }
   }
@@ -86,7 +83,7 @@ public class ApplicationManagerService {
   public ResultList<ModuleDiscovery> getModuleDiscoveries(String applicationId, String token) {
     try {
       return applicationManagerClient.getModuleDiscoveries(applicationId, DEFAULT_NUMBER_OF_DISCOVERY_ENTITIES, token);
-    } catch (FeignException cause) {
+    } catch (RestClientResponseException cause) {
       throw new IntegrationException("Failed to retrieve module discovery descriptors: " + applicationId, cause);
     }
   }
@@ -102,13 +99,13 @@ public class ApplicationManagerService {
   public void validate(ApplicationDescriptor descriptor, String token) {
     try {
       applicationManagerClient.validate(descriptor, token);
-    } catch (BadRequest badRequest) {
+    } catch (HttpClientErrorException.BadRequest badRequest) {
       var error = extractError(badRequest);
 
       throw new RequestValidationException("Invalid application descriptor. Details: "
         + (error != null ? error.getMessage() : badRequest.getMessage()),
         "application", descriptor.getId());
-    } catch (FeignException cause) {
+    } catch (RestClientResponseException cause) {
       throw new IntegrationException("Failed to validate application descriptor: " + descriptor.getId(), cause);
     }
   }
@@ -118,10 +115,15 @@ public class ApplicationManagerService {
       loadApplicationDescriptors(applicationIdsBatch, token).getRecords();
   }
 
-  private Error extractError(BadRequest badRequest) {
-    return badRequest.responseBody()
-      .map(this::parseErrors)
-      .map(this::first)
+  @SuppressWarnings("java:S2589")
+  private Error extractError(HttpClientErrorException.BadRequest badRequest) {
+    var responseBody = badRequest.getResponseBodyAsByteArray();
+    if (responseBody == null || responseBody.length == 0) {
+      return null;
+    }
+    return parseErrors(badRequest.getResponseBodyAsString())
+      .stream()
+      .findFirst()
       .orElse(null);
   }
 
@@ -137,27 +139,21 @@ public class ApplicationManagerService {
     try {
       var query = CqlQuery.exactMatchAny("id", applicationIds);
       return applicationManagerClient.queryApplicationDescriptors(query, true, APP_DESCRIPTOR_BATCH_SIZE, 0, token);
-    } catch (FeignException cause) {
+    } catch (RestClientResponseException cause) {
       throw new IntegrationException("Failed to query application descriptors", cause);
     }
   }
 
-  private List<Error> parseErrors(ByteBuffer response) {
-    var responseStr = new String(response.array());
-
+  private List<Error> parseErrors(String responseStr) {
     try {
       var errorResponse = objectMapper.readValue(responseStr, ErrorResponse.class);
 
       return errorResponse.getErrors();
-    } catch (JsonProcessingException e) {
+    } catch (JacksonException e) {
       log.warn("Failed to parse {} from the response: {}", getSimpleName(ErrorResponse.class), responseStr);
 
       return emptyList();
     }
-  }
-
-  private <T> T first(List<T> items) {
-    return ListUtils.emptyIfNull(items).size() == 1 ? items.get(0) : null;
   }
 
   private static void checkAllApplicationsFound(Collection<String> appIds, List<ApplicationDescriptor> descriptors) {

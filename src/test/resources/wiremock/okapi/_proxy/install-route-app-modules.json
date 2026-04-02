@@ -29,7 +29,8 @@
             "id": "routes-module2-2.0.0",
             "action": "enable"
           }
-        ]
+        ],
+        "ignoreExtraElements": true
       }
     ]
   },

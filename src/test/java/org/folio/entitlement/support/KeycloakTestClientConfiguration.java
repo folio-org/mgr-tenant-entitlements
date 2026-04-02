@@ -25,9 +25,6 @@ import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VAL
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.util.UriComponentsBuilder.fromUriString;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
@@ -43,7 +40,7 @@ import java.util.stream.StreamSupport;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.support.model.AuthorizationResource;
 import org.folio.security.integration.keycloak.service.SecureStoreKeyProvider;
@@ -52,6 +49,9 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpMethod;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
 
 @Log4j2
 @TestConfiguration
@@ -102,13 +102,13 @@ public class KeycloakTestClientConfiguration {
     }
 
     private static AuthorizationResource toAuthorizationResource(JsonNode node) {
-      var resourceName = node.path("name").asText();
+      var resourceName = node.path("name").asString();
 
       var scopeNode = node.path("scopes");
       var resultScopes = new ArrayList<String>();
       if (scopeNode instanceof ArrayNode scopes) {
         for (var scope : scopes) {
-          var scopeName = scope.path("name").asText();
+          var scopeName = scope.path("name").asString();
           if (scopeName != null) {
             resultScopes.add(scopeName);
           }
@@ -132,7 +132,7 @@ public class KeycloakTestClientConfiguration {
 
       var responseJson = sendAndParseGetResponseAsString(uri);
       return StreamSupport.stream(objectMapper.readTree(responseJson).spliterator(), false)
-        .map(node -> node.path("name").asText())
+        .map(node -> node.path("name").asString())
         .filter(Objects::nonNull)
         .map(HttpMethod::valueOf)
         .sorted()
@@ -147,7 +147,7 @@ public class KeycloakTestClientConfiguration {
         "client_secret", credentials.getValue(),
         "grant_type", "client_credentials");
 
-      var keycloakBaseUrl = StringUtils.removeEnd(keycloakConfiguration.getUrl(), "/");
+      var keycloakBaseUrl = Strings.CS.removeEnd(keycloakConfiguration.getUrl(), "/");
       var uri = URI.create(String.format("%s/realms/%s/protocol/openid-connect/token", keycloakBaseUrl, tenant));
       var request = HttpRequest.newBuilder(uri)
         .method(POST.name(), ofString(toFormUrlencodedValue(tokenRequestBody), UTF_8))

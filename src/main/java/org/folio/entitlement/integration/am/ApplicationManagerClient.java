@@ -7,13 +7,15 @@ import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.utils.CqlQuery;
 import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.service.annotation.GetExchange;
+import org.springframework.web.service.annotation.HttpExchange;
+import org.springframework.web.service.annotation.PostExchange;
 
+@HttpExchange(accept = APPLICATION_JSON_VALUE)
 public interface ApplicationManagerClient {
 
   /**
@@ -24,13 +26,13 @@ public interface ApplicationManagerClient {
    * @param token - okapi auth token
    * @return retrieved {@link ApplicationDescriptor} object
    */
-  @GetMapping(value = "/applications/{id}", consumes = APPLICATION_JSON_VALUE)
+  @GetExchange("/applications/{id}")
   ApplicationDescriptor getApplicationDescriptor(
     @PathVariable("id") String applicationId,
     @RequestParam("full") Boolean full,
     @RequestHeader(TOKEN) String token);
 
-  @GetMapping(value = "/applications", consumes = APPLICATION_JSON_VALUE)
+  @GetExchange("/applications")
   ResultList<ApplicationDescriptor> queryApplicationDescriptors(
     @RequestParam("query") CqlQuery query,
     @RequestParam("full") Boolean full,
@@ -38,10 +40,10 @@ public interface ApplicationManagerClient {
     @RequestParam("offset") int offset,
     @RequestHeader(TOKEN) String token);
 
-  @PostMapping(value = "/applications/validate", consumes = APPLICATION_JSON_VALUE)
+  @PostExchange("/applications/validate")
   void validate(@RequestBody ApplicationDescriptor descriptor, @RequestHeader(TOKEN) String token);
 
-  @GetMapping(value = "/applications/{id}/discovery", consumes = APPLICATION_JSON_VALUE)
+  @GetExchange("/applications/{id}/discovery")
   ResultList<ModuleDiscovery> getModuleDiscoveries(
     @PathVariable("id") String applicationId,
     @RequestParam("limit") int limit,

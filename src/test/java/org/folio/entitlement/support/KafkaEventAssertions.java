@@ -11,7 +11,6 @@ import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTop
 import static org.folio.entitlement.support.TestConstants.systemUserTenantTopic;
 import static org.folio.test.FakeKafkaConsumer.getEvents;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -24,6 +23,7 @@ import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
+import tools.jackson.core.type.TypeReference;
 
 @Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)

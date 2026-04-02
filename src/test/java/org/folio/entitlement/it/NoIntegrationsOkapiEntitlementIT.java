@@ -389,7 +389,8 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(jsonPath("$.errors[0].message", containsString("Cannot construct instance of `java.util.ArrayList`")))
+      .andExpect(jsonPath("$.errors[0].message",
+        containsString("Cannot deserialize value of type `java.util.ArrayList")))
       .andExpect(jsonPath("$.errors[0].type", is("HttpMessageNotReadableException")))
       .andExpect(jsonPath("$.errors[0].code", is("validation_error")));
 
@@ -471,7 +472,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
       .andExpect(jsonPath("$.errors[0].parameters[0].key", is("OkapiModulesInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
-        "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
+        "FAILED: [BadRequest] 400 Bad Request")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
@@ -499,7 +500,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
       .andExpect(jsonPath("$.errors[0].parameters[0].key", is("OkapiModulesInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
-        "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
+        "FAILED: [BadRequest] 400 Bad Request")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), emptyEntitlements());
   }
@@ -526,7 +527,7 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
       .andExpect(jsonPath("$.errors[0].parameters[0].key", is("OkapiModulesInstaller")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
-        "FAILED: [BadRequest] [400 Bad Request] during [POST] to")));
+        "FAILED: [BadRequest] 400 Bad Request")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(OKAPI_APP_ID), entitlements(entitlement(OKAPI_APP_ID)));
   }
@@ -557,7 +558,8 @@ class NoIntegrationsOkapiEntitlementIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest)))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
-      .andExpect(jsonPath("$.errors[0].message", containsString("Cannot construct instance of `java.util.ArrayList`")))
+      .andExpect(jsonPath("$.errors[0].message",
+        containsString("Cannot deserialize value of type `java.util.ArrayList")))
       .andExpect(jsonPath("$.errors[0].type", is("HttpMessageNotReadableException")))
       .andExpect(jsonPath("$.errors[0].code", is("validation_error")));
   }

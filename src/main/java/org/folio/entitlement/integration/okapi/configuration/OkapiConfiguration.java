@@ -1,11 +1,8 @@
 package org.folio.entitlement.integration.okapi.configuration;
 
 import static java.util.Arrays.asList;
+import static org.folio.common.utils.tls.HttpClientTlsUtils.buildHttpServiceClient;
 
-import feign.Contract;
-import feign.Feign;
-import feign.codec.Decoder;
-import feign.codec.Encoder;
 import org.folio.entitlement.integration.kafka.CapabilitiesEventPublisher;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobEventPublisher;
@@ -24,28 +21,23 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.web.client.RestClient;
 
 @Configuration
 @ConditionalOnProperty("application.okapi.enabled")
 public class OkapiConfiguration {
 
   /**
-   * Creates a {@link org.springframework.cloud.openfeign.FeignClient} for integration with Kong Admin API.
+   * Creates an {@link OkapiClient} for integration with Okapi API.
    *
    * @param okapiConfigurationProperties - okapi configuration properties with required data
-   * @param contract - feign contract
-   * @param encoder - feign http body encoder
-   * @param decoder - feign http body decoder
    * @return created {@link OkapiClient} component
    */
   @Bean
-  public OkapiClient okapiClient(OkapiConfigurationProperties okapiConfigurationProperties,
-    Contract contract, Encoder encoder, Decoder decoder) {
-    return Feign.builder()
-      .contract(contract)
-      .encoder(encoder)
-      .decoder(decoder)
-      .target(OkapiClient.class, okapiConfigurationProperties.getUrl());
+  public OkapiClient okapiClient(OkapiConfigurationProperties okapiConfigurationProperties) {
+    return buildHttpServiceClient(
+      RestClient.builder().baseUrl(okapiConfigurationProperties.getUrl()),
+      null, okapiConfigurationProperties.getUrl(), OkapiClient.class);
   }
 
   /**

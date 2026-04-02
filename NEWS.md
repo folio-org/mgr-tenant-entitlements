@@ -15,6 +15,7 @@
 * Review and clean up logs in mgr-tenant-entitlements (MGRENTITLE-152)
 * Half of timers are disabled after recent bugfest update for 1 tenant (MGRENTITLE-165)
 * Migrate CI to centralized FOLIO Maven GitHub workflow (MGRENTITLE-162)
+* Upgrade module to SpringBoot4.0 and Spring7.0 (MGRENTITLE-148)
 
 ---
 

@@ -17,13 +17,13 @@ mvn clean install -Pcoverage
 ```
 
 ### Testing
-Tests are separated into unit and integration tests using JUnit 5 tags:
+Tests are split between repo-local unit tests and an integration suite centered on `BaseIntegrationTest`:
 
 ```bash
 # Run unit tests only (tagged with @UnitTest)
 mvn test
 
-# Run integration tests only (tagged with @integration)
+# Run the full verification lifecycle (unit + integration suites)
 mvn verify
 
 # Run both
@@ -41,9 +41,9 @@ mvn clean install -Pcoverage
 ```
 
 **Test Requirements:**
-- Integration tests (classes ending in `IT.java`) must be tagged with `@Tag("integration")`
-- Unit tests must be tagged with `@UnitTest`
-- Integration tests use Testcontainers for PostgreSQL and Kafka
+- Unit tests use `@UnitTest`
+- Integration tests are centered on `BaseIntegrationTest` and use `@IntegrationTest`
+- Test coverage spans `configuration`, `controller`, `integration`, `it`, `service`, `support`, and `utils`, with nested coverage under `service/stage`, `service/flow`, and `service/validator`
 
 ### Linting
 ```bash
@@ -108,12 +108,8 @@ The application is built around the **Flow Engine** (`folio-flow-engine` library
    - Manages cross-application module dependencies
 
 5. **Integration Points** (in `integration/`):
-   - **Application Manager** (`am/`): Retrieves application descriptors
-   - **Tenant Manager** (`tm/`): Manages tenant information
-   - **Keycloak** (`keycloak/`): Authentication and authorization
-   - **Kong** (via `folio-integration-kong`): API gateway registration
-   - **Kafka** (`kafka/`): Event publishing for entitlement changes
-   - **FOLIO Modules** (`folio/`): Module installation endpoints
+   - Active subpackages include `am/`, `tm/`, `okapi/`, `folio/`, `keycloak/`, `kafka/`, `token/`, and `interceptor/`
+   - These packages cover application and tenant clients, Okapi/FOLIO interactions, auth/token handling, Kafka publishing, and request interception
 
 ### Key Domain Concepts
 
@@ -133,7 +129,8 @@ The application is built around the **Flow Engine** (`folio-flow-engine` library
     - `service/flow/`: Flow providers and factories
     - `service/stage/`: Individual flow stages
     - `service/validator/`: Interface integrity and request validators
-  - `integration/`: External service clients (Feign clients)
+  - `integration/`: External clients and supporting runtime adapters
+    - Active subpackages: `am/`, `tm/`, `okapi/`, `folio/`, `keycloak/`, `kafka/`, `token/`, `interceptor/`
   - `repository/`: JPA repositories
   - `domain/`: Domain models
     - `domain/entity/`: JPA entities
@@ -167,24 +164,26 @@ From `lombok.config`:
 
 - **Test class naming**:
   - Unit tests: `*Test.java` (tagged with `@UnitTest`)
-  - Integration tests: `*IT.java` (tagged with `@Tag("integration")`)
+  - Integration tests: `*IT.java` (centered on `BaseIntegrationTest` and using `@IntegrationTest`)
 - **Base test classes**:
-  - Integration tests extend `BaseIntegrationTest` (in `support/base/`)
-  - Common test utilities in `support/` package
+  - `BaseIntegrationTest` in `support/base/` anchors the integration suite
+  - Common test utilities live in `support/`
+- **Test layout**:
+  - Test coverage spans `configuration`, `controller`, `integration`, `it`, `service`, `support`, and `utils`, with nested coverage under `service/stage`, `service/flow`, and `service/validator`
 - **Mocking**: Use Mockito for unit tests
 - **Integration tests**: Use Testcontainers, WireMock for external services
 
 ### Database
 
 - **Schema management**: Liquibase (changelogs in `src/main/resources/changelog/`)
-- **Versioning**: Changelogs organized by version (e.g., `changes/v1.0.0/`, `changes.v4.0.0/`)
-- **Main changelog**: `changelog/changelog-4.0.0.xml`
+- **Versioning**: Changelogs are versioned with mixed directory naming styles (e.g., `changes/v1.0.0/`, `changes.v3.0.0/`, `changes.v4.0.0/`)
+- **Main changelog**: `changelog/changelog-master.xml`
 
 ### Dependency Injection
 
 - Constructor injection (enabled via Lombok `@RequiredArgsConstructor`)
-- Spring Boot 3.x with Java 21
-- Configuration properties use `@ConfigurationPropertiesScan`
+- Spring Boot `4.0.4` with Java `21`
+- App bootstrap uses `@EnableKafka`, `@EnableMgrSecurity`, and `@ConfigurationPropertiesScan`
 
 ### Security
 
@@ -196,13 +195,19 @@ From `lombok.config`:
 ### Environment Variables
 
 Critical environment variables (see README for full list):
-- `okapi.url`: Okapi gateway URL
-- `tenant.url`: Tenant Manager URL (required)
-- `am.url`: Application Manager URL (required)
-- `kong.url`: Kong Admin API URL (required if KONG_INTEGRATION_ENABLED=true)
-- `SECRET_STORE_TYPE`: Secure storage type (EPHEMERAL, AWS_SSM, VAULT, FSSP)
+- `OKAPI_URL` / `okapi.url`: Okapi gateway URL
+- `MT_CLIENT_URL` / `tenant.url`: Tenant Manager URL
+- `AM_CLIENT_URL` / `am.url`: Application Manager URL
+- `KONG_ADMIN_URL` / `kong.url`: Kong Admin API URL
+- `KONG_INTEGRATION_ENABLED`: Enables Kong integration flows
+- `OKAPI_INTEGRATION_ENABLED`: Enables Okapi integration flows
+- `KC_INTEGRATION_ENABLED`: Enables Keycloak integration
+- `SECRET_STORE_TYPE`: Selects the secure storage backend used by the service
+- `FLOW_ENGINE_EXECUTION_TIMEOUT`: Flow execution timeout
+- `FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE`: Recent flow cache size
 - `FLOW_ENGINE_THREADS_NUM`: Flow engine thread pool size (default: 4)
 - `FLOW_ENGINE_MODULE_INSTALLER_THREADS`: Parallel module installation threads (default: 4)
+- `VALIDATION_INTERFACE_INTEGRITY_STATE_ENABLED`: Enables interface integrity validation state checks
 - `ENV`: Logical deployment name (kafka topic prefix)
 
 ### API Design
@@ -231,7 +236,7 @@ From `pom.xml`, these are excluded from code coverage:
 ### Common Pitfalls
 
 1. **Generated code**: Don't modify generated DTOs or API interfaces in `target/generated-sources/`
-2. **Test tags**: Always tag tests with `@UnitTest` or `@Tag("integration")`
+2. **Test setup**: Keep unit tests on `@UnitTest`; keep integration coverage aligned with `BaseIntegrationTest` and `@IntegrationTest`
 3. **Flow stages**: Stages must be idempotent where possible (may be retried)
 4. **Thread safety**: Be aware of ThreadLocal usage in `ThreadLocalModuleStageContext`
 5. **Kafka topics**: Topic names are prefixed with `ENV` variable

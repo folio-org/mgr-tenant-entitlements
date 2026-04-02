@@ -37,10 +37,6 @@ spring:
         max.in.flight.requests.per.connection: 5
         retries: 5
         spring.json.add.type.headers: false
-  cloud:
-    openfeign:
-      okhttp:
-        enabled: true
 
 application:
   router:
@@ -198,18 +194,6 @@ management:
     base-path: /admin
     exposure:
       include: info,health,liquibase,threaddump,heapdump,httptrace,loggers
-
-feign:
-  compression:
-    request:
-      enabled: true
-    response:
-      enabled: true
-  client:
-    config:
-      okapi:
-        connectTimeout: 30000
-        readTimeout: 300000
 
 retries:
   module:

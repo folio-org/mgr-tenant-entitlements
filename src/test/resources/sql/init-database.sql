@@ -1,11 +1,10 @@
-create database te_it;
+-- 1. Setup for te_it
+CREATE DATABASE te_it;
+CREATE USER te_admin WITH PASSWORD 'folio123';
+ALTER DATABASE te_it OWNER TO te_admin;
 
-create user te_admin with password 'folio123';
-grant connect on database te_it to te_admin;
-grant all privileges on database te_it to te_admin;
 
-create database kong_it;
-
-create user kong_admin with password 'kong123';
-grant connect on database kong_it to kong_admin;
-grant all privileges on database kong_it to kong_admin;
+-- 2. Setup for kong_it
+CREATE DATABASE kong_it;
+CREATE USER kong_admin WITH PASSWORD 'kong123';
+ALTER DATABASE kong_it OWNER TO kong_admin;

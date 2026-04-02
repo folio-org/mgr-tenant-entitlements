@@ -3,9 +3,6 @@
     "method": "GET",
     "urlPath": "/applications",
     "headers": {
-      "content-type": {
-        "equalTo": "application/json"
-      },
       "x-okapi-token": {
         "matches": ".+"
       }
@@ -44,7 +41,9 @@
                   "version": "1.0.0",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/folio-module1/events",
                       "permissionsRequired": [
                         "folio-module1.events.item.post",
@@ -54,14 +53,22 @@
                       ]
                     },
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/folio-module1/events",
-                      "permissionsRequired": [ "folio-module1.events.collection.get" ]
+                      "permissionsRequired": [
+                        "folio-module1.events.collection.get"
+                      ]
                     },
                     {
-                      "methods": [ "GET" ],
+                      "methods": [
+                        "GET"
+                      ],
                       "pathPattern": "/folio-module1/events/{id}",
-                      "permissionsRequired": [ "folio-module1.events.item.get" ]
+                      "permissionsRequired": [
+                        "folio-module1.events.item.get"
+                      ]
                     }
                   ]
                 },
@@ -71,11 +78,16 @@
                   "interfaceType": "system",
                   "handlers": [
                     {
-                      "methods": [ "POST" ],
+                      "methods": [
+                        "POST"
+                      ],
                       "pathPattern": "/_/tenant"
                     },
                     {
-                      "methods": [ "GET", "DELETE" ],
+                      "methods": [
+                        "GET",
+                        "DELETE"
+                      ],
                       "pathPattern": "/_/tenant/{id}"
                     }
                   ]
