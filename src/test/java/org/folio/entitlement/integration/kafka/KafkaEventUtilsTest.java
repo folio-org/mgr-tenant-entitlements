@@ -1,18 +1,20 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.integration.kafka.model.ResourceEventType.CREATE;
-import static org.folio.entitlement.integration.kafka.model.ResourceEventType.DELETE;
-import static org.folio.entitlement.integration.kafka.model.ResourceEventType.UPDATE;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
+import static org.folio.integration.kafka.model.ResourceEventType.CREATE;
+import static org.folio.integration.kafka.model.ResourceEventType.DELETE;
+import static org.folio.integration.kafka.model.ResourceEventType.UPDATE;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.folio.entitlement.integration.kafka.model.ResourceEvent;
-import org.folio.entitlement.integration.kafka.model.ResourceEventType;
+import org.folio.integration.kafka.model.ResourceEvent;
+import org.folio.integration.kafka.model.ResourceEventType;
+import org.folio.integration.kafka.model.TenantAwareEvent;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -36,6 +38,14 @@ class KafkaEventUtilsTest {
     var resourceName = "test-resource";
     var result = KafkaEventUtils.createEvent(resourceName, TENANT_NAME, newValue, oldValue);
     assertThat(result).isEqualTo(Optional.ofNullable(event));
+  }
+
+  @Test
+  void createEvent_positive_resultImplementsSharedTenantAwareEvent() {
+    var result = KafkaEventUtils.createEvent("test-resource", TENANT_NAME, "v2", null);
+
+    assertThat(result).isPresent();
+    assertThat(result.orElseThrow()).isInstanceOf(TenantAwareEvent.class);
   }
 
   private static Stream<Arguments> createEventDatasource() {

@@ -19,10 +19,10 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
-import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
 import org.folio.entitlement.support.model.AuthorizationResource;
+import org.folio.integration.kafka.model.ResourceEvent;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class UpgradeTestValues {

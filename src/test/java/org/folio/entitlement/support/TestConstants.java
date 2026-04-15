@@ -2,8 +2,8 @@ package org.folio.entitlement.support;
 
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.entitlement.support.TestUtils.httpClientWithDummySslContext;
-import static org.folio.integration.kafka.KafkaUtils.getEnvTopicName;
-import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
+import static org.folio.integration.kafka.producer.KafkaUtils.getEnvTopicName;
+import static org.folio.integration.kafka.producer.KafkaUtils.getTenantTopicName;
 
 import java.net.http.HttpClient;
 import java.util.List;

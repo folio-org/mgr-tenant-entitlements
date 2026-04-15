@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SYSTEM_USER_RESOURCE_NAME;
-import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
+import static org.folio.integration.kafka.producer.KafkaUtils.getTenantTopicName;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

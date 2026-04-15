@@ -20,9 +20,9 @@ import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
 import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
-import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
 import org.folio.entitlement.integration.kafka.model.SystemUserEvent;
+import org.folio.integration.kafka.model.ResourceEvent;
 import tools.jackson.core.type.TypeReference;
 
 @Log4j2
