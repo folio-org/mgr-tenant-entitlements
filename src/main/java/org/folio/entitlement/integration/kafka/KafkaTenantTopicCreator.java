@@ -9,7 +9,7 @@ import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
-import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
+import static org.folio.integration.kafka.producer.KafkaUtils.getTenantTopicName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +18,9 @@ import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
-import org.folio.integration.kafka.FolioKafkaProperties;
-import org.folio.integration.kafka.KafkaAdminService;
-import org.folio.integration.kafka.KafkaUtils;
+import org.folio.integration.kafka.producer.KafkaAdminService;
+import org.folio.integration.kafka.producer.KafkaProducerProperties.KafkaTopic;
+import org.folio.integration.kafka.producer.KafkaUtils;
 import org.springframework.stereotype.Component;
 
 @Log4j2
@@ -80,7 +80,7 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageCon
     return createdTopics;
   }
 
-  private void createTopic(String topicName, FolioKafkaProperties.KafkaTopic topicConfig) {
+  private void createTopic(String topicName, KafkaTopic topicConfig) {
     var createdTopic = KafkaUtils.createTopic(topicName, topicConfig.getNumPartitions(),
       topicConfig.getReplicationFactor());
     kafkaAdminService.createTopic(createdTopic);

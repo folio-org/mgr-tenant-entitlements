@@ -14,7 +14,7 @@ import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITI
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITY_RESOURCE_NAME;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.entitlement.utils.RoutingEntryUtils.getMethods;
-import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
+import static org.folio.integration.kafka.producer.KafkaUtils.getTenantTopicName;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;

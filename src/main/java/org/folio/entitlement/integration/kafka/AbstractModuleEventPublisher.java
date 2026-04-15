@@ -10,8 +10,8 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
-import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
+import org.folio.integration.kafka.model.ResourceEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @RequiredArgsConstructor

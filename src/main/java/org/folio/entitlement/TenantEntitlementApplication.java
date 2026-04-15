@@ -1,7 +1,7 @@
 package org.folio.entitlement;
 
 import org.folio.common.service.TransactionHelper;
-import org.folio.integration.kafka.EnableKafka;
+import org.folio.integration.kafka.producer.EnableKafkaProducer;
 import org.folio.security.EnableMgrSecurity;
 import org.folio.spring.cql.JpaCqlConfiguration;
 import org.springframework.boot.SpringApplication;
@@ -9,7 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Import;
 
-@EnableKafka
+@EnableKafkaProducer
 @SpringBootApplication
 @Import({JpaCqlConfiguration.class, TransactionHelper.class})
 @EnableMgrSecurity

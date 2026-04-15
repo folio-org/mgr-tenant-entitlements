@@ -4,7 +4,7 @@ import static org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPub
 import static org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher.getEventPayloadForUnchangedModule;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITIES_TOPIC;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITY_RESOURCE_NAME;
-import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
+import static org.folio.integration.kafka.producer.KafkaUtils.getTenantTopicName;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

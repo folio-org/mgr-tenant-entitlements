@@ -13,9 +13,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.ModuleDescriptorHolder;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
-import org.folio.entitlement.integration.kafka.model.ResourceEvent;
 import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
+import org.folio.integration.kafka.model.ResourceEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public abstract class AbstractEventPublisher<T> extends DatabaseLoggingStage<OkapiStageContext> {

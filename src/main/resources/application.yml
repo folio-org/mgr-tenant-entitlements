@@ -105,10 +105,11 @@ application:
   kafka:
     send-duration-timeout: ${KAFKA_SEND_DURATION_TIMEOUT:10s}
     producer-tenant-collection: ${KAFKA_PRODUCER_TENANT_COLLECTION:false}
-    topics:
-      - name: entitlement
-        num-partitions: ${KAFKA_ENTITLEMENT_TOPIC_PARTITIONS:1}
-        replication-factor: ${KAFKA_ENTITLEMENT_TOPIC_REPLICATION_FACTOR:}
+    producer:
+      topics:
+        - name: entitlement
+          num-partitions: ${KAFKA_ENTITLEMENT_TOPIC_PARTITIONS:1}
+          replication-factor: ${KAFKA_ENTITLEMENT_TOPIC_REPLICATION_FACTOR:}
     tenant-topics:
       - name: mgr-tenant-entitlements.scheduled-job
         num-partitions: ${KAFKA_SCHEDULED_JOB_TOPIC_PARTITIONS:1}

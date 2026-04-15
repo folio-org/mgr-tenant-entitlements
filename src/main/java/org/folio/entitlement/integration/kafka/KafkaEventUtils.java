@@ -8,8 +8,8 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
-import org.folio.entitlement.integration.kafka.model.ResourceEvent;
-import org.folio.entitlement.integration.kafka.model.ResourceEventType;
+import org.folio.integration.kafka.model.ResourceEvent;
+import org.folio.integration.kafka.model.ResourceEventType;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
@@ -60,9 +60,9 @@ public class KafkaEventUtils {
   /**
    * Generates {@link ResourceEventType} value for old and new values.
    *
-   * @param newValue - new value for {@link org.folio.entitlement.integration.kafka.model.ResourceEvent}
-   * @param oldValue - previous (old) value for {@link org.folio.entitlement.integration.kafka.model.ResourceEvent}
-   * @return {@link ResourceEventType} for {@link org.folio.entitlement.integration.kafka.model.ResourceEvent}
+   * @param newValue - new value for {@link ResourceEvent}
+   * @param oldValue - previous (old) value for {@link ResourceEvent}
+   * @return {@link ResourceEventType} for {@link ResourceEvent}
    */
   public static ResourceEventType getResourceEventType(Object newValue, Object oldValue) {
     if (newValue != null && oldValue == null) {

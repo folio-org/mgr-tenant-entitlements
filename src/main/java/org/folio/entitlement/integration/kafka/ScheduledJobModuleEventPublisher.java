@@ -6,7 +6,7 @@ import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SCHEDULED_JOB_RESOURCE_NAME;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SCHEDULED_JOB_TOPIC;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
-import static org.folio.integration.kafka.KafkaUtils.getTenantTopicName;
+import static org.folio.integration.kafka.producer.KafkaUtils.getTenantTopicName;
 
 import java.util.List;
 import java.util.Objects;
