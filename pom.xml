@@ -37,9 +37,9 @@
     <cql2pgjson.version>36.0.0</cql2pgjson.version>
     <openapi-tools.jackson-databind-nullable.version>0.2.10</openapi-tools.jackson-databind-nullable.version>
     <folio-spring-cql.version>10.0.0</folio-spring-cql.version>
-    <applications-poc-tools.version>4.0.1</applications-poc-tools.version>
+    <applications-poc-tools.version>4.1.0-SNAPSHOT</applications-poc-tools.version>
     <folio-java-checkstyle.version>1.2.0</folio-java-checkstyle.version>
-    <folio-flow-engine.version>4.0.0</folio-flow-engine.version>
+    <folio-flow-engine.version>4.1.0-SNAPSHOT</folio-flow-engine.version>
     <caffeine.version>3.1.8</caffeine.version>
 
     <mgr-tenant-entitlements.yaml-file>${project.basedir}/src/main/resources/swagger.api/mgr-tenant-entitlements.yaml
