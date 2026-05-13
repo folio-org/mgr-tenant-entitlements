@@ -161,12 +161,16 @@ public class KeycloakService {
     try (var response = retrySupport.callWithRetry(() -> failOnInternalServerError(client.scopes().create(scope)))) {
       var status = response.getStatus();
       if (status >= SC_BAD_REQUEST && status != SC_CONFLICT) {
+        log.warn("Failed to create Keycloak scope: name = {}, status = {}, info = {}",
+          scopeName, status, response.getStatusInfo());
         return Optional.of(getScopeError(format(
           "Failed to create scope %s (status: %s, info: %s)", scope.getName(), status, response.getStatusInfo())));
       }
 
       log.debug("Scope was created with name: #{}", scopeName);
     } catch (Exception exception) {
+      log.warn("Failed to create Keycloak scope: name = {}, cause = {}, causeMessage = {}",
+        scopeName, exception.getClass().getSimpleName(), exception.getMessage());
       return Optional.of(getScopeError(format("Failed to create scope %s (cause: %s, causeMessage: %s)",
         scopeName, exception.getClass().getSimpleName(), exception.getMessage())));
     }
@@ -201,12 +205,15 @@ public class KeycloakService {
 
       if (status >= SC_BAD_REQUEST) {
         var statusInfo = response.getStatusInfo();
+        log.warn("Failed to create Keycloak resource: name = {}, status = {}, info = {}", name, status, statusInfo);
         var errorMessage = format("Failed to create resource: %s (status: %s, info: %s)", name, status, statusInfo);
         return Optional.of(getResourceError(errorMessage));
       }
 
       log.debug("Resource was created with name: #{}", name);
     } catch (Exception exception) {
+      log.warn("Failed to create Keycloak resource: name = {}, cause = {}, causeMessage = {}",
+        name, exception.getClass().getSimpleName(), exception.getMessage());
       return Optional.of(getResourceError(format("Failed to create resource: %s (cause: %s, causeMessage: %s)",
         name, exception.getClass().getSimpleName(), exception.getMessage())));
     }
@@ -218,6 +225,7 @@ public class KeycloakService {
     var name = resource.getName();
     var resourceByName = findResourceByName(client, name);
     if (resourceByName.isEmpty()) {
+      log.warn("Failed to update Keycloak resource: name = {}, created resource lookup returned empty result", name);
       return Optional.of(getResourceError("Failed to find created resource by name: " + name));
     }
 
@@ -230,6 +238,8 @@ public class KeycloakService {
       log.debug("Authorization scopes are updated for resource: name = {}", name);
       return Optional.empty();
     } catch (WebApplicationException exception) {
+      log.warn("Failed to update Keycloak resource: name = {}, status = {}, causeMessage = {}",
+        name, exception.getResponse().getStatus(), exception.getMessage());
       var param = getResourceError(format("Failed to update resource: %s (status: %s, causeMessage: %s)",
         name, exception.getResponse().getStatus(), exception.getMessage()));
       return Optional.of(param);
@@ -262,6 +272,8 @@ public class KeycloakService {
     } catch (WebApplicationException exception) {
       var response = exception.getResponse();
       if (response.getStatus() != SC_NOT_FOUND) {
+        log.warn("Failed to delete Keycloak resource: name = {}, status = {}, info = {}, causeMessage = {}",
+          resourceName, response.getStatus(), response.getStatusInfo(), exception.getMessage());
         var value = format("Failed to delete resource: %s (status: %s, causeMessage: %s)",
           resourceName, response.getStatusInfo(), exception.getMessage());
         return Optional.of(getResourceError(value));
