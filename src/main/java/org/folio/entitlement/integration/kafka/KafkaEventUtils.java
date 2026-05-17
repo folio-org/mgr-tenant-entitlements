@@ -46,7 +46,7 @@ public class KafkaEventUtils {
       return Optional.empty();
     }
 
-    var scheduledJobEvent = ResourceEvent.<T>builder()
+    var scheduledJobEvent = ResourceEvent.<T>baseBuilder()
       .tenant(tenant)
       .type(getResourceEventType(newPayload, oldPayload))
       .resourceName(resource)

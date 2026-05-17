@@ -58,7 +58,7 @@ class KafkaEventUtilsTest {
   }
 
   private static ResourceEvent<String> resourceEvent(ResourceEventType eventType, String newValue, String oldValue) {
-    return ResourceEvent.<String>builder()
+    return ResourceEvent.<String>baseBuilder()
       .tenant(TENANT_NAME)
       .type(eventType)
       .resourceName("test-resource")
