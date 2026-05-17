@@ -155,7 +155,7 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     moduleEventPublisher.execute(stageContext);
 
-    var expectedResourceEvent = ResourceEvent.<SystemUserEvent>builder()
+    var expectedResourceEvent = ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("System user")
       .newValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.v2.entities.post")))
       .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
@@ -199,7 +199,7 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     moduleEventPublisher.execute(stageContext);
 
-    var expectedResourceEvent = ResourceEvent.<SystemUserEvent>builder()
+    var expectedResourceEvent = ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("System user")
       .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
       .build();
@@ -240,7 +240,7 @@ class SystemUserModuleEventPublisherTest {
   }
 
   private static ResourceEvent<SystemUserEvent> resourceEvent(SystemUserEvent entry) {
-    return ResourceEvent.<SystemUserEvent>builder()
+    return ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(CREATE)
       .tenant(TENANT_NAME)
       .resourceName("System user")

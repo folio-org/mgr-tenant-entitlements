@@ -79,13 +79,13 @@ class ScheduledJobEventPublisherTest {
 
     eventPublisher.execute(stageContext);
 
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(FOO_MODULE_ID, APPLICATION_ID, List.of(fooTimerRoutingEntry())))
       .build();
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
 
-    var barTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+    var barTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(BAR_MODULE_ID, APPLICATION_ID, List.of(barTimerRoutingEntry())))
       .build();
@@ -107,14 +107,14 @@ class ScheduledJobEventPublisherTest {
 
     eventPublisher.execute(stageContext);
 
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(FOO_MODULE_V2_ID, APPLICATION_ID, List.of(fooTimerRoutingEntryV2())))
       .oldValue(ScheduledTimers.of(FOO_MODULE_ID, ENTITLED_APPLICATION_ID, List.of(fooTimerRoutingEntry())))
       .build();
     verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_ID.toString(), fooTimerEvent);
 
-    var barTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+    var barTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .oldValue(ScheduledTimers.of(BAR_MODULE_ID, ENTITLED_APPLICATION_ID, List.of(barTimerRoutingEntry())))
       .build();
