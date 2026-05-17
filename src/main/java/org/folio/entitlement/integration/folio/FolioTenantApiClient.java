@@ -98,7 +98,7 @@ public class FolioTenantApiClient {
     }
 
     if (statusCode != NO_CONTENT.value()) {
-      log.warn("Module responded with code: {}, expected '[204] No Content' [moduleId='{}', url={}, tenant='{}']",
+      log.debug("Module responded with code: {}, expected '[204] No Content' [moduleId='{}', url={}, tenant='{}']",
         statusCode, request.getModuleId(), request.getLocation(), request.getTenantName());
     }
   }

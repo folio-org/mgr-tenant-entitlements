@@ -83,7 +83,7 @@ class ScheduledJobModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     var expectedNewHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, expectedNewHandlers))
       .build();
@@ -104,7 +104,7 @@ class ScheduledJobModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     var expectedNewHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, expectedNewHandlers))
       .build();
@@ -143,7 +143,7 @@ class ScheduledJobModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     var expectedOldHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(MODULE_ID_V2, APPLICATION_ID, List.of(fooTimerRoutingEntryV2())))
       .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
@@ -183,7 +183,7 @@ class ScheduledJobModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     var expectedOldHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>builder()
+    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
       .build();
