@@ -441,3 +441,6 @@ _The Async flag returns the flow identifier instantly, allowing the user to trac
 uninstallation, or upgrading the application using the `/entitlement-flow/{id}` endpoint. If this flag is set
 to `false` - `mgr-tenant-entitlement` holds the response until the entitlement flow is executed, however, the
 flow execution implementation is the same as calling the entitlement process using `async=true`._
+
+## AI Documentation
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/folio-org/mgr-tenant-entitlements)
