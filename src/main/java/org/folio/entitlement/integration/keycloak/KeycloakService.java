@@ -10,6 +10,7 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.SC_SERVICE_UNAVAILABLE;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.common.utils.Collectors.toLinkedHashMap;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.filterAndMap;
@@ -223,7 +224,7 @@ public class KeycloakService {
 
   private Optional<Parameter> updateResource(AuthorizationResource client, ResourceRepresentation resource) {
     var name = resource.getName();
-    var resourceByName = findResourceByName(client, name);
+    var resourceByName = findResourceByNameAfterConflict(client, name);
     if (resourceByName.isEmpty()) {
       log.warn("Failed to update Keycloak resource: name = {}, created resource lookup returned empty result", name);
       return Optional.of(getResourceError("Failed to find created resource by name: " + name));
@@ -285,9 +286,23 @@ public class KeycloakService {
 
   private Optional<ResourceRepresentation> findResourceByName(AuthorizationResource client, String name) {
     var searchResourcesResult = retrySupport.callWithRetry(() -> client.resources().findByName(name));
+    return findResourceByName(searchResourcesResult, name);
+  }
+
+  private static Optional<ResourceRepresentation> findResourceByName(List<ResourceRepresentation> searchResourcesResult,
+    String name) {
     return searchResourcesResult.stream()
       .filter(res -> res.getName().equals(name))
       .findFirst();
+  }
+
+  private Optional<ResourceRepresentation> findResourceByNameAfterConflict(AuthorizationResource client, String name) {
+    try {
+      return Optional.of(retrySupport.callWithRetry(() -> findResourceByName(client.resources().findByName(name), name)
+        .orElseThrow(() -> new ResourceLookupNotReadyException(name))));
+    } catch (ResourceLookupNotReadyException exception) {
+      return Optional.empty();
+    }
   }
 
   private AuthorizationResource getAuthorizationResourceClient(String clientId, String realmName) {
@@ -314,5 +329,13 @@ public class KeycloakService {
       throw new WebApplicationException(response);
     }
     return response;
+  }
+
+  private static class ResourceLookupNotReadyException extends WebApplicationException {
+
+    ResourceLookupNotReadyException(String resourceName) {
+      super(format("Keycloak resource lookup by name returned empty result: %s", resourceName),
+        Response.status(SC_SERVICE_UNAVAILABLE).build());
+    }
   }
 }

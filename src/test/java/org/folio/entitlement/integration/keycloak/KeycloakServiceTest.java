@@ -119,6 +119,21 @@ class KeycloakServiceTest {
       .thenAnswer(invocation -> invocation.getArgument(0, SafeCallable.class).call());
   }
 
+  private void setupCallWithRetryMockWithServiceUnavailableRetry() {
+    when(retrySupportService.callWithRetry(any())).thenAnswer(invocation -> {
+      var callable = invocation.getArgument(0, SafeCallable.class);
+      try {
+        return callable.call();
+      } catch (WebApplicationException exception) {
+        if (exception.getResponse() != null
+          && exception.getResponse().getStatus() == Status.SERVICE_UNAVAILABLE.getStatusCode()) {
+          return callable.call();
+        }
+        throw exception;
+      }
+    });
+  }
+
   private void setupRunWithRetryMock() {
     doAnswer(invocation -> {
       invocation.getArgument(0, Runnable.class).run();
@@ -496,6 +511,37 @@ class KeycloakServiceTest {
         .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
           parameter("resource", "Failed to find created resource by name: /r1")));
 
+      verify(kcConfiguration, atLeastOnce()).getLogin();
+      verify(kcConfiguration, atLeastOnce()).getUrl();
+      verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
+      verify(authorizationResource, atLeastOnce()).scopes();
+      verify(authorizationResource, atLeastOnce()).resources();
+    }
+
+    @Test
+    void updateAuthResources_resourceConflictAndResourceInitiallyNotFound_updatesResource() {
+      setupCallWithRetryMockWithServiceUnavailableRetry();
+      setupRunWithRetryMock();
+
+      var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
+      var currentMappings = keycloakMappings(resource("/r1", "GET"));
+
+      when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
+      when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
+      when(authorizationResource.scopes().scopes()).thenReturn(ALL_SCOPES);
+      when(keycloakModuleDescriptorMapper.map(currentDescriptor, true)).thenReturn(currentMappings);
+
+      var resource = resource(null, "/r1", scopeWithId("GET"));
+      mockResourceCreation(resource, 409, resp -> {});
+
+      var foundResourceId = randomUUID();
+      var foundResource = resource(foundResourceId, "/r1", scopeWithId("POST"));
+      when(authorizationResource.resources().findByName("/r1")).thenReturn(emptyList(), List.of(foundResource));
+
+      keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME);
+
+      verify(authorizationResource.resources().resource(foundResource.getId()))
+        .update(resource(foundResourceId, "/r1", scopeWithId("GET")));
       verify(kcConfiguration, atLeastOnce()).getLogin();
       verify(kcConfiguration, atLeastOnce()).getUrl();
       verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
