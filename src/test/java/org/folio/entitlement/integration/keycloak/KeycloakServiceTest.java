@@ -44,7 +44,6 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
-import org.folio.entitlement.configuration.RetryConfigurationProperties;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties.Login;
@@ -82,7 +81,6 @@ class KeycloakServiceTest {
   @Mock private KeycloakRetrySupportService retrySupportService;
   @Mock(answer = RETURNS_DEEP_STUBS) private Keycloak keycloak;
   @Mock(answer = RETURNS_DEEP_STUBS) private AuthorizationResource authorizationResource;
-  @Spy private final RetryConfigurationProperties retryConfiguration = new RetryConfigurationProperties();
 
   @AfterEach
   void tearDown() {
@@ -199,7 +197,6 @@ class KeycloakServiceTest {
       verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
       verify(authorizationResource, atLeastOnce()).scopes();
       verify(authorizationResource, atLeastOnce()).resources();
-      verify(retryConfiguration, atLeastOnce()).getKeycloak();
     }
 
     @Test
@@ -477,7 +474,6 @@ class KeycloakServiceTest {
       verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
       verify(authorizationResource, atLeastOnce()).scopes();
       verify(authorizationResource, atLeastOnce()).resources();
-      verify(retryConfiguration, atLeastOnce()).getKeycloak();
     }
 
     @Test
@@ -500,20 +496,26 @@ class KeycloakServiceTest {
         .isInstanceOf(IntegrationException.class)
         .hasMessage("Failed to update authorization resources in Keycloak")
         .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
-          parameter("resource", "Failed to find created resource after 3 polls, name: /r1")));
+          parameter("resource", "Failed to find created resource after all retry attempts, name: /r1")));
 
       verify(kcConfiguration, atLeastOnce()).getLogin();
       verify(kcConfiguration, atLeastOnce()).getUrl();
       verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
       verify(authorizationResource, atLeastOnce()).scopes();
       verify(authorizationResource, atLeastOnce()).resources();
-      verify(authorizationResource.resources(), times(3)).findByName("/r1");
-      verify(retryConfiguration, atLeastOnce()).getKeycloak();
+      verify(authorizationResource.resources(), times(1)).findByName("/r1");
     }
 
     @Test
     void updateAuthResources_resourceConflictAndResourceInitiallyNotFound_updatesResource() {
-      setupCallWithRetryMock();
+      doAnswer(inv -> {
+        var callable = inv.getArgument(0, SafeCallable.class);
+        try {
+          return callable.call();
+        } catch (ResourceLookupNotReadyException e) {
+          return callable.call();
+        }
+      }).when(retrySupportService).callWithRetry(any());
       setupRunWithRetryMock();
 
       var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
@@ -540,7 +542,6 @@ class KeycloakServiceTest {
       verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
       verify(authorizationResource, atLeastOnce()).scopes();
       verify(authorizationResource, atLeastOnce()).resources();
-      verify(retryConfiguration, atLeastOnce()).getKeycloak();
     }
   }
 
