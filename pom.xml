@@ -45,6 +45,9 @@
     <mgr-tenant-entitlements.yaml-file>${project.basedir}/src/main/resources/swagger.api/mgr-tenant-entitlements.yaml
     </mgr-tenant-entitlements.yaml-file>
 
+    <!-- overrides Spring Boot BOM default; can be removed once Spring Boot ships this version -->
+    <kafka.version>4.2.0</kafka.version>
+
     <!-- Test dependencies versions -->
     <mockito.version>5.23.0</mockito.version>
     <testcontainer.version>2.0.5</testcontainer.version>
