@@ -27,6 +27,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import java.util.List;
 import java.util.Map;
 import org.awaitility.Awaitility;
+import org.folio.entitlement.configuration.RetryConfigurationProperties;
 import org.folio.entitlement.integration.keycloak.KeycloakService;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties.Login;
@@ -252,9 +253,10 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     @Bean
     @Primary
     public KeycloakService keycloakServiceWiremock(Keycloak keycloakWiremock, KeycloakModuleDescriptorMapper mapper,
-      KeycloakRetrySupportService keycloakRetrySupportService) {
+      KeycloakRetrySupportService keycloakRetrySupportService,
+      RetryConfigurationProperties retryConfigurationProperties) {
       return new KeycloakService(keycloakWiremock, mapper, keycloakConfigurationProperties(),
-        keycloakRetrySupportService);
+        keycloakRetrySupportService, retryConfigurationProperties);
     }
   }
 }

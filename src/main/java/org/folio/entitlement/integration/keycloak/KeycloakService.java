@@ -10,7 +10,6 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.apache.http.HttpStatus.SC_SERVICE_UNAVAILABLE;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.common.utils.Collectors.toLinkedHashMap;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.filterAndMap;
@@ -31,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
+import org.folio.entitlement.configuration.RetryConfigurationProperties;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.keycloak.configuration.properties.KeycloakConfigurationProperties;
 import org.folio.entitlement.retry.keycloak.KeycloakRetrySupportService;
@@ -49,6 +49,7 @@ public class KeycloakService {
   private final KeycloakModuleDescriptorMapper moduleDescriptorMapper;
   private final KeycloakConfigurationProperties properties;
   private final KeycloakRetrySupportService retrySupport;
+  private final RetryConfigurationProperties retryConfigurationProperties;
 
   /**
    * Registers authorization resources and scopes in Keycloak.
@@ -224,10 +225,11 @@ public class KeycloakService {
 
   private Optional<Parameter> updateResource(AuthorizationResource client, ResourceRepresentation resource) {
     var name = resource.getName();
-    var resourceByName = findResourceByNameAfterConflict(client, name);
+    var resourceByName = awaitResourceAfterConflict(client, name);
     if (resourceByName.isEmpty()) {
-      log.warn("Failed to update Keycloak resource: name = {}, created resource lookup returned empty result", name);
-      return Optional.of(getResourceError("Failed to find created resource by name: " + name));
+      var maxAttempts = retryConfigurationProperties.getKeycloak().getMax();
+      var msg = "Failed to find created resource after " + maxAttempts + " polls, name: " + name;
+      return Optional.of(getResourceError(msg));
     }
 
     var resourceRepresentation = resourceByName.get();
@@ -260,6 +262,13 @@ public class KeycloakService {
       .toList();
   }
 
+  /**
+   * Removes a Keycloak resource if it exists, ignoring 404 responses.
+   *
+   * <p>Unlike post-conflict resource lookups (see {@link #awaitResourceAfterConflict}), this method
+   * performs a single lookup without polling because remove operations occur after the resource has
+   * been fully propagated in Keycloak and are not subject to eventual-consistency delays.</p>
+   */
   private Optional<Parameter> removeResourceIfExist(AuthorizationResource client,
     ResourceRepresentation resource) {
     var resourceName = resource.getName();
@@ -284,11 +293,18 @@ public class KeycloakService {
     return Optional.empty();
   }
 
+  /**
+   * Finds a Keycloak resource by exact name, retrying transient network failures via the
+   * standard keycloak retry policy.
+   */
   private Optional<ResourceRepresentation> findResourceByName(AuthorizationResource client, String name) {
     var searchResourcesResult = retrySupport.callWithRetry(() -> client.resources().findByName(name));
     return findResourceByName(searchResourcesResult, name);
   }
 
+  /**
+   * Filters a raw Keycloak search result to find a resource with an exact name match.
+   */
   private static Optional<ResourceRepresentation> findResourceByName(List<ResourceRepresentation> searchResourcesResult,
     String name) {
     return searchResourcesResult.stream()
@@ -296,13 +312,23 @@ public class KeycloakService {
       .findFirst();
   }
 
-  private Optional<ResourceRepresentation> findResourceByNameAfterConflict(AuthorizationResource client, String name) {
-    try {
-      return Optional.of(retrySupport.callWithRetry(() -> findResourceByName(client.resources().findByName(name), name)
-        .orElseThrow(() -> new ResourceLookupNotReadyException(name))));
-    } catch (ResourceLookupNotReadyException exception) {
-      return Optional.empty();
+  /**
+   * Looks up a Keycloak resource by name after a 409 Conflict, polling up to the configured
+   * keycloak retry max to allow for eventual consistency after a concurrent creation.
+   */
+  private Optional<ResourceRepresentation> awaitResourceAfterConflict(AuthorizationResource client, String name) {
+    var maxAttempts = retryConfigurationProperties.getKeycloak().getMax();
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      var searchResult = retrySupport.callWithRetry(() -> client.resources().findByName(name));
+      var found = findResourceByName(searchResult, name);
+      if (found.isPresent()) {
+        return found;
+      }
+      log.debug("Resource not yet visible in Keycloak after conflict, attempt {}/{}: name = '{}'",
+        attempt, maxAttempts, name);
     }
+    log.warn("Resource not visible in Keycloak after {} poll attempts: name = '{}'", maxAttempts, name);
+    return Optional.empty();
   }
 
   private AuthorizationResource getAuthorizationResourceClient(String clientId, String realmName) {
@@ -329,13 +355,5 @@ public class KeycloakService {
       throw new WebApplicationException(response);
     }
     return response;
-  }
-
-  private static class ResourceLookupNotReadyException extends WebApplicationException {
-
-    ResourceLookupNotReadyException(String resourceName) {
-      super(format("Keycloak resource lookup by name returned empty result: %s", resourceName),
-        Response.status(SC_SERVICE_UNAVAILABLE).build());
-    }
   }
 }

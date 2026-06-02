@@ -4,6 +4,7 @@ import static org.folio.security.integration.keycloak.utils.ClientBuildUtils.bui
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.folio.entitlement.configuration.RetryConfigurationProperties;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
 import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
@@ -52,8 +53,9 @@ public class KeycloakConfiguration {
   @Bean
   @ConditionalOnProperty(name = "application.keycloak.enabled", havingValue = "true", matchIfMissing = true)
   public KeycloakService keycloakService(Keycloak client, KeycloakModuleDescriptorMapper mapper,
-    KeycloakConfigurationProperties properties, KeycloakRetrySupportService keycloakRetrySupportService) {
-    return new KeycloakService(client, mapper, properties, keycloakRetrySupportService);
+    KeycloakConfigurationProperties properties, KeycloakRetrySupportService keycloakRetrySupportService,
+    RetryConfigurationProperties retryConfigurationProperties) {
+    return new KeycloakService(client, mapper, properties, keycloakRetrySupportService, retryConfigurationProperties);
   }
 
   @Bean
