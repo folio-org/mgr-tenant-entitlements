@@ -225,8 +225,7 @@ public class KeycloakService {
     var name = resource.getName();
     var resourceByName = awaitResourceAfterConflict(client, name);
     if (resourceByName.isEmpty()) {
-      var msg = "Failed to find created resource after all retry attempts, name: " + name;
-      return Optional.of(getResourceError(msg));
+      return Optional.of(getResourceError("Failed to find created resource after all retry attempts, name: " + name));
     }
 
     var resourceRepresentation = resourceByName.get();
@@ -259,9 +258,6 @@ public class KeycloakService {
       .toList();
   }
 
-  /**
-   * Removes a Keycloak resource if it exists, ignoring 404 responses.
-   */
   private Optional<Parameter> removeResourceIfExist(AuthorizationResource client,
     ResourceRepresentation resource) {
     var resourceName = resource.getName();
@@ -286,35 +282,25 @@ public class KeycloakService {
     return Optional.empty();
   }
 
-  /**
-   * Finds a Keycloak resource by exact name, retrying transient network failures via the
-   * standard keycloak retry policy.
-   */
   private Optional<ResourceRepresentation> findResourceByName(AuthorizationResource client, String name) {
     var searchResourcesResult = retrySupport.callWithRetry(() -> client.resources().findByName(name));
-    return findResourceByName(searchResourcesResult, name);
+    return filterByExactName(searchResourcesResult, name);
   }
 
-  /**
-   * Filters a raw Keycloak search result to find a resource with an exact name match.
-   */
-  private static Optional<ResourceRepresentation> findResourceByName(List<ResourceRepresentation> searchResourcesResult,
+  private static Optional<ResourceRepresentation> filterByExactName(List<ResourceRepresentation> resources,
     String name) {
-    return searchResourcesResult.stream()
+    return resources.stream()
       .filter(res -> res.getName().equals(name))
       .findFirst();
   }
 
-  /**
-   * Looks up a Keycloak resource by name after a 409 Conflict, delegating to the standard retry
-   * interceptor via {@link ResourceLookupNotReadyException} (HTTP 503) to allow for eventual
-   * consistency with proper exponential backoff.
-   */
+  // Throws ResourceLookupNotReadyException (HTTP 503) so the retry interceptor applies backoff
+  // after a 409 Conflict, rather than hammering the resource-server immediately.
   private Optional<ResourceRepresentation> awaitResourceAfterConflict(AuthorizationResource client, String name) {
     try {
       var found = retrySupport.callWithRetry(() -> {
         var searchResult = client.resources().findByName(name);
-        return findResourceByName(searchResult, name)
+        return filterByExactName(searchResult, name)
           .orElseThrow(() -> new ResourceLookupNotReadyException(name));
       });
       return Optional.of(found);
