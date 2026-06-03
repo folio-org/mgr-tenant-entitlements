@@ -1,3 +1,8 @@
+## Version `v4.1.0` (In Progress)
+* Upgrade dependencies for Kafka 4.2 compatibility in mgr-tenant-entitlements (MGRENTITLE-180)
+
+---
+
 ## Version `4.0.0` (16.04.2026)
 * Not able to entitle application due to dependency issue (MGRENTITLE-118)
 * mgr-tenant-entitlements does not check the cross-application module dependencies as expected (MGRENTITLE-113)
