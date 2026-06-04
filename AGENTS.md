@@ -182,8 +182,8 @@ From `lombok.config`:
 ### Dependency Injection
 
 - Constructor injection (enabled via Lombok `@RequiredArgsConstructor`)
-- Spring Boot `4.0.4` with Java `21`
-- App bootstrap uses `@EnableKafka`, `@EnableMgrSecurity`, and `@ConfigurationPropertiesScan`
+- Spring Boot `4.0.6` with Java `21`
+- App bootstrap uses `@EnableKafkaProducer`, `@EnableMgrSecurity`, `@ConfigurationPropertiesScan`, and imports `JpaCqlConfiguration` + `TransactionHelper`
 
 ### Security
 
@@ -207,6 +207,10 @@ Critical environment variables (see README for full list):
 - `FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE`: Recent flow cache size
 - `FLOW_ENGINE_THREADS_NUM`: Flow engine thread pool size (default: 4)
 - `FLOW_ENGINE_MODULE_INSTALLER_THREADS`: Parallel module installation threads (default: 4)
+- `VALIDATION_INTERFACE_INTEGRITY_ENTITLEMENT_ENABLED`: Enables interface integrity validation for entitlement
+- `VALIDATION_INTERFACE_INTEGRITY_UPGRADE_ENABLED`: Enables interface integrity validation for upgrade
+- `VALIDATION_INTERFACE_COLLECTOR_MODE`: Interface collection mode (`combined` or `scoped`) for integrity checks
+- `VALIDATION_INTERFACE_COLLECTOR_EXCLUDE_ENTITLED_REQUIRED`: Excludes required interfaces of already entitled apps from collection
 - `VALIDATION_INTERFACE_INTEGRITY_STATE_ENABLED`: Enables interface integrity validation state checks
 - `ENV`: Logical deployment name (kafka topic prefix)
 
@@ -229,7 +233,7 @@ From `pom.xml`, these are excluded from code coverage:
 
 ### Retry Logic
 
-- Configurable retries for external calls (Kong, Keycloak, FOLIO modules)
+- Configurable retries for external calls (Keycloak, FOLIO modules)
 - Retry configuration in `retry/` package
 - Stage-level retry support in flow engine
 
@@ -247,4 +251,4 @@ From `pom.xml`, these are excluded from code coverage:
 - Main README: `README.md` (comprehensive environment variable documentation)
 - Release notes: `NEWS.md`
 - OpenAPI spec: `src/main/resources/swagger.api/mgr-tenant-entitlements.yaml`
-- Jenkinsfile: Uses `folio_jenkins_shared_libs` with Java 21 agent
+- CI pipeline template: `Jenkinsfile-disabled` (uses `folio_jenkins_shared_libs` with Java 21 agent)

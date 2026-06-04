@@ -223,10 +223,9 @@ public class KeycloakService {
 
   private Optional<Parameter> updateResource(AuthorizationResource client, ResourceRepresentation resource) {
     var name = resource.getName();
-    var resourceByName = findResourceByName(client, name);
+    var resourceByName = awaitResourceAfterConflict(client, name);
     if (resourceByName.isEmpty()) {
-      log.warn("Failed to update Keycloak resource: name = {}, created resource lookup returned empty result", name);
-      return Optional.of(getResourceError("Failed to find created resource by name: " + name));
+      return Optional.of(getResourceError("Failed to find created resource after all retry attempts, name: " + name));
     }
 
     var resourceRepresentation = resourceByName.get();
@@ -285,9 +284,30 @@ public class KeycloakService {
 
   private Optional<ResourceRepresentation> findResourceByName(AuthorizationResource client, String name) {
     var searchResourcesResult = retrySupport.callWithRetry(() -> client.resources().findByName(name));
-    return searchResourcesResult.stream()
+    return filterByExactName(searchResourcesResult, name);
+  }
+
+  private static Optional<ResourceRepresentation> filterByExactName(List<ResourceRepresentation> resources,
+    String name) {
+    return resources.stream()
       .filter(res -> res.getName().equals(name))
       .findFirst();
+  }
+
+  // Throws ResourceLookupNotReadyException (HTTP 503) so the retry interceptor applies backoff
+  // after a 409 Conflict, rather than hammering the resource-server immediately.
+  private Optional<ResourceRepresentation> awaitResourceAfterConflict(AuthorizationResource client, String name) {
+    try {
+      var found = retrySupport.callWithRetry(() -> {
+        var searchResult = client.resources().findByName(name);
+        return filterByExactName(searchResult, name)
+          .orElseThrow(() -> new ResourceLookupNotReadyException(name));
+      });
+      return Optional.of(found);
+    } catch (ResourceLookupNotReadyException e) {
+      log.warn("Resource not visible in Keycloak after retries exhausted: name = '{}'", name);
+      return Optional.empty();
+    }
   }
 
   private AuthorizationResource getAuthorizationResourceClient(String clientId, String realmName) {
