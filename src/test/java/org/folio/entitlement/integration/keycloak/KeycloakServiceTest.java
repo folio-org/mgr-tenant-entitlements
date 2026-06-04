@@ -27,6 +27,7 @@ import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -427,7 +428,8 @@ class KeycloakServiceTest {
         .isInstanceOf(IntegrationException.class)
         .hasMessage("Failed to update authorization resources in Keycloak")
         .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
-          parameter("resource", "Failed to create resource: /r1 (cause: RuntimeException, causeMessage: Error)")));
+          parameter("resource",
+            "Failed to create resource: /r1 (cause: RuntimeException, causeMessage: Error)")));
 
       verify(kcConfiguration, atLeastOnce()).getLogin();
       verify(kcConfiguration, atLeastOnce()).getUrl();
@@ -494,8 +496,47 @@ class KeycloakServiceTest {
         .isInstanceOf(IntegrationException.class)
         .hasMessage("Failed to update authorization resources in Keycloak")
         .satisfies(error -> assertThat(((IntegrationException) error).getErrors()).containsExactly(
-          parameter("resource", "Failed to find created resource by name: /r1")));
+          parameter("resource", "Failed to find created resource after all retry attempts, name: /r1")));
 
+      verify(kcConfiguration, atLeastOnce()).getLogin();
+      verify(kcConfiguration, atLeastOnce()).getUrl();
+      verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
+      verify(authorizationResource, atLeastOnce()).scopes();
+      verify(authorizationResource, atLeastOnce()).resources();
+      verify(authorizationResource.resources(), times(1)).findByName("/r1");
+    }
+
+    @Test
+    void updateAuthResources_resourceConflictAndResourceInitiallyNotFound_updatesResource() {
+      doAnswer(inv -> {
+        var callable = inv.getArgument(0, SafeCallable.class);
+        try {
+          return callable.call();
+        } catch (ResourceLookupNotReadyException e) {
+          return callable.call();
+        }
+      }).when(retrySupportService).callWithRetry(any());
+      setupRunWithRetryMock();
+
+      var currentDescriptor = moduleDescriptor("mod-foo-1.2.0");
+      var currentMappings = keycloakMappings(resource("/r1", "GET"));
+
+      when(keycloak.realm(TENANT_NAME).clients().findByClientId(CLIENT_NAME)).thenReturn(List.of(loginClient()));
+      when(keycloak.proxy(AuthorizationResource.class, KEYCLOAK_PROXY_URL)).thenReturn(authorizationResource);
+      when(authorizationResource.scopes().scopes()).thenReturn(ALL_SCOPES);
+      when(keycloakModuleDescriptorMapper.map(currentDescriptor, true)).thenReturn(currentMappings);
+
+      var resource = resource(null, "/r1", scopeWithId("GET"));
+      mockResourceCreation(resource, 409, resp -> {});
+
+      var foundResourceId = randomUUID();
+      var foundResource = resource(foundResourceId, "/r1", scopeWithId("POST"));
+      when(authorizationResource.resources().findByName("/r1")).thenReturn(emptyList(), List.of(foundResource));
+
+      keycloakService.updateAuthResources(null, currentDescriptor, TENANT_NAME);
+
+      verify(authorizationResource.resources().resource(foundResource.getId()))
+        .update(resource(foundResourceId, "/r1", scopeWithId("GET")));
       verify(kcConfiguration, atLeastOnce()).getLogin();
       verify(kcConfiguration, atLeastOnce()).getUrl();
       verify(keycloak, atLeastOnce()).realm(TENANT_NAME);
