@@ -7,6 +7,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import java.util.Map;
 import java.util.UUID;
+import org.mockito.ArgumentCaptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -175,5 +177,27 @@ class FolioModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, emptyMap());
     var result = folioModuleEventPublisher.getStageName(stageContext);
     assertThat(result).isEqualTo(MODULE_ID + "-folioModuleEventPublisher");
+  }
+
+  @Test
+  void execute_publishesEventWithApplicationId() {
+    var tenantId = randomUUID();
+    var tenantName = "tenantName";
+    var applicationId = "app-platform-minimal-2.0.53";
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(tenantId).build();
+    var desc = new ModuleDescriptor().id(MODULE_ID);
+    var flowParameters = Map.of(
+      PARAM_REQUEST, request,
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.ENTITLE,
+      PARAM_MODULE_ID, MODULE_ID,
+      PARAM_MODULE_DESCRIPTOR, desc,
+      PARAM_APPLICATION_ID, applicationId);
+    var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, tenantName));
+
+    folioModuleEventPublisher.execute(stageContext);
+
+    var captor = ArgumentCaptor.forClass(EntitlementEvent.class);
+    verify(entitlementEventPublisher).publish(captor.capture());
+    assertThat(captor.getValue().getApplicationId()).isEqualTo(applicationId);
   }
 }

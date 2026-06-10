@@ -53,6 +53,6 @@ public class FolioModuleEventPublisher extends ModuleDatabaseLoggingStage {
   }
 
   private static EntitlementEvent getEntitlementEvent(String moduleId, ModuleStageContext ctx, EntitlementType type) {
-    return new EntitlementEvent(type.name(), moduleId, ctx.getTenantName(), ctx.getTenantId());
+    return new EntitlementEvent(type.name(), moduleId, ctx.getTenantName(), ctx.getTenantId(), ctx.getApplicationId());
   }
 }
