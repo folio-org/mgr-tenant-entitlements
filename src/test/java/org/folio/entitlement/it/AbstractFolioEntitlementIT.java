@@ -8,6 +8,7 @@ import static org.folio.entitlement.support.DesiredStateTestValues.capabilityEve
 import static org.folio.entitlement.support.DesiredStateTestValues.entitlementEventsAfterComplexState;
 import static org.folio.entitlement.support.DesiredStateTestValues.kcResourcesAfterComplexState;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertCapabilityEvents;
+import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEventApplicationIds;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertEntitlementEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertScheduledJobEvents;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertSystemUserEvents;
@@ -138,6 +139,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
     assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP1_ID), expected);
     assertModuleEntitlements(FOLIO_MODULE1_ID, expectedModuleEntitlements);
     assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID));
+    assertEntitlementEventApplicationIds(FOLIO_APP1_ID);
     assertThat(kcClient.getAuthorizationScopes(TENANT_NAME)).containsExactlyElementsOf(ALL_HTTP_METHODS);
     assertThat(kcClient.getAuthorizationResources(TENANT_NAME)).containsExactly(
       authResource("/folio-module1/events", "GET", "POST"), authResource("/folio-module1/events/{id}", "GET"));
