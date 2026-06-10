@@ -14,4 +14,9 @@ public class EntitlementEvent {
   private String moduleId;
   private String tenantName;
   private UUID tenantId;
+  private String applicationId;
+
+  public EntitlementEvent(String type, String moduleId, String tenantName, UUID tenantId) {
+    this(type, moduleId, tenantName, tenantId, null);
+  }
 }
