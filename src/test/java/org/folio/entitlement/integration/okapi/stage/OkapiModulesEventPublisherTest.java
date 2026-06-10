@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.okapi.stage;
 
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
@@ -18,16 +18,16 @@ import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
-import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
-import org.mockito.ArgumentCaptor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
+import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
