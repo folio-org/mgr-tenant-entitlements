@@ -1,6 +1,8 @@
 package org.folio.entitlement.integration.okapi.stage;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ID;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.okapi.model.OkapiStageContext.PARAM_MODULE_DESCRIPTORS;
@@ -10,6 +12,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.entitlementEvent;
 import static org.folio.entitlement.support.TestValues.okapiStageContext;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
@@ -18,11 +21,13 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
+import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -53,5 +58,26 @@ class OkapiModulesEventPublisherTest {
 
     verify(entitlementEventPublisher).publish(
       entitlementEvent(EntitlementType.ENTITLE, moduleId, TENANT_NAME, TENANT_ID));
+  }
+
+  @Test
+  void execute_publishesEventsWithApplicationId() {
+    var moduleId = "mod-bar-2.0.0";
+    var applicationId = "app-platform-complete-1.2.0";
+    var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
+    var flowParameters = Map.of(
+      PARAM_REQUEST, EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build(),
+      PARAM_MODULE_ENTITLEMENT_TYPE, EntitlementType.ENTITLE,
+      PARAM_MODULE_DESCRIPTORS, List.of(new ModuleDescriptor().id(moduleId)),
+      PARAM_APPLICATION_ID, applicationId);
+    var stageContext = okapiStageContext(FLOW_STAGE_ID, flowParameters, contextData);
+
+    eventPublisher.execute(stageContext);
+
+    var captor = ArgumentCaptor.forClass(EntitlementEvent.class);
+    verify(entitlementEventPublisher, atLeastOnce()).publish(captor.capture());
+    assertThat(captor.getAllValues())
+      .extracting(EntitlementEvent::getApplicationId)
+      .containsOnly(applicationId);
   }
 }

@@ -41,7 +41,17 @@ public final class KafkaEventAssertions {
     await().untilAsserted(() -> {
       var consumerRecords = getEvents(entitlementTopic(), EntitlementEvent.class);
       var entitlementEvents = mapItems(consumerRecords, ConsumerRecord::value);
-      assertThat(entitlementEvents).containsAll(events);
+      assertThat(entitlementEvents)
+        .usingElementComparatorIgnoringFields("applicationId")
+        .containsAll(events);
+    });
+  }
+
+  public static void assertEntitlementEventApplicationIds(String... expectedApplicationIds) {
+    await().untilAsserted(() -> {
+      var consumerRecords = getEvents(entitlementTopic(), EntitlementEvent.class);
+      var applicationIds = mapItems(consumerRecords, r -> r.value().getApplicationId());
+      assertThat(applicationIds).contains(expectedApplicationIds);
     });
   }
 
