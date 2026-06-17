@@ -7,6 +7,7 @@ import org.folio.entitlement.domain.entity.key.EntitlementModuleKey;
 import org.folio.spring.cql.JpaCqlRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Repository;
 public interface EntitlementModuleRepository extends JpaCqlRepository<EntitlementModuleEntity, EntitlementModuleKey> {
 
   Page<EntitlementModuleEntity> findAllByModuleId(String moduleId, Pageable pageable);
+
+  List<EntitlementModuleEntity> findAllByModuleId(String moduleId, Sort sort);
 
   List<EntitlementModuleEntity> findAllByModuleIdAndTenantId(String moduleId, UUID tenantId);
 
