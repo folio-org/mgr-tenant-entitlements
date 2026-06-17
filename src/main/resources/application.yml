@@ -102,6 +102,11 @@ application:
     authorization-cache-max-size: ${KC_AUTHORIZATION_CACHE_MAX_SIZE:50}
     authorization-cache-ttl-offset: ${KC_AUTHORIZATION_CACHE_TTL_OFFSET:5000}
   environment: ${ENV:folio}
+  module-entitlements-cache:
+    enabled: ${MODULE_ENTITLEMENTS_CACHE_ENABLED:true}
+    max-size: ${MODULE_ENTITLEMENTS_CACHE_MAX_SIZE:1000}
+    ttl: ${MODULE_ENTITLEMENTS_CACHE_TTL:2h}
+    refresh-interval: ${MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL:1h}
   kafka:
     send-duration-timeout: ${KAFKA_SEND_DURATION_TIMEOUT:10s}
     producer-tenant-collection: ${KAFKA_PRODUCER_TENANT_COLLECTION:false}
