@@ -29,7 +29,7 @@ public class EntitlementModuleService {
   public Entitlements getModuleEntitlements(String moduleId, Integer limit, Integer offset) {
     var all = cacheProvider.getByModuleId(moduleId);
     var total = all.size();
-    var from = Math.min(Math.max(offset, 0), total);
+    var from = Math.clamp(offset, 0, total);
     var to = Math.min(from + limit, total);
 
     return new Entitlements()

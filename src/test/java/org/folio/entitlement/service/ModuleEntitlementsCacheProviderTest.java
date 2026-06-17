@@ -52,7 +52,8 @@ class ModuleEntitlementsCacheProviderTest {
     var result = provider.getByModuleId(MODULE_ID);
 
     assertThat(result).containsExactly(entitlement());
-    assertThatThrownBy(() -> result.add(entitlement())).isInstanceOf(UnsupportedOperationException.class);
+    var extra = entitlement();
+    assertThatThrownBy(() -> result.add(extra)).isInstanceOf(UnsupportedOperationException.class);
   }
 
   @Test
