@@ -122,9 +122,10 @@ public class ModuleEntitlementsCacheProperties {
 
   /**
    * Backstop expiry (Caffeine expireAfterWrite). Not the freshness mechanism — invalidation is
-   * in-process and immediate on every write to the entitlement table.
+   * in-process and immediate on every write, and the warmer re-populates on a fixed delay. Keep this
+   * above {@code refresh-interval} so entries are re-warmed before they expire.
    */
-  private Duration ttl = Duration.ofMinutes(30);
+  private Duration ttl = Duration.ofHours(2);
 }
 ```
 
@@ -832,7 +833,7 @@ public class ModuleEntitlementsCacheWarmer {
   private final CacheManager moduleEntitlementsCacheManager;
 
   @Scheduled(initialDelayString = "0s",
-    fixedDelayString = "${application.module-entitlements-cache.refresh-interval:10m}")
+    fixedDelayString = "${application.module-entitlements-cache.refresh-interval:1h}")
   @Transactional(readOnly = true)
   public void warmUp() {
     var cache = moduleEntitlementsCacheManager.getCache(MODULE_ENTITLEMENTS_CACHE);
@@ -881,8 +882,8 @@ In `src/main/resources/application.yml`, under the top-level `application:` bloc
   module-entitlements-cache:
     enabled: ${MODULE_ENTITLEMENTS_CACHE_ENABLED:true}
     max-size: ${MODULE_ENTITLEMENTS_CACHE_MAX_SIZE:1000}
-    ttl: ${MODULE_ENTITLEMENTS_CACHE_TTL:30m}
-    refresh-interval: ${MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL:10m}
+    ttl: ${MODULE_ENTITLEMENTS_CACHE_TTL:2h}
+    refresh-interval: ${MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL:1h}
 ```
 
 - [ ] **Step 2: Write the integration test**
@@ -1008,8 +1009,8 @@ only a backstop.
 |---|---|---|
 | `MODULE_ENTITLEMENTS_CACHE_ENABLED` | `true` | Enable the cache. When `false`, a no-op cache is used (every read hits the DB) and the warmer is not started. |
 | `MODULE_ENTITLEMENTS_CACHE_MAX_SIZE` | `1000` | Max number of cached per-module lists (Caffeine `maximumSize`). Set ≥ the number of distinct module IDs read in the deployment, or hot entries get LRU-evicted. |
-| `MODULE_ENTITLEMENTS_CACHE_TTL` | `30m` | Backstop expiry (Caffeine `expireAfterWrite`). |
-| `MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL` | `10m` | How often the warmer re-loads all module entitlements (one batched query) to keep the cache warm and backstop missed evictions. |
+| `MODULE_ENTITLEMENTS_CACHE_TTL` | `2h` | Backstop expiry (Caffeine `expireAfterWrite`). Keep it above the refresh interval so entries are re-warmed before they expire. |
+| `MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL` | `1h` | How often the warmer re-loads all module entitlements (one batched query) to keep the cache warm and backstop missed evictions. |
 ```
 
 - [ ] **Step 2: Commit**

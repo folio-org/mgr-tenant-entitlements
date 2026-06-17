@@ -113,7 +113,7 @@ eviction harder. Per-module result sets are small, so caching the whole list and
 - Eviction is in-process and correct because there is exactly one mte instance. REVOKE clears the
   affected module's entry immediately, so the sidecar never sees a revoked entitlement from a stale
   entry (beyond the brief in-transaction window noted in Risks).
-- **TTL backstop** (`expireAfterWrite`, default 30m) bounds any residual staleness (e.g. the tiny
+- **TTL backstop** (`expireAfterWrite`, default 2h — kept above the refresh interval) bounds any residual staleness (e.g. the tiny
   window if an eviction fires just before the surrounding transaction commits).
 
 ### 4. Warm-up and periodic refresh — no cold-start storm
@@ -128,7 +128,7 @@ and the synchronized `0 */5 * * * ?` sidecar poll would issue them as a burst. T
   count.
 - Runs once at startup (`initialDelay = 0`) so the cache is warm before the first sidecar poll → no
   cold-start storm.
-- Re-runs on a fixed delay (`refresh-interval`, default 10m) to keep entries warm (no per-key TTL
+- Re-runs on a fixed delay (`refresh-interval`, default 1h) to keep entries warm (no per-key TTL
   expiry misses) and backstop any missed eviction — the "automatically kept up to date" behavior.
 - Requires `@EnableScheduling` (added to `ModuleEntitlementsCacheConfiguration`).
 
@@ -136,9 +136,11 @@ Combined freshness model:
 - **Immediate:** evict-on-write removes a changed module's entry the moment an entitlement changes.
 - **Warm:** the periodic re-warm re-populates everything in one query; an evicted module read before
   the next re-warm lazily reloads just that one module (deduped by `sync = true`).
-- **Backstop:** `expireAfterWrite` (30m) is now rarely reached (re-warm rewrites entries first); it
-  only guards entries somehow never re-warmed. Because re-warm rewrites all entries in one query,
-  there is no per-key lockstep expiry, so no TTL jitter is needed.
+- **Backstop:** `expireAfterWrite` (2h, above the 1h refresh) is normally never reached (re-warm
+  rewrites entries first); it only guards entries if the warmer itself stops running. Because re-warm
+  rewrites all entries in one query, there is no per-key lockstep expiry, so no TTL jitter is needed.
+  TTL must stay greater than `refresh-interval`, else entries expire between refreshes and the
+  cold-fill storm returns.
 
 ### 5. Configuration
 
@@ -147,8 +149,8 @@ application:
   module-entitlements-cache:
     enabled: ${MODULE_ENTITLEMENTS_CACHE_ENABLED:true}
     max-size: ${MODULE_ENTITLEMENTS_CACHE_MAX_SIZE:1000}
-    ttl: ${MODULE_ENTITLEMENTS_CACHE_TTL:30m}
-    refresh-interval: ${MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL:10m}
+    ttl: ${MODULE_ENTITLEMENTS_CACHE_TTL:2h}
+    refresh-interval: ${MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL:1h}
 ```
 
 Backed by `@ConfigurationProperties("application.module-entitlements-cache")`
@@ -220,7 +222,7 @@ All in `mgr-tenant-entitlements`:
 - **Cold-start storm (200 unique modules)** → a warmer pre-populates the whole cache in one batched
   query at startup and on a fixed-delay refresh, so the synchronized sidecar poll always hits a warm
   cache. `sync = true` covers any request that races warm-up.
-- **Warmer full-table read** → one `findAll` every `refresh-interval` (default 10m), off the request
+- **Warmer full-table read** → one `findAll` every `refresh-interval` (default 1h), off the request
   path. Far cheaper than per-module lazy reloads; tune the interval for very large tables. A refresh
   that races a concurrent write may briefly re-cache slightly stale data for that module, bounded by
   the refresh interval and corrected on the next read/refresh.
