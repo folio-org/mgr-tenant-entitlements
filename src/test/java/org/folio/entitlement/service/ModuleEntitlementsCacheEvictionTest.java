@@ -18,6 +18,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronizationUtils;
 
 @UnitTest
 @SpringJUnitConfig({
@@ -56,6 +58,29 @@ class ModuleEntitlementsCacheEvictionTest {
 
     assertThat(cache().get(MODULE_ID)).as("affected module evicted").isNull();
     assertThat(cache().get(otherModuleId)).as("unrelated module retained").isNotNull();
+  }
+
+  @Test
+  void evict_insideTransaction_isDeferredUntilAfterCommit() {
+    var entity = new EntitlementModuleEntity();
+    entity.setModuleId(MODULE_ID);
+    entity.setTenantId(TENANT_ID);
+    entity.setApplicationId(APPLICATION_ID);
+    when(repository.findAllByModuleId(any(String.class), any(Sort.class))).thenReturn(List.of(entity));
+    when(mapper.map(any(EntitlementModuleEntity.class))).thenReturn(new Entitlement(APPLICATION_ID, TENANT_ID));
+    provider.getByModuleId(MODULE_ID);
+    assertThat(cache().get(MODULE_ID)).as("cached before write").isNotNull();
+
+    TransactionSynchronizationManager.initSynchronization();
+    try {
+      provider.evict(MODULE_ID);
+      assertThat(cache().get(MODULE_ID)).as("still cached while the write transaction is open").isNotNull();
+
+      TransactionSynchronizationUtils.triggerAfterCommit();
+      assertThat(cache().get(MODULE_ID)).as("evicted once the write transaction commits").isNull();
+    } finally {
+      TransactionSynchronizationManager.clearSynchronization();
+    }
   }
 
   private org.springframework.cache.Cache cache() {

@@ -1,4 +1,5 @@
 ## Version `v4.1.0` (In Progress)
+* Cache module entitlements lookup (`GET /entitlements/modules/{moduleId}`) with a warmed, in-process Caffeine cache (EUREKA-899)
 * Upgrade dependencies for Kafka 4.2 compatibility in mgr-tenant-entitlements (MGRENTITLE-180)
 
 ---

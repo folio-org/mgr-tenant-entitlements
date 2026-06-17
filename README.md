@@ -347,8 +347,9 @@ FLOW_ENGINE_MODULE_INSTALLER_THREADS=6
 the cache hot with a single batched query at startup and on a fixed-delay refresh, so there is no
 cold-start storm even with many unique module IDs. Because mgr-tenant-entitlements runs as a single
 instance, the cache is invalidated in-process: a write to the entitlement table (entitle / upgrade /
-revoke) evicts only the affected module IDs, so unrelated modules stay cached. `expireAfterWrite` is
-only a backstop.
+revoke) evicts only the affected module IDs, so unrelated modules stay cached. Eviction is deferred
+until after the write transaction commits, so a concurrent read cannot repopulate the entry with a
+pre-commit (stale) snapshot. `expireAfterWrite` is only a backstop.
 
 | Name                                       | Default value | Required | Description                                                                                                                                |
 |:-------------------------------------------|:--------------|:--------:|:-------------------------------------------------------------------------------------------------------------------------------------------|

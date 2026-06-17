@@ -17,7 +17,9 @@ import org.springframework.data.domain.Sort;
 @IdClass(EntitlementModuleKey.class)
 public class EntitlementModuleEntity implements Serializable {
 
-  public static final Sort SORT_BY_TENANT = Sort.by(Sort.Direction.ASC, "tenantId");
+  // Total order (the PK is moduleId + tenantId + applicationId) so paginated reads stay stable
+  // across cache re-warms; tenantId is the primary sort key, applicationId the tiebreaker.
+  public static final Sort SORT_BY_TENANT = Sort.by(Sort.Direction.ASC, "tenantId", "applicationId");
 
   @Serial private static final long serialVersionUID = 191195764119176160L;
 

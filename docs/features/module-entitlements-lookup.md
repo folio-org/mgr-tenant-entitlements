@@ -36,7 +36,8 @@ Response `200`: `entitlements` object — `totalRecords` (full count for the mod
 
 ## Business rules and constraints
 - Returns one record per `(tenantId, applicationId)` pairing that has the module entitled.
-- Records are ordered by `tenantId` ascending.
+- Records are ordered by `tenantId` ascending, then `applicationId` ascending. The `applicationId`
+  tiebreaker makes the order total, so paging stays stable across cache re-warms.
 - `totalRecords` reflects the total number of entitlements for the module, independent of `limit`/`offset`.
 - Pagination is applied over the complete per-module result set (the full list is retrieved, then the
   `[offset, offset+limit)` window is returned).
@@ -54,8 +55,10 @@ the full per-module entitlement list is cached and pagination is applied in memo
   query at startup and on a fixed delay (`refresh-interval`), so a cold instance does not issue a
   burst of per-module queries.
 - **Invalidation:** entitlement changes (entitle / upgrade / revoke) evict only the affected
-  `moduleId` entries in-process; unrelated modules stay cached. `expireAfterWrite` (`ttl`) is a
-  backstop kept above `refresh-interval`.
+  `moduleId` entries in-process; unrelated modules stay cached. Eviction is deferred until **after
+  the write transaction commits**, so a concurrent read that misses cannot repopulate the entry with
+  the writer's pre-commit (stale) snapshot. `expireAfterWrite` (`ttl`) is a backstop kept above
+  `refresh-interval`.
 - **Cluster note:** invalidation is in-process and assumes a single running instance of
   mgr-tenant-entitlements. The cache can be disabled (`MODULE_ENTITLEMENTS_CACHE_ENABLED=false`), in
   which case every lookup reads from the database.
