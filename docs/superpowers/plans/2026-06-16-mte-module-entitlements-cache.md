@@ -4,7 +4,7 @@
 
 **Goal:** Cache `EntitlementModuleService.getModuleEntitlements(moduleId, …)` in mgr-tenant-entitlements so repeated reads from the sidecar don't hit the DB, invalidated in-process whenever entitlements change.
 
-**Architecture:** mte is single-instance, so an in-process cache with in-process eviction is fully correct. Cache the full per-module entitlement list keyed on `moduleId` in a dedicated Caffeine cache (in its own bean so the cache proxy isn't bypassed), read with `sync = true` to avoid a stampede across many sidecars; paginate in memory. Every write to `entitlement_module` (all of which go through `EntitlementModuleService`) evicts exactly the affected module IDs via `cacheProvider.evict(moduleId)` — per-key, so unrelated modules stay cached; `expireAfterWrite` is a backstop. `@EnableCaching` moves to an always-on config so the cache works regardless of `application.keycloak.enabled`.
+**Architecture:** mte is single-instance, so an in-process cache with in-process eviction is fully correct. Cache the full per-module entitlement list keyed on `moduleId` in a dedicated Caffeine cache (in its own bean so the cache proxy isn't bypassed), read with `sync = true` to avoid a stampede across many sidecars; paginate in memory. A scheduled warmer keeps the cache hot with one batched query at startup (no cold-start storm for the ~200 unique modules) and on a fixed-delay refresh. Every write to `entitlement_module` (all of which go through `EntitlementModuleService`) evicts exactly the affected module IDs via `cacheProvider.evict(moduleId)` — per-key, so unrelated modules stay cached; `expireAfterWrite` is a backstop. `@EnableCaching` (and `@EnableScheduling`) move to an always-on config so the cache works regardless of `application.keycloak.enabled`.
 
 **Tech Stack:** Spring Boot 4.1.0, Java 21, Spring Cache + Caffeine 3.1.8, JUnit 5 + Mockito + AssertJ, Testcontainers (Postgres) + embedded Kafka (provided by the IT base; not used directly).
 
@@ -23,21 +23,23 @@
 
 **New files (under `src/main/java/org/folio/entitlement`):**
 - `configuration/cache/ModuleEntitlementsCacheProperties.java` — `@ConfigurationProperties` (maxSize, ttl).
-- `configuration/cache/ModuleEntitlementsCacheConfiguration.java` — always-on `@EnableCaching`, `moduleEntitlementsCacheManager` (Caffeine when enabled / NoOp when disabled), cache-name constant.
+- `configuration/cache/ModuleEntitlementsCacheConfiguration.java` — always-on `@EnableCaching` + `@EnableScheduling`, `moduleEntitlementsCacheManager` (Caffeine when enabled / NoOp when disabled), cache-name constant.
 - `service/ModuleEntitlementsCacheProvider.java` — the `@Cacheable` read (`sync = true`) + `@CacheEvict` per-key evict in a dedicated bean.
+- `service/ModuleEntitlementsCacheWarmer.java` — `@Scheduled` batched warm-up at startup + periodic refresh (one `findAll` query, populates all module entries).
 
 **Modified files:**
 - `configuration/cache/CacheConfiguration.java` — remove `@EnableCaching`.
 - `integration/keycloak/KeycloakCacheableService.java` — add `cacheManager = "accessTokenCacheManager"`.
 - `service/EntitlementModuleService.java` — `getModuleEntitlements` delegates + paginates; write methods call `cacheProvider.evict(...)` for the affected module IDs.
 - `repository/EntitlementModuleRepository.java` — add `findAllByModuleId(String, Sort)`.
-- `src/main/resources/application.yml` — `application.module-entitlements-cache.*`.
+- `src/main/resources/application.yml` — `application.module-entitlements-cache.*` (incl. `refresh-interval`).
 - `README.md`.
 
 **New / modified tests:**
 - `configuration/cache/ModuleEntitlementsCacheConfigurationTest.java` (`@UnitTest`).
 - `service/ModuleEntitlementsCacheProviderTest.java` (`@UnitTest`, Spring slice).
 - `service/ModuleEntitlementsCacheEvictionTest.java` (`@UnitTest`, Spring slice).
+- `service/ModuleEntitlementsCacheWarmerTest.java` (`@UnitTest`, Spring slice).
 - `service/EntitlementModuleServiceTest.java` (modify existing).
 - `it/ModuleEntitlementsCacheIT.java` (`@IntegrationTest`).
 
@@ -143,18 +145,21 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.cache.support.NoOpCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Always-on cache configuration. Carries {@link EnableCaching} so caching works regardless of
  * {@code application.keycloak.enabled} (the keycloak-gated {@link CacheConfiguration} no longer
- * enables caching). Provides a {@code moduleEntitlementsCacheManager} bean that is a Caffeine
- * manager when enabled and a {@link NoOpCacheManager} when disabled — the bean name always resolves
- * so {@code @Cacheable/@CacheEvict(cacheManager = "moduleEntitlementsCacheManager")} is valid in
- * every profile.
+ * enables caching), and {@link EnableScheduling} for the cache warmer's periodic refresh. Provides a
+ * {@code moduleEntitlementsCacheManager} bean that is a Caffeine manager when enabled and a
+ * {@link NoOpCacheManager} when disabled — the bean name always resolves so
+ * {@code @Cacheable/@CacheEvict(cacheManager = "moduleEntitlementsCacheManager")} is valid in every
+ * profile.
  */
 @Log4j2
 @Configuration
 @EnableCaching
+@EnableScheduling
 @EnableConfigurationProperties(ModuleEntitlementsCacheProperties.class)
 public class ModuleEntitlementsCacheConfiguration {
 
@@ -700,7 +705,169 @@ git commit -m "feat: evict affected module entries from cache on entitlement wri
 
 ---
 
-## Task 5: Add config + integration test (caching active with keycloak off, write evicts)
+## Task 5: Cache warm-up + periodic refresh (no cold-start storm)
+
+With ~200 unique module IDs, lazily filling a cold cache costs ~200 queries in a burst. The warmer
+loads everything in ONE batched query at startup and on a fixed delay, so the cache is warm before
+the synchronized sidecar poll and stays warm. It populates the same cache the provider reads from.
+
+**Files:**
+- Create: `src/main/java/org/folio/entitlement/service/ModuleEntitlementsCacheWarmer.java`
+- Test: `src/test/java/org/folio/entitlement/service/ModuleEntitlementsCacheWarmerTest.java`
+
+- [ ] **Step 1: Write the failing test**
+
+Create `src/test/java/org/folio/entitlement/service/ModuleEntitlementsCacheWarmerTest.java`:
+
+```java
+package org.folio.entitlement.service;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.entitlement.configuration.cache.ModuleEntitlementsCacheConfiguration.MODULE_ENTITLEMENTS_CACHE;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.UUID;
+import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
+import org.folio.entitlement.mapper.EntitlementModuleMapper;
+import org.folio.entitlement.repository.EntitlementModuleRepository;
+import org.folio.test.types.UnitTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Sort;
+
+@UnitTest
+@ExtendWith(MockitoExtension.class)
+class ModuleEntitlementsCacheWarmerTest {
+
+  @Mock private EntitlementModuleRepository repository;
+  @Mock private EntitlementModuleMapper mapper;
+  @Mock private CacheManager moduleEntitlementsCacheManager;
+  @Mock private Cache cache;
+  @InjectMocks private ModuleEntitlementsCacheWarmer warmer;
+
+  private static EntitlementModuleEntity entity(String moduleId, UUID tenantId) {
+    var e = new EntitlementModuleEntity();
+    e.setModuleId(moduleId);
+    e.setTenantId(tenantId);
+    e.setApplicationId("app-1.0.0");
+    return e;
+  }
+
+  @Test
+  void warmUp_populatesOneEntryPerDistinctModule() {
+    var t1 = UUID.fromString("00000000-0000-0000-0000-000000000001");
+    var t2 = UUID.fromString("00000000-0000-0000-0000-000000000002");
+    when(moduleEntitlementsCacheManager.getCache(MODULE_ENTITLEMENTS_CACHE)).thenReturn(cache);
+    when(repository.findAll(any(Sort.class))).thenReturn(List.of(
+      entity("mod-a-1.0.0", t1), entity("mod-a-1.0.0", t2), entity("mod-b-2.0.0", t1)));
+    when(mapper.map(any(EntitlementModuleEntity.class))).thenReturn(new Entitlement("app-1.0.0", t1));
+
+    warmer.warmUp();
+
+    var keys = ArgumentCaptor.forClass(String.class);
+    verify(cache, times(2)).put(keys.capture(), any());
+    assertThat(keys.getAllValues()).containsExactlyInAnyOrder("mod-a-1.0.0", "mod-b-2.0.0");
+  }
+}
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `JAVA_HOME=<java21> mvn test -Dtest=ModuleEntitlementsCacheWarmerTest -Dcheckstyle.skip`
+Expected: COMPILE FAILURE — `ModuleEntitlementsCacheWarmer` does not exist.
+
+- [ ] **Step 3: Create the warmer**
+
+Create `src/main/java/org/folio/entitlement/service/ModuleEntitlementsCacheWarmer.java`:
+
+```java
+package org.folio.entitlement.service;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static org.folio.entitlement.configuration.cache.ModuleEntitlementsCacheConfiguration.MODULE_ENTITLEMENTS_CACHE;
+import static org.folio.entitlement.domain.entity.key.EntitlementModuleEntity.SORT_BY_TENANT;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
+import org.folio.entitlement.mapper.EntitlementModuleMapper;
+import org.folio.entitlement.repository.EntitlementModuleRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cache.CacheManager;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Keeps the module-entitlements cache warm with a single batched query: loads every
+ * {@code entitlement_module} row once, groups by moduleId, and (re)populates the cache. Runs at
+ * startup (no cold-start storm across the many unique module IDs) and on a fixed delay (keeps entries
+ * warm and backstops missed evictions). One DB round-trip regardless of module count.
+ *
+ * <p>The {@code moduleEntitlementsCacheManager} field name selects the cache manager by name, so it
+ * resolves unambiguously even when the keycloak {@code accessTokenCacheManager} is also present.
+ */
+@Log4j2
+@Component
+@RequiredArgsConstructor
+@ConditionalOnProperty(name = "application.module-entitlements-cache.enabled", havingValue = "true",
+  matchIfMissing = true)
+public class ModuleEntitlementsCacheWarmer {
+
+  private final EntitlementModuleRepository repository;
+  private final EntitlementModuleMapper mapper;
+  private final CacheManager moduleEntitlementsCacheManager;
+
+  @Scheduled(initialDelayString = "0s",
+    fixedDelayString = "${application.module-entitlements-cache.refresh-interval:10m}")
+  @Transactional(readOnly = true)
+  public void warmUp() {
+    var cache = moduleEntitlementsCacheManager.getCache(MODULE_ENTITLEMENTS_CACHE);
+    if (cache == null) {
+      return;
+    }
+    var byModule = repository.findAll(SORT_BY_TENANT).stream()
+      .collect(groupingBy(EntitlementModuleEntity::getModuleId, mapping(mapper::map, toUnmodifiableList())));
+    byModule.forEach(cache::put);
+    log.info("Module-entitlements cache warmed: modules={}", byModule.size());
+  }
+}
+```
+
+Notes: the cache value type (`List<Entitlement>` from `toUnmodifiableList()`) matches what the
+provider's `@Cacheable` caches, so a subsequent `getByModuleId` is a cache hit. `repository.findAll(Sort)`
+comes from `JpaRepository` (via `JpaCqlRepository`). `@EnableScheduling` was added to the cache config
+in Task 1.
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `JAVA_HOME=<java21> mvn test -Dtest=ModuleEntitlementsCacheWarmerTest -Dcheckstyle.skip`
+Expected: PASS (1 test).
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/main/java/org/folio/entitlement/service/ModuleEntitlementsCacheWarmer.java \
+        src/test/java/org/folio/entitlement/service/ModuleEntitlementsCacheWarmerTest.java
+git commit -m "feat: warm module-entitlements cache at startup and on a fixed-delay refresh"
+```
+
+---
+
+## Task 6: Add config + integration test (caching active with keycloak off, write evicts)
 
 **Files:**
 - Modify: `src/main/resources/application.yml`
@@ -715,13 +882,15 @@ In `src/main/resources/application.yml`, under the top-level `application:` bloc
     enabled: ${MODULE_ENTITLEMENTS_CACHE_ENABLED:true}
     max-size: ${MODULE_ENTITLEMENTS_CACHE_MAX_SIZE:1000}
     ttl: ${MODULE_ENTITLEMENTS_CACHE_TTL:30m}
+    refresh-interval: ${MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL:10m}
 ```
 
 - [ ] **Step 2: Write the integration test**
 
 This IT runs under the `it` profile (`application.keycloak.enabled=false`), proving the gating fix:
-`@Cacheable` is active without keycloak. It seeds a row, populates the cache via the provider, then
-calls a write method and asserts the entry is gone — fully synchronous.
+caching is active without keycloak. It seeds a row, populates the cache via the warmer's single
+batched query, confirms reads are served, then calls a write method and asserts only that module's
+entry is gone — fully synchronous.
 
 Create `src/test/java/org/folio/entitlement/it/ModuleEntitlementsCacheIT.java`:
 
@@ -737,6 +906,7 @@ import org.folio.entitlement.domain.entity.key.EntitlementModuleKey;
 import org.folio.entitlement.repository.EntitlementModuleRepository;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.ModuleEntitlementsCacheProvider;
+import org.folio.entitlement.service.ModuleEntitlementsCacheWarmer;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.AfterEach;
@@ -755,6 +925,7 @@ class ModuleEntitlementsCacheIT extends BaseIntegrationTest {
   @Autowired private CacheManager cacheManager;
   @Autowired private EntitlementModuleRepository repository;
   @Autowired private ModuleEntitlementsCacheProvider cacheProvider;
+  @Autowired private ModuleEntitlementsCacheWarmer warmer;
   @Autowired private EntitlementModuleService entitlementModuleService;
 
   @AfterEach
@@ -770,18 +941,22 @@ class ModuleEntitlementsCacheIT extends BaseIntegrationTest {
   }
 
   @Test
-  void getByModuleId_isCachedWithKeycloakOff_andEvictedOnWrite() {
+  void cacheIsWarmedReadAndEvictedOnWrite() {
     var entity = new EntitlementModuleEntity();
     entity.setModuleId(MODULE_ID);
     entity.setTenantId(TENANT_ID);
     entity.setApplicationId(APPLICATION_ID);
     repository.save(entity);
 
-    // caching is active even with keycloak disabled (it profile) — the gating fix
-    assertThat(cacheProvider.getByModuleId(MODULE_ID)).hasSize(1);
-    assertThat(cache().get(MODULE_ID)).as("entry cached").isNotNull();
+    // the warmer populates the cache from a single batched query — and caching is active with
+    // keycloak disabled (it profile), proving the gating fix and the by-name cache-manager wiring
+    warmer.warmUp();
+    assertThat(cache().get(MODULE_ID)).as("entry warmed").isNotNull();
 
-    // a write to the entitlement table evicts the cache in-process
+    // reads are served from the warmed cache (pagination wrapper works end to end)
+    assertThat(cacheProvider.getByModuleId(MODULE_ID)).hasSize(1);
+
+    // a write to the entitlement table evicts that module's entry in-process
     entitlementModuleService.deleteModuleEntitlement(MODULE_ID, TENANT_ID, APPLICATION_ID);
     assertThat(cache().get(MODULE_ID)).as("entry evicted after write").isNull();
   }
@@ -795,7 +970,7 @@ class ModuleEntitlementsCacheIT extends BaseIntegrationTest {
 - [ ] **Step 3: Run the integration test to verify it passes**
 
 Run: `JAVA_HOME=<java21> mvn test-compile failsafe:integration-test -Dit.test='**/ModuleEntitlementsCacheIT.java' -Dcheckstyle.skip`
-Expected: PASS (1 test). The entry is non-null after the read and null after the write.
+Expected: PASS (1 test). The warmer populates the entry, the read is served from cache, and the entry is null after the write.
 
 If `cacheManager` autowiring is ambiguous (the keycloak `accessTokenCacheManager` is absent in the `it` profile, so it should be the only manager): qualify with `@Qualifier("moduleEntitlementsCacheManager")` on the autowired field.
 
@@ -809,7 +984,7 @@ git commit -m "test: integration test for module-entitlements caching and evicti
 
 ---
 
-## Task 6: Documentation
+## Task 7: Documentation
 
 **Files:**
 - Modify: `README.md`
@@ -822,16 +997,19 @@ Add to `README.md` (near the caching/environment docs):
 ### Module entitlements cache
 
 `GET /entitlements/modules/{moduleId}` is served from an in-memory Caffeine cache keyed by
-`moduleId` (the full per-module entitlement list; pagination is applied in memory). Because
-mgr-tenant-entitlements runs as a single instance, the cache is invalidated in-process: a write to
-the entitlement table (entitle / upgrade / revoke) evicts only the affected module IDs, so unrelated
-modules stay cached. `expireAfterWrite` is only a backstop.
+`moduleId` (the full per-module entitlement list; pagination is applied in memory). A warmer keeps
+the cache hot with a single batched query at startup and on a fixed-delay refresh, so there is no
+cold-start storm even with many unique module IDs. Because mgr-tenant-entitlements runs as a single
+instance, the cache is invalidated in-process: a write to the entitlement table (entitle / upgrade /
+revoke) evicts only the affected module IDs, so unrelated modules stay cached. `expireAfterWrite` is
+only a backstop.
 
 | Env var | Default | Description |
 |---|---|---|
-| `MODULE_ENTITLEMENTS_CACHE_ENABLED` | `true` | Enable the cache. When `false`, a no-op cache is used (every read hits the DB). |
+| `MODULE_ENTITLEMENTS_CACHE_ENABLED` | `true` | Enable the cache. When `false`, a no-op cache is used (every read hits the DB) and the warmer is not started. |
 | `MODULE_ENTITLEMENTS_CACHE_MAX_SIZE` | `1000` | Max number of cached per-module lists (Caffeine `maximumSize`). Set ≥ the number of distinct module IDs read in the deployment, or hot entries get LRU-evicted. |
 | `MODULE_ENTITLEMENTS_CACHE_TTL` | `30m` | Backstop expiry (Caffeine `expireAfterWrite`). |
+| `MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL` | `10m` | How often the warmer re-loads all module entitlements (one batched query) to keep the cache warm and backstop missed evictions. |
 ```
 
 - [ ] **Step 2: Commit**
@@ -843,7 +1021,7 @@ git commit -m "docs: document module-entitlements cache configuration"
 
 ---
 
-## Task 7: Full build + regression
+## Task 8: Full build + regression
 
 - [ ] **Step 1: Run the full unit suite**
 
@@ -868,22 +1046,25 @@ git commit -m "chore: checkstyle/cleanup for module-entitlements cache"
 
 **Spec coverage:**
 - Cache shape (cache-by-moduleId, paginate in memory, separate provider bean, unmodifiable list, `sync = true`) → Tasks 2 & 3. ✓
-- `@EnableCaching` gating fix + dedicated manager + NoOp swap + `cacheManager` qualifiers → Task 1. ✓
+- `@EnableCaching` + `@EnableScheduling` gating fix + dedicated manager + NoOp swap + `cacheManager` qualifiers → Task 1. ✓
 - Per-moduleId in-process eviction on all writes + TTL backstop → Task 4 (provider `evict` + service calls); ttl in Task 1. ✓
-- Effectiveness at scale (per-key eviction, `sync = true` anti-stampede, `max-size` sizing) → Tasks 2, 4, 6. ✓
-- Config keys (`enabled`, `max-size`, `ttl`) → Tasks 1 & 5. ✓
-- Error handling (NoOp when disabled, immutable cached value, read falls through) → Tasks 1, 2. ✓
-- Testing (config, provider caching, per-key eviction slice, pagination unit, IT for gating + eviction, access-token regression) → Tasks 1–5, 7. ✓
-- README → Task 6. ✓
+- Warm-up + periodic refresh (one batched query, no cold-start storm, "auto up-to-date") → Task 5. ✓
+- Effectiveness at scale (per-key eviction, `sync = true` anti-stampede, warmer, `max-size` sizing) → Tasks 2, 4, 5, 7. ✓
+- Config keys (`enabled`, `max-size`, `ttl`, `refresh-interval`) → Tasks 1, 5 & 6. ✓
+- Error handling (NoOp when disabled, immutable cached value, read falls through, warmer null-cache guard) → Tasks 1, 2, 5. ✓
+- Testing (config, provider caching, per-key eviction slice, warmer slice, pagination unit, IT for gating + warm + eviction, access-token regression) → Tasks 1–6, 8. ✓
+- README → Task 7. ✓
 - Out of scope (by-tenant read, consumer-repo changes, Kafka consumer) → not implemented, by design. ✓
 
 **Type/name consistency:**
-- `MODULE_ENTITLEMENTS_CACHE = "module-entitlements"` — config, provider `@Cacheable`/`@CacheEvict`, eviction test, IT. ✓
-- Cache manager bean name `"moduleEntitlementsCacheManager"` — both `@Bean(name=...)`, provider `@Cacheable`/`@CacheEvict`, config test. ✓
-- `ModuleEntitlementsCacheProvider.getByModuleId(String)` / `evict(String)` — Tasks 2 & 4; used by service (Tasks 3, 4) and tests (Tasks 2, 4, 5). ✓
-- Repository `findAllByModuleId(String, Sort)` — Task 2; used by provider. ✓
-- Property prefix `application.module-entitlements-cache` — properties class, conditionals, yaml. ✓
+- `MODULE_ENTITLEMENTS_CACHE = "module-entitlements"` — config, provider `@Cacheable`/`@CacheEvict`, warmer, eviction test, IT. ✓
+- Cache manager bean name `"moduleEntitlementsCacheManager"` — both `@Bean(name=...)`, provider `@Cacheable`/`@CacheEvict`, warmer field (by-name), config test. ✓
+- `ModuleEntitlementsCacheProvider.getByModuleId(String)` / `evict(String)` — Tasks 2 & 4; used by service (Tasks 3, 4) and tests (Tasks 2, 4, 6). ✓
+- `ModuleEntitlementsCacheWarmer.warmUp()` — Task 5; used by IT (Task 6). ✓
+- Repository `findAllByModuleId(String, Sort)` (Task 2) and `findAll(Sort)` (warmer, Task 5) — both used by reads. ✓
+- Property prefix `application.module-entitlements-cache` — properties class, conditionals, yaml, `@Scheduled` placeholder. ✓
 
 **Watch-outs flagged inline:**
 - Write-method bodies on disk may differ slightly — add only the trailing `cacheProvider.evict(...)` line(s) (Task 4 Step 4 note).
-- `cacheManager` autowiring qualifier in the IT if ambiguous — Task 5 Step 3 note.
+- `cacheManager` autowiring qualifier in the IT if ambiguous — Task 6 Step 3 note.
+- Warmer resolves the cache manager by field name `moduleEntitlementsCacheManager` (avoids ambiguity with the keycloak manager) — Task 5 Step 3 note.

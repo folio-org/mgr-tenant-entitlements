@@ -116,7 +116,31 @@ eviction harder. Per-module result sets are small, so caching the whole list and
 - **TTL backstop** (`expireAfterWrite`, default 30m) bounds any residual staleness (e.g. the tiny
   window if an eviction fires just before the surrounding transaction commits).
 
-### 4. Configuration
+### 4. Warm-up and periodic refresh — no cold-start storm
+
+With ~200 unique module IDs, a cold mte would otherwise take ~200 distinct `findAllByModuleId`
+queries to fill lazily (one per module — `sync = true` dedups only *within* a key, not across keys),
+and the synchronized `0 */5 * * * ?` sidecar poll would issue them as a burst. To avoid this, a
+`ModuleEntitlementsCacheWarmer` keeps the cache warm with **one** batched query:
+
+- Loads all `entitlement_module` rows in a single `repository.findAll(SORT_BY_TENANT)`, groups by
+  `moduleId`, and `cache.put`s each module's immutable list — one DB round-trip regardless of module
+  count.
+- Runs once at startup (`initialDelay = 0`) so the cache is warm before the first sidecar poll → no
+  cold-start storm.
+- Re-runs on a fixed delay (`refresh-interval`, default 10m) to keep entries warm (no per-key TTL
+  expiry misses) and backstop any missed eviction — the "automatically kept up to date" behavior.
+- Requires `@EnableScheduling` (added to `ModuleEntitlementsCacheConfiguration`).
+
+Combined freshness model:
+- **Immediate:** evict-on-write removes a changed module's entry the moment an entitlement changes.
+- **Warm:** the periodic re-warm re-populates everything in one query; an evicted module read before
+  the next re-warm lazily reloads just that one module (deduped by `sync = true`).
+- **Backstop:** `expireAfterWrite` (30m) is now rarely reached (re-warm rewrites entries first); it
+  only guards entries somehow never re-warmed. Because re-warm rewrites all entries in one query,
+  there is no per-key lockstep expiry, so no TTL jitter is needed.
+
+### 5. Configuration
 
 ```yaml
 application:
@@ -124,23 +148,28 @@ application:
     enabled: ${MODULE_ENTITLEMENTS_CACHE_ENABLED:true}
     max-size: ${MODULE_ENTITLEMENTS_CACHE_MAX_SIZE:1000}
     ttl: ${MODULE_ENTITLEMENTS_CACHE_TTL:30m}
+    refresh-interval: ${MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL:10m}
 ```
 
 Backed by `@ConfigurationProperties("application.module-entitlements-cache")`
-(`ModuleEntitlementsCacheProperties`: `long maxSize`, `Duration ttl`). No Kafka/consumer config.
+(`ModuleEntitlementsCacheProperties`: `long maxSize`, `Duration ttl`). `refresh-interval` is read
+directly by the warmer's `@Scheduled(fixedDelayString = ...)` placeholder. No Kafka/consumer config.
 
 **Sizing:** `max-size` must comfortably exceed the number of distinct module IDs read in the
-deployment; otherwise Caffeine LRU-evicts hot entries and the hit rate collapses. The default of
-1000 covers a typical FOLIO backend-module count; bump `MODULE_ENTITLEMENTS_CACHE_MAX_SIZE` for
-larger platforms.
+deployment (≥ 200 here); otherwise Caffeine LRU-evicts hot entries and the warmer/refresh can't keep
+them all resident. The default of 1000 covers a typical FOLIO backend-module count; bump
+`MODULE_ENTITLEMENTS_CACHE_MAX_SIZE` for larger platforms.
 
-### 5. Error handling
+### 6. Error handling
 
 - Provider/cache failure → read falls through to the DB; a cache problem never breaks a read.
-- `enabled=false` → `NoOpCacheManager`; behavior identical to today (every read hits the DB).
-- Cold start → empty cache; first read per module populates from DB.
+- `enabled=false` → `NoOpCacheManager` and the warmer is not created; behavior identical to today
+  (every read hits the DB).
+- Cold start → the warmer populates the cache at startup; any request arriving before warm-up
+  completes lazily loads its module (deduped by `sync = true`).
+- Warmer query failure → logged; the cache simply stays as-is and the next scheduled run retries.
 
-### 6. Testing
+### 7. Testing
 
 - **Unit (`EntitlementModuleService`):** in-memory pagination — empty, single page, partial last
   page, `offset` beyond size, default `limit=10`; returns a fresh `Entitlements` and list.
@@ -151,8 +180,11 @@ larger platforms.
   other module's entry survives (proves per-key, not all-entries).
 - **Config (`ApplicationContextRunner`):** enabled → `CaffeineCacheManager`; disabled →
   `NoOpCacheManager`.
+- **Warmer (Spring slice):** `warmUp()` issues a single `findAll` and populates one cache entry per
+  distinct `moduleId`.
 - **Integration (`BaseIntegrationTest`, `it` profile = keycloak off):** prove caching is active
-  without keycloak (the gating fix) and that a write evicts — synchronous, no Kafka.
+  without keycloak (the gating fix), that the warmer pre-populates at startup, and that a write
+  evicts — synchronous, no Kafka.
 - **Regression:** the access-token `@Cacheable` still works after moving `@EnableCaching` and adding
   the explicit `cacheManager` qualifier.
 
@@ -161,10 +193,11 @@ larger platforms.
 All in `mgr-tenant-entitlements`:
 
 - **New**
-  - `configuration/cache/ModuleEntitlementsCacheConfiguration.java` (always-on `@EnableCaching`,
-    `moduleEntitlementsCacheManager` + NoOp fallback).
+  - `configuration/cache/ModuleEntitlementsCacheConfiguration.java` (always-on `@EnableCaching` +
+    `@EnableScheduling`, `moduleEntitlementsCacheManager` + NoOp fallback).
   - `configuration/cache/ModuleEntitlementsCacheProperties.java`.
   - `service/ModuleEntitlementsCacheProvider.java` (`@Cacheable` read + `@CacheEvict` per-key evict).
+  - `service/ModuleEntitlementsCacheWarmer.java` (`@Scheduled` batched warm-up + periodic refresh).
 - **Modified**
   - `configuration/cache/CacheConfiguration.java` — remove `@EnableCaching`.
   - `integration/keycloak/KeycloakCacheableService.java` — add `cacheManager = "accessTokenCacheManager"`.
@@ -184,6 +217,13 @@ All in `mgr-tenant-entitlements`:
 - **Evict-before-commit window** → `@CacheEvict` runs after a successful write but possibly just
   before the surrounding transaction commits; on a single instance with infrequent writes this is a
   sub-second window, bounded by the TTL backstop. Acceptable; not worth an `afterCommit` hook.
+- **Cold-start storm (200 unique modules)** → a warmer pre-populates the whole cache in one batched
+  query at startup and on a fixed-delay refresh, so the synchronized sidecar poll always hits a warm
+  cache. `sync = true` covers any request that races warm-up.
+- **Warmer full-table read** → one `findAll` every `refresh-interval` (default 10m), off the request
+  path. Far cheaper than per-module lazy reloads; tune the interval for very large tables. A refresh
+  that races a concurrent write may briefly re-cache slightly stale data for that module, bounded by
+  the refresh interval and corrected on the next read/refresh.
 - **Future multi-instance** → if mte ever becomes multi-replica, in-process eviction is no longer
   sufficient and a broadcast invalidation (e.g. consuming `${ENV}.entitlement`) would be required.
   Documented here so the assumption is explicit.
