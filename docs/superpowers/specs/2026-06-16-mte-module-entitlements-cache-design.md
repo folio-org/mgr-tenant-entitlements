@@ -65,10 +65,11 @@ backstop only.
 - New bean `ModuleEntitlementsCacheProvider` holds the cached read in its own bean so Spring's
   cache proxy is honored (a self-invocation from `getModuleEntitlements` into a `@Cacheable` method
   on the same bean would bypass it). Mirrors `mgr-applications`' `ModuleBootstrapDataProvider`.
-  - `@Cacheable(cacheNames = "module-entitlements", cacheManager = "moduleEntitlementsCacheManager", key = "#moduleId")`
+  - `@Cacheable(cacheNames = "module-entitlements", cacheManager = "moduleEntitlementsCacheManager", key = "#moduleId", sync = true)`
     `List<Entitlement> getByModuleId(String moduleId)` — queries the full result set sorted by
     tenant (no paging), maps to `List<Entitlement>`, returns an **unmodifiable copy**
-    (`List.copyOf(...)`).
+    (`List.copyOf(...)`). `sync = true` collapses concurrent cache-miss loads (many sidecars
+    polling the same module ID) into a single DB load per key, preventing a cache stampede.
 - New repository method `List<EntitlementModuleEntity> findAllByModuleId(String moduleId, Sort sort)`.
 - `EntitlementModuleService.getModuleEntitlements(moduleId, limit, offset)` is rewritten to fetch
   the cached list and slice `[offset, offset+limit)` with bounds handling, building a fresh
@@ -91,21 +92,27 @@ eviction harder. Per-module result sets are small, so caching the whole list and
   `"moduleEntitlementsCacheManager"`; `KeycloakCacheableService` gains
   `cacheManager = "accessTokenCacheManager"`.
 
-### 3. Invalidation — in-process eviction + TTL backstop
+### 3. Invalidation — per-moduleId in-process eviction + TTL backstop
 
-- Annotate each `EntitlementModuleService` write method
-  (`save`, `saveAll`, both `deleteModuleEntitlement` overloads, `deleteAll`) with
-  `@CacheEvict(cacheNames = "module-entitlements", cacheManager = "moduleEntitlementsCacheManager", allEntries = true)`.
-  - `allEntries = true` is chosen for simplicity over per-key eviction: writes are infrequent admin
-    operations and the cache is small, so clearing it wholesale on any entitlement change is cheap
-    and removes all per-key/list-handling logic. The sidecar repopulates on its next read.
-  - These methods are invoked from other beans (flow stages), not via self-invocation, so the cache
-    proxy applies.
-  - Default `beforeInvocation = false`: eviction happens only after the write returns successfully,
-    so a rolled-back write does not evict.
+- The provider also exposes
+  `@CacheEvict(cacheNames = "module-entitlements", cacheManager = "moduleEntitlementsCacheManager", key = "#moduleId")`
+  `void evict(String moduleId)`.
+- `EntitlementModuleService` calls `cacheProvider.evict(...)` for exactly the module IDs each write
+  touches, after the repository write:
+  - `save(ModuleRequest)` / `deleteModuleEntitlement(ModuleRequest)` → `evict(request.getModuleId())`.
+  - `deleteModuleEntitlement(moduleId, tenantId, applicationId)` → `evict(moduleId)`.
+  - `saveAll(tenantId, applicationId, modules)` / `deleteAll(tenantId, applicationId, modules)` →
+    `modules.forEach(cacheProvider::evict)`.
+- **Per-moduleId, not `allEntries`.** This is the key effectiveness decision for a large deployment:
+  module IDs are unique and spread across many sidecars, and entitlement operations happen
+  continuously across tenants. Evicting only the affected module IDs means a change to module A
+  never flushes module B's hot entry. `allEntries` would defeat the cache whenever entitlement churn
+  is non-trivial.
+- The provider is a different bean, so `cacheProvider.evict(...)` goes through the cache proxy
+  (no self-invocation bypass).
 - Eviction is in-process and correct because there is exactly one mte instance. REVOKE clears the
-  cache immediately, so the sidecar never sees a revoked entitlement from a stale entry (beyond the
-  brief in-transaction window noted in Risks).
+  affected module's entry immediately, so the sidecar never sees a revoked entitlement from a stale
+  entry (beyond the brief in-transaction window noted in Risks).
 - **TTL backstop** (`expireAfterWrite`, default 30m) bounds any residual staleness (e.g. the tiny
   window if an eviction fires just before the surrounding transaction commits).
 
@@ -122,6 +129,11 @@ application:
 Backed by `@ConfigurationProperties("application.module-entitlements-cache")`
 (`ModuleEntitlementsCacheProperties`: `long maxSize`, `Duration ttl`). No Kafka/consumer config.
 
+**Sizing:** `max-size` must comfortably exceed the number of distinct module IDs read in the
+deployment; otherwise Caffeine LRU-evicts hot entries and the hit rate collapses. The default of
+1000 covers a typical FOLIO backend-module count; bump `MODULE_ENTITLEMENTS_CACHE_MAX_SIZE` for
+larger platforms.
+
 ### 5. Error handling
 
 - Provider/cache failure → read falls through to the DB; a cache problem never breaks a read.
@@ -134,8 +146,9 @@ Backed by `@ConfigurationProperties("application.module-entitlements-cache")`
   page, `offset` beyond size, default `limit=10`; returns a fresh `Entitlements` and list.
 - **Unit (`ModuleEntitlementsCacheProvider`, Spring slice):** returns an unmodifiable list; a second
   call with the same `moduleId` does not re-query the repository.
-- **Cache eviction (Spring slice):** populate via the provider, call an `EntitlementModuleService`
-  write method, assert the cache entry is gone.
+- **Cache eviction (Spring slice):** populate two module IDs via the provider, call an
+  `EntitlementModuleService` write affecting one of them, assert the affected entry is gone and the
+  other module's entry survives (proves per-key, not all-entries).
 - **Config (`ApplicationContextRunner`):** enabled → `CaffeineCacheManager`; disabled →
   `NoOpCacheManager`.
 - **Integration (`BaseIntegrationTest`, `it` profile = keycloak off):** prove caching is active
@@ -151,12 +164,12 @@ All in `mgr-tenant-entitlements`:
   - `configuration/cache/ModuleEntitlementsCacheConfiguration.java` (always-on `@EnableCaching`,
     `moduleEntitlementsCacheManager` + NoOp fallback).
   - `configuration/cache/ModuleEntitlementsCacheProperties.java`.
-  - `service/ModuleEntitlementsCacheProvider.java` (`@Cacheable` read).
+  - `service/ModuleEntitlementsCacheProvider.java` (`@Cacheable` read + `@CacheEvict` per-key evict).
 - **Modified**
   - `configuration/cache/CacheConfiguration.java` — remove `@EnableCaching`.
   - `integration/keycloak/KeycloakCacheableService.java` — add `cacheManager = "accessTokenCacheManager"`.
   - `service/EntitlementModuleService.java` — `getModuleEntitlements` delegates + paginates; write
-    methods get `@CacheEvict(allEntries = true)`.
+    methods call `cacheProvider.evict(...)` for the affected module IDs.
   - `repository/EntitlementModuleRepository.java` — add `findAllByModuleId(String, Sort)`.
   - `src/main/resources/application.yml` — cache config block.
   - `README.md`.

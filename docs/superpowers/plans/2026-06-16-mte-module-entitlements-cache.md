@@ -4,7 +4,7 @@
 
 **Goal:** Cache `EntitlementModuleService.getModuleEntitlements(moduleId, …)` in mgr-tenant-entitlements so repeated reads from the sidecar don't hit the DB, invalidated in-process whenever entitlements change.
 
-**Architecture:** mte is single-instance, so an in-process cache with in-process eviction is fully correct. Cache the full per-module entitlement list keyed on `moduleId` in a dedicated Caffeine cache (in its own bean so the cache proxy isn't bypassed); paginate in memory. Every write to `entitlement_module` (all of which go through `EntitlementModuleService`) evicts the cache via `@CacheEvict(allEntries = true)`; `expireAfterWrite` is a backstop. `@EnableCaching` moves to an always-on config so the cache works regardless of `application.keycloak.enabled`.
+**Architecture:** mte is single-instance, so an in-process cache with in-process eviction is fully correct. Cache the full per-module entitlement list keyed on `moduleId` in a dedicated Caffeine cache (in its own bean so the cache proxy isn't bypassed), read with `sync = true` to avoid a stampede across many sidecars; paginate in memory. Every write to `entitlement_module` (all of which go through `EntitlementModuleService`) evicts exactly the affected module IDs via `cacheProvider.evict(moduleId)` — per-key, so unrelated modules stay cached; `expireAfterWrite` is a backstop. `@EnableCaching` moves to an always-on config so the cache works regardless of `application.keycloak.enabled`.
 
 **Tech Stack:** Spring Boot 4.1.0, Java 21, Spring Cache + Caffeine 3.1.8, JUnit 5 + Mockito + AssertJ, Testcontainers (Postgres) + embedded Kafka (provided by the IT base; not used directly).
 
@@ -24,12 +24,12 @@
 **New files (under `src/main/java/org/folio/entitlement`):**
 - `configuration/cache/ModuleEntitlementsCacheProperties.java` — `@ConfigurationProperties` (maxSize, ttl).
 - `configuration/cache/ModuleEntitlementsCacheConfiguration.java` — always-on `@EnableCaching`, `moduleEntitlementsCacheManager` (Caffeine when enabled / NoOp when disabled), cache-name constant.
-- `service/ModuleEntitlementsCacheProvider.java` — the `@Cacheable` read in a dedicated bean.
+- `service/ModuleEntitlementsCacheProvider.java` — the `@Cacheable` read (`sync = true`) + `@CacheEvict` per-key evict in a dedicated bean.
 
 **Modified files:**
 - `configuration/cache/CacheConfiguration.java` — remove `@EnableCaching`.
 - `integration/keycloak/KeycloakCacheableService.java` — add `cacheManager = "accessTokenCacheManager"`.
-- `service/EntitlementModuleService.java` — `getModuleEntitlements` delegates + paginates; write methods get `@CacheEvict(allEntries = true)`.
+- `service/EntitlementModuleService.java` — `getModuleEntitlements` delegates + paginates; write methods call `cacheProvider.evict(...)` for the affected module IDs.
 - `repository/EntitlementModuleRepository.java` — add `findAllByModuleId(String, Sort)`.
 - `src/main/resources/application.yml` — `application.module-entitlements-cache.*`.
 - `README.md`.
@@ -355,7 +355,7 @@ public class ModuleEntitlementsCacheProvider {
   private final EntitlementModuleMapper mapper;
 
   @Cacheable(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
-    key = "#moduleId")
+    key = "#moduleId", sync = true)
   @Transactional(readOnly = true)
   public List<Entitlement> getByModuleId(String moduleId) {
     var entities = repository.findAllByModuleId(moduleId, SORT_BY_TENANT);
@@ -363,6 +363,10 @@ public class ModuleEntitlementsCacheProvider {
   }
 }
 ```
+
+`sync = true` collapses concurrent cache-miss loads for the same key (many sidecars polling the
+same module ID) into a single DB load, preventing a stampede on miss/eviction. It is compatible
+with a single named cache + key + `cacheManager`; do not add `unless`/multiple caches alongside it.
 
 - [ ] **Step 5: Run test to verify it passes**
 
@@ -521,13 +525,16 @@ git commit -m "feat: serve getModuleEntitlements from cache and paginate in memo
 
 ---
 
-## Task 4: In-process eviction on writes
+## Task 4: Per-moduleId in-process eviction on writes
 
-Every write to `entitlement_module` goes through `EntitlementModuleService`, so annotating its write
-methods with `@CacheEvict(allEntries = true)` clears the cache on any entitlement change. These
-methods are called from flow stages (other beans), so the cache proxy applies.
+Every write to `entitlement_module` goes through `EntitlementModuleService`. Each write evicts
+exactly the module IDs it touches (not the whole cache) — critical for a large deployment where many
+unique module IDs are cached and entitlement changes happen continuously: a change to module A must
+not flush module B's hot entry. Eviction goes through `ModuleEntitlementsCacheProvider.evict(moduleId)`
+(a different bean), so the cache proxy applies.
 
 **Files:**
+- Modify: `src/main/java/org/folio/entitlement/service/ModuleEntitlementsCacheProvider.java`
 - Modify: `src/main/java/org/folio/entitlement/service/EntitlementModuleService.java`
 - Test: `src/test/java/org/folio/entitlement/service/ModuleEntitlementsCacheEvictionTest.java`
 
@@ -547,7 +554,6 @@ import java.util.UUID;
 import org.folio.entitlement.configuration.cache.ModuleEntitlementsCacheConfiguration;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
-import org.folio.entitlement.domain.entity.key.EntitlementModuleKey;
 import org.folio.entitlement.mapper.EntitlementModuleMapper;
 import org.folio.entitlement.repository.EntitlementModuleRepository;
 import org.folio.test.types.UnitTest;
@@ -577,23 +583,24 @@ class ModuleEntitlementsCacheEvictionTest {
   @Autowired private CacheManager cacheManager;
 
   @Test
-  void writeMethod_evictsCachedModuleEntitlements() {
+  void writeAffectingModule_evictsOnlyThatModulesEntry() {
     var entity = new EntitlementModuleEntity();
     entity.setModuleId(MODULE_ID);
     entity.setTenantId(TENANT_ID);
     entity.setApplicationId(APPLICATION_ID);
     when(repository.findAllByModuleId(any(String.class), any(Sort.class))).thenReturn(List.of(entity));
-    when(mapper.map(any(EntitlementModuleEntity.class)))
-      .thenReturn(new Entitlement(APPLICATION_ID, TENANT_ID));
-    when(mapper.mapKey(any(String.class), any(UUID.class), any(String.class)))
-      .thenReturn(EntitlementModuleKey.of(MODULE_ID, TENANT_ID, APPLICATION_ID));
+    when(mapper.map(any(EntitlementModuleEntity.class))).thenReturn(new Entitlement(APPLICATION_ID, TENANT_ID));
 
+    var otherModuleId = "mod-bar-2.0.0";
     provider.getByModuleId(MODULE_ID);
-    assertThat(cache().get(MODULE_ID)).as("cached after read").isNotNull();
+    provider.getByModuleId(otherModuleId);
+    assertThat(cache().get(MODULE_ID)).as("module under test cached").isNotNull();
+    assertThat(cache().get(otherModuleId)).as("other module cached").isNotNull();
 
     service.deleteModuleEntitlement(MODULE_ID, TENANT_ID, APPLICATION_ID);
 
-    assertThat(cache().get(MODULE_ID)).as("evicted after write").isNull();
+    assertThat(cache().get(MODULE_ID)).as("affected module evicted").isNull();
+    assertThat(cache().get(otherModuleId)).as("unrelated module retained").isNotNull();
   }
 
   private org.springframework.cache.Cache cache() {
@@ -602,74 +609,93 @@ class ModuleEntitlementsCacheEvictionTest {
 }
 ```
 
-Note: `deleteModuleEntitlement(String, UUID, String)` builds its key via `mapper.mapKey(moduleId, tenantId, applicationId)` then `repository.deleteById(key)` — hence the `mapKey` stub. If the on-disk overload instead builds the key with `EntitlementModuleKey.of(...)` directly (no mapper), drop the `mapKey` stub.
+Note: this assumes `deleteModuleEntitlement(String, UUID, String)` builds its key with
+`EntitlementModuleKey.of(moduleId, tenantId, applicationId)` directly (verified in the current
+source), so no `mapper.mapKey` stub is needed. The per-key assertion (`otherModuleId` survives) is
+what proves eviction is per-module rather than all-entries.
 
 - [ ] **Step 2: Run test to verify it fails**
 
 Run: `JAVA_HOME=<java21> mvn test -Dtest=ModuleEntitlementsCacheEvictionTest -Dcheckstyle.skip`
-Expected: FAIL — the second assertion fails (`cache().get(MODULE_ID)` is still non-null) because no `@CacheEvict` exists yet.
+Expected: FAIL — the `affected module evicted` assertion fails (`cache().get(MODULE_ID)` is still non-null) because eviction is not wired yet.
 
-- [ ] **Step 3: Add `@CacheEvict` to every write method**
+- [ ] **Step 3: Add an `evict` method to the provider**
 
-In `src/main/java/org/folio/entitlement/service/EntitlementModuleService.java`, add imports:
+In `src/main/java/org/folio/entitlement/service/ModuleEntitlementsCacheProvider.java`, add the import:
 
 ```java
-import static org.folio.entitlement.configuration.cache.ModuleEntitlementsCacheConfiguration.MODULE_ENTITLEMENTS_CACHE;
 import org.springframework.cache.annotation.CacheEvict;
 ```
 
-Annotate each of the five write methods (`save`, `saveAll`, both `deleteModuleEntitlement` overloads, `deleteAll`) with the same annotation directly above each method signature:
+and the method (alongside `getByModuleId`):
 
 ```java
   @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
-    allEntries = true)
-  public void save(ModuleRequest moduleRequest) {
-    ...
-  }
-
-  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
-    allEntries = true)
-  public void saveAll(UUID tenantId, String applicationId, List<String> modules) {
-    ...
-  }
-
-  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
-    allEntries = true)
-  public void deleteModuleEntitlement(ModuleRequest moduleRequest) {
-    ...
-  }
-
-  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
-    allEntries = true)
-  public void deleteModuleEntitlement(String moduleId, UUID tenantId, String applicationId) {
-    ...
-  }
-
-  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
-    allEntries = true)
-  public void deleteAll(UUID tenantId, String applicationId, List<String> modules) {
-    ...
+    key = "#moduleId")
+  public void evict(String moduleId) {
+    // body intentionally empty: eviction performed by @CacheEvict
   }
 ```
 
-(Leave each method body unchanged — only add the annotation. Do not annotate the read methods `getModuleEntitlements` / `findAllModuleEntitlements`.)
+- [ ] **Step 4: Evict the affected module IDs in each write method**
 
-- [ ] **Step 4: Run test to verify it passes**
+In `src/main/java/org/folio/entitlement/service/EntitlementModuleService.java`, call
+`cacheProvider.evict(...)` after the repository write in each of the five write methods (the
+`cacheProvider` field already exists from Task 3). The method bodies become:
+
+```java
+  public void save(ModuleRequest moduleRequest) {
+    var entity = mapper.map(moduleRequest);
+    repository.save(entity);
+    cacheProvider.evict(moduleRequest.getModuleId());
+  }
+
+  public void saveAll(UUID tenantId, String applicationId, List<String> modules) {
+    var entities = toEntities(tenantId, applicationId, modules);
+    repository.saveAll(entities);
+    modules.forEach(cacheProvider::evict);
+  }
+
+  public void deleteModuleEntitlement(ModuleRequest moduleRequest) {
+    var key = mapper.mapKey(moduleRequest);
+    repository.deleteById(key);
+    cacheProvider.evict(moduleRequest.getModuleId());
+  }
+
+  public void deleteModuleEntitlement(String moduleId, UUID tenantId, String applicationId) {
+    var key = EntitlementModuleKey.of(moduleId, tenantId, applicationId);
+    repository.deleteById(key);
+    cacheProvider.evict(moduleId);
+  }
+
+  public void deleteAll(UUID tenantId, String applicationId, List<String> modules) {
+    var keys = toModuleKeys(tenantId, applicationId, modules);
+    repository.deleteAllById(keys);
+    modules.forEach(cacheProvider::evict);
+  }
+```
+
+(Do not evict in the read methods `getModuleEntitlements` / `findAllModuleEntitlements`. If a
+write-method body on disk differs — e.g. a different helper name — keep the existing body and only add
+the trailing `cacheProvider.evict(...)` line(s).)
+
+- [ ] **Step 5: Run test to verify it passes**
 
 Run: `JAVA_HOME=<java21> mvn test -Dtest=ModuleEntitlementsCacheEvictionTest -Dcheckstyle.skip`
-Expected: PASS (1 test).
+Expected: PASS (1 test) — the affected module is evicted, the unrelated module stays cached.
 
-- [ ] **Step 5: Re-run the service unit test (regression)**
+- [ ] **Step 6: Re-run the service unit test (regression)**
 
 Run: `JAVA_HOME=<java21> mvn test -Dtest=EntitlementModuleServiceTest -Dcheckstyle.skip`
-Expected: PASS (the write tests still pass — they use plain Mockito, where `@CacheEvict` is a no-op without a Spring context).
+Expected: PASS (the write tests still pass — `cacheProvider` is a Mockito mock there, so `evict` is a no-op).
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/main/java/org/folio/entitlement/service/EntitlementModuleService.java \
+git add src/main/java/org/folio/entitlement/service/ModuleEntitlementsCacheProvider.java \
+        src/main/java/org/folio/entitlement/service/EntitlementModuleService.java \
         src/test/java/org/folio/entitlement/service/ModuleEntitlementsCacheEvictionTest.java
-git commit -m "feat: evict module-entitlements cache on entitlement writes"
+git commit -m "feat: evict affected module entries from cache on entitlement writes"
 ```
 
 ---
@@ -797,14 +823,14 @@ Add to `README.md` (near the caching/environment docs):
 
 `GET /entitlements/modules/{moduleId}` is served from an in-memory Caffeine cache keyed by
 `moduleId` (the full per-module entitlement list; pagination is applied in memory). Because
-mgr-tenant-entitlements runs as a single instance, the cache is invalidated in-process: any write
-to the entitlement table (entitle / upgrade / revoke) clears the cache. `expireAfterWrite` is only a
-backstop.
+mgr-tenant-entitlements runs as a single instance, the cache is invalidated in-process: a write to
+the entitlement table (entitle / upgrade / revoke) evicts only the affected module IDs, so unrelated
+modules stay cached. `expireAfterWrite` is only a backstop.
 
 | Env var | Default | Description |
 |---|---|---|
 | `MODULE_ENTITLEMENTS_CACHE_ENABLED` | `true` | Enable the cache. When `false`, a no-op cache is used (every read hits the DB). |
-| `MODULE_ENTITLEMENTS_CACHE_MAX_SIZE` | `1000` | Max number of cached per-module lists (Caffeine `maximumSize`). |
+| `MODULE_ENTITLEMENTS_CACHE_MAX_SIZE` | `1000` | Max number of cached per-module lists (Caffeine `maximumSize`). Set ≥ the number of distinct module IDs read in the deployment, or hot entries get LRU-evicted. |
 | `MODULE_ENTITLEMENTS_CACHE_TTL` | `30m` | Backstop expiry (Caffeine `expireAfterWrite`). |
 ```
 
@@ -841,22 +867,23 @@ git commit -m "chore: checkstyle/cleanup for module-entitlements cache"
 ## Self-Review
 
 **Spec coverage:**
-- Cache shape (cache-by-moduleId, paginate in memory, separate provider bean, unmodifiable list) → Tasks 2 & 3. ✓
+- Cache shape (cache-by-moduleId, paginate in memory, separate provider bean, unmodifiable list, `sync = true`) → Tasks 2 & 3. ✓
 - `@EnableCaching` gating fix + dedicated manager + NoOp swap + `cacheManager` qualifiers → Task 1. ✓
-- In-process eviction on all writes + TTL backstop → Tasks 1 (ttl) & 4. ✓
+- Per-moduleId in-process eviction on all writes + TTL backstop → Task 4 (provider `evict` + service calls); ttl in Task 1. ✓
+- Effectiveness at scale (per-key eviction, `sync = true` anti-stampede, `max-size` sizing) → Tasks 2, 4, 6. ✓
 - Config keys (`enabled`, `max-size`, `ttl`) → Tasks 1 & 5. ✓
 - Error handling (NoOp when disabled, immutable cached value, read falls through) → Tasks 1, 2. ✓
-- Testing (config, provider caching, eviction slice, pagination unit, IT for gating + eviction, access-token regression) → Tasks 1–5, 7. ✓
+- Testing (config, provider caching, per-key eviction slice, pagination unit, IT for gating + eviction, access-token regression) → Tasks 1–5, 7. ✓
 - README → Task 6. ✓
 - Out of scope (by-tenant read, consumer-repo changes, Kafka consumer) → not implemented, by design. ✓
 
 **Type/name consistency:**
-- `MODULE_ENTITLEMENTS_CACHE = "module-entitlements"` — config, provider, service `@CacheEvict`, eviction test, IT. ✓
-- Cache manager bean name `"moduleEntitlementsCacheManager"` — both `@Bean(name=...)`, provider `@Cacheable`, service `@CacheEvict`, config test. ✓
-- `ModuleEntitlementsCacheProvider.getByModuleId(String)` — Task 2; used by service (Task 3), tests (Tasks 2, 4, 5). ✓
+- `MODULE_ENTITLEMENTS_CACHE = "module-entitlements"` — config, provider `@Cacheable`/`@CacheEvict`, eviction test, IT. ✓
+- Cache manager bean name `"moduleEntitlementsCacheManager"` — both `@Bean(name=...)`, provider `@Cacheable`/`@CacheEvict`, config test. ✓
+- `ModuleEntitlementsCacheProvider.getByModuleId(String)` / `evict(String)` — Tasks 2 & 4; used by service (Tasks 3, 4) and tests (Tasks 2, 4, 5). ✓
 - Repository `findAllByModuleId(String, Sort)` — Task 2; used by provider. ✓
 - Property prefix `application.module-entitlements-cache` — properties class, conditionals, yaml. ✓
 
 **Watch-outs flagged inline:**
-- `deleteModuleEntitlement(String, UUID, String)` key construction (mapper vs `EntitlementModuleKey.of`) — Task 4 Step 1 note.
+- Write-method bodies on disk may differ slightly — add only the trailing `cacheProvider.evict(...)` line(s) (Task 4 Step 4 note).
 - `cacheManager` autowiring qualifier in the IT if ambiguous — Task 5 Step 3 note.
