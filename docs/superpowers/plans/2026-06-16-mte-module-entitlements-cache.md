@@ -2,46 +2,44 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Cache `EntitlementModuleService.getModuleEntitlements(moduleId, …)` in mgr-tenant-entitlements so repeated reads from the sidecar don't hit the DB, kept fresh across replicas by a Kafka broadcast consumer with a TTL backstop.
+**Goal:** Cache `EntitlementModuleService.getModuleEntitlements(moduleId, …)` in mgr-tenant-entitlements so repeated reads from the sidecar don't hit the DB, invalidated in-process whenever entitlements change.
 
-**Architecture:** Cache the full per-module entitlement list keyed on `moduleId` in a dedicated Caffeine cache; paginate in memory. The cached read lives in its own bean (`ModuleEntitlementsCacheProvider`) so Spring's cache proxy isn't bypassed. A new per-instance broadcast Kafka consumer on `${ENV}.entitlement` evicts the affected `moduleId` on every replica; `expireAfterWrite` is a missed-event backstop. `@EnableCaching` moves to an always-on config so the cache works regardless of `application.keycloak.enabled`.
+**Architecture:** mte is single-instance, so an in-process cache with in-process eviction is fully correct. Cache the full per-module entitlement list keyed on `moduleId` in a dedicated Caffeine cache (in its own bean so the cache proxy isn't bypassed); paginate in memory. Every write to `entitlement_module` (all of which go through `EntitlementModuleService`) evicts the cache via `@CacheEvict(allEntries = true)`; `expireAfterWrite` is a backstop. `@EnableCaching` moves to an always-on config so the cache works regardless of `application.keycloak.enabled`.
 
-**Tech Stack:** Spring Boot 4.1.0, Java 21, Spring Cache + Caffeine 3.1.8, Spring Kafka, JUnit 5 + Mockito + AssertJ + Awaitility, Testcontainers (Postgres) + embedded Kafka.
+**Tech Stack:** Spring Boot 4.1.0, Java 21, Spring Cache + Caffeine 3.1.8, JUnit 5 + Mockito + AssertJ, Testcontainers (Postgres) + embedded Kafka (provided by the IT base; not used directly).
 
 **Design spec:** `docs/superpowers/specs/2026-06-16-mte-module-entitlements-cache-design.md`
 
 ## Conventions for this repo (read before running anything)
 
 - **JDK:** `mvn` here defaults to Java 26 and silently breaks Lombok. Export `JAVA_HOME` to a Java 21 JDK before every Maven command.
-- **Unit tests** are `@UnitTest` (surefire): run with `mvn test -Dtest=<ClassName>`.
-- **Integration tests** are `@IntegrationTest` (failsafe). `failsafe:integration-test` does NOT run `test-compile`, so a new/edited IT runs stale or "not found" — always prepend `test-compile`. During TDD add `-Dcheckstyle.skip` to focus on the failure:
+- **Unit tests** are `@UnitTest` (surefire): `mvn test -Dtest=<ClassName>`.
+- **Integration tests** are `@IntegrationTest` (failsafe). `failsafe:integration-test` does NOT run `test-compile`, so always prepend it. During TDD add `-Dcheckstyle.skip`:
   `mvn test-compile failsafe:integration-test -Dit.test='**/<ClassName>.java' -Dcheckstyle.skip`
 
 ---
 
 ## File Structure
 
-**New files (all under `src/main/java/org/folio/entitlement`):**
-- `configuration/cache/ModuleEntitlementsCacheProperties.java` — `@ConfigurationProperties` (maxSize, ttl, groupIdPrefix).
-- `configuration/cache/ModuleEntitlementsCacheConfiguration.java` — always-on `@EnableCaching`, the `moduleEntitlementsCacheManager` (Caffeine when enabled / NoOp when disabled), cache-name constant.
-- `service/ModuleEntitlementsCacheProvider.java` — the `@Cacheable` read + `@CacheEvict` in a dedicated bean.
-- `integration/kafka/configuration/ModuleEntitlementsCacheConsumerConfiguration.java` — broadcast consumer factory + listener container factory.
-- `integration/kafka/ModuleEntitlementsCacheInvalidationListener.java` — `@KafkaListener` that evicts by `moduleId`.
+**New files (under `src/main/java/org/folio/entitlement`):**
+- `configuration/cache/ModuleEntitlementsCacheProperties.java` — `@ConfigurationProperties` (maxSize, ttl).
+- `configuration/cache/ModuleEntitlementsCacheConfiguration.java` — always-on `@EnableCaching`, `moduleEntitlementsCacheManager` (Caffeine when enabled / NoOp when disabled), cache-name constant.
+- `service/ModuleEntitlementsCacheProvider.java` — the `@Cacheable` read in a dedicated bean.
 
 **Modified files:**
-- `configuration/cache/CacheConfiguration.java` — remove `@EnableCaching` (moved to the always-on config).
-- `integration/keycloak/KeycloakCacheableService.java` — add `cacheManager = "accessTokenCacheManager"` to its `@Cacheable` (two managers now exist → must qualify).
-- `service/EntitlementModuleService.java` — `getModuleEntitlements` delegates to the provider and paginates in memory.
+- `configuration/cache/CacheConfiguration.java` — remove `@EnableCaching`.
+- `integration/keycloak/KeycloakCacheableService.java` — add `cacheManager = "accessTokenCacheManager"`.
+- `service/EntitlementModuleService.java` — `getModuleEntitlements` delegates + paginates; write methods get `@CacheEvict(allEntries = true)`.
 - `repository/EntitlementModuleRepository.java` — add `findAllByModuleId(String, Sort)`.
-- `src/main/resources/application.yml` — add `spring.kafka.topics.entitlement` + `application.module-entitlements-cache.*`.
-- `README.md` — document the cache and its env vars.
+- `src/main/resources/application.yml` — `application.module-entitlements-cache.*`.
+- `README.md`.
 
-**New tests:**
-- `src/test/java/org/folio/entitlement/configuration/cache/ModuleEntitlementsCacheConfigurationTest.java` (`@UnitTest`).
-- `src/test/java/org/folio/entitlement/service/ModuleEntitlementsCacheProviderTest.java` (`@UnitTest`, Spring slice).
-- `src/test/java/org/folio/entitlement/integration/kafka/ModuleEntitlementsCacheInvalidationListenerTest.java` (`@UnitTest`).
-- `src/test/java/org/folio/entitlement/it/ModuleEntitlementsCacheIT.java` (`@IntegrationTest`).
-- `src/test/java/org/folio/entitlement/service/EntitlementModuleServiceTest.java` (modify existing).
+**New / modified tests:**
+- `configuration/cache/ModuleEntitlementsCacheConfigurationTest.java` (`@UnitTest`).
+- `service/ModuleEntitlementsCacheProviderTest.java` (`@UnitTest`, Spring slice).
+- `service/ModuleEntitlementsCacheEvictionTest.java` (`@UnitTest`, Spring slice).
+- `service/EntitlementModuleServiceTest.java` (modify existing).
+- `it/ModuleEntitlementsCacheIT.java` (`@IntegrationTest`).
 
 ---
 
@@ -121,17 +119,10 @@ public class ModuleEntitlementsCacheProperties {
   private long maxSize = 1000;
 
   /**
-   * Missed-event / memory backstop expiry (Caffeine expireAfterWrite). Not the freshness mechanism —
-   * invalidation is event-driven via the entitlement Kafka topic.
+   * Backstop expiry (Caffeine expireAfterWrite). Not the freshness mechanism — invalidation is
+   * in-process and immediate on every write to the entitlement table.
    */
   private Duration ttl = Duration.ofMinutes(30);
-
-  /**
-   * Base name of the per-instance Kafka consumer group used for broadcast cache invalidation. A
-   * random UUID is appended so every replica forms its own group and receives every event. Override
-   * via {@code KAFKA_MODULE_ENTITLEMENTS_CACHE_GROUP_ID}; the default is environment-prefixed in config.
-   */
-  private String groupIdPrefix = "mgr-tenant-entitlements-module-entitlements-cache";
 }
 ```
 
@@ -158,7 +149,8 @@ import org.springframework.context.annotation.Configuration;
  * {@code application.keycloak.enabled} (the keycloak-gated {@link CacheConfiguration} no longer
  * enables caching). Provides a {@code moduleEntitlementsCacheManager} bean that is a Caffeine
  * manager when enabled and a {@link NoOpCacheManager} when disabled — the bean name always resolves
- * so {@code @Cacheable(cacheManager = "moduleEntitlementsCacheManager")} is valid in every profile.
+ * so {@code @Cacheable/@CacheEvict(cacheManager = "moduleEntitlementsCacheManager")} is valid in
+ * every profile.
  */
 @Log4j2
 @Configuration
@@ -191,19 +183,7 @@ public class ModuleEntitlementsCacheConfiguration {
 
 - [ ] **Step 5: Remove `@EnableCaching` from the keycloak-gated config**
 
-In `src/main/java/org/folio/entitlement/configuration/cache/CacheConfiguration.java`, delete the `@EnableCaching` line and its import. The class header changes from:
-
-```java
-import org.springframework.cache.annotation.EnableCaching;
-...
-@Log4j2
-@Configuration
-@EnableCaching
-@ConditionalOnProperty("application.keycloak.enabled")
-public class CacheConfiguration {
-```
-
-to:
+In `src/main/java/org/folio/entitlement/configuration/cache/CacheConfiguration.java`, delete the `@EnableCaching` annotation and its import. The header becomes:
 
 ```java
 @Log4j2
@@ -212,7 +192,7 @@ to:
 public class CacheConfiguration {
 ```
 
-(Remove the now-unused `import org.springframework.cache.annotation.EnableCaching;`.)
+(Remove `import org.springframework.cache.annotation.EnableCaching;`.)
 
 - [ ] **Step 6: Qualify the access-token `@Cacheable`**
 
@@ -220,14 +200,12 @@ In `src/main/java/org/folio/entitlement/integration/keycloak/KeycloakCacheableSe
 
 ```java
   @Cacheable(cacheNames = ACCESS_TOKEN, key = "#userToken")
-  public AccessTokenResponse getAccessToken(String userToken) {
 ```
 
 to:
 
 ```java
   @Cacheable(cacheNames = ACCESS_TOKEN, cacheManager = "accessTokenCacheManager", key = "#userToken")
-  public AccessTokenResponse getAccessToken(String userToken) {
 ```
 
 - [ ] **Step 7: Run test to verify it passes**
@@ -279,6 +257,7 @@ import org.folio.entitlement.mapper.EntitlementModuleMapper;
 import org.folio.entitlement.repository.EntitlementModuleRepository;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -291,7 +270,7 @@ class ModuleEntitlementsCacheProviderTest {
 
   @MockitoBean private EntitlementModuleRepository repository;
   @MockitoBean private EntitlementModuleMapper mapper;
-  @org.springframework.beans.factory.annotation.Autowired private ModuleEntitlementsCacheProvider provider;
+  @Autowired private ModuleEntitlementsCacheProvider provider;
 
   private static EntitlementModuleEntity entity() {
     var e = new EntitlementModuleEntity();
@@ -326,18 +305,6 @@ class ModuleEntitlementsCacheProviderTest {
 
     verify(repository, times(1)).findAllByModuleId(eq(MODULE_ID), any(Sort.class));
   }
-
-  @Test
-  void evict_forcesRepositoryReloadOnNextCall() {
-    when(repository.findAllByModuleId(eq(MODULE_ID), any(Sort.class))).thenReturn(List.of(entity()));
-    when(mapper.map(any(EntitlementModuleEntity.class))).thenReturn(entitlement());
-
-    provider.getByModuleId(MODULE_ID);
-    provider.evict(MODULE_ID);
-    provider.getByModuleId(MODULE_ID);
-
-    verify(repository, times(2)).findAllByModuleId(eq(MODULE_ID), any(Sort.class));
-  }
 }
 ```
 
@@ -348,41 +315,11 @@ Expected: COMPILE FAILURE — `ModuleEntitlementsCacheProvider` and `findAllByMo
 
 - [ ] **Step 3: Add the repository method**
 
-In `src/main/java/org/folio/entitlement/repository/EntitlementModuleRepository.java`, add an import and one method. After the existing `findAllByModuleId(String, Pageable)` line, the body becomes:
+In `src/main/java/org/folio/entitlement/repository/EntitlementModuleRepository.java`, add `import org.springframework.data.domain.Sort;` and one method below the existing `findAllByModuleId(String, Pageable)`:
 
 ```java
-import java.util.List;
-import java.util.UUID;
-import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
-import org.folio.entitlement.domain.entity.key.EntitlementModuleKey;
-import org.folio.spring.cql.JpaCqlRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
-@Repository
-public interface EntitlementModuleRepository extends JpaCqlRepository<EntitlementModuleEntity, EntitlementModuleKey> {
-
-  Page<EntitlementModuleEntity> findAllByModuleId(String moduleId, Pageable pageable);
-
   List<EntitlementModuleEntity> findAllByModuleId(String moduleId, Sort sort);
-
-  List<EntitlementModuleEntity> findAllByModuleIdAndTenantId(String moduleId, UUID tenantId);
-
-  @Query("""
-    select entity from EntitlementModuleEntity entity
-      where entity.applicationId = :applicationId
-        and entity.tenantId = :tenantId
-    order by entity.moduleId""")
-  List<EntitlementModuleEntity> findAllByApplicationIdAndTenantId(
-    @Param("applicationId") String applicationId, @Param("tenantId") UUID tenantId);
-}
 ```
-
-(Only the `import org.springframework.data.domain.Sort;` and the `findAllByModuleId(String moduleId, Sort sort)` line are new.)
 
 - [ ] **Step 4: Create the provider**
 
@@ -400,7 +337,6 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.mapper.EntitlementModuleMapper;
 import org.folio.entitlement.repository.EntitlementModuleRepository;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -425,19 +361,13 @@ public class ModuleEntitlementsCacheProvider {
     var entities = repository.findAllByModuleId(moduleId, SORT_BY_TENANT);
     return List.copyOf(mapItems(entities, mapper::map));
   }
-
-  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
-    key = "#moduleId")
-  public void evict(String moduleId) {
-    // body intentionally empty: eviction is performed by @CacheEvict
-  }
 }
 ```
 
 - [ ] **Step 5: Run test to verify it passes**
 
 Run: `JAVA_HOME=<java21> mvn test -Dtest=ModuleEntitlementsCacheProviderTest -Dcheckstyle.skip`
-Expected: PASS (3 tests).
+Expected: PASS (2 tests).
 
 - [ ] **Step 6: Commit**
 
@@ -458,14 +388,14 @@ git commit -m "feat: add cached ModuleEntitlementsCacheProvider keyed by moduleI
 
 - [ ] **Step 1: Update the existing test (write the failing tests)**
 
-In `src/test/java/org/folio/entitlement/service/EntitlementModuleServiceTest.java`, add the provider mock and replace the `getModuleEntitlements_positive` test with pagination tests. Add these imports near the top:
+In `src/test/java/org/folio/entitlement/service/EntitlementModuleServiceTest.java`, add imports:
 
 ```java
 import java.util.List;
 import org.folio.entitlement.domain.dto.Entitlement;
 ```
 
-Add a mock field alongside the existing mocks:
+Add a provider mock alongside the existing mocks:
 
 ```java
   @Mock private EntitlementModuleRepository repository;
@@ -475,7 +405,7 @@ Add a mock field alongside the existing mocks:
   @InjectMocks private EntitlementModuleService service;
 ```
 
-Replace the existing `getModuleEntitlements_positive` test with:
+Replace the existing `getModuleEntitlements_positive` test with these four:
 
 ```java
   private static List<Entitlement> threeEntitlements() {
@@ -526,31 +456,31 @@ Replace the existing `getModuleEntitlements_positive` test with:
   }
 ```
 
-(Leave the other existing tests — `findModuleEntitlement_positive`, `save_positive`, `saveAll_positive`, `deleteModuleEntitlement_positive`, `deleteAll_positive` — unchanged.)
+(Leave `findModuleEntitlement_positive`, `save_positive`, `saveAll_positive`, `deleteModuleEntitlement_positive`, `deleteAll_positive` unchanged.)
 
 - [ ] **Step 2: Run tests to verify they fail**
 
 Run: `JAVA_HOME=<java21> mvn test -Dtest=EntitlementModuleServiceTest -Dcheckstyle.skip`
-Expected: COMPILE FAILURE — `ModuleEntitlementsCacheProvider` is not a constructor dependency of `EntitlementModuleService` yet.
+Expected: COMPILE FAILURE — `ModuleEntitlementsCacheProvider` is not a dependency of `EntitlementModuleService` yet.
 
 - [ ] **Step 3: Rewrite `getModuleEntitlements` in the service**
 
 In `src/main/java/org/folio/entitlement/service/EntitlementModuleService.java`:
 
-Remove these two imports (no longer used):
+Remove these imports (no longer used):
 
 ```java
 import static org.folio.entitlement.domain.entity.key.EntitlementModuleEntity.SORT_BY_TENANT;
 import org.folio.common.domain.model.OffsetRequest;
 ```
 
-Add this import:
+Add:
 
 ```java
 import java.util.ArrayList;
 ```
 
-Add the provider field (the class already uses `@RequiredArgsConstructor`):
+Add the provider field (class uses `@RequiredArgsConstructor`):
 
 ```java
   private final EntitlementModuleRepository repository;
@@ -558,7 +488,7 @@ Add the provider field (the class already uses `@RequiredArgsConstructor`):
   private final ModuleEntitlementsCacheProvider cacheProvider;
 ```
 
-Replace the `getModuleEntitlements` method with:
+Replace the `getModuleEntitlements` method body with:
 
 ```java
   @Transactional(readOnly = true)
@@ -574,7 +504,7 @@ Replace the `getModuleEntitlements` method with:
   }
 ```
 
-(`ModuleEntitlementsCacheProvider` is in the same package `org.folio.entitlement.service`, so no import is needed.)
+(`ModuleEntitlementsCacheProvider` is in the same package, no import needed.)
 
 - [ ] **Step 4: Run tests to verify they pass**
 
@@ -591,277 +521,195 @@ git commit -m "feat: serve getModuleEntitlements from cache and paginate in memo
 
 ---
 
-## Task 4: Kafka broadcast consumer + invalidation listener
+## Task 4: In-process eviction on writes
+
+Every write to `entitlement_module` goes through `EntitlementModuleService`, so annotating its write
+methods with `@CacheEvict(allEntries = true)` clears the cache on any entitlement change. These
+methods are called from flow stages (other beans), so the cache proxy applies.
 
 **Files:**
-- Create: `src/main/java/org/folio/entitlement/integration/kafka/configuration/ModuleEntitlementsCacheConsumerConfiguration.java`
-- Create: `src/main/java/org/folio/entitlement/integration/kafka/ModuleEntitlementsCacheInvalidationListener.java`
-- Modify: `src/main/resources/application.yml`
-- Test: `src/test/java/org/folio/entitlement/integration/kafka/ModuleEntitlementsCacheInvalidationListenerTest.java`
+- Modify: `src/main/java/org/folio/entitlement/service/EntitlementModuleService.java`
+- Test: `src/test/java/org/folio/entitlement/service/ModuleEntitlementsCacheEvictionTest.java`
 
 - [ ] **Step 1: Write the failing test**
 
-Create `src/test/java/org/folio/entitlement/integration/kafka/ModuleEntitlementsCacheInvalidationListenerTest.java`:
+Create `src/test/java/org/folio/entitlement/service/ModuleEntitlementsCacheEvictionTest.java`:
 
 ```java
-package org.folio.entitlement.integration.kafka;
+package org.folio.entitlement.service;
 
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.UUID;
-import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
-import org.folio.entitlement.service.ModuleEntitlementsCacheProvider;
+import org.folio.entitlement.configuration.cache.ModuleEntitlementsCacheConfiguration;
+import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
+import org.folio.entitlement.domain.entity.key.EntitlementModuleKey;
+import org.folio.entitlement.mapper.EntitlementModuleMapper;
+import org.folio.entitlement.repository.EntitlementModuleRepository;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.data.domain.Sort;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 @UnitTest
-@ExtendWith(MockitoExtension.class)
-class ModuleEntitlementsCacheInvalidationListenerTest {
+@SpringJUnitConfig({
+  ModuleEntitlementsCacheConfiguration.class,
+  ModuleEntitlementsCacheProvider.class,
+  EntitlementModuleService.class
+})
+class ModuleEntitlementsCacheEvictionTest {
 
   private static final String MODULE_ID = "mod-foo-1.0.0";
+  private static final UUID TENANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+  private static final String APPLICATION_ID = "app-1.0.0";
 
-  @Mock private ModuleEntitlementsCacheProvider cacheProvider;
-  @InjectMocks private ModuleEntitlementsCacheInvalidationListener listener;
+  @MockitoBean private EntitlementModuleRepository repository;
+  @MockitoBean private EntitlementModuleMapper mapper;
+  @Autowired private ModuleEntitlementsCacheProvider provider;
+  @Autowired private EntitlementModuleService service;
+  @Autowired private CacheManager cacheManager;
 
   @Test
-  void onEntitlementEvent_evictsByModuleId() {
-    listener.onEntitlementEvent(new EntitlementEvent("REVOKE", MODULE_ID, "tenant", UUID.randomUUID()));
-    verify(cacheProvider).evict(MODULE_ID);
+  void writeMethod_evictsCachedModuleEntitlements() {
+    var entity = new EntitlementModuleEntity();
+    entity.setModuleId(MODULE_ID);
+    entity.setTenantId(TENANT_ID);
+    entity.setApplicationId(APPLICATION_ID);
+    when(repository.findAllByModuleId(any(String.class), any(Sort.class))).thenReturn(List.of(entity));
+    when(mapper.map(any(EntitlementModuleEntity.class)))
+      .thenReturn(new Entitlement(APPLICATION_ID, TENANT_ID));
+    when(mapper.mapKey(any(String.class), any(UUID.class), any(String.class)))
+      .thenReturn(EntitlementModuleKey.of(MODULE_ID, TENANT_ID, APPLICATION_ID));
+
+    provider.getByModuleId(MODULE_ID);
+    assertThat(cache().get(MODULE_ID)).as("cached after read").isNotNull();
+
+    service.deleteModuleEntitlement(MODULE_ID, TENANT_ID, APPLICATION_ID);
+
+    assertThat(cache().get(MODULE_ID)).as("evicted after write").isNull();
   }
 
-  @Test
-  void onEntitlementEvent_blankModuleId_doesNotEvict() {
-    listener.onEntitlementEvent(new EntitlementEvent("REVOKE", "  ", "tenant", UUID.randomUUID()));
-    verify(cacheProvider, never()).evict(org.mockito.ArgumentMatchers.any());
+  private org.springframework.cache.Cache cache() {
+    return cacheManager.getCache(ModuleEntitlementsCacheConfiguration.MODULE_ENTITLEMENTS_CACHE);
   }
 }
 ```
+
+Note: `deleteModuleEntitlement(String, UUID, String)` builds its key via `mapper.mapKey(moduleId, tenantId, applicationId)` then `repository.deleteById(key)` — hence the `mapKey` stub. If the on-disk overload instead builds the key with `EntitlementModuleKey.of(...)` directly (no mapper), drop the `mapKey` stub.
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `JAVA_HOME=<java21> mvn test -Dtest=ModuleEntitlementsCacheInvalidationListenerTest -Dcheckstyle.skip`
-Expected: COMPILE FAILURE — `ModuleEntitlementsCacheInvalidationListener` does not exist.
+Run: `JAVA_HOME=<java21> mvn test -Dtest=ModuleEntitlementsCacheEvictionTest -Dcheckstyle.skip`
+Expected: FAIL — the second assertion fails (`cache().get(MODULE_ID)` is still non-null) because no `@CacheEvict` exists yet.
 
-- [ ] **Step 3: Create the consumer configuration**
+- [ ] **Step 3: Add `@CacheEvict` to every write method**
 
-Create `src/main/java/org/folio/entitlement/integration/kafka/configuration/ModuleEntitlementsCacheConsumerConfiguration.java`:
-
-```java
-package org.folio.entitlement.integration.kafka.configuration;
-
-import static org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG;
-import static org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.folio.entitlement.configuration.cache.ModuleEntitlementsCacheProperties;
-import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.KafkaException;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.listener.ContainerProperties.AckMode;
-import org.springframework.kafka.listener.DefaultErrorHandler;
-import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
-import org.springframework.util.backoff.FixedBackOff;
-
-/**
- * Broadcast consumer for module-entitlements cache invalidation. A unique group per instance
- * (UUID-suffixed prefix) ensures every replica receives every entitlement event. Offsets are never
- * committed (ack mode MANUAL, no auto-commit) and reset to latest, so these throwaway groups leave
- * no lingering metadata and resume from start-up onward. Mirrors mgr-applications' bootstrap-cache
- * consumer.
- */
-@Log4j2
-@Configuration
-@RequiredArgsConstructor
-@ConditionalOnProperty(name = "application.module-entitlements-cache.enabled", havingValue = "true",
-  matchIfMissing = true)
-public class ModuleEntitlementsCacheConsumerConfiguration {
-
-  private final KafkaProperties kafkaProperties;
-  private final ModuleEntitlementsCacheProperties cacheProperties;
-
-  @Bean
-  public ConcurrentKafkaListenerContainerFactory<String, EntitlementEvent>
-    moduleEntitlementsCacheKafkaListenerContainerFactory(
-      ConsumerFactory<String, EntitlementEvent> moduleEntitlementsCacheConsumerFactory) {
-    var factory = new ConcurrentKafkaListenerContainerFactory<String, EntitlementEvent>();
-    factory.setConsumerFactory(moduleEntitlementsCacheConsumerFactory);
-    factory.setCommonErrorHandler(errorHandler());
-    factory.getContainerProperties().setAckMode(AckMode.MANUAL);
-    return factory;
-  }
-
-  @Bean
-  public ConsumerFactory<String, EntitlementEvent> moduleEntitlementsCacheConsumerFactory() {
-    var deserializer = new JacksonJsonDeserializer<>(EntitlementEvent.class);
-    Map<String, Object> config = new HashMap<>(kafkaProperties.buildConsumerProperties());
-    config.put(KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-    config.put(VALUE_DESERIALIZER_CLASS_CONFIG, deserializer);
-    config.put(GROUP_ID_CONFIG, cacheProperties.getGroupIdPrefix() + "-" + UUID.randomUUID());
-    config.put(AUTO_OFFSET_RESET_CONFIG, "latest");
-    config.put(ENABLE_AUTO_COMMIT_CONFIG, false);
-    return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), deserializer);
-  }
-
-  private DefaultErrorHandler errorHandler() {
-    var handler = new DefaultErrorHandler((record, ex) ->
-      log.warn("Failed to process entitlement event for cache invalidation [record: {}]",
-        record, ex.getCause()));
-    // best-effort: eviction is idempotent, so no retry/backoff
-    handler.setBackOffFunction((record, ex) -> new FixedBackOff(0L, 0L));
-    handler.setLogLevel(KafkaException.Level.INFO);
-    return handler;
-  }
-}
-```
-
-Note: if `kafkaProperties.buildConsumerProperties()` fails to compile under Spring Boot 4.1, use `kafkaProperties.buildConsumerProperties(null)` (the `SslBundles`-aware overload). Verify against `mgr-applications` which compiles with the no-arg form.
-
-- [ ] **Step 4: Create the listener**
-
-Create `src/main/java/org/folio/entitlement/integration/kafka/ModuleEntitlementsCacheInvalidationListener.java`:
+In `src/main/java/org/folio/entitlement/service/EntitlementModuleService.java`, add imports:
 
 ```java
-package org.folio.entitlement.integration.kafka;
+import static org.folio.entitlement.configuration.cache.ModuleEntitlementsCacheConfiguration.MODULE_ENTITLEMENTS_CACHE;
+import org.springframework.cache.annotation.CacheEvict;
+```
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
-import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
-import org.folio.entitlement.service.ModuleEntitlementsCacheProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Component;
+Annotate each of the five write methods (`save`, `saveAll`, both `deleteModuleEntitlement` overloads, `deleteAll`) with the same annotation directly above each method signature:
 
-/**
- * Consumes entitlement events from {@code {ENV}.entitlement} (per-instance broadcast group) and
- * evicts the affected module's cached entitlements on this replica. ENTITLE / UPGRADE / REVOKE all
- * evict identically; eviction is idempotent, so duplicate delivery is harmless.
- */
-@Log4j2
-@Component
-@RequiredArgsConstructor
-@ConditionalOnProperty(name = "application.module-entitlements-cache.enabled", havingValue = "true",
-  matchIfMissing = true)
-public class ModuleEntitlementsCacheInvalidationListener {
-
-  private final ModuleEntitlementsCacheProvider cacheProvider;
-
-  @KafkaListener(
-    id = "module-entitlements-cache-invalidation-listener",
-    containerFactory = "moduleEntitlementsCacheKafkaListenerContainerFactory",
-    topics = "${spring.kafka.topics.entitlement}")
-  public void onEntitlementEvent(EntitlementEvent event) {
-    var moduleId = event == null ? null : event.getModuleId();
-    if (StringUtils.isBlank(moduleId)) {
-      log.warn("Skipping entitlement event with no moduleId: {}", event);
-      return;
-    }
-    log.debug("Invalidating module-entitlements cache on entitlement event: moduleId={}", moduleId);
-    cacheProvider.evict(moduleId);
+```java
+  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
+    allEntries = true)
+  public void save(ModuleRequest moduleRequest) {
+    ...
   }
-}
+
+  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
+    allEntries = true)
+  public void saveAll(UUID tenantId, String applicationId, List<String> modules) {
+    ...
+  }
+
+  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
+    allEntries = true)
+  public void deleteModuleEntitlement(ModuleRequest moduleRequest) {
+    ...
+  }
+
+  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
+    allEntries = true)
+  public void deleteModuleEntitlement(String moduleId, UUID tenantId, String applicationId) {
+    ...
+  }
+
+  @CacheEvict(cacheNames = MODULE_ENTITLEMENTS_CACHE, cacheManager = "moduleEntitlementsCacheManager",
+    allEntries = true)
+  public void deleteAll(UUID tenantId, String applicationId, List<String> modules) {
+    ...
+  }
 ```
 
-- [ ] **Step 5: Add config to `application.yml`**
+(Leave each method body unchanged — only add the annotation. Do not annotate the read methods `getModuleEntitlements` / `findAllModuleEntitlements`.)
 
-In `src/main/resources/application.yml`, under the existing `spring.kafka:` block (which currently has `bootstrap-servers`, `security`, `ssl`, `producer`), add a `topics` key:
+- [ ] **Step 4: Run test to verify it passes**
 
-```yaml
-  kafka:
-    bootstrap-servers: ${KAFKA_HOST:kafka}:${KAFKA_PORT:9092}
-    # ... existing security/ssl/producer ...
-    topics:
-      entitlement: ${KAFKA_ENTITLEMENT_TOPIC:${application.environment}.entitlement}
-```
+Run: `JAVA_HOME=<java21> mvn test -Dtest=ModuleEntitlementsCacheEvictionTest -Dcheckstyle.skip`
+Expected: PASS (1 test).
 
-And under the top-level `application:` block, add the cache block (place it near the existing `application.environment` / `application.kafka` keys):
+- [ ] **Step 5: Re-run the service unit test (regression)**
 
-```yaml
-application:
-  # ... existing keys ...
-  environment: ${ENV:folio}
-  module-entitlements-cache:
-    enabled: ${MODULE_ENTITLEMENTS_CACHE_ENABLED:true}
-    max-size: ${MODULE_ENTITLEMENTS_CACHE_MAX_SIZE:1000}
-    ttl: ${MODULE_ENTITLEMENTS_CACHE_TTL:30m}
-    group-id-prefix: ${KAFKA_MODULE_ENTITLEMENTS_CACHE_GROUP_ID:${application.environment}-mgr-tenant-entitlements-module-entitlements-cache}
-```
+Run: `JAVA_HOME=<java21> mvn test -Dtest=EntitlementModuleServiceTest -Dcheckstyle.skip`
+Expected: PASS (the write tests still pass — they use plain Mockito, where `@CacheEvict` is a no-op without a Spring context).
 
-- [ ] **Step 6: Run test to verify it passes**
-
-Run: `JAVA_HOME=<java21> mvn test -Dtest=ModuleEntitlementsCacheInvalidationListenerTest -Dcheckstyle.skip`
-Expected: PASS (2 tests).
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/main/java/org/folio/entitlement/integration/kafka/configuration/ModuleEntitlementsCacheConsumerConfiguration.java \
-        src/main/java/org/folio/entitlement/integration/kafka/ModuleEntitlementsCacheInvalidationListener.java \
-        src/main/resources/application.yml \
-        src/test/java/org/folio/entitlement/integration/kafka/ModuleEntitlementsCacheInvalidationListenerTest.java
-git commit -m "feat: invalidate module-entitlements cache via broadcast Kafka consumer"
+git add src/main/java/org/folio/entitlement/service/EntitlementModuleService.java \
+        src/test/java/org/folio/entitlement/service/ModuleEntitlementsCacheEvictionTest.java
+git commit -m "feat: evict module-entitlements cache on entitlement writes"
 ```
 
 ---
 
-## Task 5: Integration test — caching active (keycloak off) + event-driven eviction
+## Task 5: Add config + integration test (caching active with keycloak off, write evicts)
 
 **Files:**
+- Modify: `src/main/resources/application.yml`
 - Create: `src/test/java/org/folio/entitlement/it/ModuleEntitlementsCacheIT.java`
-- (Possibly modify) `pom.xml` — only if `org.awaitility:awaitility` is not already a test dependency.
 
-This IT runs under the `it` profile (`application.keycloak.enabled=false`), so it also proves the gating fix: `@Cacheable` is active without keycloak. It seeds a row directly, populates the cache through the provider, publishes a real `EntitlementEvent` to the embedded Kafka, and asserts the entry is evicted.
+- [ ] **Step 1: Add config to `application.yml`**
 
-- [ ] **Step 1: Confirm Awaitility is available**
+In `src/main/resources/application.yml`, under the top-level `application:` block (near `application.environment`), add:
 
-Run: `grep -n "awaitility" pom.xml`
-Expected: a test-scoped `org.awaitility:awaitility` dependency. If absent, add it under `<dependencies>`:
-
-```xml
-<dependency>
-  <groupId>org.awaitility</groupId>
-  <artifactId>awaitility</artifactId>
-  <scope>test</scope>
-</dependency>
+```yaml
+  module-entitlements-cache:
+    enabled: ${MODULE_ENTITLEMENTS_CACHE_ENABLED:true}
+    max-size: ${MODULE_ENTITLEMENTS_CACHE_MAX_SIZE:1000}
+    ttl: ${MODULE_ENTITLEMENTS_CACHE_TTL:30m}
 ```
 
 - [ ] **Step 2: Write the integration test**
+
+This IT runs under the `it` profile (`application.keycloak.enabled=false`), proving the gating fix:
+`@Cacheable` is active without keycloak. It seeds a row, populates the cache via the provider, then
+calls a write method and asserts the entry is gone — fully synchronous.
 
 Create `src/test/java/org/folio/entitlement/it/ModuleEntitlementsCacheIT.java`:
 
 ```java
 package org.folio.entitlement.it;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.folio.entitlement.configuration.cache.ModuleEntitlementsCacheConfiguration.MODULE_ENTITLEMENTS_CACHE;
 
 import java.util.UUID;
 import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
 import org.folio.entitlement.domain.entity.key.EntitlementModuleKey;
-import org.folio.entitlement.integration.kafka.EntitlementEventPublisher;
-import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.repository.EntitlementModuleRepository;
+import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.ModuleEntitlementsCacheProvider;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.types.IntegrationTest;
@@ -880,34 +728,36 @@ class ModuleEntitlementsCacheIT extends BaseIntegrationTest {
 
   @Autowired private CacheManager cacheManager;
   @Autowired private EntitlementModuleRepository repository;
-  @Autowired private EntitlementEventPublisher eventPublisher;
   @Autowired private ModuleEntitlementsCacheProvider cacheProvider;
+  @Autowired private EntitlementModuleService entitlementModuleService;
 
   @AfterEach
   void cleanUp() {
-    repository.deleteById(EntitlementModuleKey.of(MODULE_ID, TENANT_ID, APPLICATION_ID));
-    cache().clear();
+    var key = EntitlementModuleKey.of(MODULE_ID, TENANT_ID, APPLICATION_ID);
+    if (repository.existsById(key)) {
+      repository.deleteById(key);
+    }
+    var cache = cache();
+    if (cache != null) {
+      cache.clear();
+    }
   }
 
   @Test
-  void getByModuleId_isCachedThenEvictedByEntitlementEvent() {
+  void getByModuleId_isCachedWithKeycloakOff_andEvictedOnWrite() {
     var entity = new EntitlementModuleEntity();
     entity.setModuleId(MODULE_ID);
     entity.setTenantId(TENANT_ID);
     entity.setApplicationId(APPLICATION_ID);
     repository.save(entity);
 
-    // cache is active even with keycloak disabled (the it profile) — populate it
+    // caching is active even with keycloak disabled (it profile) — the gating fix
     assertThat(cacheProvider.getByModuleId(MODULE_ID)).hasSize(1);
     assertThat(cache().get(MODULE_ID)).as("entry cached").isNotNull();
 
-    // publishing an entitlement event for this module evicts the entry on this replica.
-    // re-publish on each poll to absorb the broadcast consumer's start-up assignment lag
-    // (it uses auto-offset-reset=latest, so an event sent before assignment would be missed).
-    await().atMost(30, SECONDS).pollInterval(1, SECONDS).untilAsserted(() -> {
-      eventPublisher.publish(new EntitlementEvent("REVOKE", MODULE_ID, "it-tenant", TENANT_ID));
-      assertThat(cache().get(MODULE_ID)).as("entry evicted after event").isNull();
-    });
+    // a write to the entitlement table evicts the cache in-process
+    entitlementModuleService.deleteModuleEntitlement(MODULE_ID, TENANT_ID, APPLICATION_ID);
+    assertThat(cache().get(MODULE_ID)).as("entry evicted after write").isNull();
   }
 
   private Cache cache() {
@@ -919,15 +769,16 @@ class ModuleEntitlementsCacheIT extends BaseIntegrationTest {
 - [ ] **Step 3: Run the integration test to verify it passes**
 
 Run: `JAVA_HOME=<java21> mvn test-compile failsafe:integration-test -Dit.test='**/ModuleEntitlementsCacheIT.java' -Dcheckstyle.skip`
-Expected: PASS (1 test). The cache entry appears after `getByModuleId`, then becomes `null` once the listener consumes the published event.
+Expected: PASS (1 test). The entry is non-null after the read and null after the write.
 
-If it hangs/fails on eviction: confirm the listener subscribed to the same topic the publisher writes to — `EntitlementEventPublisher` uses `KafkaUtils.getEnvTopicName("entitlement")` and the listener uses `${spring.kafka.topics.entitlement}` = `${application.environment}.entitlement`. In the `it` profile `application.environment=it`, so both must resolve to `it.entitlement`. If they differ, align `spring.kafka.topics.entitlement` to whatever `getEnvTopicName("entitlement")` produces.
+If `cacheManager` autowiring is ambiguous (the keycloak `accessTokenCacheManager` is absent in the `it` profile, so it should be the only manager): qualify with `@Qualifier("moduleEntitlementsCacheManager")` on the autowired field.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/test/java/org/folio/entitlement/it/ModuleEntitlementsCacheIT.java pom.xml
-git commit -m "test: integration test for module-entitlements cache + event-driven eviction"
+git add src/main/resources/application.yml \
+        src/test/java/org/folio/entitlement/it/ModuleEntitlementsCacheIT.java
+git commit -m "test: integration test for module-entitlements caching and eviction"
 ```
 
 ---
@@ -939,24 +790,22 @@ git commit -m "test: integration test for module-entitlements cache + event-driv
 
 - [ ] **Step 1: Document the cache and its configuration**
 
-Add a section to `README.md` (under the existing caching/environment documentation, or near the Kafka section) describing:
+Add to `README.md` (near the caching/environment docs):
 
 ```markdown
 ### Module entitlements cache
 
 `GET /entitlements/modules/{moduleId}` is served from an in-memory Caffeine cache keyed by
-`moduleId` (the full per-module entitlement list; pagination is applied in memory). The cache is
-invalidated event-driven: a per-instance broadcast Kafka consumer on `${ENV}.entitlement` evicts
-the affected `moduleId` on every replica when an entitlement is created, upgraded, or revoked.
-`expireAfterWrite` is a missed-event backstop, not the primary freshness mechanism.
+`moduleId` (the full per-module entitlement list; pagination is applied in memory). Because
+mgr-tenant-entitlements runs as a single instance, the cache is invalidated in-process: any write
+to the entitlement table (entitle / upgrade / revoke) clears the cache. `expireAfterWrite` is only a
+backstop.
 
 | Env var | Default | Description |
 |---|---|---|
-| `MODULE_ENTITLEMENTS_CACHE_ENABLED` | `true` | Enable the cache. When `false`, a no-op cache is used and the consumer is not started. |
+| `MODULE_ENTITLEMENTS_CACHE_ENABLED` | `true` | Enable the cache. When `false`, a no-op cache is used (every read hits the DB). |
 | `MODULE_ENTITLEMENTS_CACHE_MAX_SIZE` | `1000` | Max number of cached per-module lists (Caffeine `maximumSize`). |
 | `MODULE_ENTITLEMENTS_CACHE_TTL` | `30m` | Backstop expiry (Caffeine `expireAfterWrite`). |
-| `KAFKA_MODULE_ENTITLEMENTS_CACHE_GROUP_ID` | `${ENV}-mgr-tenant-entitlements-module-entitlements-cache` | Base consumer-group name; a UUID is appended per instance for broadcast delivery. |
-| `KAFKA_ENTITLEMENT_TOPIC` | `${ENV}.entitlement` | Topic the invalidation consumer subscribes to. |
 ```
 
 - [ ] **Step 2: Commit**
@@ -970,17 +819,17 @@ git commit -m "docs: document module-entitlements cache configuration"
 
 ## Task 7: Full build + regression
 
-- [ ] **Step 1: Run the full unit test suite**
+- [ ] **Step 1: Run the full unit suite**
 
 Run: `JAVA_HOME=<java21> mvn test`
-Expected: PASS. Pay attention that the existing `KeycloakCacheableService` / access-token caching tests (if any) still pass after the `@EnableCaching` move and the `cacheManager` qualifier.
+Expected: PASS. Verify the existing access-token caching path still works after the `@EnableCaching` move and the `cacheManager` qualifier.
 
-- [ ] **Step 2: Run the new integration test once more in a clean compile**
+- [ ] **Step 2: Run the new IT once more with checkstyle on**
 
 Run: `JAVA_HOME=<java21> mvn test-compile failsafe:integration-test -Dit.test='**/ModuleEntitlementsCacheIT.java'`
-Expected: PASS (with checkstyle on).
+Expected: PASS.
 
-- [ ] **Step 3: Final commit (if any checkstyle fixes were needed)**
+- [ ] **Step 3: Final commit (only if checkstyle/cleanup changes were needed)**
 
 ```bash
 git add -A
@@ -994,22 +843,20 @@ git commit -m "chore: checkstyle/cleanup for module-entitlements cache"
 **Spec coverage:**
 - Cache shape (cache-by-moduleId, paginate in memory, separate provider bean, unmodifiable list) → Tasks 2 & 3. ✓
 - `@EnableCaching` gating fix + dedicated manager + NoOp swap + `cacheManager` qualifiers → Task 1. ✓
-- Kafka broadcast consumer (per-instance UUID group, latest offset, ephemeral, evict by moduleId) + TTL backstop → Tasks 1 (ttl) & 4. ✓
-- Config keys (`enabled`, `max-size`, `ttl`, group id, topic) → Tasks 1 & 4. ✓
-- Error handling (best-effort listener, NoOp when disabled, immutable cached value) → Tasks 1, 2, 4. ✓
-- Testing (pagination unit, provider caching slice, listener unit, IT for gating + eviction, access-token regression) → Tasks 2, 3, 4, 5, 7. ✓
+- In-process eviction on all writes + TTL backstop → Tasks 1 (ttl) & 4. ✓
+- Config keys (`enabled`, `max-size`, `ttl`) → Tasks 1 & 5. ✓
+- Error handling (NoOp when disabled, immutable cached value, read falls through) → Tasks 1, 2. ✓
+- Testing (config, provider caching, eviction slice, pagination unit, IT for gating + eviction, access-token regression) → Tasks 1–5, 7. ✓
 - README → Task 6. ✓
-- Out of scope (by-tenant read, consumer-repo changes) → not implemented, by design. ✓
+- Out of scope (by-tenant read, consumer-repo changes, Kafka consumer) → not implemented, by design. ✓
 
-**Type/name consistency check:**
-- Cache name constant `MODULE_ENTITLEMENTS_CACHE = "module-entitlements"` used by config, provider, IT. ✓
-- Cache manager bean name `"moduleEntitlementsCacheManager"` used by both `@Bean(name=...)` methods, the provider's `@Cacheable`/`@CacheEvict`, and the config test. ✓
-- Listener `id = "module-entitlements-cache-invalidation-listener"`, containerFactory `"moduleEntitlementsCacheKafkaListenerContainerFactory"` — defined in Task 4 config, referenced in Task 4 listener. ✓
-- Provider methods `getByModuleId(String)` / `evict(String)` — defined in Task 2, used in Task 3 (service), Task 4 (listener), Task 5 (IT). ✓
-- Repository `findAllByModuleId(String, Sort)` — added in Task 2, used by provider. ✓
-- Property prefix `application.module-entitlements-cache` consistent across properties class, conditionals, and yaml. ✓
+**Type/name consistency:**
+- `MODULE_ENTITLEMENTS_CACHE = "module-entitlements"` — config, provider, service `@CacheEvict`, eviction test, IT. ✓
+- Cache manager bean name `"moduleEntitlementsCacheManager"` — both `@Bean(name=...)`, provider `@Cacheable`, service `@CacheEvict`, config test. ✓
+- `ModuleEntitlementsCacheProvider.getByModuleId(String)` — Task 2; used by service (Task 3), tests (Tasks 2, 4, 5). ✓
+- Repository `findAllByModuleId(String, Sort)` — Task 2; used by provider. ✓
+- Property prefix `application.module-entitlements-cache` — properties class, conditionals, yaml. ✓
 
-**Open verification items (carried from the spec; the IT in Task 5 is the safety net):**
-- `getEnvTopicName("entitlement")` must equal `${application.environment}.entitlement` — confirmed identical in the `it` profile or Task 5 fails (Step 3 note explains the fix).
-- `kafkaProperties.buildConsumerProperties()` no-arg form must compile under Spring Boot 4.1 (mirrors mgr-applications; fallback noted in Task 4 Step 3).
-- `org.awaitility:awaitility` test dependency present (Task 5 Step 1 adds it if missing).
+**Watch-outs flagged inline:**
+- `deleteModuleEntitlement(String, UUID, String)` key construction (mapper vs `EntitlementModuleKey.of`) — Task 4 Step 1 note.
+- `cacheManager` autowiring qualifier in the IT if ambiguous — Task 5 Step 3 note.
