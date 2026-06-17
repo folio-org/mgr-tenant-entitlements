@@ -340,6 +340,23 @@ FLOW_ENGINE_THREADS_NUM=10
 FLOW_ENGINE_MODULE_INSTALLER_THREADS=6
 ```
 
+### Module entitlements cache
+
+`GET /entitlements/modules/{moduleId}` is served from an in-memory Caffeine cache keyed by
+`moduleId` (the full per-module entitlement list; pagination is applied in memory). A warmer keeps
+the cache hot with a single batched query at startup and on a fixed-delay refresh, so there is no
+cold-start storm even with many unique module IDs. Because mgr-tenant-entitlements runs as a single
+instance, the cache is invalidated in-process: a write to the entitlement table (entitle / upgrade /
+revoke) evicts only the affected module IDs, so unrelated modules stay cached. `expireAfterWrite` is
+only a backstop.
+
+| Name                                       | Default value | Required | Description                                                                                                                                |
+|:-------------------------------------------|:--------------|:--------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
+| MODULE_ENTITLEMENTS_CACHE_ENABLED          | true          |  false   | Enable the cache. When `false`, a no-op cache is used (every read hits the DB) and the warmer is not started.                              |
+| MODULE_ENTITLEMENTS_CACHE_MAX_SIZE         | 1000          |  false   | Max number of cached per-module lists (Caffeine `maximumSize`). Set ≥ the number of distinct module IDs in the deployment to avoid LRU eviction. |
+| MODULE_ENTITLEMENTS_CACHE_TTL              | 2h            |  false   | Backstop expiry (Caffeine `expireAfterWrite`). Keep it above the refresh interval so entries are re-warmed before they expire.             |
+| MODULE_ENTITLEMENTS_CACHE_REFRESH_INTERVAL | 1h            |  false   | How often the warmer re-loads all module entitlements (one batched query) to keep the cache warm and backstop missed evictions.           |
+
 ### Kong Service Registration
 
 The Kong Gateway services are added on service discovery registration per application. Each Kong Service has tag equal
