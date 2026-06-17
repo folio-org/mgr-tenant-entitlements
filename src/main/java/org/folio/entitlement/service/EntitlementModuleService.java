@@ -47,26 +47,31 @@ public class EntitlementModuleService {
   public void save(ModuleRequest moduleRequest) {
     var entity = mapper.map(moduleRequest);
     repository.save(entity);
+    cacheProvider.evict(moduleRequest.getModuleId());
   }
 
   public void saveAll(UUID tenantId, String applicationId, List<String> modules) {
     var entities = toEntities(tenantId, applicationId, modules);
     repository.saveAll(entities);
+    modules.forEach(cacheProvider::evict);
   }
 
   public void deleteModuleEntitlement(ModuleRequest moduleRequest) {
     var key = mapper.mapKey(moduleRequest);
     repository.deleteById(key);
+    cacheProvider.evict(moduleRequest.getModuleId());
   }
 
   public void deleteModuleEntitlement(String moduleId, UUID tenantId, String applicationId) {
     var key = EntitlementModuleKey.of(moduleId, tenantId, applicationId);
     repository.deleteById(key);
+    cacheProvider.evict(moduleId);
   }
 
   public void deleteAll(UUID tenantId, String applicationId, List<String> modules) {
     var keys = toModuleKeys(tenantId, applicationId, modules);
     repository.deleteAllById(keys);
+    modules.forEach(cacheProvider::evict);
   }
 
   private List<EntitlementModuleKey> toModuleKeys(UUID tenantId, String applicationId, List<String> modules) {
