@@ -6,14 +6,12 @@ import org.folio.entitlement.integration.keycloak.configuration.properties.Keycl
 import org.keycloak.representations.AccessTokenResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Log4j2
 @Configuration
-@EnableCaching
 @ConditionalOnProperty("application.keycloak.enabled")
 public class CacheConfiguration {
 

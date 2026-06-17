@@ -18,7 +18,7 @@ public class KeycloakCacheableService {
 
   private final Keycloak keycloak;
 
-  @Cacheable(cacheNames = ACCESS_TOKEN, key = "#userToken")
+  @Cacheable(cacheNames = ACCESS_TOKEN, cacheManager = "accessTokenCacheManager", key = "#userToken")
   public AccessTokenResponse getAccessToken(String userToken) {
     return keycloak.tokenManager()
       .grantToken();
