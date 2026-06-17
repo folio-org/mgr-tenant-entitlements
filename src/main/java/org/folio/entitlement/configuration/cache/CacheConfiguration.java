@@ -9,6 +9,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 @Log4j2
 @Configuration
@@ -18,6 +19,7 @@ public class CacheConfiguration {
   public static final String ACCESS_TOKEN = "access-token";
 
   @Bean
+  @Primary
   @SuppressWarnings("java:S3740")
   public CacheManager accessTokenCacheManager(Caffeine caffeine) {
     var cacheManager = new CaffeineCacheManager(ACCESS_TOKEN);

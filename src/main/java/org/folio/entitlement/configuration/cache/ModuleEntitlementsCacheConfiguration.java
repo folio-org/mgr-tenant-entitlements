@@ -19,7 +19,9 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * {@code moduleEntitlementsCacheManager} bean that is a Caffeine manager when enabled and a
  * {@link NoOpCacheManager} when disabled — the bean name always resolves so
  * {@code @Cacheable/@CacheEvict(cacheManager = "moduleEntitlementsCacheManager")} is valid in every
- * profile.
+ * profile. When keycloak is enabled the {@code accessTokenCacheManager} also exists and is marked
+ * {@code @Primary} there, which gives Spring's caching infrastructure the single default
+ * {@code CacheManager} it needs at startup (every cache operation still names its manager explicitly).
  */
 @Log4j2
 @Configuration
