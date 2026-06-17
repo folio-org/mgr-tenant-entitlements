@@ -1,12 +1,11 @@
 package org.folio.entitlement.service;
 
 import static org.folio.common.utils.CollectionUtils.mapItems;
-import static org.folio.entitlement.domain.entity.key.EntitlementModuleEntity.SORT_BY_TENANT;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.folio.common.domain.model.OffsetRequest;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
@@ -24,15 +23,18 @@ public class EntitlementModuleService {
 
   private final EntitlementModuleRepository repository;
   private final EntitlementModuleMapper mapper;
+  private final ModuleEntitlementsCacheProvider cacheProvider;
 
   @Transactional(readOnly = true)
   public Entitlements getModuleEntitlements(String moduleId, Integer limit, Integer offset) {
-    var page = repository.findAllByModuleId(moduleId, OffsetRequest.of(offset, limit, SORT_BY_TENANT));
-    var entitlements = mapItems(page.getContent(), mapper::map);
+    var all = cacheProvider.getByModuleId(moduleId);
+    var total = all.size();
+    var from = Math.min(Math.max(offset, 0), total);
+    var to = Math.min(from + limit, total);
 
     return new Entitlements()
-      .totalRecords((int) page.getTotalElements())
-      .entitlements(entitlements);
+      .totalRecords(total)
+      .entitlements(new ArrayList<>(all.subList(from, to)));
   }
 
   @Transactional(readOnly = true)

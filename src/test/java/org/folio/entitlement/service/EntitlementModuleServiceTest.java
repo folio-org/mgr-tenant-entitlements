@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.UUID;
+import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.entity.key.EntitlementModuleEntity;
 import org.folio.entitlement.domain.entity.key.EntitlementModuleKey;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
@@ -25,7 +26,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
@@ -42,16 +42,55 @@ class EntitlementModuleServiceTest {
 
   @Mock private EntitlementModuleRepository repository;
   @Mock private EntitlementModuleMapper mapper;
+  @Mock private ModuleEntitlementsCacheProvider cacheProvider;
 
   @InjectMocks private EntitlementModuleService service;
 
+  private static List<Entitlement> threeEntitlements() {
+    return List.of(
+      new Entitlement("app-1.0.0", UUID.fromString("00000000-0000-0000-0000-000000000001")),
+      new Entitlement("app-1.0.0", UUID.fromString("00000000-0000-0000-0000-000000000002")),
+      new Entitlement("app-1.0.0", UUID.fromString("00000000-0000-0000-0000-000000000003")));
+  }
+
   @Test
-  void getModuleEntitlements_positive() {
-    when(repository.findAllByModuleId(any(), any())).thenReturn(new PageImpl<>(List.of(entitlementModuleEntity())));
-    when(mapper.map(any(EntitlementModuleEntity.class))).thenReturn(entitlement());
+  void getModuleEntitlements_returnsFirstPage() {
+    when(cacheProvider.getByModuleId(MODULE_ID)).thenReturn(threeEntitlements());
+
+    var actual = service.getModuleEntitlements(MODULE_ID, 2, 0);
+
+    assertThat(actual.getTotalRecords()).isEqualTo(3);
+    assertThat(actual.getEntitlements()).hasSize(2);
+  }
+
+  @Test
+  void getModuleEntitlements_returnsSecondPartialPage() {
+    when(cacheProvider.getByModuleId(MODULE_ID)).thenReturn(threeEntitlements());
+
+    var actual = service.getModuleEntitlements(MODULE_ID, 2, 2);
+
+    assertThat(actual.getTotalRecords()).isEqualTo(3);
+    assertThat(actual.getEntitlements()).hasSize(1);
+  }
+
+  @Test
+  void getModuleEntitlements_offsetBeyondSize_returnsEmptyPageWithTotal() {
+    when(cacheProvider.getByModuleId(MODULE_ID)).thenReturn(threeEntitlements());
+
+    var actual = service.getModuleEntitlements(MODULE_ID, 10, 50);
+
+    assertThat(actual.getTotalRecords()).isEqualTo(3);
+    assertThat(actual.getEntitlements()).isEmpty();
+  }
+
+  @Test
+  void getModuleEntitlements_emptyModule_returnsEmpty() {
+    when(cacheProvider.getByModuleId(MODULE_ID)).thenReturn(List.of());
 
     var actual = service.getModuleEntitlements(MODULE_ID, 10, 0);
-    assertThat(actual).isNotNull();
+
+    assertThat(actual.getTotalRecords()).isZero();
+    assertThat(actual.getEntitlements()).isEmpty();
   }
 
   @Test
