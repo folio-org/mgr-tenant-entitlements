@@ -187,18 +187,27 @@ public class ModuleEntitlementsCacheConfiguration {
 }
 ```
 
-- [ ] **Step 5: Remove `@EnableCaching` from the keycloak-gated config**
+- [ ] **Step 5: Remove `@EnableCaching` from the keycloak-gated config and make its manager `@Primary`**
 
-In `src/main/java/org/folio/entitlement/configuration/cache/CacheConfiguration.java`, delete the `@EnableCaching` annotation and its import. The header becomes:
+In `src/main/java/org/folio/entitlement/configuration/cache/CacheConfiguration.java`, delete the `@EnableCaching` annotation and its import, and mark `accessTokenCacheManager` `@Primary`. The header and bean become:
 
 ```java
+import org.springframework.context.annotation.Primary;
+
 @Log4j2
 @Configuration
 @ConditionalOnProperty("application.keycloak.enabled")
 public class CacheConfiguration {
+
+  public static final String ACCESS_TOKEN = "access-token";
+
+  @Bean
+  @Primary
+  @SuppressWarnings("java:S3740")
+  public CacheManager accessTokenCacheManager(Caffeine caffeine) {
 ```
 
-(Remove `import org.springframework.cache.annotation.EnableCaching;`.)
+(Remove `import org.springframework.cache.annotation.EnableCaching;`.) `@Primary` is required: with both cache managers present (keycloak enabled), Spring's caching infrastructure needs a single default `CacheManager` to build its default `CacheResolver` at startup — otherwise context init fails with `NoUniqueBeanDefinitionException`, even though every cache operation names its manager. `accessTokenCacheManager` is the pre-existing default and is keycloak-gated, so when keycloak is disabled the module manager is the only `CacheManager` (no primary needed).
 
 - [ ] **Step 6: Qualify the access-token `@Cacheable`**
 

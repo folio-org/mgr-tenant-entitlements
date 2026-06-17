@@ -91,6 +91,12 @@ eviction harder. Per-module result sets are small, so caching the whole list and
   both `@Cacheable`/`@CacheEvict` sites name their manager — the new ones use
   `"moduleEntitlementsCacheManager"`; `KeycloakCacheableService` gains
   `cacheManager = "accessTokenCacheManager"`.
+- **Spring still needs a single default `CacheManager` at startup** to build its default
+  `CacheResolver`, even though every cache operation is qualified — otherwise context init fails with
+  `NoUniqueBeanDefinitionException` when both managers exist (keycloak enabled). Mark
+  `accessTokenCacheManager` `@Primary` (it is the pre-existing default and keycloak-gated, so when
+  keycloak is disabled the module manager is the only `CacheManager` and no primary is needed). The
+  module manager is addressed by name everywhere, so it is unaffected by which bean is primary.
 
 ### 3. Invalidation — per-moduleId in-process eviction + TTL backstop
 
