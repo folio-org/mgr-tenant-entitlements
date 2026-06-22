@@ -55,7 +55,7 @@
     <wiremock.version>3.13.2</wiremock.version>
 
     <!-- Plugins versions -->
-    <maven-checkstyle.version>13.5.0</maven-checkstyle.version>
+    <maven-checkstyle.version>13.6.0</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <openapi-generator.version>7.23.0</openapi-generator.version>
 
