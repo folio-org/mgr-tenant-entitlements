@@ -36,6 +36,7 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
   * [How purge flag is working for application uninstalling?](#how-purge-flag-is-working-for-application-uninstalling)
   * [Is rollbacks are supported for the application uninstalling/upgrades?](#is-rollbacks-are-supported-for-the-application-uninstallingupgrades)
   * [How async flag works?](#how-async-flag-works)
+* [Integration Testing](#integration-testing)
 
 ## Introduction
 
@@ -441,6 +442,18 @@ _The Async flag returns the flow identifier instantly, allowing the user to trac
 uninstallation, or upgrading the application using the `/entitlement-flow/{id}` endpoint. If this flag is set
 to `false` - `mgr-tenant-entitlement` holds the response until the entitlement flow is executed, however, the
 flow execution implementation is the same as calling the entitlement process using `async=true`._
+
+## Integration Testing
+
+Integration tests use Testcontainers for PostgreSQL and Kong. The following environment variables
+let you redirect containers to a private registry or adjust startup behaviour without changing
+source code.
+
+| Environment variable                     | Default                         | Description                          |
+|:-----------------------------------------|:--------------------------------|:-------------------------------------|
+| `TESTCONTAINERS_POSTGRES_IMAGE`          | `postgres:16-alpine`            | PostgreSQL container image           |
+| `TESTCONTAINERS_KONG_IMAGE`              | `folioci/folio-kong:latest`     | Kong container image                 |
+| `TESTCONTAINERS_KONG_READINESS_TIMEOUT`  | `120`                           | Seconds to wait for Kong startup     |
 
 ## AI Documentation
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/folio-org/mgr-tenant-entitlements)
