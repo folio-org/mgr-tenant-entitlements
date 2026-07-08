@@ -280,6 +280,8 @@ with `mgr-tenants` and `mgr-applications` services.
 | KC_ADMIN_USERNAME                 | -                          | conditional | Keycloak admin username. Required only if admin secret is not set.                                                                                               |
 | KC_ADMIN_PASSWORD                 | -                          | conditional | Keycloak admin password. Required only if admin secret is not set.                                                                                               |
 | KC_ADMIN_GRANT_TYPE               | client_credentials         |    false    | Keycloak admin grant type. Should be set to `password` if username/password are used instead of client secret.                                                   |
+| KC_ADMIN_CONNECT_TIMEOUT          | 10s                        |    false    | Keycloak admin client connect timeout (Spring `Duration` syntax, e.g. `10s`, `500ms`).                                                                            |
+| KC_ADMIN_READ_TIMEOUT             | 60s                        |    false    | Keycloak admin client read/socket timeout (Spring `Duration` syntax, e.g. `60s`, `2m`).                                                                           |
 | KC_CLIENT_ID                      | mgr-tenant-entitlements    |    false    | client id to be imported to Keycloak.                                                                                                                            |
 | KC_CLIENT_SECRET                  | -                          |    true     | client secret to be imported to Keycloak.                                                                                                                        |
 | KC_LOGIN_CLIENT_SUFFIX            | -login-application         |    false    | Login Client name suffix for building full client name like {tenantName}{suffix} for creating client resources based on ModuleDescriptors during the entitlement |
@@ -293,6 +295,10 @@ with `mgr-tenants` and `mgr-applications` services.
 | KC_FORCED_JWKS_REFRESH_INTERVAL   | 60                         |    false    | Forced jwks refresh interval for realm JWT parser (used in signing key rotation, in minutes).                                                                    |
 | KC_AUTHORIZATION_CACHE_MAX_SIZE   | 50                         |    false    | Maximum amount of entries for keycloak authorization cache.                                                                                                      |
 | KC_AUTHORIZATION_CACHE_TTL_OFFSET | 5000                       |    false    | TTL Offset for cached authorization information, positive, in millis.                                                                                            |
+
+When an admin client call exceeds `KC_ADMIN_CONNECT_TIMEOUT` or `KC_ADMIN_READ_TIMEOUT`, it fails with a
+`jakarta.ws.rs.ProcessingException` (wrapping a `ConnectTimeoutException` / `SocketTimeoutException`),
+releasing the caller thread so existing retry logic can observe it.
 
 ### Retry configuration
 
