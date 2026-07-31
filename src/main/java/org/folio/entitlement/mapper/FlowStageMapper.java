@@ -16,6 +16,7 @@ public interface FlowStageMapper {
    * @param flowStage - stage dto as {@link FlowStage} object
    * @return converted {@link FlowStageEntity} object
    */
+  @Mapping(target = "id", source = "id")
   @Mapping(target = "stageName", source = "name")
   FlowStageEntity map(FlowStage flowStage);
 

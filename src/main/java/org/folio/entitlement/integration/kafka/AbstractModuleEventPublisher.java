@@ -1,12 +1,15 @@
 package org.folio.entitlement.integration.kafka;
 
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FINISHED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
 
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
+import java.util.UUID;
 import org.apache.commons.lang3.tuple.Pair;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
@@ -14,11 +17,22 @@ import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.folio.integration.kafka.model.ResourceEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@RequiredArgsConstructor
 public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLoggingStage {
+
+  private static final String EVENT_PUBLISHER_SUCCESS_STATUS = "eventPublisherSuccessStatus";
 
   protected KafkaEventPublisher kafkaEventPublisher;
   protected TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
+
+  private final boolean awaitCompletion;
+
+  protected AbstractModuleEventPublisher() {
+    this(true);
+  }
+
+  protected AbstractModuleEventPublisher(boolean awaitCompletion) {
+    this.awaitCompletion = awaitCompletion;
+  }
 
   @Override
   public void execute(ModuleStageContext ctx) {
@@ -28,13 +42,15 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
     var installedModuleDesc = ctx.getInstalledModuleDescriptor();
     var applicationId = ctx.getApplicationId();
     var entitledApplicationId = ctx.getEntitledApplicationId();
-    var messageKey = ctx.getTenantName();
 
     if (!isModuleUpdated(moduleDesc, installedModuleDesc)) {
       if (isModuleVersionChanged(moduleDesc, installedModuleDesc)) {
         getEventPayloadForNotChangedModule(applicationId, entitledApplicationId, type, moduleDesc, installedModuleDesc)
-          .flatMap(payload -> createEvent(tenant, payload.getLeft(), payload.getRight()))
-          .ifPresent(evt -> kafkaEventPublisher.send(getTopicName(tenant), messageKey, evt));
+          .flatMap(payload -> createEvent(ctx.getStageId(), tenant, payload.getLeft(), payload.getRight()))
+          .ifPresentOrElse(
+            evt -> sendEvent(evt, ctx),
+            () -> setSuccessStatus(FINISHED, ctx)
+          );
       }
 
       return;
@@ -43,8 +59,9 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
     var newPayload = getEventPayload(applicationId, type, moduleDesc).orElse(null);
     var oldPayload = getEventPayload(entitledApplicationId, type, installedModuleDesc).orElse(null);
 
-    var topicName = getTopicName(tenant);
-    createEvent(tenant, newPayload, oldPayload).ifPresent(evt -> kafkaEventPublisher.send(topicName, messageKey, evt));
+    createEvent(ctx.getStageId(), tenant, newPayload, oldPayload).ifPresentOrElse(
+      evt -> sendEvent(evt, ctx),
+      () -> setSuccessStatus(FINISHED, ctx));
   }
 
   @Autowired
@@ -103,20 +120,39 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
     return Optional.empty();
   }
 
+  @Override
+  protected EntityExecutionStatus getSuccessStatus(ModuleStageContext context) {
+    return context.get(EVENT_PUBLISHER_SUCCESS_STATUS);
+  }
+
   /**
    * Creates {@link ResourceEvent} object for given tenant nane, new and old event bodies.
    *
+   * @param eventId
    * @param tenantName - tenant name as {@link String}
    * @param newPayload - new value in {@link ResourceEvent}
    * @param oldPayload - old value in {@link ResourceEvent}
    * @return {@link Optional} of {@link ResourceEvent}, it will be empty if old and new values are not valid
    */
-  private Optional<ResourceEvent<T>> createEvent(String tenantName, T newPayload, T oldPayload) {
-    return KafkaEventUtils.createEvent(getResourceName(), tenantName, newPayload, oldPayload);
+  private Optional<ResourceEvent<T>> createEvent(UUID eventId, String tenantName, T newPayload, T oldPayload) {
+    return KafkaEventUtils.createEvent(eventId.toString(), getResourceName(), tenantName, newPayload, oldPayload);
   }
 
   private String getTopicName(String tenantName) {
     return tenantEntitlementKafkaProperties.isProducerTenantCollection()
       ? getTopicNameByTenantCollection() : getTopicNameByTenant(tenantName);
+  }
+
+  private void sendEvent(ResourceEvent<T> event, ModuleStageContext ctx) {
+    var messageKey = ctx.getTenantName();
+    var tenant = ctx.getTenantName();
+
+    kafkaEventPublisher.send(getTopicName(tenant), messageKey, event);
+
+    setSuccessStatus(awaitCompletion ? IN_PROGRESS : FINISHED, ctx);
+  }
+
+  private void setSuccessStatus(EntityExecutionStatus status, ModuleStageContext ctx) {
+    ctx.put(EVENT_PUBLISHER_SUCCESS_STATUS, status);
   }
 }

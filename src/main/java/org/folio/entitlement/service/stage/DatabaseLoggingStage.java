@@ -9,6 +9,7 @@ import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_
 import static org.folio.entitlement.domain.model.ModuleStageContext.ATTR_RETRY_INFO;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.getErrorMessage;
 
+import java.util.UUID;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.entity.FlowStageEntity;
 import org.folio.entitlement.domain.entity.key.FlowStageKey;
@@ -30,16 +31,23 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
   @Transactional
   public void onStart(C context) {
     var entity = new FlowStageEntity();
+    var stageId = UUID.randomUUID();
+
+    entity.setId(stageId);
     entity.setFlowId(context.getCurrentFlowId());
     entity.setStageName(getStageName(context));
     entity.setStatus(IN_PROGRESS);
+
     stageRepository.save(entity);
+
+    context.withStageId(stageId);
   }
 
   @Override
   @Transactional
   public void onSuccess(C context) {
-    setEntitlementStageStatus(context, FINISHED, null);
+    var status = getSuccessStatus(context);
+    setEntitlementStageStatus(context, status, null);
   }
 
   @Override
@@ -86,6 +94,10 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
     return getId();
   }
 
+  protected EntityExecutionStatus getSuccessStatus(C context) {
+    return FINISHED;
+  }
+
   private void setEntitlementStageStatus(C context, EntityExecutionStatus status, Exception error) {
     var stageExecutionKey = FlowStageKey.of(context.getCurrentFlowId(), getStageName(context));
     var stageExecutionEntity = stageRepository.getReferenceById(stageExecutionKey);
@@ -95,7 +107,7 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
       stageExecutionEntity.setErrorType(error.getClass().getSimpleName());
       stageExecutionEntity.setErrorMessage(getErrorMessage(error));
 
-      log.error(format("Flow stage %s %s execution error", getId(), getStageName(context)), error);
+      log.error(format("Flow stage %s %s execution error", context.getStageId(), getStageName(context)), error);
     }
 
     var retryInfo = (RetryInformation) context.get(ATTR_RETRY_INFO);

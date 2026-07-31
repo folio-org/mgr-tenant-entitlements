@@ -26,6 +26,9 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "flow_stage")
 public class FlowStageEntity {
 
+  @Column(name = "stage_id")
+  private UUID id;
+
   /**
    * A stage name.
    */

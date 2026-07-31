@@ -5,6 +5,11 @@
   "description": "Flow stage descriptor. A stage can be part of global flow or specific application flow.",
   "type": "object",
   "properties": {
+    "id": {
+      "description": "A unique stage identifier",
+      "type": "string",
+      "format": "uuid"
+    },
     "flowId": {
       "description": "A parent flow identifier (global or application flow)",
       "type": "string",
