@@ -35,6 +35,7 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
   }
 
   @Override
+  @SuppressWarnings("checkstyle:MethodLength")
   public void execute(ModuleStageContext ctx) {
     var tenant = ctx.getTenantName();
     var type = ctx.getModuleType();
@@ -128,7 +129,7 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
   /**
    * Creates {@link ResourceEvent} object for given tenant nane, new and old event bodies.
    *
-   * @param eventId
+   * @param eventId    - event id as {@link UUID}
    * @param tenantName - tenant name as {@link String}
    * @param newPayload - new value in {@link ResourceEvent}
    * @param oldPayload - old value in {@link ResourceEvent}

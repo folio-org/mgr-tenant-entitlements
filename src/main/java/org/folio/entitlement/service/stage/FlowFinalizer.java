@@ -14,7 +14,6 @@ public abstract class FlowFinalizer extends AbstractFlowFinalizer<FlowEntity, Co
    * Injects beans from spring context.
    *
    * @param flowRepository - {@link ApplicationFlowRepository} bean
-   * @param statusProvider
    */
   protected FlowFinalizer(FlowRepository flowRepository, FlowFinalizerStatusProvider<CommonStageContext> statusProvider,
     ApplicationFlowService applicationFlowService) {

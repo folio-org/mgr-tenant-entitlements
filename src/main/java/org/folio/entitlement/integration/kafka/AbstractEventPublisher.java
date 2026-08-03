@@ -8,6 +8,7 @@ import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdate
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleVersionChanged;
 
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.folio.common.domain.model.ModuleDescriptor;
@@ -104,7 +105,8 @@ public abstract class AbstractEventPublisher<T> extends DatabaseLoggingStage<Oka
     }
 
     return toStream(context.getModuleDescriptors(moduleType))
-      .map(moduleDescriptor -> getEvent(moduleDescriptor, moduleType, tenantName, applicationId, false))
+      .map(moduleDescriptor -> getEvent(context.getStageId(), moduleDescriptor, moduleType, tenantName,
+        applicationId, false))
       .flatMap(Optional::stream);
   }
 
@@ -118,7 +120,7 @@ public abstract class AbstractEventPublisher<T> extends DatabaseLoggingStage<Oka
     if (!isModuleUpdated(descriptor, installedDescriptor)) {
       if (isModuleVersionChanged(descriptor, installedDescriptor)) {
         return getEventPayloadForNotChangedModule(appId, entitledAppId, type, descriptor, installedDescriptor)
-          .flatMap(pair -> createEvent(tenantName, pair.getLeft(), pair.getRight()));
+          .flatMap(pair -> createEvent(ctx.getStageId(), tenantName, pair.getLeft(), pair.getRight()));
       }
 
       return Optional.empty();
@@ -126,24 +128,27 @@ public abstract class AbstractEventPublisher<T> extends DatabaseLoggingStage<Oka
 
     var newEventPayload = getEventPayload(appId, type, descriptor);
     var oldEventPayload = getEventPayload(entitledAppId, type, mdh.installedModuleDescriptor());
-    return createEvent(tenantName, newEventPayload.orElse(null), oldEventPayload.orElse(null));
+    return createEvent(ctx.getStageId(), tenantName, newEventPayload.orElse(null), oldEventPayload.orElse(null));
   }
 
-  private Optional<ResourceEvent<T>> getEvent(ModuleDescriptor moduleDescriptor, ModuleType moduleType,
+  private Optional<ResourceEvent<T>> getEvent(UUID stageId, ModuleDescriptor moduleDescriptor, ModuleType moduleType,
     String tenantName, String applicationId, boolean isDeprecated) {
     var payload = getEventPayload(applicationId, moduleType, moduleDescriptor).orElse(null);
-    return isDeprecated ? createEvent(tenantName, null, payload) : createEvent(tenantName, payload, null);
+    return isDeprecated
+      ? createEvent(stageId, tenantName, null, payload)
+      : createEvent(stageId, tenantName, payload, null);
   }
 
   private Stream<ResourceEvent<T>> getDeprecatedEventsStream(OkapiStageContext context, ModuleType moduleType) {
     var tenantName = context.getTenantName();
     var entitledApplicationId = context.getEntitledApplicationId();
+    var stageId = context.getStageId();
     return toStream(context.getDeprecatedModuleDescriptors(moduleType))
-      .map(moduleDescriptor -> getEvent(moduleDescriptor, moduleType, tenantName, entitledApplicationId, true))
+      .map(moduleDescriptor -> getEvent(stageId, moduleDescriptor, moduleType, tenantName, entitledApplicationId, true))
       .flatMap(Optional::stream);
   }
 
-  private Optional<ResourceEvent<T>> createEvent(String tenantName, T newPayload, T oldPayload) {
-    return KafkaEventUtils.createEvent(getResourceName(), tenantName, newPayload, oldPayload);
+  private Optional<ResourceEvent<T>> createEvent(UUID eventId, String tenantName, T newPayload, T oldPayload) {
+    return KafkaEventUtils.createEvent(eventId.toString(), getResourceName(), tenantName, newPayload, oldPayload);
   }
 }
