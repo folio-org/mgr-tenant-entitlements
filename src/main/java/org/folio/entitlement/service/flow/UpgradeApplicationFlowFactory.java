@@ -6,6 +6,8 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.service.stage.ApplicationDependencyUpdater;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
+import org.folio.entitlement.service.stage.CancellationFailedApplicationFlowFinalizer;
+import org.folio.entitlement.service.stage.CancelledApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.FailedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.SkippedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.UpgradeApplicationFlowFinalizer;
@@ -29,6 +31,8 @@ public class UpgradeApplicationFlowFactory implements ApplicationFlowFactory {
   private final FailedApplicationFlowFinalizer failedFlowFinalizer;
   private final SkippedApplicationFlowFinalizer skippedFlowFinalizer;
   private final UpgradeApplicationFlowFinalizer finishedFlowFinalizer;
+  private final CancelledApplicationFlowFinalizer cancelledFlowFinalizer;
+  private final CancellationFailedApplicationFlowFinalizer cancellationFailedFlowFinalizer;
 
   @Override
   public Flow createFlow(Object flowId, FlowExecutionStrategy strategy, Map<?, ?> additionalFlowParameter) {
@@ -42,6 +46,8 @@ public class UpgradeApplicationFlowFactory implements ApplicationFlowFactory {
       .stage(finishedFlowFinalizer)
       .onFlowSkip(skippedFlowFinalizer)
       .onFlowError(failedFlowFinalizer)
+      .onFlowCancellation(cancelledFlowFinalizer)
+      .onFlowCancellationError(cancellationFailedFlowFinalizer)
       .executionStrategy(strategy)
       .flowParameters(additionalFlowParameter)
       .build();

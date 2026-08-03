@@ -11,6 +11,8 @@ import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -18,8 +20,10 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.common.domain.model.SearchResult;
@@ -42,6 +46,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -169,6 +174,51 @@ class FlowServiceTest {
       var result = flowService.create(flow);
 
       assertThat(result).isEqualTo(flow);
+    }
+  }
+
+  @Nested
+  @DisplayName("failIfNotTerminal")
+  class FailIfNotTerminal {
+
+    private static final Set<EntityExecutionStatus> NON_TERMINAL =
+      EnumSet.of(EntityExecutionStatus.QUEUED, EntityExecutionStatus.IN_PROGRESS);
+
+    @Test
+    void positive() {
+      when(applicationFlowService.failNonTerminalFlows(eq(FLOW_ID), any())).thenReturn(2);
+      when(flowRepository.updateStatusIfCurrentIn(
+        eq(FLOW_ID), eq(EntityExecutionStatus.FAILED), eq(NON_TERMINAL), any())).thenReturn(1);
+
+      var result = flowService.failIfNotTerminal(FLOW_ID);
+
+      assertThat(result).isTrue();
+    }
+
+    @Test
+    void positive_flowIsAlreadyInTerminalStatus() {
+      when(applicationFlowService.failNonTerminalFlows(eq(FLOW_ID), any())).thenReturn(0);
+      when(flowRepository.updateStatusIfCurrentIn(
+        eq(FLOW_ID), eq(EntityExecutionStatus.FAILED), eq(NON_TERMINAL), any())).thenReturn(0);
+
+      var result = flowService.failIfNotTerminal(FLOW_ID);
+
+      assertThat(result).isFalse();
+    }
+
+    @Test
+    void positive_sameFinishedAtIsUsedForBothUpdates() {
+      var applicationFlowTimestamp = ArgumentCaptor.forClass(ZonedDateTime.class);
+      var flowTimestamp = ArgumentCaptor.forClass(ZonedDateTime.class);
+
+      when(applicationFlowService.failNonTerminalFlows(eq(FLOW_ID), applicationFlowTimestamp.capture()))
+        .thenReturn(1);
+      when(flowRepository.updateStatusIfCurrentIn(
+        eq(FLOW_ID), eq(EntityExecutionStatus.FAILED), eq(NON_TERMINAL), flowTimestamp.capture())).thenReturn(1);
+
+      flowService.failIfNotTerminal(FLOW_ID);
+
+      assertThat(applicationFlowTimestamp.getValue()).isEqualTo(flowTimestamp.getValue());
     }
   }
 

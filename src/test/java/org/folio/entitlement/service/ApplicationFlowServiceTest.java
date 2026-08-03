@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import jakarta.persistence.EntityNotFoundException;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.OffsetRequest;
@@ -298,6 +299,24 @@ class ApplicationFlowServiceTest {
       var result = applicationFlowService.createQueuedApplicationFlows(FLOW_ID, request);
 
       assertThat(result).containsExactly(applicationFlow);
+    }
+  }
+
+  @Nested
+  @DisplayName("failNonTerminalFlows")
+  class FailNonTerminalFlows {
+
+    @Test
+    void positive() {
+      var finishedAt = ZonedDateTime.now();
+      var nonTerminalStatuses = EnumSet.of(EntityExecutionStatus.QUEUED, EntityExecutionStatus.IN_PROGRESS);
+
+      when(repository.updateStatusIfCurrentIn(
+        FLOW_ID, EntityExecutionStatus.FAILED, nonTerminalStatuses, finishedAt)).thenReturn(2);
+
+      var result = applicationFlowService.failNonTerminalFlows(FLOW_ID, finishedAt);
+
+      assertThat(result).isEqualTo(2);
     }
   }
 

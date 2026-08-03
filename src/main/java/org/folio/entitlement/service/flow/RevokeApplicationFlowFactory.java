@@ -6,6 +6,8 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.service.stage.ApplicationDependencyCleaner;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
+import org.folio.entitlement.service.stage.CancellationFailedApplicationFlowFinalizer;
+import org.folio.entitlement.service.stage.CancelledApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.FailedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.RevokeApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.RevokeRequestDependencyValidator;
@@ -27,6 +29,8 @@ public class RevokeApplicationFlowFactory implements ApplicationFlowFactory {
   private final FailedApplicationFlowFinalizer failedFlowFinalizer;
   private final RevokeApplicationFlowFinalizer finishedFlowFinalizer;
   private final SkippedApplicationFlowFinalizer skippedFlowFinalizer;
+  private final CancelledApplicationFlowFinalizer cancelledFlowFinalizer;
+  private final CancellationFailedApplicationFlowFinalizer cancellationFailedFlowFinalizer;
   private final ModulesFlowProvider modulesFlowProvider;
 
   @Override
@@ -41,6 +45,8 @@ public class RevokeApplicationFlowFactory implements ApplicationFlowFactory {
       .stage(finishedFlowFinalizer)
       .onFlowSkip(skippedFlowFinalizer)
       .onFlowError(failedFlowFinalizer)
+      .onFlowCancellation(cancelledFlowFinalizer)
+      .onFlowCancellationError(cancellationFailedFlowFinalizer)
       .executionStrategy(strategy)
       .flowParameters(additionalFlowParameter)
       .build();

@@ -3,10 +3,13 @@ package org.folio.entitlement.service.stage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.commonStageContext;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,6 +58,23 @@ class FailedFlowFinalizerTest {
 
     var capturedValue = flowEntityCaptor.getValue();
     assertThat(capturedValue.getStatus()).isEqualTo(FAILED);
+    verify(applicationFlowService).removeAllQueuedFlows(FLOW_ID);
+  }
+
+  @Test
+  void execute_positive_flowIsAlreadyInTerminalStatus() {
+    var entity = new FlowEntity();
+    entity.setId(FLOW_ID);
+    entity.setTenantId(TENANT_ID);
+    entity.setStatus(FINISHED);
+
+    when(flowRepository.getReferenceById(FLOW_ID)).thenReturn(entity);
+
+    var stageContext = commonStageContext(FLOW_ID, flowParameters(), Map.of());
+    flowFinalizer.execute(stageContext);
+
+    assertThat(entity.getStatus()).isEqualTo(FINISHED);
+    verify(flowRepository, never()).save(any());
     verify(applicationFlowService).removeAllQueuedFlows(FLOW_ID);
   }
 

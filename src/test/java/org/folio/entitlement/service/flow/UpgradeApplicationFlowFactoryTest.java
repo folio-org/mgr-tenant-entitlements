@@ -16,6 +16,8 @@ import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.service.stage.ApplicationDependencyUpdater;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
+import org.folio.entitlement.service.stage.CancellationFailedApplicationFlowFinalizer;
+import org.folio.entitlement.service.stage.CancelledApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.entitlement.service.stage.FailedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.SkippedApplicationFlowFinalizer;
@@ -48,11 +50,14 @@ class UpgradeApplicationFlowFactoryTest {
   @Mock private FailedApplicationFlowFinalizer failedFlowFinalizer;
   @Mock private UpgradeApplicationFlowFinalizer finishedFlowFinalizer;
   @Mock private SkippedApplicationFlowFinalizer skippedFlowFinalizer;
+  @Mock private CancelledApplicationFlowFinalizer cancelledFlowFinalizer;
+  @Mock private CancellationFailedApplicationFlowFinalizer cancellationFailedFlowFinalizer;
 
   @Test
   void prepareFlow() {
     mockStageNames(applicationDependencyUpdater, upgradeRequestDependencyValidator, flowInitializer,
-      failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer, applicationDiscoveryLoader);
+      failedFlowFinalizer, finishedFlowFinalizer, skippedFlowFinalizer, applicationDiscoveryLoader,
+      cancelledFlowFinalizer, cancellationFailedFlowFinalizer);
 
     var request = EntitlementRequest.builder().type(UPGRADE).tenantId(TENANT_ID).ignoreErrors(true).build();
     var entitledApplicationDescriptor = appDescriptor("app-foo-1.0.0");

@@ -36,12 +36,15 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.dto.FlowStage;
+import org.folio.entitlement.exception.FlowExecutionTimeoutException;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.service.FlowStageService;
@@ -317,6 +320,34 @@ class ApiExceptionHandlerTest {
       .andExpect(jsonPath("$.errors[0].code", is("service_error")))
       .andExpect(jsonPath("$.errors[0].parameters[0].key", is("NegativeStage1")))
       .andExpect(jsonPath("$.errors[0].parameters[0].value", is("FAILED: [RuntimeException] Stage error")));
+  }
+
+  @Test
+  void handleFlowExecutionTimeoutException_positive() throws Exception {
+    var failedStage = new FlowStage()
+      .name("FolioModuleInstaller")
+      .flowId(APPLICATION_FLOW_ID)
+      .status(FAILED)
+      .errorType("RuntimeException")
+      .errorMessage("Stage error");
+
+    when(testService.execute()).thenThrow(
+      new FlowExecutionTimeoutException(FLOW_ID, Duration.ofMinutes(30), new TimeoutException("timed out")));
+    when(flowStageService.findFailedStages(FLOW_ID)).thenReturn(List.of(failedStage));
+
+    mockMvc.perform(get("/tests")
+        .queryParam("query", "cql.allRecords=1")
+        .contentType(APPLICATION_JSON))
+      .andExpect(status().isBadRequest())
+      .andExpect(header().string(FLOW_ID_HEADER, is(FLOW_ID.toString())))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].message", is(format("Flow '%s' finished with status: FAILED", FLOW_ID))))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionTimeoutException")))
+      .andExpect(jsonPath("$.errors[0].code", is("service_error")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("FolioModuleInstaller")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", is("FAILED: [RuntimeException] Stage error")))
+      .andExpect(jsonPath("$.errors[0].parameters[1].key", is("timeout")))
+      .andExpect(jsonPath("$.errors[0].parameters[1].value", is("PT30M")));
   }
 
   @Test

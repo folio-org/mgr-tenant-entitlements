@@ -1,5 +1,8 @@
 package org.folio.entitlement.domain.entity.type;
 
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 
 public enum EntityExecutionStatus {
@@ -11,6 +14,9 @@ public enum EntityExecutionStatus {
   FAILED,
   FINISHED;
 
+  public static final Set<EntityExecutionStatus> NON_TERMINAL_STATUSES =
+    Collections.unmodifiableSet(EnumSet.of(QUEUED, IN_PROGRESS));
+
   /**
    * Creates {@link EntityExecutionStatus} from {@link ExecutionStatus} enum value.
    *
@@ -19,5 +25,9 @@ public enum EntityExecutionStatus {
    */
   public static EntityExecutionStatus from(ExecutionStatus status) {
     return EntityExecutionStatus.valueOf(status.name());
+  }
+
+  public static boolean isTerminal(EntityExecutionStatus status) {
+    return status == FINISHED || status == FAILED || status == CANCELLED || status == CANCELLATION_FAILED;
   }
 }

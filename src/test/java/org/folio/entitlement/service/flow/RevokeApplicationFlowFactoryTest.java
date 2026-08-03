@@ -18,6 +18,8 @@ import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.service.stage.ApplicationDependencyCleaner;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
+import org.folio.entitlement.service.stage.CancellationFailedApplicationFlowFinalizer;
+import org.folio.entitlement.service.stage.CancelledApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.folio.entitlement.service.stage.FailedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.RevokeApplicationFlowFinalizer;
@@ -52,6 +54,8 @@ class RevokeApplicationFlowFactoryTest {
   @Mock private RevokeApplicationFlowFinalizer finishedFlowFinalizer;
   @Mock private FailedApplicationFlowFinalizer failedFlowFinalizer;
   @Mock private SkippedApplicationFlowFinalizer skippedFlowFinalizer;
+  @Mock private CancelledApplicationFlowFinalizer cancelledFlowFinalizer;
+  @Mock private CancellationFailedApplicationFlowFinalizer cancellationFailedFlowFinalizer;
 
   @Mock private ModulesFlowProvider modulesFlowProvider;
 
@@ -63,7 +67,8 @@ class RevokeApplicationFlowFactoryTest {
   @Test
   void prepareFlow_positive() {
     mockStageNames(flowInitializer, applicationDependencyCleaner, revokeRequestDependencyValidator,
-      applicationDiscoveryLoader, finishedFlowFinalizer, failedFlowFinalizer, skippedFlowFinalizer);
+      applicationDiscoveryLoader, finishedFlowFinalizer, failedFlowFinalizer, skippedFlowFinalizer,
+      cancelledFlowFinalizer, cancellationFailedFlowFinalizer);
 
     var request = EntitlementRequest.builder().type(REVOKE).tenantId(TENANT_ID).build();
     var flowParameters = TestValues.flowParameters(request, TestValues.appDescriptor());

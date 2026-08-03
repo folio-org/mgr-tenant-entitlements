@@ -3,7 +3,10 @@ package org.folio.entitlement.service.flow;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON_TERMINAL_STATUSES;
 
+import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -86,5 +89,24 @@ public class FlowService {
     var flowEntity = flowMapper.map(flow);
     var savedEntity = flowRepository.save(flowEntity);
     return flowMapper.map(savedEntity);
+  }
+
+  /**
+   * Marks the flow and its application flows as failed, if they have not reached a terminal status yet.
+   *
+   * <p>Used when waiting for a synchronously executed flow timed out. The flow itself is not stopped - the flow engine
+   * provides no way to abort a running flow - so the update is conditional and the flow finalizer stages keep the
+   * status written here.</p>
+   */
+  @Transactional
+  public boolean failIfNotTerminal(UUID flowId) {
+    var finishedAt = ZonedDateTime.now();
+    var updatedApplicationFlows = applicationFlowService.failNonTerminalFlows(flowId, finishedAt);
+    var updatedFlows = flowRepository.updateStatusIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
+
+    log.warn("Flow is forcibly marked as failed [flowId: {}, flows: {}, applicationFlows: {}]",
+      flowId, updatedFlows, updatedApplicationFlows);
+
+    return updatedFlows > 0;
   }
 }

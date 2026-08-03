@@ -2,10 +2,14 @@ package org.folio.entitlement.service.stage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.CANCELLED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestValues.appStageContext;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
@@ -52,5 +56,21 @@ class FailedApplicationFlowFinalizerTest {
 
     var capturedValue = applicationFlowEntityCaptor.getValue();
     assertThat(capturedValue.getStatus()).isEqualTo(FAILED);
+  }
+
+  @Test
+  void execute_positive_applicationFlowIsAlreadyInTerminalStatus() {
+    var request = EntitlementRequest.builder().type(ENTITLE).build();
+    var flowParameters = TestValues.flowParameters(request, TestValues.appDescriptor());
+    var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, Map.of());
+
+    var entity = new ApplicationFlowEntity();
+    entity.setStatus(CANCELLED);
+    when(applicationFlowRepository.getReferenceById(APPLICATION_FLOW_ID)).thenReturn(entity);
+
+    failedApplicationFlowFinalizer.execute(stageContext);
+
+    assertThat(entity.getStatus()).isEqualTo(CANCELLED);
+    verify(applicationFlowRepository, never()).save(any());
   }
 }

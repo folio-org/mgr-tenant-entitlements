@@ -1,9 +1,11 @@
 package org.folio.entitlement.repository;
 
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.folio.entitlement.domain.entity.ApplicationFlowEntity;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -49,4 +51,17 @@ public interface ApplicationFlowRepository extends AbstractFlowRepository<Applic
   @Modifying
   @Query("DELETE ApplicationFlowEntity entity WHERE entity.flowId = :flowId and entity.status = 'QUEUED'")
   void removeQueuedFlows(@Param("flowId") UUID flowId);
+
+  /**
+   * Compare-and-set on the statuses of all application flows of the given flow: the status check is a part of the
+   * statement, so a status set concurrently by a finalizer stage cannot be overwritten. {@code finishedAt} is passed
+   * in because a bulk update bypasses {@link org.hibernate.annotations.UpdateTimestamp}.
+   */
+  @Modifying
+  @Query("UPDATE ApplicationFlowEntity e SET e.status = :status, e.finishedAt = :finishedAt "
+    + "WHERE e.flowId = :flowId AND e.status IN :currentStatuses")
+  int updateStatusIfCurrentIn(@Param("flowId") UUID flowId,
+    @Param("status") EntityExecutionStatus status,
+    @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
+    @Param("finishedAt") ZonedDateTime finishedAt);
 }
