@@ -18,7 +18,7 @@ public class CancelledFlowFinalizer extends FlowFinalizer {
    * @param applicationFlowService - {@link ApplicationFlowService} bean
    */
   public CancelledFlowFinalizer(FlowRepository flowRepository, ApplicationFlowService applicationFlowService) {
-    super(flowRepository, applicationFlowService);
+    super(flowRepository, statusProvider, applicationFlowService);
   }
 
   @Override

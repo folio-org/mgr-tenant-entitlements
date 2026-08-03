@@ -1,7 +1,6 @@
 package org.folio.entitlement.service.stage;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.entity.AbstractFlowEntity;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
@@ -13,18 +12,23 @@ public abstract class AbstractFlowFinalizer<T extends AbstractFlowEntity, C exte
   extends DatabaseLoggingStage<C> {
 
   private final AbstractFlowRepository<T> abstractFlowRepository;
+  private final FlowFinalizerStatusProvider<C> statusProvider;
 
   @Override
   @Transactional
   public void execute(C context) {
     var entitlementFlowId = context.getCurrentFlowId();
     var entitlementFlowEntity = abstractFlowRepository.getReferenceById(entitlementFlowId);
-    entitlementFlowEntity.setStatus(EntityExecutionStatus.from(getFinalStatus()));
-    abstractFlowRepository.save(entitlementFlowEntity);
-    afterFlowStatusUpdate(context);
-  }
 
-  protected abstract ExecutionStatus getFinalStatus();
+    var prevStatus = entitlementFlowEntity.getStatus();
+    var status = EntityExecutionStatus.from(statusProvider.getFinalStatus(context));
+
+    if (!status.equals(prevStatus)) {
+      entitlementFlowEntity.setStatus(status);
+      abstractFlowRepository.save(entitlementFlowEntity);
+      afterFlowStatusUpdate(context);
+    }
+  }
 
   protected void afterFlowStatusUpdate(C context) {}
 }

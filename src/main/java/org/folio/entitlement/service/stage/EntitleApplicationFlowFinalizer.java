@@ -1,13 +1,11 @@
 package org.folio.entitlement.service.stage;
 
-import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
-
 import org.folio.entitlement.domain.dto.Entitlement;
-import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.entity.ApplicationFlowEntity;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
 import org.folio.entitlement.service.EntitlementCrudService;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +22,10 @@ public class EntitleApplicationFlowFinalizer
    * @param entitlementCrudService - {@link EntitlementCrudService} bean
    */
   public EntitleApplicationFlowFinalizer(ApplicationFlowRepository applicationFlowRepository,
+    @Qualifier("applicationFlowFinalizerStatusProvider")
+    FlowFinalizerStatusProvider<ApplicationStageContext> statusProvider,
     EntitlementCrudService entitlementCrudService) {
-    super(applicationFlowRepository);
+    super(applicationFlowRepository,  statusProvider);
     this.entitlementCrudService = entitlementCrudService;
   }
 
@@ -42,11 +42,6 @@ public class EntitleApplicationFlowFinalizer
   public void cancel(ApplicationStageContext context) {
     var entitlement = buildEntitlementFromContext(context);
     entitlementCrudService.delete(entitlement);
-  }
-
-  @Override
-  protected ExecutionStatus getFinalStatus() {
-    return FINISHED;
   }
 
   private static Entitlement buildEntitlementFromContext(ApplicationStageContext context) {

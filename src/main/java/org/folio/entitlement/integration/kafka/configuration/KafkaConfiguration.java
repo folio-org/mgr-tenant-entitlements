@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.kafka.configuration;
 
+import org.folio.integration.kafka.consumer.EnableKafkaConsumer;
+import org.folio.integration.kafka.producer.EnableKafkaProducer;
 import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,6 +9,8 @@ import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 import tools.jackson.databind.json.JsonMapper;
 
 @Configuration
+@EnableKafkaProducer
+@EnableKafkaConsumer
 public class KafkaConfiguration {
 
   /**

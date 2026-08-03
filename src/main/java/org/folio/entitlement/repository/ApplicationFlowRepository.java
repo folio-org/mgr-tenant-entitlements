@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import org.folio.entitlement.domain.entity.ApplicationFlowEntity;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -49,4 +50,9 @@ public interface ApplicationFlowRepository extends AbstractFlowRepository<Applic
   @Modifying
   @Query("DELETE ApplicationFlowEntity entity WHERE entity.flowId = :flowId and entity.status = 'QUEUED'")
   void removeQueuedFlows(@Param("flowId") UUID flowId);
+
+  @Override
+  @Query("""
+    SELECT COUNT(entity) > 0 FROM FlowStageEntity entity WHERE entity.flowId = :flowId and entity.status = :status""")
+  boolean existsAnyStageByFlowIdAndStatus(@Param("flowId") UUID flowId, @Param("status") EntityExecutionStatus status);
 }
