@@ -26,8 +26,4 @@ public enum EntityExecutionStatus {
   public static EntityExecutionStatus from(ExecutionStatus status) {
     return EntityExecutionStatus.valueOf(status.name());
   }
-
-  public static boolean isTerminal(EntityExecutionStatus status) {
-    return status == FINISHED || status == FAILED || status == CANCELLED || status == CANCELLATION_FAILED;
-  }
 }

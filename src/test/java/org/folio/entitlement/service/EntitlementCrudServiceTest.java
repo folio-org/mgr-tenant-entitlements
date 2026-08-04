@@ -9,11 +9,14 @@ import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementEntity;
 import static org.folio.entitlement.support.TestValues.entitlementModuleEntity;
 import static org.folio.entitlement.support.TestValues.entitlementWithModules;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
 import org.folio.entitlement.domain.entity.key.EntitlementKey;
@@ -118,11 +121,21 @@ class EntitlementCrudServiceTest {
   void delete_positive() {
     var entitlementKey = EntitlementKey.of(TENANT_ID, APPLICATION_ID);
     var entitlementEntity = entitlementEntity();
-    when(entitlementRepository.getReferenceById(entitlementKey)).thenReturn(entitlementEntity);
+    when(entitlementRepository.findById(entitlementKey)).thenReturn(Optional.of(entitlementEntity));
 
     service.delete(entitlement(TENANT_ID, APPLICATION_ID));
 
     verify(entitlementRepository).delete(entitlementEntity);
+  }
+
+  @Test
+  void delete_positive_missingEntitlement() {
+    var entitlementKey = EntitlementKey.of(TENANT_ID, APPLICATION_ID);
+    when(entitlementRepository.findById(entitlementKey)).thenReturn(Optional.empty());
+
+    service.delete(entitlement(TENANT_ID, APPLICATION_ID));
+
+    verify(entitlementRepository, never()).delete(any());
   }
 
   @Test

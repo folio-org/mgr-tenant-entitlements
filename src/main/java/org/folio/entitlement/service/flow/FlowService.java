@@ -6,15 +6,20 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON_TERMINAL_STATUSES;
 
+import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.Date;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.common.domain.model.SearchResult;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
+import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.Flow;
 import org.folio.entitlement.domain.entity.FlowEntity;
+import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.mapper.FlowMapper;
 import org.folio.entitlement.repository.FlowRepository;
 import org.folio.entitlement.service.FlowStageService;
@@ -81,32 +86,88 @@ public class FlowService {
   /**
    * Creates flow entity in database.
    *
+   * <p>An already existing row can only be the FAILED one inserted by {@link #createFailed} for a flow that timed
+   * out before it was scheduled - such a flow must not be started, so this method throws instead of overwriting.</p>
+   *
    * @param flow - flow representation
    * @return created {@link Flow} entity
+   * @throws IllegalStateException if the flow row already exists
    */
   @Transactional
   public Flow create(Flow flow) {
+    if (flowRepository.existsById(flow.getId())) {
+      throw new IllegalStateException(String.format(
+        "Flow cannot be started, because it has already been created with a terminal status [flowId: %s]",
+        flow.getId()));
+    }
+
     var flowEntity = flowMapper.map(flow);
     var savedEntity = flowRepository.save(flowEntity);
     return flowMapper.map(savedEntity);
   }
 
   /**
-   * Marks the flow and its application flows as failed, if they have not reached a terminal status yet.
+   * Records a flow that timed out before its initializer stage created the flow row: a FAILED row is inserted, so
+   * {@link #create(Flow)} refuses to start the flow when the engine eventually schedules it.
+   *
+   * <p>{@code saveAndFlush} surfaces a concurrent insert by the initializer as a data-access exception inside this
+   * method - the caller falls back to {@link #failIfNotTerminal(UUID)} in a new transaction.</p>
+   */
+  @Transactional
+  public void createFailed(UUID flowId, EntitlementRequest request) {
+    var now = Date.from(Instant.now());
+    var flow = new Flow()
+      .id(flowId)
+      .tenantId(request.getTenantId())
+      .status(ExecutionStatus.FAILED)
+      .type(request.getType())
+      .startedAt(now)
+      .finishedAt(now);
+
+    flowRepository.saveAndFlush(flowMapper.map(flow));
+    log.warn("Flow timed out before it was started, created as failed [flowId: {}]", flowId);
+  }
+
+  /**
+   * Marks the flow, its application flows and their in-progress stages as failed, if the flow has not reached a
+   * terminal status yet.
    *
    * <p>Used when waiting for a synchronously executed flow timed out. The flow itself is not stopped - the flow engine
    * provides no way to abort a running flow - so the update is conditional and the flow finalizer stages keep the
    * status written here.</p>
+   *
+   * <p>The flow row is updated first: the flow finalizer is the last stage of a flow, so a terminal flow status
+   * implies all application flow and stage rows are terminal as well, and once the flow row is failed a concurrently
+   * finishing flow finalizer can no longer win against the application flow updates below.</p>
+   *
+   * @return {@code true} when the flow was marked as failed, {@code false} when it already was in a terminal status
    */
   @Transactional
   public boolean failIfNotTerminal(UUID flowId) {
     var finishedAt = ZonedDateTime.now();
-    var updatedApplicationFlows = applicationFlowService.failNonTerminalFlows(flowId, finishedAt);
     var updatedFlows = flowRepository.updateStatusIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
+    if (updatedFlows == 0) {
+      log.warn("Flow is not marked as failed, it has already reached a terminal status [flowId: {}]", flowId);
+      return false;
+    }
 
-    log.warn("Flow is forcibly marked as failed [flowId: {}, flows: {}, applicationFlows: {}]",
-      flowId, updatedFlows, updatedApplicationFlows);
+    var updatedApplicationFlows = applicationFlowService.failNonTerminalFlows(flowId, finishedAt);
+    var updatedStages = flowStageService.failNonTerminalStages(flowId, finishedAt);
 
-    return updatedFlows > 0;
+    log.warn("Flow is forcibly marked as failed [flowId: {}, applicationFlows: {}, stages: {}]",
+      flowId, updatedApplicationFlows, updatedStages);
+
+    return true;
+  }
+
+  /**
+   * Retrieves the current status of the flow, empty when the flow row does not exist yet.
+   *
+   * @param flowId - flow identifier as {@link UUID}
+   * @return flow status as {@link ExecutionStatus}, or empty
+   */
+  @Transactional(readOnly = true)
+  public Optional<ExecutionStatus> findStatus(UUID flowId) {
+    return flowRepository.findStatusById(flowId).map(status -> ExecutionStatus.valueOf(status.name()));
   }
 }

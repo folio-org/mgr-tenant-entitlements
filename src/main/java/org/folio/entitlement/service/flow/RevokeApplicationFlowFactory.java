@@ -6,12 +6,8 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.service.stage.ApplicationDependencyCleaner;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
-import org.folio.entitlement.service.stage.CancellationFailedApplicationFlowFinalizer;
-import org.folio.entitlement.service.stage.CancelledApplicationFlowFinalizer;
-import org.folio.entitlement.service.stage.FailedApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.RevokeApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.RevokeRequestDependencyValidator;
-import org.folio.entitlement.service.stage.SkippedApplicationFlowFinalizer;
 import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
@@ -26,27 +22,22 @@ public class RevokeApplicationFlowFactory implements ApplicationFlowFactory {
   private final RevokeRequestDependencyValidator requestDependencyValidator;
 
   private final ApplicationFlowInitializer flowInitializer;
-  private final FailedApplicationFlowFinalizer failedFlowFinalizer;
   private final RevokeApplicationFlowFinalizer finishedFlowFinalizer;
-  private final SkippedApplicationFlowFinalizer skippedFlowFinalizer;
-  private final CancelledApplicationFlowFinalizer cancelledFlowFinalizer;
-  private final CancellationFailedApplicationFlowFinalizer cancellationFailedFlowFinalizer;
+  private final ApplicationFlowFinalizerCallbacks finalizerCallbacks;
   private final ModulesFlowProvider modulesFlowProvider;
 
   @Override
   public Flow createFlow(Object flowId, FlowExecutionStrategy strategy, Map<?, ?> additionalFlowParameter) {
-    return Flow.builder()
+    var builder = Flow.builder()
       .id(flowId)
       .stage(flowInitializer)
       .stage(requestDependencyValidator)
       .stage(applicationDiscoveryLoader)
       .stage(DynamicStage.of(modulesFlowProvider.getName(), modulesFlowProvider::createFlow))
       .stage(applicationDependencyCleaner)
-      .stage(finishedFlowFinalizer)
-      .onFlowSkip(skippedFlowFinalizer)
-      .onFlowError(failedFlowFinalizer)
-      .onFlowCancellation(cancelledFlowFinalizer)
-      .onFlowCancellationError(cancellationFailedFlowFinalizer)
+      .stage(finishedFlowFinalizer);
+
+    return finalizerCallbacks.apply(builder)
       .executionStrategy(strategy)
       .flowParameters(additionalFlowParameter)
       .build();

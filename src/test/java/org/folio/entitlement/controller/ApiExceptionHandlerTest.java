@@ -332,7 +332,7 @@ class ApiExceptionHandlerTest {
       .errorMessage("Stage error");
 
     when(testService.execute()).thenThrow(
-      new FlowExecutionTimeoutException(FLOW_ID, Duration.ofMinutes(30), new TimeoutException("timed out")));
+      new FlowExecutionTimeoutException(FLOW_ID, FAILED, Duration.ofMinutes(30), new TimeoutException("timed out")));
     when(flowStageService.findFailedStages(FLOW_ID)).thenReturn(List.of(failedStage));
 
     mockMvc.perform(get("/tests")

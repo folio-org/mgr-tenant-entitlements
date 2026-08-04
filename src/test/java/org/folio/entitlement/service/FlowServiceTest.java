@@ -13,6 +13,8 @@ import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -23,6 +25,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.folio.common.domain.model.OffsetRequest;
@@ -35,6 +38,7 @@ import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.entity.FlowEntity;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.domain.entity.type.EntityFlowEntitlementType;
+import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.mapper.FlowMapper;
 import org.folio.entitlement.repository.FlowRepository;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
@@ -167,6 +171,7 @@ class FlowServiceTest {
       var flow = flow();
       var flowEntity = flowEntity();
 
+      when(flowRepository.existsById(FLOW_ID)).thenReturn(false);
       when(flowMapper.map(flow)).thenReturn(flowEntity);
       when(flowRepository.save(flowEntity)).thenReturn(flowEntity);
       when(flowMapper.map(flowEntity)).thenReturn(flow);
@@ -174,6 +179,48 @@ class FlowServiceTest {
       var result = flowService.create(flow);
 
       assertThat(result).isEqualTo(flow);
+    }
+
+    @Test
+    void negative_flowAlreadyExists() {
+      var flow = flow();
+
+      when(flowRepository.existsById(FLOW_ID)).thenReturn(true);
+
+      assertThatThrownBy(() -> flowService.create(flow))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Flow cannot be started, because it has already been created "
+          + "with a terminal status [flowId: %s]", FLOW_ID);
+
+      verify(flowRepository, never()).save(any());
+    }
+  }
+
+  @Nested
+  @DisplayName("createFailed")
+  class CreateFailed {
+
+    @Test
+    void positive() {
+      var flowEntity = flowEntity();
+      var request = EntitlementRequest.builder()
+        .applications(List.of(APPLICATION_ID))
+        .tenantId(TENANT_ID)
+        .type(ENTITLE)
+        .build();
+      var flowCaptor = ArgumentCaptor.forClass(Flow.class);
+
+      when(flowMapper.map(flowCaptor.capture())).thenReturn(flowEntity);
+      when(flowRepository.saveAndFlush(flowEntity)).thenReturn(flowEntity);
+
+      flowService.createFailed(FLOW_ID, request);
+
+      var mappedFlow = flowCaptor.getValue();
+      assertThat(mappedFlow.getId()).isEqualTo(FLOW_ID);
+      assertThat(mappedFlow.getTenantId()).isEqualTo(TENANT_ID);
+      assertThat(mappedFlow.getStatus()).isEqualTo(ExecutionStatus.FAILED);
+      assertThat(mappedFlow.getType()).isEqualTo(ENTITLE);
+      assertThat(mappedFlow.getStartedAt()).isNotNull().isEqualTo(mappedFlow.getFinishedAt());
     }
   }
 
@@ -186,9 +233,10 @@ class FlowServiceTest {
 
     @Test
     void positive() {
-      when(applicationFlowService.failNonTerminalFlows(eq(FLOW_ID), any())).thenReturn(2);
       when(flowRepository.updateStatusIfCurrentIn(
         eq(FLOW_ID), eq(EntityExecutionStatus.FAILED), eq(NON_TERMINAL), any())).thenReturn(1);
+      when(applicationFlowService.failNonTerminalFlows(eq(FLOW_ID), any())).thenReturn(2);
+      when(flowStageService.failNonTerminalStages(eq(FLOW_ID), any())).thenReturn(3);
 
       var result = flowService.failIfNotTerminal(FLOW_ID);
 
@@ -197,7 +245,6 @@ class FlowServiceTest {
 
     @Test
     void positive_flowIsAlreadyInTerminalStatus() {
-      when(applicationFlowService.failNonTerminalFlows(eq(FLOW_ID), any())).thenReturn(0);
       when(flowRepository.updateStatusIfCurrentIn(
         eq(FLOW_ID), eq(EntityExecutionStatus.FAILED), eq(NON_TERMINAL), any())).thenReturn(0);
 
@@ -207,18 +254,44 @@ class FlowServiceTest {
     }
 
     @Test
-    void positive_sameFinishedAtIsUsedForBothUpdates() {
-      var applicationFlowTimestamp = ArgumentCaptor.forClass(ZonedDateTime.class);
+    void positive_sameFinishedAtIsUsedForAllUpdates() {
       var flowTimestamp = ArgumentCaptor.forClass(ZonedDateTime.class);
+      var applicationFlowTimestamp = ArgumentCaptor.forClass(ZonedDateTime.class);
+      var stageTimestamp = ArgumentCaptor.forClass(ZonedDateTime.class);
 
-      when(applicationFlowService.failNonTerminalFlows(eq(FLOW_ID), applicationFlowTimestamp.capture()))
-        .thenReturn(1);
       when(flowRepository.updateStatusIfCurrentIn(
         eq(FLOW_ID), eq(EntityExecutionStatus.FAILED), eq(NON_TERMINAL), flowTimestamp.capture())).thenReturn(1);
+      when(applicationFlowService.failNonTerminalFlows(eq(FLOW_ID), applicationFlowTimestamp.capture()))
+        .thenReturn(1);
+      when(flowStageService.failNonTerminalStages(eq(FLOW_ID), stageTimestamp.capture())).thenReturn(1);
 
       flowService.failIfNotTerminal(FLOW_ID);
 
       assertThat(applicationFlowTimestamp.getValue()).isEqualTo(flowTimestamp.getValue());
+      assertThat(stageTimestamp.getValue()).isEqualTo(flowTimestamp.getValue());
+    }
+  }
+
+  @Nested
+  @DisplayName("findStatus")
+  class FindStatus {
+
+    @Test
+    void positive() {
+      when(flowRepository.findStatusById(FLOW_ID)).thenReturn(Optional.of(EntityExecutionStatus.FINISHED));
+
+      var result = flowService.findStatus(FLOW_ID);
+
+      assertThat(result).contains(FINISHED);
+    }
+
+    @Test
+    void positive_flowNotFound() {
+      when(flowRepository.findStatusById(FLOW_ID)).thenReturn(Optional.empty());
+
+      var result = flowService.findStatus(FLOW_ID);
+
+      assertThat(result).isEmpty();
     }
   }
 

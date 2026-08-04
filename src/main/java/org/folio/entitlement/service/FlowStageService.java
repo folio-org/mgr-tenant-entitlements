@@ -4,9 +4,13 @@ import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.folio.common.utils.CollectionUtils.mapItems;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.SearchResult;
@@ -90,5 +94,19 @@ public class FlowStageService {
    */
   public List<FlowStage> findFailedStages(UUID flowId) {
     return mapItems(flowStageRepository.findLastFailedStage(flowId), flowStageMapper::map);
+  }
+
+  /**
+   * Marks all in-progress stages of the flow and of its application flows as failed.
+   *
+   * @param flowId - flow identifier as {@link UUID} object
+   * @param finishedAt - timestamp to set as the stage finish time
+   * @return number of updated stage rows
+   */
+  @Transactional
+  public int failNonTerminalStages(UUID flowId, ZonedDateTime finishedAt) {
+    // not NON_TERMINAL_STATUSES: the entitlement_stage_status_type enum in the database has no QUEUED value,
+    // stage rows are created with IN_PROGRESS
+    return flowStageRepository.updateStatusByFlowIdIfCurrentIn(flowId, FAILED, Set.of(IN_PROGRESS), finishedAt);
   }
 }

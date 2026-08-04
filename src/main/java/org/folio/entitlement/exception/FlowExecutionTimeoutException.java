@@ -1,12 +1,12 @@
 package org.folio.entitlement.exception;
 
 import static java.lang.String.format;
-import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
 
 import java.io.Serial;
 import java.time.Duration;
 import java.util.UUID;
 import lombok.Getter;
+import org.folio.entitlement.domain.dto.ExecutionStatus;
 
 /**
  * Thrown when a synchronously executed flow did not finish within the configured execution timeout.
@@ -23,8 +23,8 @@ public class FlowExecutionTimeoutException extends RuntimeException {
   private final UUID flowId;
   private final transient Duration timeout;
 
-  public FlowExecutionTimeoutException(UUID flowId, Duration timeout, Throwable cause) {
-    super(format("Flow '%s' finished with status: %s", flowId, FAILED), cause);
+  public FlowExecutionTimeoutException(UUID flowId, ExecutionStatus status, Duration timeout, Throwable cause) {
+    super(format("Flow '%s' finished with status: %s", flowId, status.name()), cause);
 
     this.flowId = flowId;
     this.timeout = timeout;

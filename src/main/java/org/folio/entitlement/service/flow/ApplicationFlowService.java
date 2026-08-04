@@ -214,6 +214,6 @@ public class ApplicationFlowService {
    */
   @Transactional
   public int failNonTerminalFlows(UUID flowId, ZonedDateTime finishedAt) {
-    return applicationFlowRepository.updateStatusIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
+    return applicationFlowRepository.updateStatusByFlowIdIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
   }
 }

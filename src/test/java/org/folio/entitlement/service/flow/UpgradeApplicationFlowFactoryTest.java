@@ -25,10 +25,10 @@ import org.folio.entitlement.service.stage.UpgradeApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.UpgradeRequestDependencyValidator;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -39,7 +39,7 @@ class UpgradeApplicationFlowFactoryTest {
 
   private final FlowEngine flowEngine = singleThreadFlowEngine("test-flow-engine", false);
 
-  @InjectMocks private UpgradeApplicationFlowFactory flowFactory;
+  private UpgradeApplicationFlowFactory flowFactory;
 
   @Mock private ApplicationDiscoveryLoader applicationDiscoveryLoader;
   @Mock private ApplicationDependencyUpdater applicationDependencyUpdater;
@@ -52,6 +52,14 @@ class UpgradeApplicationFlowFactoryTest {
   @Mock private SkippedApplicationFlowFinalizer skippedFlowFinalizer;
   @Mock private CancelledApplicationFlowFinalizer cancelledFlowFinalizer;
   @Mock private CancellationFailedApplicationFlowFinalizer cancellationFailedFlowFinalizer;
+
+  @BeforeEach
+  void setUp() {
+    var finalizerCallbacks = new ApplicationFlowFinalizerCallbacks(skippedFlowFinalizer, failedFlowFinalizer,
+      cancelledFlowFinalizer, cancellationFailedFlowFinalizer);
+    flowFactory = new UpgradeApplicationFlowFactory(applicationDependencyUpdater, upgradeRequestDependencyValidator,
+      modulesFlowProvider, applicationDiscoveryLoader, flowInitializer, finishedFlowFinalizer, finalizerCallbacks);
+  }
 
   @Test
   void prepareFlow() {

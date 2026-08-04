@@ -6,9 +6,6 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.stage.ApplicationDescriptorLoader;
-import org.folio.entitlement.service.stage.CancellationFailedFlowFinalizer;
-import org.folio.entitlement.service.stage.CancelledFlowFinalizer;
-import org.folio.entitlement.service.stage.FailedFlowFinalizer;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.stage.TenantLoader;
@@ -30,14 +27,12 @@ public class RevokeFlowFactory implements FlowFactory {
   private final ExistingEntitlementValidator existingEntitlementValidator;
 
   private final FlowInitializer flowInitializer;
-  private final FailedFlowFinalizer failedFlowFinalizer;
   private final FinishedFlowFinalizer finishedFlowFinalizer;
-  private final CancelledFlowFinalizer cancelledFlowFinalizer;
-  private final CancellationFailedFlowFinalizer cancellationFailedFlowFinalizer;
+  private final FlowFinalizerCallbacks finalizerCallbacks;
 
   @Override
   public Flow createFlow(EntitlementRequest request) {
-    return Flow.builder()
+    var builder = Flow.builder()
       .id(UUID.randomUUID())
       .stage(flowInitializer)
       .stage(existingEntitlementValidator)
@@ -46,10 +41,9 @@ public class RevokeFlowFactory implements FlowFactory {
       .stage(applicationDescriptorLoader)
       .stage(applicationFlowQueuingStage)
       .stage(DynamicStage.of(applicationsFlowFactory.getClass().getSimpleName(), applicationsFlowFactory::createFlow))
-      .stage(finishedFlowFinalizer)
-      .onFlowError(failedFlowFinalizer)
-      .onFlowCancellation(cancelledFlowFinalizer)
-      .onFlowCancellationError(cancellationFailedFlowFinalizer)
+      .stage(finishedFlowFinalizer);
+
+    return finalizerCallbacks.apply(builder)
       .flowParameter(PARAM_REQUEST, request)
       .executionStrategy(request.getExecutionStrategy())
       .build();

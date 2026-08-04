@@ -311,7 +311,7 @@ class ApplicationFlowServiceTest {
       var finishedAt = ZonedDateTime.now();
       var nonTerminalStatuses = EnumSet.of(EntityExecutionStatus.QUEUED, EntityExecutionStatus.IN_PROGRESS);
 
-      when(repository.updateStatusIfCurrentIn(
+      when(repository.updateStatusByFlowIdIfCurrentIn(
         FLOW_ID, EntityExecutionStatus.FAILED, nonTerminalStatuses, finishedAt)).thenReturn(2);
 
       var result = applicationFlowService.failNonTerminalFlows(FLOW_ID, finishedAt);
