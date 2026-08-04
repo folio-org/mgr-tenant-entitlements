@@ -31,14 +31,16 @@ The resulting flow record is readable via `GET /entitlement-flows/{flowId}` (opt
 
 - The timeout applies to synchronous requests only; `async=true` executions are not bounded by it.
 - On expiry, the flow row is failed first, then all non-terminal application flows and in-progress stages — the record can never show a successful flow whose caller was told it failed.
-- The running execution cannot be aborted immediately; it stops at the next application boundary. Work already in flight for the current application keeps running in the background but cannot change the reported statuses or create entitlements: success side effects only apply when the final status write succeeds.
+- The running execution cannot be aborted immediately; it stops at the next application boundary. Work already in flight for the current application keeps running in the background but cannot change the reported flow and application-flow statuses or create entitlement records: success side effects only apply when the final status write succeeds.
+- The target systems may still have been changed even though the record reads `failed`: modules whose enablement was in flight complete their installation in the wrapped modules (and related events are published), while no entitlement row exists. A retried request converges — module installations are idempotent and the retry records the entitlement.
+- Stage rows are not protected the way flow and application-flow rows are: a stage in progress at the timeout is marked `failed`, but its own completion may later overwrite that stage row (for example to `finished`). The flow and application-flow statuses are authoritative — a `failed` flow can legitimately show `finished` stages.
 - If the timeout fires before the flow was even scheduled (saturated executor), the flow record is created directly in `failed` status and the scheduled execution refuses to start.
 - A rollback (`ignoreErrors=false`) may later transition the record from `failed` to `cancelled` — cancellation outcomes always reflect the real final state.
 - A request that timed out can be retried: `failed` (and `cancelled`) application flows do not block a repeated request of the same type, and module installations are idempotent.
 
 ## Error behavior
 
-- Timeout expiry: `400 Bad Request`, error `type` `FlowExecutionTimeoutException`, `code` `service_error`; parameters include any failed stages and a `timeout` entry with the configured duration; response header `x-mgr-tenant-entitlement-flow-id` carries the flow id for follow-up queries.
+- Timeout expiry: `400 Bad Request`, error `type` `FlowExecutionTimeoutException`, `code` `service_error`; parameters include a `timeout` entry with the configured duration, plus any stages that had already failed with recorded errors before the timeout — a pure timeout carries only the `timeout` parameter, and the flow record is the source of stage detail. Response header `x-mgr-tenant-entitlement-flow-id` carries the flow id for follow-up queries.
 - Flow finished concurrently with the timeout: normal success response.
 - Flow reached another terminal status concurrently (e.g. `cancelled`): `400` with the actual status in the error message.
 

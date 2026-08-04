@@ -208,9 +208,10 @@ public class ApplicationFlowService {
   /**
    * Marks all not yet finished application flows of the given flow as failed.
    *
-   * <p>Queued application flows are failed, not removed as in {@link #removeAllQueuedFlows(UUID)}: the flow can still
-   * be running, and removing a row that {@code ApplicationFlowInitializer} will later load by reference would fail
-   * that application flow and trigger a rollback of the already installed applications.</p>
+   * <p>Queued application flows are failed, not removed as in {@link #removeAllQueuedFlows(UUID)}: they were just
+   * reported to the caller as failed, and the flow record must keep matching that response. The running flow is
+   * stopped either way - {@code ApplicationFlowInitializer}'s compare-and-set refuses a terminal (or missing) row
+   * and a terminal parent flow alike.</p>
    */
   @Transactional
   public int failNonTerminalFlows(UUID flowId, ZonedDateTime finishedAt) {

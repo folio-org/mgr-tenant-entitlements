@@ -86,8 +86,9 @@ public class FlowService {
   /**
    * Creates flow entity in database.
    *
-   * <p>An already existing row can only be the FAILED one inserted by {@link #createFailed} for a flow that timed
-   * out before it was scheduled - such a flow must not be started, so this method throws instead of overwriting.</p>
+   * <p>An already existing row is expected to be the FAILED one inserted by {@link #createFailed} for a flow that
+   * timed out before it was scheduled - such a flow must not be started, so this method throws instead of
+   * overwriting, reporting the actual status of the existing row.</p>
    *
    * @param flow - flow representation
    * @return created {@link Flow} entity
@@ -95,10 +96,11 @@ public class FlowService {
    */
   @Transactional
   public Flow create(Flow flow) {
-    if (flowRepository.existsById(flow.getId())) {
+    var existingStatus = flowRepository.findStatusById(flow.getId());
+    if (existingStatus.isPresent()) {
       throw new IllegalStateException(String.format(
-        "Flow cannot be started, because it has already been created with a terminal status [flowId: %s]",
-        flow.getId()));
+        "Flow cannot be started, because it has already been created with %s status [flowId: %s]",
+        existingStatus.get(), flow.getId()));
     }
 
     var flowEntity = flowMapper.map(flow);
@@ -147,7 +149,8 @@ public class FlowService {
     var finishedAt = ZonedDateTime.now();
     var updatedFlows = flowRepository.updateStatusIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
     if (updatedFlows == 0) {
-      log.warn("Flow is not marked as failed, it has already reached a terminal status [flowId: {}]", flowId);
+      log.warn("Flow is not marked as failed, it has already reached a terminal status or has not been created yet "
+        + "[flowId: {}]", flowId);
       return false;
     }
 

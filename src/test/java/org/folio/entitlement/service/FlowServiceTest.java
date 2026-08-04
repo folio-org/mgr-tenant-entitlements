@@ -171,7 +171,7 @@ class FlowServiceTest {
       var flow = flow();
       var flowEntity = flowEntity();
 
-      when(flowRepository.existsById(FLOW_ID)).thenReturn(false);
+      when(flowRepository.findStatusById(FLOW_ID)).thenReturn(Optional.empty());
       when(flowMapper.map(flow)).thenReturn(flowEntity);
       when(flowRepository.save(flowEntity)).thenReturn(flowEntity);
       when(flowMapper.map(flowEntity)).thenReturn(flow);
@@ -185,12 +185,12 @@ class FlowServiceTest {
     void negative_flowAlreadyExists() {
       var flow = flow();
 
-      when(flowRepository.existsById(FLOW_ID)).thenReturn(true);
+      when(flowRepository.findStatusById(FLOW_ID)).thenReturn(Optional.of(EntityExecutionStatus.FAILED));
 
       assertThatThrownBy(() -> flowService.create(flow))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("Flow cannot be started, because it has already been created "
-          + "with a terminal status [flowId: %s]", FLOW_ID);
+          + "with FAILED status [flowId: %s]", FLOW_ID);
 
       verify(flowRepository, never()).save(any());
     }
