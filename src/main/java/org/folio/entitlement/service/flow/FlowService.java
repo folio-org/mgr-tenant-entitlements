@@ -1,14 +1,14 @@
 package org.folio.entitlement.service.flow;
 
 import static java.util.Collections.emptyList;
+import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON_TERMINAL_STATUSES;
 
-import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -96,11 +96,12 @@ public class FlowService {
    */
   @Transactional
   public Flow create(Flow flow) {
-    var existingStatus = flowRepository.findStatusById(flow.getId());
+    var flowId = requireNonNull(flow.getId());
+    var existingStatus = flowRepository.findStatusById(flowId);
     if (existingStatus.isPresent()) {
       throw new IllegalStateException(String.format(
         "Flow cannot be started, because it has already been created with %s status [flowId: %s]",
-        existingStatus.get(), flow.getId()));
+        existingStatus.get(), flowId));
     }
 
     var flowEntity = flowMapper.map(flow);
@@ -110,21 +111,19 @@ public class FlowService {
 
   /**
    * Records a flow that timed out before its initializer stage created the flow row: a FAILED row is inserted, so
-   * {@link #create(Flow)} refuses to start the flow when the engine eventually schedules it.
+   * {@link #create(Flow)} refuses to start the flow when the engine eventually schedules it. The timestamps are
+   * populated by the entity's creation/update callbacks on insert.
    *
    * <p>{@code saveAndFlush} surfaces a concurrent insert by the initializer as a data-access exception inside this
    * method - the caller falls back to {@link #failIfNotTerminal(UUID)} in a new transaction.</p>
    */
   @Transactional
   public void createFailed(UUID flowId, EntitlementRequest request) {
-    var now = Date.from(Instant.now());
     var flow = new Flow()
       .id(flowId)
       .tenantId(request.getTenantId())
       .status(ExecutionStatus.FAILED)
-      .type(request.getType())
-      .startedAt(now)
-      .finishedAt(now);
+      .type(request.getType());
 
     flowRepository.saveAndFlush(flowMapper.map(flow));
     log.warn("Flow timed out before it was started, created as failed [flowId: {}]", flowId);
@@ -146,7 +145,7 @@ public class FlowService {
    */
   @Transactional
   public boolean failIfNotTerminal(UUID flowId) {
-    var finishedAt = ZonedDateTime.now();
+    var finishedAt = ZonedDateTime.now(ZoneId.systemDefault());
     var updatedFlows = flowRepository.updateStatusIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
     if (updatedFlows == 0) {
       log.warn("Flow is not marked as failed, it has already reached a terminal status or has not been created yet "

@@ -9,6 +9,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
@@ -44,6 +45,9 @@ class FinishedFlowFinalizerTest {
 
     var stageContext = commonStageContext(FLOW_ID, flowParameters(), Map.of());
     flowFinalizer.execute(stageContext);
+
+    verify(flowRepository).updateStatusIfCurrentIn(
+      eq(FLOW_ID), eq(FINISHED), eq(NON_TERMINAL_STATUSES), any(ZonedDateTime.class));
   }
 
   @Test
@@ -53,6 +57,9 @@ class FinishedFlowFinalizerTest {
 
     var stageContext = commonStageContext(FLOW_ID, flowParameters(), Map.of());
     flowFinalizer.execute(stageContext);
+
+    verify(flowRepository).updateStatusIfCurrentIn(
+      eq(FLOW_ID), eq(FINISHED), eq(NON_TERMINAL_STATUSES), any(ZonedDateTime.class));
   }
 
   private static Map<?, ?> flowParameters() {

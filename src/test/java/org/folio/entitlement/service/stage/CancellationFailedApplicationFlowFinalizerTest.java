@@ -10,6 +10,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
@@ -48,6 +49,10 @@ class CancellationFailedApplicationFlowFinalizerTest {
 
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters(), Map.of());
     entitlementFlowFinalizer.execute(stageContext);
+
+    verify(applicationFlowRepository).updateStatusIfCurrentIn(
+      eq(APPLICATION_FLOW_ID), eq(CANCELLATION_FAILED), eq(EnumSet.allOf(EntityExecutionStatus.class)),
+      any(ZonedDateTime.class));
   }
 
   private static Map<?, ?> flowParameters() {

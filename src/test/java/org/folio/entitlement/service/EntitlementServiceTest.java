@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.CANCELLED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
+import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.domain.model.ResultList.asSinglePage;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
@@ -219,7 +220,6 @@ class EntitlementServiceTest {
 
       when(flowProvider.createFlow(request)).thenReturn(flow);
       when(flow.getId()).thenReturn(FLOW_ID.toString());
-      when(flowEngineProperties.getExecutionTimeout()).thenReturn(Duration.ofMinutes(30));
       doThrow(new FlowExecutionException("Failed to execute flow", FLOW_ID.toString(), cause))
         .when(flowEngine).execute(flow);
       when(flowService.failIfNotTerminal(FLOW_ID)).thenReturn(false);
@@ -249,6 +249,29 @@ class EntitlementServiceTest {
         .hasMessage("Flow '%s' finished with status: CANCELLED", FLOW_ID)
         .hasCause(cause)
         .extracting("flowId", "timeout").containsExactly(FLOW_ID, timeout);
+    }
+
+    @Test
+    void negative_timeoutFlowCreatedConcurrently() {
+      var request = entitlementRequest(false);
+      var cause = new TimeoutException("Flow execution timed out");
+      var timeout = Duration.ofMinutes(30);
+
+      when(flowProvider.createFlow(request)).thenReturn(flow);
+      when(flow.getId()).thenReturn(FLOW_ID.toString());
+      when(flowEngineProperties.getExecutionTimeout()).thenReturn(timeout);
+      doThrow(new FlowExecutionException("Failed to execute flow", FLOW_ID.toString(), cause))
+        .when(flowEngine).execute(flow);
+      when(flowService.failIfNotTerminal(FLOW_ID)).thenReturn(false, true);
+      when(flowService.findStatus(FLOW_ID)).thenReturn(Optional.of(IN_PROGRESS));
+
+      assertThatThrownBy(() -> entitlementService.performRequest(request))
+        .isInstanceOf(FlowExecutionTimeoutException.class)
+        .hasMessage("Flow '%s' finished with status: FAILED", FLOW_ID)
+        .hasCause(cause)
+        .extracting("flowId", "timeout").containsExactly(FLOW_ID, timeout);
+
+      verify(flowService, times(2)).failIfNotTerminal(FLOW_ID);
     }
 
     @Test

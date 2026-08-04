@@ -220,7 +220,8 @@ class FlowServiceTest {
       assertThat(mappedFlow.getTenantId()).isEqualTo(TENANT_ID);
       assertThat(mappedFlow.getStatus()).isEqualTo(ExecutionStatus.FAILED);
       assertThat(mappedFlow.getType()).isEqualTo(ENTITLE);
-      assertThat(mappedFlow.getStartedAt()).isNotNull().isEqualTo(mappedFlow.getFinishedAt());
+      assertThat(mappedFlow.getStartedAt()).isNull();
+      assertThat(mappedFlow.getFinishedAt()).isNull();
     }
   }
 

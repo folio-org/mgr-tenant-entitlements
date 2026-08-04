@@ -128,25 +128,36 @@ public class EntitlementService {
    * Marks the timed-out flow as failed and throws, unless the flow reached a terminal status on its own: a flow that
    * finished successfully in the same instant is reported as a successful request, any other terminal status is
    * reported with the actual outcome.
+   *
+   * <p>Two attempts: the flow row can be created between the compare-and-set and the status read - the second
+   * compare-and-set then hits the freshly created row, so a non-terminal status can never survive this method.</p>
    */
   private void failFlowExecution(EntitlementRequest request, Flow flow, Throwable cause) {
     var flowId = UUID.fromString(flow.getId());
-    var timeout = flowEngineProperties.getExecutionTimeout();
-    if (flowService.failIfNotTerminal(flowId)) {
-      throw new FlowExecutionTimeoutException(flowId, ExecutionStatus.FAILED, timeout, cause);
+    for (var attempt = 0; attempt < 2; attempt++) {
+      if (flowService.failIfNotTerminal(flowId)) {
+        throw timeoutException(flowId, ExecutionStatus.FAILED, cause);
+      }
+
+      var status = flowService.findStatus(flowId).orElse(null);
+      if (status == null) {
+        poisonNotStartedFlow(flowId, request);
+        throw timeoutException(flowId, ExecutionStatus.FAILED, cause);
+      }
+      if (status == ExecutionStatus.FINISHED) {
+        log.warn("Flow finished before the execution timeout was handled, reporting success [flowId: {}]", flowId);
+        return;
+      }
+      if (status != ExecutionStatus.IN_PROGRESS && status != ExecutionStatus.QUEUED) {
+        throw timeoutException(flowId, status, cause);
+      }
     }
 
-    var status = flowService.findStatus(flowId);
-    if (status.isEmpty()) {
-      poisonNotStartedFlow(flowId, request);
-      throw new FlowExecutionTimeoutException(flowId, ExecutionStatus.FAILED, timeout, cause);
-    }
-    if (status.get() == ExecutionStatus.FINISHED) {
-      log.warn("Flow finished before the execution timeout was handled, reporting success [flowId: {}]", flowId);
-      return;
-    }
+    throw timeoutException(flowId, ExecutionStatus.FAILED, cause);
+  }
 
-    throw new FlowExecutionTimeoutException(flowId, status.get(), timeout, cause);
+  private FlowExecutionTimeoutException timeoutException(UUID flowId, ExecutionStatus status, Throwable cause) {
+    return new FlowExecutionTimeoutException(flowId, status, flowEngineProperties.getExecutionTimeout(), cause);
   }
 
   /**

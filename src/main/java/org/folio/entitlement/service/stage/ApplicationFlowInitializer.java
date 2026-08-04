@@ -3,6 +3,7 @@ package org.folio.entitlement.service.stage;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON_TERMINAL_STATUSES;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
@@ -31,7 +32,7 @@ public class ApplicationFlowInitializer extends DatabaseLoggingStage<Application
   public void execute(ApplicationStageContext context) {
     var applicationFlowId = context.getCurrentFlowId();
     var updated = applicationFlowRepository.updateStatusIfCurrentInAndFlowActive(
-      applicationFlowId, IN_PROGRESS, NON_TERMINAL_STATUSES, ZonedDateTime.now());
+      applicationFlowId, IN_PROGRESS, NON_TERMINAL_STATUSES, ZonedDateTime.now(ZoneId.systemDefault()));
 
     if (updated == 0) {
       throw new IllegalStateException(String.format(

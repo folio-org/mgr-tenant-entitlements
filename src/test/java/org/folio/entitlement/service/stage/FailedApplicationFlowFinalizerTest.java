@@ -8,6 +8,7 @@ import static org.folio.entitlement.support.TestConstants.FLOW_STAGE_ID;
 import static org.folio.entitlement.support.TestValues.appStageContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
@@ -47,6 +48,9 @@ class FailedApplicationFlowFinalizerTest {
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, Map.of());
 
     failedApplicationFlowFinalizer.execute(stageContext);
+
+    verify(applicationFlowRepository).updateStatusIfCurrentIn(
+      eq(APPLICATION_FLOW_ID), eq(FAILED), eq(NON_TERMINAL_STATUSES), any(ZonedDateTime.class));
   }
 
   @Test
@@ -59,5 +63,8 @@ class FailedApplicationFlowFinalizerTest {
     var stageContext = appStageContext(FLOW_STAGE_ID, flowParameters, Map.of());
 
     failedApplicationFlowFinalizer.execute(stageContext);
+
+    verify(applicationFlowRepository).updateStatusIfCurrentIn(
+      eq(APPLICATION_FLOW_ID), eq(FAILED), eq(NON_TERMINAL_STATUSES), any(ZonedDateTime.class));
   }
 }

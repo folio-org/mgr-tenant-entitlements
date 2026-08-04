@@ -4,6 +4,7 @@ import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.CAN
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.CANCELLED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON_TERMINAL_STATUSES;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.EnumSet;
 import java.util.Set;
@@ -38,7 +39,7 @@ public abstract class AbstractFlowFinalizer<T extends AbstractFlowEntity, C exte
     var entitlementFlowId = context.getCurrentFlowId();
     var status = EntityExecutionStatus.from(getFinalStatus());
     var updated = abstractFlowRepository.updateStatusIfCurrentIn(
-      entitlementFlowId, status, allowedCurrentStatuses(status), ZonedDateTime.now());
+      entitlementFlowId, status, allowedCurrentStatuses(status), ZonedDateTime.now(ZoneId.systemDefault()));
 
     if (updated == 0) {
       log.warn("Flow status update to {} is skipped, flow is already in a terminal status [flowId: {}]",
