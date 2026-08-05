@@ -2,6 +2,7 @@ package org.folio.entitlement.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.folio.entitlement.domain.entity.FlowStageEntity;
 import org.folio.entitlement.domain.entity.key.FlowStageKey;
@@ -13,16 +14,19 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, FlowStageKey> {
 
+  @Query("SELECT entity from FlowStageEntity entity WHERE entity.id = :stageId")
+  Optional<FlowStageEntity> findByStageId(@Param("stageId") UUID stageId);
+
   @Query("""
-    select entity from FlowStageEntity entity
-    where entity.flowId = :flowId
-    order by entity.startedAt asc""")
+    SELECT entity from FlowStageEntity entity
+    WHERE entity.flowId = :flowId
+    ORDER BY entity.startedAt asc""")
   List<FlowStageEntity> findByFlowId(@Param("flowId") UUID flowId);
 
   @Query(value = """
-    select entity from FlowStageEntity entity
-    where entity.flowId in :flowIds
-    order by entity.startedAt asc""")
+    SELECT entity from FlowStageEntity entity
+    WHERE entity.flowId in :flowIds
+    ORDER BY entity.startedAt asc""")
   List<FlowStageEntity> findByFlowIds(@Param("flowIds") Collection<UUID> flowIds);
 
   @Query(nativeQuery = true, value = """
