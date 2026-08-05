@@ -123,8 +123,9 @@ public class EntitlementCrudService {
   @Transactional
   public void delete(Entitlement entitlement) {
     var entitlementKey = EntitlementKey.of(entitlement.getTenantId(), entitlement.getApplicationId());
-    var entitlementById = entitlementRepository.getReferenceById(entitlementKey);
-    entitlementRepository.delete(entitlementById);
+    // a rollback can cancel an application flow whose entitlement was never saved (the save is skipped when the
+    // flow was force-failed by the execution timeout) - the delete must be a no-op then, not a flush error
+    entitlementRepository.findById(entitlementKey).ifPresent(entitlementRepository::delete);
     log.info("Entitlement is deleted: tenantId = {}, applicationId = {}", entitlement.getTenantId(),
       entitlement.getApplicationId());
   }

@@ -1,7 +1,5 @@
 package org.folio.entitlement.service.stage;
 
-import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.QUEUED;
-
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
@@ -14,13 +12,13 @@ public class SkippedApplicationFlowFinalizer extends DatabaseLoggingStage<Applic
 
   private final ApplicationFlowRepository applicationFlowRepository;
 
+  /**
+   * The status check is a part of the delete statement: a row force-failed by the execution timeout between a
+   * read and a delete must not be removed - it was already reported to the caller as failed.
+   */
   @Override
   @Transactional
   public void execute(ApplicationStageContext stageContext) {
-    var flowUuid = stageContext.getCurrentFlowId();
-    var flowEntity = applicationFlowRepository.getReferenceById(flowUuid);
-    if (flowEntity.getStatus() == QUEUED) {
-      applicationFlowRepository.delete(flowEntity);
-    }
+    applicationFlowRepository.removeQueuedFlow(stageContext.getCurrentFlowId());
   }
 }

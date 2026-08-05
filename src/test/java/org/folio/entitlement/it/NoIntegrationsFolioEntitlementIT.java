@@ -1,6 +1,7 @@
 package org.folio.entitlement.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.support.KafkaEventAssertions.assertCapabilityEvents;
@@ -19,6 +20,7 @@ import static org.folio.entitlement.support.TestConstants.entitlementTopic;
 import static org.folio.entitlement.support.TestConstants.scheduledJobsTenantTopic;
 import static org.folio.entitlement.support.TestConstants.systemUserTenantTopic;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
+import static org.folio.entitlement.support.TestUtils.parseResponse;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementEvent;
@@ -45,10 +47,12 @@ import static org.folio.test.TestConstants.OKAPI_AUTH_TOKEN;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -60,6 +64,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
+import org.folio.entitlement.domain.dto.ApplicationFlow;
+import org.folio.entitlement.domain.dto.ApplicationFlows;
+import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
@@ -647,6 +654,58 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
           + "parameters: [{key: folio-app6-6.1.0, value: Entitlement is not found for application}]")));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP6_V2_ID), emptyEntitlements());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app-mixed/get-by-ids-13-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+    "/wiremock/mgr-applications/folio-app3/get-discovery-not-found.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json",
+    "/wiremock/folio-module1/install.json",
+    "/wiremock/folio-module1/uninstall.json"
+  })
+  void install_negative_secondLayerFails_finishedAppFlowCancelledAndReentitleAllowed() throws Exception {
+    mockMvc.perform(post("/entitlements")
+        .queryParam("tenantParameters", "loadReference=true")
+        .queryParam("ignoreErrors", "false")
+        .queryParam("purgeOnRollback", "true")
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, OKAPI_AUTH_TOKEN)
+        .content(asJsonString(entitlementRequest(TENANT_ID, FOLIO_APP1_ID, FOLIO_APP3_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].key", is("ApplicationDiscoveryLoader")))
+      .andExpect(jsonPath("$.errors[0].parameters[0].value", startsWith(
+        "FAILED: [IntegrationException] Failed to retrieve module discovery descriptors: " + FOLIO_APP3_ID)));
+
+    var entitlementQuery = String.format("applicationId==(%s or %s)", FOLIO_APP1_ID, FOLIO_APP3_ID);
+    getEntitlementsByQuery(entitlementQuery, emptyEntitlements());
+    assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID), entitlementEvent(REVOKE, FOLIO_MODULE1_ID));
+
+    var applicationFlowsResult = mockMvc.perform(get("/application-flows")
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken()))
+      .andExpect(status().isOk())
+      .andReturn();
+
+    var applicationFlows = parseResponse(applicationFlowsResult, ApplicationFlows.class).getApplicationFlows();
+    assertThat(applicationFlows)
+      .extracting(ApplicationFlow::getApplicationId, ApplicationFlow::getStatus)
+      .containsExactlyInAnyOrder(
+        tuple(FOLIO_APP1_ID, ExecutionStatus.CANCELLED),
+        tuple(FOLIO_APP3_ID, ExecutionStatus.CANCELLED));
+
+    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+    entitleApplications(entitlementRequest(FOLIO_APP1_ID), queryParams,
+      extendedEntitlements(entitlement(FOLIO_APP1_ID)));
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP1_ID), entitlements(entitlement(FOLIO_APP1_ID)));
   }
 
   private static void checkApplicationContextBeans(ApplicationContext appContext) {

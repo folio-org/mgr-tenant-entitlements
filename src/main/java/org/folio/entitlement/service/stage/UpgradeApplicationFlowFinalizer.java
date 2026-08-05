@@ -10,7 +10,6 @@ import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class UpgradeApplicationFlowFinalizer
@@ -31,9 +30,7 @@ public class UpgradeApplicationFlowFinalizer
   }
 
   @Override
-  @Transactional
-  public void execute(ApplicationStageContext context) {
-    super.execute(context);
+  protected void afterFlowStatusUpdate(ApplicationStageContext context) {
     var tenantId = context.getTenantId();
     entitlementCrudService.delete(buildEntitlement(tenantId, context.getEntitledApplicationId()));
     entitlementCrudService.save(buildEntitlement(tenantId, context.getApplicationId()));

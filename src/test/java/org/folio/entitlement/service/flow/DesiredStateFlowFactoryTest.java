@@ -26,10 +26,10 @@ import org.folio.entitlement.service.validator.DesiredStateWithUpgradeValidator;
 import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -40,7 +40,7 @@ class DesiredStateFlowFactoryTest {
 
   private final FlowEngine flowEngine = singleThreadFlowEngine("test-flow-engine", false);
 
-  @InjectMocks private DesiredStateFlowFactory flowFactory;
+  private DesiredStateFlowFactory flowFactory;
 
   @Mock private TenantLoader tenantLoader;
   @Mock private ApplicationStateTransitionPlanner applicationStateTransitionPlanner;
@@ -57,6 +57,16 @@ class DesiredStateFlowFactoryTest {
   @Mock private FailedFlowFinalizer failedFlowFinalizer;
   @Mock private CancelledFlowFinalizer cancelledFlowFinalizer;
   @Mock private CancellationFailedFlowFinalizer cancellationFailedFlowFinalizer;
+
+  @BeforeEach
+  void setUp() {
+    var finalizerCallbacks =
+      new FlowFinalizerCallbacks(failedFlowFinalizer, cancelledFlowFinalizer, cancellationFailedFlowFinalizer);
+    flowFactory = new DesiredStateFlowFactory(tenantLoader, applicationStateTransitionPlanner,
+      applicationDescriptorLoader, interfaceIntegrityValidator, desiredStateApplicationFlowValidator,
+      desiredStateWithUpgradeValidator, desiredStateWithRevokeValidator, applicationFlowQueuingStage,
+      kafkaTenantTopicCreator, applicationsFlowProvider, finishedFlowFinalizer, flowInitializer, finalizerCallbacks);
+  }
 
   @Test
   void createFlow_positive() {

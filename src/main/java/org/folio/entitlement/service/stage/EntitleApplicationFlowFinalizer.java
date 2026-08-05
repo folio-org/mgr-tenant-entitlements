@@ -30,9 +30,7 @@ public class EntitleApplicationFlowFinalizer
   }
 
   @Override
-  @Transactional
-  public void execute(ApplicationStageContext context) {
-    super.execute(context);
+  protected void afterFlowStatusUpdate(ApplicationStageContext context) {
     var entitlement = buildEntitlementFromContext(context);
     entitlementCrudService.save(entitlement);
   }

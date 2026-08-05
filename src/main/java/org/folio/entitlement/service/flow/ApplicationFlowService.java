@@ -6,8 +6,11 @@ import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON_TERMINAL_STATUSES;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -200,5 +203,18 @@ public class ApplicationFlowService {
   @Transactional
   public void removeAllQueuedFlows(UUID flowId) {
     applicationFlowRepository.removeQueuedFlows(flowId);
+  }
+
+  /**
+   * Marks all not yet finished application flows of the given flow as failed.
+   *
+   * <p>Queued application flows are failed, not removed as in {@link #removeAllQueuedFlows(UUID)}: they were just
+   * reported to the caller as failed, and the flow record must keep matching that response. The running flow is
+   * stopped either way - {@code ApplicationFlowInitializer}'s compare-and-set refuses a terminal (or missing) row
+   * and a terminal parent flow alike.</p>
+   */
+  @Transactional
+  public int failNonTerminalFlows(UUID flowId, ZonedDateTime finishedAt) {
+    return applicationFlowRepository.updateStatusByFlowIdIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
   }
 }

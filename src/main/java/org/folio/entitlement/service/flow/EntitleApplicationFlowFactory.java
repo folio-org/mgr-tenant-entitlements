@@ -8,12 +8,8 @@ import org.folio.entitlement.service.stage.ApplicationDependencySaver;
 import org.folio.entitlement.service.stage.ApplicationDescriptorValidator;
 import org.folio.entitlement.service.stage.ApplicationDiscoveryLoader;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
-import org.folio.entitlement.service.stage.CancellationFailedApplicationFlowFinalizer;
-import org.folio.entitlement.service.stage.CancelledApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.EntitleApplicationFlowFinalizer;
 import org.folio.entitlement.service.stage.EntitleRequestDependencyValidator;
-import org.folio.entitlement.service.stage.FailedApplicationFlowFinalizer;
-import org.folio.entitlement.service.stage.SkippedApplicationFlowFinalizer;
 import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
@@ -30,11 +26,8 @@ public class EntitleApplicationFlowFactory implements ApplicationFlowFactory {
 
   private final ModulesFlowProvider modulesFlowFactory;
   private final ApplicationFlowInitializer flowInitializer;
-  private final FailedApplicationFlowFinalizer failedFlowFinalizer;
-  private final SkippedApplicationFlowFinalizer skippedFlowFinalizer;
   private final EntitleApplicationFlowFinalizer finishedFlowFinalizer;
-  private final CancelledApplicationFlowFinalizer cancelledFlowFinalizer;
-  private final CancellationFailedApplicationFlowFinalizer cancellationFailedFlowFinalizer;
+  private final ApplicationFlowFinalizerCallbacks finalizerCallbacks;
 
   /**
    * Creates a {@link Flow} object for application installation.
@@ -45,7 +38,7 @@ public class EntitleApplicationFlowFactory implements ApplicationFlowFactory {
    */
   @Override
   public Flow createFlow(Object flowId, FlowExecutionStrategy strategy, Map<?, ?> additionalFlowParameters) {
-    return Flow.builder()
+    var builder = Flow.builder()
       .id(flowId)
       .stage(flowInitializer)
       .stage(applicationDescriptorValidator)
@@ -53,11 +46,9 @@ public class EntitleApplicationFlowFactory implements ApplicationFlowFactory {
       .stage(entitleRequestDependencyValidator)
       .stage(applicationDiscoveryLoader)
       .stage(DynamicStage.of(modulesFlowFactory.getName(), modulesFlowFactory::createFlow))
-      .stage(finishedFlowFinalizer)
-      .onFlowSkip(skippedFlowFinalizer)
-      .onFlowError(failedFlowFinalizer)
-      .onFlowCancellation(cancelledFlowFinalizer)
-      .onFlowCancellationError(cancellationFailedFlowFinalizer)
+      .stage(finishedFlowFinalizer);
+
+    return finalizerCallbacks.apply(builder)
       .executionStrategy(strategy)
       .flowParameters(additionalFlowParameters)
       .build();
