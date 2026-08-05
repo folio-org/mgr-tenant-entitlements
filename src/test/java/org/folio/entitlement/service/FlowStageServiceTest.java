@@ -8,8 +8,10 @@ import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.folio.common.domain.model.SearchResult;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.entity.FlowStageEntity;
@@ -101,6 +103,18 @@ class FlowStageServiceTest {
 
     assertThat(result).isEmpty();
     verifyNoInteractions(flowStageMapper, flowStageRepository);
+  }
+
+  @Test
+  void failNonTerminalStages_positive() {
+    var finishedAt = ZonedDateTime.now();
+
+    when(flowStageRepository.updateStatusByFlowIdIfCurrentIn(
+      FLOW_ID, EntityExecutionStatus.FAILED, Set.of(EntityExecutionStatus.IN_PROGRESS), finishedAt)).thenReturn(2);
+
+    var result = flowStageService.failNonTerminalStages(FLOW_ID, finishedAt);
+
+    assertThat(result).isEqualTo(2);
   }
 
   private static FlowStage flowStage() {

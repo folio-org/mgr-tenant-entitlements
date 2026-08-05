@@ -5,18 +5,25 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.folio.entitlement.configuration.FlowEngineConfigurationProperties;
 import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ResultList;
+import org.folio.entitlement.exception.FlowExecutionTimeoutException;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.service.flow.FlowProvider;
+import org.folio.entitlement.service.flow.FlowService;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.FlowEngine;
+import org.folio.flow.exception.FlowExecutionException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +34,10 @@ public class EntitlementService {
 
   private final FlowEngine flowEngine;
   private final FlowProvider flowProvider;
+  private final FlowService flowService;
   private final TenantManagerService tenantManagerService;
   private final EntitlementCrudService entitlementCrudService;
+  private final FlowEngineConfigurationProperties flowEngineProperties;
 
   /**
    * Retrieves all applications installed for the specified tenant.
@@ -79,7 +88,89 @@ public class EntitlementService {
     if (request.isAsync()) {
       flowEngine.executeAsync(flow);
     } else {
+      executeSyncFlow(request, flow);
+    }
+  }
+
+  /**
+   * Executes the flow and reports a flow that did not finish within the execution timeout as failed.
+   *
+   * <p>The flow engine swallows an interrupt and returns normally, so the interrupt flag is checked afterwards -
+   * otherwise an incomplete flow would be reported as a successful request. {@link Thread#interrupted()} also clears
+   * the flag: the database calls in {@link #failFlowExecution} must not run on an interrupted thread, and the flag
+   * must not leak back to the servlet thread pool.</p>
+   */
+  private void executeSyncFlow(EntitlementRequest request, Flow flow) {
+    try {
       flowEngine.execute(flow);
+    } catch (FlowExecutionException exception) {
+      if (isEngineTimeout(exception)) {
+        failFlowExecution(request, flow, exception.getCause());
+        return;
+      }
+      throw exception;
+    }
+
+    if (Thread.interrupted()) {
+      failFlowExecution(request, flow, new InterruptedException("Flow execution has been interrupted"));
+    }
+  }
+
+  /**
+   * The engine's own execution timeout carries no stage results; a stage failure whose error happens to be a
+   * {@link TimeoutException} does.
+   */
+  private static boolean isEngineTimeout(FlowExecutionException exception) {
+    return exception.getCause() instanceof TimeoutException && exception.getStageResults().isEmpty();
+  }
+
+  /**
+   * Marks the timed-out flow as failed and throws, unless the flow reached a terminal status on its own: a flow that
+   * finished successfully in the same instant is reported as a successful request, any other terminal status is
+   * reported with the actual outcome.
+   *
+   * <p>Two attempts: the flow row can be created between the compare-and-set and the status read - the second
+   * compare-and-set then hits the freshly created row, so a non-terminal status can never survive this method.</p>
+   */
+  private void failFlowExecution(EntitlementRequest request, Flow flow, Throwable cause) {
+    var flowId = UUID.fromString(flow.getId());
+    for (var attempt = 0; attempt < 2; attempt++) {
+      if (flowService.failIfNotTerminal(flowId)) {
+        throw timeoutException(flowId, ExecutionStatus.FAILED, cause);
+      }
+
+      var status = flowService.findStatus(flowId).orElse(null);
+      if (status == null) {
+        poisonNotStartedFlow(flowId, request);
+        throw timeoutException(flowId, ExecutionStatus.FAILED, cause);
+      }
+      if (status == ExecutionStatus.FINISHED) {
+        log.warn("Flow finished before the execution timeout was handled, reporting success [flowId: {}]", flowId);
+        return;
+      }
+      if (status != ExecutionStatus.IN_PROGRESS && status != ExecutionStatus.QUEUED) {
+        throw timeoutException(flowId, status, cause);
+      }
+    }
+
+    throw timeoutException(flowId, ExecutionStatus.FAILED, cause);
+  }
+
+  private FlowExecutionTimeoutException timeoutException(UUID flowId, ExecutionStatus status, Throwable cause) {
+    return new FlowExecutionTimeoutException(flowId, status, flowEngineProperties.getExecutionTimeout(), cause);
+  }
+
+  /**
+   * The flow row is created by the flow's own first stage, so a flow that timed out while still queued on the engine
+   * executor has no row to fail. A FAILED row is inserted instead - {@code FlowService#create} then refuses to start
+   * the flow when the engine eventually schedules it.
+   */
+  private void poisonNotStartedFlow(UUID flowId, EntitlementRequest request) {
+    try {
+      flowService.createFailed(flowId, request);
+    } catch (DataAccessException exception) {
+      log.warn("Flow was created concurrently with the timeout, failing it instead [flowId: {}]", flowId, exception);
+      flowService.failIfNotTerminal(flowId);
     }
   }
 

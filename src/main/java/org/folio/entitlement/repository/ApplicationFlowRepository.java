@@ -1,5 +1,6 @@
 package org.folio.entitlement.repository;
 
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -50,6 +51,37 @@ public interface ApplicationFlowRepository extends AbstractFlowRepository<Applic
   @Modifying
   @Query("DELETE ApplicationFlowEntity entity WHERE entity.flowId = :flowId and entity.status = 'QUEUED'")
   void removeQueuedFlows(@Param("flowId") UUID flowId);
+
+  @Modifying
+  @Query("DELETE ApplicationFlowEntity entity WHERE entity.id = :id and entity.status = 'QUEUED'")
+  void removeQueuedFlow(@Param("id") UUID id);
+
+  /**
+   * Compare-and-set that starts an application flow: refuses when the application flow or its parent flow has
+   * already reached a terminal status - both can be failed by the execution timeout while the flow keeps running,
+   * and rows queued after the timeout are only protected by the parent flow check.
+   */
+  @Modifying
+  @Query("UPDATE ApplicationFlowEntity e SET e.status = :status, e.finishedAt = :finishedAt "
+    + "WHERE e.id = :id AND e.status IN :currentStatuses "
+    + "AND EXISTS (SELECT f.id FROM FlowEntity f WHERE f.id = e.flowId AND f.status IN :currentStatuses)")
+  int updateStatusIfCurrentInAndFlowActive(@Param("id") UUID id,
+    @Param("status") EntityExecutionStatus status,
+    @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
+    @Param("finishedAt") ZonedDateTime finishedAt);
+
+  /**
+   * Compare-and-set on the statuses of all application flows of the given flow: the status check is a part of the
+   * statement, so a status set concurrently by a finalizer stage cannot be overwritten. {@code finishedAt} is passed
+   * in because a bulk update bypasses {@link org.hibernate.annotations.UpdateTimestamp}.
+   */
+  @Modifying
+  @Query("UPDATE ApplicationFlowEntity e SET e.status = :status, e.finishedAt = :finishedAt "
+    + "WHERE e.flowId = :flowId AND e.status IN :currentStatuses")
+  int updateStatusByFlowIdIfCurrentIn(@Param("flowId") UUID flowId,
+    @Param("status") EntityExecutionStatus status,
+    @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
+    @Param("finishedAt") ZonedDateTime finishedAt);
 
   @Override
   @Query("""

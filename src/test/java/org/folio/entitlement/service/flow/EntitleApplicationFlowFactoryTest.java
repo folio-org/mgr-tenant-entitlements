@@ -31,10 +31,10 @@ import org.folio.entitlement.support.TestValues;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -45,7 +45,7 @@ class EntitleApplicationFlowFactoryTest {
 
   private final FlowEngine flowEngine = singleThreadFlowEngine("test-flow-engine", false);
 
-  @InjectMocks private EntitleApplicationFlowFactory flowFactory;
+  private EntitleApplicationFlowFactory flowFactory;
 
   @Mock private ApplicationDescriptorValidator applicationDescriptorValidator;
   @Mock private ApplicationDependencySaver applicationDependencySaver;
@@ -59,6 +59,15 @@ class EntitleApplicationFlowFactoryTest {
   @Mock private EntitleApplicationFlowFinalizer finishedFlowFinalizer;
   @Mock private CancelledApplicationFlowFinalizer cancelledFlowFinalizer;
   @Mock private CancellationFailedApplicationFlowFinalizer cancellationFailedApplicationFlowFinalizer;
+
+  @BeforeEach
+  void setUp() {
+    var finalizerCallbacks = new ApplicationFlowFinalizerCallbacks(skippedFlowFinalizer, failedFlowFinalizer,
+      cancelledFlowFinalizer, cancellationFailedApplicationFlowFinalizer);
+    flowFactory = new EntitleApplicationFlowFactory(applicationDescriptorValidator, applicationDependencySaver,
+      applicationDiscoveryLoader, entitleRequestDependencyValidator, modulesFlowProvider, flowInitializer,
+      finishedFlowFinalizer, finalizerCallbacks);
+  }
 
   @AfterEach
   void tearDown() {

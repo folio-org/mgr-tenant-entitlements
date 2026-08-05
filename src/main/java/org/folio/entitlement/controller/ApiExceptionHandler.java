@@ -43,6 +43,7 @@ import org.folio.common.domain.model.error.ErrorResponse;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.cql2pgjson.exception.CQLFeatureUnsupportedException;
 import org.folio.entitlement.domain.dto.FlowStage;
+import org.folio.entitlement.exception.FlowExecutionTimeoutException;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.service.FlowStageService;
@@ -285,6 +286,29 @@ public class ApiExceptionHandler {
     return badRequest()
       .header(FLOW_ID_HEADER, flowId)
       .body(errorResponse);
+  }
+
+  /**
+   * Catches and handles all exceptions for type {@link FlowExecutionTimeoutException}.
+   *
+   * <p>Reported as a bad request with a flow identifier header, same as any other flow that reached a non-successful
+   * terminal status, so the caller can look the flow up.</p>
+   *
+   * @param exception {@link FlowExecutionTimeoutException} to process
+   * @return {@link ResponseEntity} with {@link ErrorResponse} body
+   */
+  @ExceptionHandler(FlowExecutionTimeoutException.class)
+  public ResponseEntity<ErrorResponse> handleFlowExecutionTimeoutException(FlowExecutionTimeoutException exception) {
+    logException(WARN, exception);
+    var flowId = exception.getFlowId();
+
+    var errorParameters = new ArrayList<>(
+      mapItems(flowStageService.findFailedStages(flowId), ApiExceptionHandler::getErrorParametersForStage));
+    errorParameters.add(new Parameter().key("timeout").value(String.valueOf(exception.getTimeout())));
+
+    return badRequest()
+      .header(FLOW_ID_HEADER, flowId.toString())
+      .body(buildErrorResponse(exception, errorParameters, SERVICE_ERROR));
   }
 
   /**

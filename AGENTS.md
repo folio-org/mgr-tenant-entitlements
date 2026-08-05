@@ -1,6 +1,6 @@
 # mgr-tenant-entitlements
 
-FOLIO module managing tenant entitlements — application install/upgrade/revoke and dependency management via a flow-based execution engine. Spring Boot 4.0.6, Java 21, PostgreSQL/Liquibase, Kafka, Keycloak.
+FOLIO module managing tenant entitlements — application install/upgrade/revoke and dependency management via a flow-based execution engine. Spring Boot 4, Java 21, PostgreSQL/Liquibase, Kafka, Keycloak.
 
 ## Build & Test
 
