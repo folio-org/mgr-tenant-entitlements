@@ -181,6 +181,13 @@ application:
         enabled: ${VALIDATION_INTERFACE_INTEGRITY_UPGRADE_ENABLED:true}
       state:
         enabled: ${VALIDATION_INTERFACE_INTEGRITY_STATE_ENABLED:true}
+  event-publishing:
+    capability:
+      await-completion: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
+    system-user:
+      await-completion: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
+    scheduled-job:
+      await-completion: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
 
 folio:
   jpa:

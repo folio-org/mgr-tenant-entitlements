@@ -87,4 +87,17 @@ public interface ApplicationFlowRepository extends AbstractFlowRepository<Applic
   @Query("""
     SELECT COUNT(entity) > 0 FROM FlowStageEntity entity WHERE entity.flowId = :flowId and entity.status = :status""")
   boolean existsAnyStageByFlowIdAndStatus(@Param("flowId") UUID flowId, @Param("status") EntityExecutionStatus status);
+
+  @Modifying
+  @Query("""
+    UPDATE ApplicationFlowEntity af
+    SET af.status = :status, af.finishedAt = :finishedAt
+    WHERE af.id = :id AND af.status IN :currentStatuses
+      AND NOT EXISTS (
+          SELECT 1 FROM FlowStageEntity s
+          WHERE s.flowId = af.id AND s.status IN :currentStatuses)""")
+  int updateStatusByIdIfCurrentInAndNoStagesWithStatus(@Param("id") UUID id,
+    @Param("status") EntityExecutionStatus status,
+    @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
+    @Param("finishedAt") ZonedDateTime finishedAt);
 }

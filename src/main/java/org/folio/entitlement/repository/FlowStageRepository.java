@@ -49,11 +49,34 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
    * in because a bulk update bypasses {@link org.hibernate.annotations.UpdateTimestamp}.
    */
   @Modifying
-  @Query("UPDATE FlowStageEntity e SET e.status = :status, e.finishedAt = :finishedAt "
-    + "WHERE e.status IN :currentStatuses AND (e.flowId = :flowId "
-    + "OR e.flowId IN (SELECT af.id FROM ApplicationFlowEntity af WHERE af.flowId = :flowId))")
+  @Query("""
+    UPDATE FlowStageEntity e 
+    SET e.status = :status, e.finishedAt = :finishedAt
+    WHERE e.status IN :currentStatuses 
+      AND (e.flowId = :flowId
+          OR e.flowId IN (SELECT af.id FROM ApplicationFlowEntity af WHERE af.flowId = :flowId))""")
   int updateStatusByFlowIdIfCurrentIn(@Param("flowId") UUID flowId,
     @Param("status") EntityExecutionStatus status,
+    @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
+    @Param("finishedAt") ZonedDateTime finishedAt);
+
+  @Modifying
+  @Query("""
+    UPDATE FlowStageEntity e
+    SET e.status = :status, e.finishedAt = :finishedAt
+    WHERE e.id = :stageId AND e.status IN :currentStatuses""")
+  int updateStatusByStageIdIfCurrentIn(@Param("stageId") UUID stageId,
+    @Param("status") EntityExecutionStatus status,
+    @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
+    @Param("finishedAt") ZonedDateTime finishedAt);
+
+  @Modifying
+  @Query("""
+    UPDATE FlowStageEntity e
+    SET e.status = 'FAILED', e.errorMessage = :errDetails, e.finishedAt = :finishedAt
+    WHERE e.id = :stageId AND e.status IN :currentStatuses""")
+  int markFailedByStageIdIfCurrentIn(@Param("stageId") UUID stageId,
+    @Param("errDetails") String errDetails,
     @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
     @Param("finishedAt") ZonedDateTime finishedAt);
 }

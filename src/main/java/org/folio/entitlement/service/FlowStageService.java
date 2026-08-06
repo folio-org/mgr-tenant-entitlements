@@ -5,11 +5,13 @@ import static java.util.stream.Collectors.groupingBy;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +27,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FlowStageService {
 
-  private final FlowStageMapper flowStageMapper;
-  private final FlowStageRepository flowStageRepository;
+  private final FlowStageMapper mapper;
+  private final FlowStageRepository repository;
+
+  @Transactional(readOnly = true)
+  public Optional<FlowStage> findById(UUID id) {
+    return repository.findByStageId(id).map(mapper::map);
+  }
 
   /**
    * Provides a list of entitlement stages for flow id and application id.
@@ -36,8 +43,8 @@ public class FlowStageService {
    */
   @Transactional(readOnly = true)
   public SearchResult<FlowStage> findByFlowId(UUID flowId) {
-    var foundEntities = flowStageRepository.findByFlowId(flowId);
-    return SearchResult.of(foundEntities.size(), mapItems(foundEntities, flowStageMapper::map));
+    var foundEntities = repository.findByFlowId(flowId);
+    return SearchResult.of(foundEntities.size(), mapItems(foundEntities, mapper::map));
   }
 
   /**
@@ -52,9 +59,9 @@ public class FlowStageService {
       return emptyMap();
     }
 
-    var foundEntities = flowStageRepository.findByFlowIds(applicationFlowIds);
+    var foundEntities = repository.findByFlowIds(applicationFlowIds);
     return foundEntities.stream()
-      .map(flowStageMapper::map)
+      .map(mapper::map)
       .collect(groupingBy(FlowStage::getFlowId));
   }
 
@@ -67,8 +74,8 @@ public class FlowStageService {
    */
   @Transactional(readOnly = true)
   public FlowStage getEntitlementStage(UUID applicationFlowId, String stageName) {
-    var entity = flowStageRepository.getReferenceById(FlowStageKey.of(applicationFlowId, stageName));
-    return flowStageMapper.map(entity);
+    var entity = repository.getReferenceById(FlowStageKey.of(applicationFlowId, stageName));
+    return mapper.map(entity);
   }
 
   /**
@@ -79,8 +86,8 @@ public class FlowStageService {
    */
   @Transactional(readOnly = true)
   public Map<UUID, List<FlowStage>> findStagesForFlow(UUID flowId) {
-    var entitlementStageEntities = flowStageRepository.findByFlowId(flowId);
-    var values = mapItems(entitlementStageEntities, flowStageMapper::map);
+    var entitlementStageEntities = repository.findByFlowId(flowId);
+    var values = mapItems(entitlementStageEntities, mapper::map);
     return values.stream().collect(groupingBy(FlowStage::getFlowId));
   }
 
@@ -92,8 +99,9 @@ public class FlowStageService {
    * @param flowId - flow identifier as {@link UUID} object.
    * @return last failed stage by the flow identifier.
    */
+  @Transactional(readOnly = true)
   public List<FlowStage> findFailedStages(UUID flowId) {
-    return mapItems(flowStageRepository.findLastFailedStage(flowId), flowStageMapper::map);
+    return mapItems(repository.findLastFailedStage(flowId), mapper::map);
   }
 
   /**
@@ -107,6 +115,16 @@ public class FlowStageService {
   public int failNonTerminalStages(UUID flowId, ZonedDateTime finishedAt) {
     // not NON_TERMINAL_STATUSES: the entitlement_stage_status_type enum in the database has no QUEUED value,
     // stage rows are created with IN_PROGRESS
-    return flowStageRepository.updateStatusByFlowIdIfCurrentIn(flowId, FAILED, Set.of(IN_PROGRESS), finishedAt);
+    return repository.updateStatusByFlowIdIfCurrentIn(flowId, FAILED, Set.of(IN_PROGRESS), finishedAt);
+  }
+
+  @Transactional
+  public int finishActiveStage(UUID id, ZonedDateTime finishedAt) {
+    return repository.updateStatusByStageIdIfCurrentIn(id, FINISHED, Set.of(IN_PROGRESS), finishedAt);
+  }
+
+  @Transactional
+  public int failActiveStage(UUID id, String errDetails, ZonedDateTime finishedAt) {
+    return repository.markFailedByStageIdIfCurrentIn(id, errDetails, Set.of(IN_PROGRESS), finishedAt);
   }
 }

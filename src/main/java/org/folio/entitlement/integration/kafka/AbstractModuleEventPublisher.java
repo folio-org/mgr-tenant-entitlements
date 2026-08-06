@@ -26,10 +26,6 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
 
   private final boolean awaitCompletion;
 
-  protected AbstractModuleEventPublisher() {
-    this(true);
-  }
-
   protected AbstractModuleEventPublisher(boolean awaitCompletion) {
     this.awaitCompletion = awaitCompletion;
   }
