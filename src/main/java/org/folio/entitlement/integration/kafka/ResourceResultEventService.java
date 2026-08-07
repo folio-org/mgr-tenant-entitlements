@@ -10,7 +10,6 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -44,24 +43,22 @@ public class ResourceResultEventService {
     log.info("Processing resource result event: {}", () -> eventToString(event));
 
     stageService.findById(stageId).ifPresentOrElse(
-      applyStageResult(event),
+      stage -> applyStageResult(stage, event),
       () -> log.info("Flow stage is not found by id for resource result event: id = {}, event = {}",
         stageId, event)
     );
   }
 
-  private Consumer<FlowStage> applyStageResult(ResourceResultEvent event) {
-    return stage -> {
-      if (stage.getStatus() != IN_PROGRESS) {
-        // stage status is not in_progress
-        // Ignore. Duplicate delivery, or already resolved.
-        log.info("Flow stage status is not 'In Progress' for resource result event: flowStage = {}, event = {}."
-            + " Event is ignored..", () -> flowStageToString(stage), () -> eventToString(event));
-        return;
-      }
+  private void applyStageResult(FlowStage stage, ResourceResultEvent event) {
+    if (stage.getStatus() != IN_PROGRESS) {
+      // stage status is not in_progress
+      // Ignore. Duplicate delivery, or already resolved.
+      log.info("Flow stage status is not 'In Progress' for resource result event: flowStage = {}, event = {}."
+          + " Event is ignored..", () -> flowStageToString(stage), () -> eventToString(event));
+      return;
+    }
 
-      getHandler(event.getStatus()).accept(stage, event);
-    };
+    getHandler(event.getStatus()).accept(stage, event);
   }
 
   private BiConsumer<FlowStage, ResourceResultEvent> getHandler(ResourceResultStatus status) {

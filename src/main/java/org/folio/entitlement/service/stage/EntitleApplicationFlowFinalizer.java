@@ -25,7 +25,7 @@ public class EntitleApplicationFlowFinalizer
     @Qualifier("applicationFlowFinalizerStatusProvider")
     FlowFinalizerStatusProvider<ApplicationStageContext> statusProvider,
     EntitlementCrudService entitlementCrudService) {
-    super(applicationFlowRepository,  statusProvider);
+    super(applicationFlowRepository, statusProvider);
     this.entitlementCrudService = entitlementCrudService;
   }
 

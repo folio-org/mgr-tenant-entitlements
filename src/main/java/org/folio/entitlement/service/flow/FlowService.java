@@ -9,7 +9,6 @@ import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FIN
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON_TERMINAL_STATUSES;
 
-import jakarta.validation.Valid;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -190,7 +189,7 @@ public class FlowService {
       Set.of(IN_PROGRESS), finishedAt);
   }
 
-  public int failActiveFlow(@Valid UUID id, ZonedDateTime finishedAt) {
+  public int failActiveFlow(UUID id, ZonedDateTime finishedAt) {
     return flowRepository.updateStatusIfCurrentIn(id, FAILED, Set.of(IN_PROGRESS), finishedAt);
   }
 }

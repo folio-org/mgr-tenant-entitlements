@@ -30,7 +30,7 @@ public interface FlowRepository extends AbstractFlowRepository<FlowEntity> {
   @Query("""
     UPDATE FlowEntity f
     SET f.status = :status, f.finishedAt = :finishedAt
-    WHERE f.id = :id AND f.status IN :currentStatuses
+    WHERE f.id = :flowId AND f.status IN :currentStatuses
       AND NOT EXISTS (
           SELECT 1 FROM FlowStageEntity s
           WHERE s.flowId = f.id AND s.status IN :currentStatuses)
