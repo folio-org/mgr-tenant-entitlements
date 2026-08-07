@@ -56,6 +56,18 @@ class DatabaseLoggingStageTest {
   }
 
   @Test
+  void onStart_positive_stageIdGeneratedAndPropagatedToContext() {
+    when(stageRepository.save(entitlementStageCaptor.capture())).thenReturn(entitlementStageEntity());
+    var stageContext = stageContext();
+
+    testStage.onStart(stageContext);
+
+    var capturedEntity = entitlementStageCaptor.getValue();
+    assertThat(capturedEntity.getId()).isNotNull();
+    assertThat(stageContext.getStageId()).isEqualTo(capturedEntity.getId());
+  }
+
+  @Test
   void onSuccess_positive() {
     var expectedKey = FlowStageKey.of(APPLICATION_FLOW_ID, STAGE_NAME);
     var entity = entitlementStageEntity();
