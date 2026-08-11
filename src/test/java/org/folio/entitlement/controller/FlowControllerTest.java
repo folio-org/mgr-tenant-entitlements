@@ -122,12 +122,12 @@ class  FlowControllerTest {
       .andExpect(jsonPath("$.totalRecords", is(1)))
       .andExpect(jsonPath("$.stages[0].flowId", is(APPLICATION_FLOW_ID.toString())))
       .andExpect(jsonPath("$.stages[0].status", is("finished")))
-      .andExpect(jsonPath("$.stages[0].name", is("OkapiModuleInstaller")));
+      .andExpect(jsonPath("$.stages[0].name", is("FolioModuleInstaller")));
   }
 
   @Test
   void getEntitlementStageByName_positive() throws Exception {
-    var stageName = "OkapiModuleInstaller";
+    var stageName = "FolioModuleInstaller";
     when(flowStageService.getEntitlementStage(APPLICATION_FLOW_ID, stageName)).thenReturn(stage());
     mockMvc.perform(get("/application-flows/{applicationFlowId}/stages/{name}", APPLICATION_FLOW_ID, stageName)
         .header(OkapiHeaders.TOKEN, OKAPI_TOKEN)
@@ -153,7 +153,7 @@ class  FlowControllerTest {
 
   private static FlowStage stage() {
     return new FlowStage()
-      .name("OkapiModuleInstaller")
+      .name("FolioModuleInstaller")
       .status(FINISHED)
       .flowId(APPLICATION_FLOW_ID);
   }

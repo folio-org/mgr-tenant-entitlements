@@ -168,26 +168,22 @@
     {
       "description": "Installs/enables application for tenant",
       "displayName": "Manager Tenant Entitlements - install application",
-      "permissionName": "mgr-tenant-entitlements.entitlements.item.post",
-      "subPermissions": [ "okapi.proxy.tenants.install.post" ]
+      "permissionName": "mgr-tenant-entitlements.entitlements.item.post"
     },
     {
       "description": "Upgrades application(s) for tenant",
       "displayName": "Manager Tenant Entitlements - Upgrade application",
-      "permissionName": "mgr-tenant-entitlements.entitlements.item.put",
-      "subPermissions": [ "okapi.proxy.tenants.install.post" ]
+      "permissionName": "mgr-tenant-entitlements.entitlements.item.put"
     },
     {
       "description": "Delete an application installation from a tenant",
       "displayName": "Manager Tenant Entitlements - uninstall application",
-      "permissionName": "mgr-tenant-entitlements.entitlements.item.delete",
-      "subPermissions": [ "okapi.proxy.tenants.install.post" ]
+      "permissionName": "mgr-tenant-entitlements.entitlements.item.delete"
     },
     {
       "description": "Set the desired state of applications for tenant",
       "displayName": "Manager Tenant Entitlements - desired state of application",
-      "permissionName": "mgr-tenant-entitlements.entitlements.state.item.put",
-      "subPermissions": [ "okapi.proxy.tenants.install.post" ]
+      "permissionName": "mgr-tenant-entitlements.entitlements.state.item.put"
     },
     {
       "description": "Retrieve applications installed for tenants",

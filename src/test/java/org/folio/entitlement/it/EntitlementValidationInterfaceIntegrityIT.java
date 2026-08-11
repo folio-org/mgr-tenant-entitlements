@@ -39,7 +39,6 @@ class EntitlementValidationInterfaceIntegrityIT {
   @Sql(scripts = "classpath:/sql/truncate-tables.sql", executionPhase = AFTER_TEST_METHOD)
   @TestPropertySource(properties = {
     "application.keycloak.enabled=false",
-    "application.okapi.enabled=false",
     "application.kong.enabled=false",
     "application.validation.interface-integrity.entitlement.interface-collector.mode=scoped"
   })
@@ -82,7 +81,6 @@ class EntitlementValidationInterfaceIntegrityIT {
   @Sql(scripts = "classpath:/sql/truncate-tables.sql", executionPhase = AFTER_TEST_METHOD)
   @TestPropertySource(properties = {
     "application.keycloak.enabled=false",
-    "application.okapi.enabled=false",
     "application.kong.enabled=false",
     "application.validation.interface-integrity.entitlement.interface-collector.mode=combined"
   })
@@ -119,7 +117,6 @@ class EntitlementValidationInterfaceIntegrityIT {
   @Sql(scripts = "classpath:/sql/truncate-tables.sql", executionPhase = AFTER_TEST_METHOD)
   @TestPropertySource(properties = {
     "application.keycloak.enabled=false",
-    "application.okapi.enabled=false",
     "application.kong.enabled=false",
   })
   class EntitledApplication extends BaseIntegrationTest {

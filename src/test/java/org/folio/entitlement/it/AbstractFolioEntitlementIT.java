@@ -15,8 +15,6 @@ import static org.folio.entitlement.support.KeycloakTestClientConfiguration.Keyc
 import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_MODULE_INSTALLER_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
@@ -88,7 +86,6 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @TestPropertySource(properties = {
   "application.kong.enabled=true",
   "application.keycloak.enabled=true",
-  "application.okapi.enabled=false",
   "application.clients.folio.connect-timeout=250ms",
   "application.clients.folio.read-timeout=250ms"
 })
@@ -838,8 +835,5 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
     checkExistingBeans(appContext, FOLIO_MODULE_INSTALLER_BEAN_TYPES);
     checkExistingBeans(appContext, COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES);
     checkExistingBeans(appContext, FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES);
-
-    checkMissingBeans(appContext, OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES);
-    checkMissingBeans(appContext, OKAPI_MODULE_INSTALLER_BEAN_TYPES);
   }
 }
