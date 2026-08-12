@@ -17,17 +17,10 @@ import org.folio.entitlement.integration.folio.flow.FolioModulesFlowProvider;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.folio.stage.FolioModuleInstaller;
 import org.folio.entitlement.integration.folio.stage.FolioModuleUninstaller;
-import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
-import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
-import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCleaner;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCreator;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
 import org.folio.entitlement.integration.keycloak.KeycloakService;
-import org.folio.entitlement.integration.okapi.flow.OkapiModulesFlowProvider;
-import org.folio.entitlement.integration.okapi.flow.OkapiModulesRevokeFlowFactory;
-import org.folio.entitlement.integration.okapi.flow.OkapiModulesUpgradeFlowFactory;
-import org.folio.entitlement.integration.okapi.stage.OkapiModulesInstaller;
 import org.keycloak.admin.client.Keycloak;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -69,13 +62,6 @@ public class TestConstants {
     FolioModulesFlowProvider.class, FolioModuleEntitleFlowFactory.class, FolioModuleUpgradeFlowFactory.class,
     FolioModuleRevokeFlowFactory.class, FolioModuleInstaller.class, FolioModuleUninstaller.class,
     FolioModuleEventPublisher.class);
-
-  public static final List<Class<?>> OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES = List.of(
-    KeycloakAuthResourceCreator.class, KeycloakAuthResourceUpdater.class, KeycloakAuthResourceCleaner.class);
-
-  public static final List<Class<?>> OKAPI_MODULE_INSTALLER_BEAN_TYPES = List.of(
-    OkapiModulesFlowProvider.class, OkapiModulesInstaller.class, OkapiModulesUpgradeFlowFactory.class,
-    OkapiModulesUpgradeFlowFactory.class, OkapiModulesRevokeFlowFactory.class);
 
   public static String entitlementTopic() {
     return getEnvTopicName("entitlement");

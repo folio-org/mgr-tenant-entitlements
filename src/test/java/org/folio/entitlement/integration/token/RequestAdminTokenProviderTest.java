@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.okapi;
+package org.folio.entitlement.integration.token;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;

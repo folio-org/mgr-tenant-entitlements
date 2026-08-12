@@ -218,7 +218,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       stage(APP_FLOW_ID_1, "ApplicationDependencyValidator", "2023-01-01T12:01:16", "2023-01-01T12:01:20"),
       stage(APP_FLOW_ID_1, "ApplicationDiscoveryValidator", "2023-01-01T12:01:21", "2023-01-01T12:01:25"),
       stage(APP_FLOW_ID_1, "KongRouteCreator", "2023-01-01T12:01:26", "2023-01-01T12:01:30"),
-      stage(APP_FLOW_ID_1, "OkapiModuleInstaller", "2023-01-01T12:01:31", "2023-01-01T12:01:35"),
+      stage(APP_FLOW_ID_1, "FolioModuleInstaller", "2023-01-01T12:01:31", "2023-01-01T12:01:35"),
       stage(APP_FLOW_ID_1, "EntitlementEventPublisher", "2023-01-01T12:01:36", "2023-01-01T12:01:40"),
       stage(APP_FLOW_ID_1, "EntitlementFlowFinalizer", "2023-01-01T12:01:41", "2023-01-01T12:01:45")
     );
@@ -232,7 +232,7 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       stage(APP_FLOW_ID_2, "ApplicationDependencyValidator", "2023-01-01T12:02:16", "2023-01-01T12:02:20"),
       stage(APP_FLOW_ID_2, "ApplicationDiscoveryValidator", "2023-01-01T12:02:21", "2023-01-01T12:02:25"),
       stage(APP_FLOW_ID_2, "KongRouteCreator", "2023-01-01T12:02:26", "2023-01-01T12:02:30"),
-      stage(APP_FLOW_ID_2, "OkapiModuleInstaller", "2023-01-01T12:02:31", "2023-01-01T12:02:35"),
+      stage(APP_FLOW_ID_2, "FolioModuleInstaller", "2023-01-01T12:02:31", "2023-01-01T12:02:35"),
       stage(APP_FLOW_ID_2, "EntitlementEventPublisher", "2023-01-01T12:02:36", "2023-01-01T12:02:40"),
       stage(APP_FLOW_ID_2, "EntitlementFlowFinalizer", "2023-01-01T12:02:41", "2023-01-01T12:02:45")
     );

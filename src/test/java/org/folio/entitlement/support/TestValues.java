@@ -61,7 +61,6 @@ import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.integration.am.model.ModuleDiscovery;
 import org.folio.entitlement.integration.kafka.model.EntitlementEvent;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
-import org.folio.entitlement.integration.okapi.model.OkapiStageContext;
 import org.folio.entitlement.integration.tm.model.Tenant;
 import org.folio.flow.api.FlowEngine;
 import org.folio.flow.api.StageContext;
@@ -274,10 +273,6 @@ public class TestValues {
 
   public static ApplicationStageContext appStageContext(Object flowId, Map<?, ?> flowParams, Map<?, ?> ctxParams) {
     return ApplicationStageContext.decorate(StageContext.of(flowId, flowParams, ctxParams));
-  }
-
-  public static OkapiStageContext okapiStageContext(Object flowId, Map<?, ?> flowParams, Map<?, ?> ctxParams) {
-    return OkapiStageContext.decorate(StageContext.of(flowId, flowParams, ctxParams));
   }
 
   public static CommonStageContext commonStageContext(Object flowId, Map<?, ?> flowParams, Map<?, ?> ctxParams) {

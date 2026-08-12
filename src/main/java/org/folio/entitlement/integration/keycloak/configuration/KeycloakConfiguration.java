@@ -4,9 +4,6 @@ import static org.folio.security.integration.keycloak.utils.ClientBuildUtils.bui
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCleaner;
-import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceCreator;
-import org.folio.entitlement.integration.keycloak.KeycloakAuthResourceUpdater;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCleaner;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCreator;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
@@ -57,37 +54,16 @@ public class KeycloakConfiguration {
   }
 
   @Bean
-  @ConditionalOnProperty("application.okapi.enabled")
-  public KeycloakAuthResourceCreator keycloakAuthResourceCreator(Keycloak keycloak, KeycloakService keycloakService) {
-    return new KeycloakAuthResourceCreator(keycloak, keycloakService);
-  }
-
-  @Bean
-  @ConditionalOnProperty("application.okapi.enabled")
-  public KeycloakAuthResourceUpdater keycloakAuthResourceUpdater(Keycloak keycloak, KeycloakService keycloakService) {
-    return new KeycloakAuthResourceUpdater(keycloak, keycloakService);
-  }
-
-  @Bean
-  @ConditionalOnProperty("application.okapi.enabled")
-  public KeycloakAuthResourceCleaner keycloakAuthResourceCleaner(Keycloak keycloak, KeycloakService keycloakService) {
-    return new KeycloakAuthResourceCleaner(keycloak, keycloakService);
-  }
-
-  @Bean
-  @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KeycloakModuleResourceCreator keycloakModuleResourceCreator(Keycloak keycloak, KeycloakService kcService) {
     return new KeycloakModuleResourceCreator(keycloak, kcService);
   }
 
   @Bean
-  @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KeycloakModuleResourceUpdater keycloakModuleResourceUpdater(Keycloak keycloak, KeycloakService kcService) {
     return new KeycloakModuleResourceUpdater(keycloak, kcService);
   }
 
   @Bean
-  @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KeycloakModuleResourceCleaner keycloakModuleResourceCleaner(Keycloak keycloak, KeycloakService kcService) {
     return new KeycloakModuleResourceCleaner(keycloak, kcService);
   }
