@@ -3,6 +3,7 @@
   "tenant": "test",
   "resourceName": "System user",
   "new": {
+    "moduleId": "folio-module2-2.0.0",
     "name": "folio-module2",
     "type": "module",
     "permissions": [

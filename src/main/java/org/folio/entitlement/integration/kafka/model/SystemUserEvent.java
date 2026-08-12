@@ -10,6 +10,7 @@ import lombok.Data;
 @AllArgsConstructor(staticName = "of")
 public class SystemUserEvent {
 
+  private String moduleId;
   private String name;
   private String type;
   private List<String> permissions;
