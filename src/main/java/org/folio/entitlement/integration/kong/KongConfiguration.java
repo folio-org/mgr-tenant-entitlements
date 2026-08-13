@@ -15,8 +15,8 @@ public class KongConfiguration {
   @Bean
   @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteCreator kongModuleRouteCreator(KongGatewayService kongGatewayService,
-    ApiGatewayConfigurationProperties properties) {
-    return new KongModuleRouteCreator(kongGatewayService, properties);
+    ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
+    return new KongModuleRouteCreator(kongGatewayService, properties, entitlementModuleService);
   }
 
   @Bean

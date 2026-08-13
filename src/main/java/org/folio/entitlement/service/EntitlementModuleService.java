@@ -42,6 +42,11 @@ public class EntitlementModuleService {
       .toList();
   }
 
+  @Transactional(readOnly = true)
+  public boolean isEntitlementExist(String moduleId) {
+    return repository.existsByModuleId(moduleId);
+  }
+
   public void save(ModuleRequest moduleRequest) {
     var entity = mapper.map(moduleRequest);
     repository.save(entity);

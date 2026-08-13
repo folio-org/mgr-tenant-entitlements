@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
+import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
 import org.folio.tools.kong.model.Service;
 import org.folio.tools.kong.service.KongGatewayService;
@@ -16,6 +17,7 @@ public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
 
   private final KongGatewayService kongGatewayService;
   private final ApiGatewayConfigurationProperties properties;
+  private final EntitlementModuleService entitlementModuleService;
 
   @Override
   public void execute(ModuleStageContext context) {
@@ -25,11 +27,10 @@ public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
 
     var moduleId = context.getModuleId();
     var location = context.getModuleDiscovery();
-
     kongGatewayService.upsertService(new Service().name(moduleId).url(location));
     log.debug("Upserted Kong service: moduleId = {}", moduleId);
 
-    if (properties.getRouteManagement().isEnabled()) {
+    if (properties.getRouteManagement().isEnabled() && !entitlementModuleService.isEntitlementExist(moduleId)) {
       kongGatewayService.addRoutes(List.of(context.getModuleDescriptor()));
       log.debug("Added Kong routes for module: moduleId = {}", moduleId);
     }
@@ -45,12 +46,19 @@ public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
     if (context.getModuleType() == ModuleType.UI_MODULE) {
       return;
     }
-
-    var moduleId = context.getModuleId();
-    if (properties.getRouteManagement().isEnabled()) {
-      deleteServiceRoutesQuietly(moduleId);
+    var request = context.getEntitlementRequest();
+    if (!request.isPurgeOnRollback()) {
+      log.debug("Skipping purge of Kong routes during rollback: moduleId = {}", context.getModuleId());
+      return;
     }
-    deleteServiceQuietly(moduleId);
+    var moduleId = context.getModuleId();
+    if (properties.getRouteManagement().isEnabled() && !entitlementModuleService.isEntitlementExist(moduleId)) {
+      deleteServiceAndRoutes(moduleId);
+      return;
+    }
+    if (properties.getTenantChecks().isEnabled()) {
+      kongGatewayService.removeTenantFromModuleRoutes(moduleId, context.getTenantName());
+    }
   }
 
   @Override
@@ -58,11 +66,17 @@ public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
     return true;
   }
 
+  private void deleteServiceAndRoutes(String moduleId) {
+    deleteServiceRoutesQuietly(moduleId);
+    deleteServiceQuietly(moduleId);
+    log.debug("Deleted Kong service and routes on cancel: moduleId = {}", moduleId);
+  }
+
   private void deleteServiceRoutesQuietly(String moduleId) {
     try {
       kongGatewayService.deleteServiceRoutes(moduleId);
     } catch (NoSuchElementException e) {
-      log.debug("Kong service not found when deleting routes, skipping: moduleId = {}", moduleId);
+      log.error("Kong service not found when deleting routes, skipping: moduleId = {}", moduleId);
     }
   }
 
@@ -70,7 +84,7 @@ public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
     try {
       kongGatewayService.deleteService(moduleId);
     } catch (Exception e) {
-      log.debug("Failed to delete Kong service, skipping: moduleId = {}", moduleId);
+      log.error("Failed to delete Kong service, skipping: moduleId = {}", moduleId);
     }
   }
 }

@@ -64,6 +64,18 @@ class EntitlementModuleServiceTest {
   }
 
   @Test
+  void isEntitlementExist_positive() {
+    when(repository.existsByModuleId(MODULE_ID)).thenReturn(true);
+    assertThat(service.isEntitlementExist(MODULE_ID)).isTrue();
+  }
+
+  @Test
+  void isEntitlementExist_negative() {
+    when(repository.existsByModuleId(MODULE_ID)).thenReturn(false);
+    assertThat(service.isEntitlementExist(MODULE_ID)).isFalse();
+  }
+
+  @Test
   void save_positive() {
     when(mapper.map(any(ModuleRequest.class))).thenReturn(entitlementModuleEntity());
 
