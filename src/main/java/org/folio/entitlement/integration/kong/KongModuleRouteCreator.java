@@ -36,7 +36,6 @@ public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
       kongGatewayService.addTenantToModuleRoutes(moduleId, context.getTenantName());
       log.debug("Added tenant to Kong routes: moduleId = {}, tenant = {}", moduleId, context.getTenantName());
     }
-    throw new RuntimeException("error");
   }
 
   @Override
