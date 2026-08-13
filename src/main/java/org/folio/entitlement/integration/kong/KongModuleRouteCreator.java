@@ -24,21 +24,19 @@ public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
     if (context.getModuleType() == ModuleType.UI_MODULE) {
       return;
     }
-
     var moduleId = context.getModuleId();
     var location = context.getModuleDiscovery();
     kongGatewayService.upsertService(new Service().name(moduleId).url(location));
     log.debug("Upserted Kong service: moduleId = {}", moduleId);
-
     if (properties.getRouteManagement().isEnabled() && !entitlementModuleService.isEntitlementExist(moduleId)) {
       kongGatewayService.addRoutes(List.of(context.getModuleDescriptor()));
       log.debug("Added Kong routes for module: moduleId = {}", moduleId);
     }
-
     if (properties.getTenantChecks().isEnabled()) {
       kongGatewayService.addTenantToModuleRoutes(moduleId, context.getTenantName());
       log.debug("Added tenant to Kong routes: moduleId = {}, tenant = {}", moduleId, context.getTenantName());
     }
+    throw new RuntimeException("error");
   }
 
   @Override

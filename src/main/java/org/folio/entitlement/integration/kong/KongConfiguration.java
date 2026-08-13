@@ -13,21 +13,18 @@ import org.springframework.context.annotation.Configuration;
 public class KongConfiguration {
 
   @Bean
-  @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteCreator kongModuleRouteCreator(KongGatewayService kongGatewayService,
     ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
     return new KongModuleRouteCreator(kongGatewayService, properties, entitlementModuleService);
   }
 
   @Bean
-  @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteUpdater kongModuleRouteUpdater(KongGatewayService kongGatewayService,
     ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
     return new KongModuleRouteUpdater(kongGatewayService, properties, entitlementModuleService);
   }
 
   @Bean
-  @ConditionalOnProperty(value = "application.okapi.enabled", havingValue = "false")
   public KongModuleRouteCleaner kongModuleRouteCleaner(KongGatewayService kongGatewayService,
     ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
     return new KongModuleRouteCleaner(kongGatewayService, properties, entitlementModuleService);
