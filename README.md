@@ -66,9 +66,7 @@ listening port 8081 (default listening port):
 
 ```shell
 java \
-  -Dokapi.url=http://localhost:9130 \
   -Dam.url=http://localhost:9130 \
-  -Dokapi.token=${okapiToken} \
   -jar target/mgr-tenant-entitlements-*.jar
 ```
 
@@ -85,10 +83,8 @@ docker run \
   --name mgr-tenant-entitlements \
   --link postgres:postgres \
   -e DB_HOST=postgres \
-  -e okapi.url=http://okapi:9130 \
   -e tenant.url=http://mgr-tenants:8081 \
   -e am.url=http://mgr-applications:8081 \
-  -e okapi.token=${okapiToken} \
   -p 8081:8081 \
   -d mgr-tenant-entitlements
 ```
@@ -105,14 +101,13 @@ docker run \
 | FLOW_ENGINE_THREADS_NUM                | 4                                   |  false   | Number of threads for the main flow engine executor pool                                                                                                                                                   |
 | FLOW_ENGINE_MODULE_INSTALLER_THREADS   | 4                                   |  false   | Number of threads for parallel module installation. Controls how many modules are being installed concurrently during entitlement operations                                                               |
 | MODULE_URL                             | http://mgr-tenant-entitlements:8081 |  false   | Module URL (module cannot define url for Kong registration by itself, because it can be under Load Balancer, so this value must be provided manually)                                                      |
-| okapi.url                              | -                                   |  false   | Okapi URL used to perform HTTP requests by `OkapiClient`.                                                                                                                                                  |
 | tenant.url                             | -                                   |   true   | Tenant URL used to perform HTTP requests by `TenantManagerClient`.                                                                                                                                         |
 | am.url                                 | -                                   |   true   | Application Manager URL used to perform HTTP requests by `ApplicationManagerClient`.                                                                                                                       |
 | AM_CLIENT_TLS_ENABLED                  | false                               |  false   | Enables TLS for application-manager client.                                                                                                                                                                |
 | AM_CLIENT_TLS_TRUSTSTORE_PATH          | -                                   |  false   | Truststore file path for application-manager client.                                                                                                                                                       |
 | AM_CLIENT_TLS_TRUSTSTORE_PASSWORD      | -                                   |  false   | Truststore password for application-manager client.                                                                                                                                                        |
 | AM_CLIENT_TLS_TRUSTSTORE_TYPE          | -                                   |  false   | Truststore file type for application-manager client.                                                                                                                                                       |
-| kong.url                               | -                                   |   true   | Okapi URL used to perform HTTP requests for recurring jobs, required.                                                                                                                                      |
+| kong.url                               | -                                   |   true   | Kong Admin URL used to perform HTTP requests for route management, required.                                                                                                                                      |
 | KONG_ADMIN_URL                         | -                                   |  false   | Alias for `kong.url`.                                                                                                                                                                                      |
 | KONG_INTEGRATION_ENABLED               | true                                |  false   | Defines if kong integration is enabled or disabled.<br/>If it set to `false` - it will exclude all kong-related beans from spring context.                                                                 |
 | KONG_CONNECT_TIMEOUT                   | -                                   |  false   | Defines the timeout in milliseconds for establishing a connection from Kong to upstream service. If the value is not provided then Kong defaults are applied.                                              |
@@ -123,7 +118,6 @@ docker run \
 | KONG_TLS_TRUSTSTORE_PATH               | -                                   |  false   | Truststore file path for TLS connection to Kong.                                                                                                                                                           |
 | KONG_TLS_TRUSTSTORE_PASSWORD           | -                                   |  false   | Truststore password for TLS connection to Kong.                                                                                                                                                            |
 | KONG_TLS_TRUSTSTORE_TYPE               | -                                   |  false   | Truststore file type for TLS connection to Kong.                                                                                                                                                           |
-| OKAPI_INTEGRATION_ENABLED              | false                               |  false   | Defines if okapi integration is enabled or disabled.<br/>If it set to `false` - it will exclude OkapiModuleInstaller stage from flow and okapi related beans from spring context.                          |
 | ENV                                    | folio                               |  false   | The logical name of the deployment (kafka topic prefix), must be unique across all environments using the same shared Kafka/Elasticsearch clusters, `a-z (any case)`, `0-9`, `-`, `_` symbols only allowed |
 | SECURITY_ENABLED                       | true                                |  false   | Allows to enable/disable security. If true and KC_INTEGRATION_ENABLED is also true - the Keycloak will be used as a security provider.                                                                     |
 | MT_CLIENT_TLS_ENABLED                  | false                               |  false   | Allows to enable/disable TLS connection to mgr-tenants module.                                                                                                                                             |
@@ -136,7 +130,6 @@ docker run \
 | FOLIO_CLIENT_TLS_TRUSTSTORE_PATH       | -                                   |  false   | Truststore file path for TLS connection to Folio Modules.                                                                                                                                                  |
 | FOLIO_CLIENT_TLS_TRUSTSTORE_PASSWORD   | -                                   |  false   | Truststore password for TLS connection to Folio Modules.                                                                                                                                                   |
 | FOLIO_CLIENT_TLS_TRUSTSTORE_TYPE       | -                                   |  false   | Truststore file type for TLS connection to Folio Modules.                                                                                                                                                  |
-| MOD_AUTHTOKEN_URL                      | -                                   |   true   | Mod-authtoken URL. Required if OKAPI_INTEGRATION_ENABLED is true and SECURITY_ENABLED  is true and KC_INTEGRATION_ENABLED is false.                                                                        |
 | SECURE\_STORE\_ENV                     | folio                               |  false   | First segment of the secure store key, for example `prod` or `test`. Defaults to `folio`. In Ramsons and Sunflower defaults to ENV with fall-back `folio`.                                                 |
 | SECRET_STORE_TYPE                      | -                                   |   true   | Secure storage type. Supported values: `EPHEMERAL`, `AWS_SSM`, `VAULT`, `FSSP`                                                                                                                             |
 | MAX_HTTP_REQUEST_HEADER_SIZE           | 200KB                               |  false   | Maximum size of the HTTP request header.                                                                                                                                                                   |

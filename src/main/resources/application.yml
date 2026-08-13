@@ -62,10 +62,6 @@ application:
       enabled: ${APIGW_ROUTEMANAGEMENT_ENABLED:true}
     tenant-checks:
       enabled: ${APIGW_TENANT_CHECKS_ENABLED:false}
-  okapi:
-    enabled: ${OKAPI_INTEGRATION_ENABLED:false}
-    url: ${OKAPI_URL:${okapi.url:}}
-    mod-authtoken-url: ${MOD_AUTHTOKEN_URL}
   am:
     url: ${AM_CLIENT_URL:${am.url:}}
     tls:

@@ -1,7 +1,6 @@
-package org.folio.entitlement.integration.okapi;
+package org.folio.entitlement.integration.token;
 
 import lombok.extern.log4j.Log4j2;
-import org.folio.entitlement.integration.token.AdminTokenProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 

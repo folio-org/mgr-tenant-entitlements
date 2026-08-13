@@ -27,7 +27,7 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
                                       ↓ (on failure) FailedFlowFinalizer
   ```
 - **Dependencies**: builds `ApplicationInstallationGraph` / `ModuleInstallationGraph`; validates interface integrity; handles optional vs required and cross-application deps.
-- **Integrations** (`integration/`): `am/`, `tm/`, `okapi/`, `folio/`, `keycloak/`, `kafka/`, `token/`, `interceptor/`.
+- **Integrations** (`integration/`): `am/`, `tm/`, `folio/`, `keycloak/`, `kafka/`, `token/`, `interceptor/`.
 
 **Domain concepts**: Entitlement (tenant's right to an application + modules), Application, Module, Flow Execution (DB-tracked), Stage Context (thread-local, see `ThreadLocalModuleStageContext`).
 
@@ -41,7 +41,7 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
 - **Security**: Keycloak via `@EnableMgrSecurity`; Caffeine token cache with auto-refresh for long ops.
 - **Retry**: configurable for Keycloak/FOLIO calls (`retry/` package) + stage-level retry.
 - **Tests**: `@UnitTest` (Mockito), `@IntegrationTest` (extend `BaseIntegrationTest`, Testcontainers + WireMock).
-- **Key env vars**: `OKAPI_URL`, `MT_CLIENT_URL`, `AM_CLIENT_URL`, `KONG_ADMIN_URL`; toggles `KONG_/OKAPI_/KC_INTEGRATION_ENABLED`; `FLOW_ENGINE_*` (threads, timeout, cache); `VALIDATION_INTERFACE_*`; `ENV` (Kafka topic prefix). Full list in `README.md`.
+- **Key env vars**: `MT_CLIENT_URL`, `AM_CLIENT_URL`, `KONG_ADMIN_URL`; toggles `KONG_/KC_INTEGRATION_ENABLED`; `FLOW_ENGINE_*` (threads, timeout, cache); `VALIDATION_INTERFACE_*`; `ENV` (Kafka topic prefix). Full list in `README.md`.
 
 ## Pitfalls
 

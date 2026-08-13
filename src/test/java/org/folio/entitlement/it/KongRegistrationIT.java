@@ -3,7 +3,6 @@ package org.folio.entitlement.it;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.folio.entitlement.support.base.BaseIntegrationTest;
-import org.folio.test.extensions.EnableOkapiSecurity;
 import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient;
 import org.junit.jupiter.api.Test;
@@ -11,10 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
 @IntegrationTest
-@EnableOkapiSecurity
 @TestPropertySource(properties = {
+  "application.security.enabled=true",
   "application.keycloak.enabled=false",
-  "application.okapi.enabled=false",
   "application.kong.module-self-url=https://test-mgr-tenant-entitlements:443",
   "application.kong.register-module=true",
   "application.kong.tls.enabled=true",

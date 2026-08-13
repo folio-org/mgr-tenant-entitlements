@@ -17,8 +17,6 @@ application:
     enabled: true
     register-module: false
     retries: 3
-  okapi:
-    enabled: true
   environment: it
   keycloak:
     enabled: false

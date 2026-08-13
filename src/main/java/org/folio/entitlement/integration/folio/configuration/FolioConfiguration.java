@@ -24,13 +24,11 @@ import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.ModuleSequenceProvider;
 import org.folio.entitlement.utils.JsonConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "application.okapi.enabled", havingValue = "false")
 public class FolioConfiguration {
 
   /**
