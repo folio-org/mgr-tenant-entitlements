@@ -3,7 +3,7 @@
   "type": "object",
   "id": "moduleReinstallRequestBody.json",
   "title": "Module Reinstall Request Schema",
-  "description": "A collection of application ids to reinstall",
+  "description": "A collection of module ids to reinstall",
   "properties": {
     "tenantId": {
       "description": "Tenant id",
@@ -15,7 +15,7 @@
       "type": "string"
     },
     "modules": {
-      "description": "List of application ids",
+      "description": "List of module ids",
       "type": "array",
       "minItems": 1,
       "maxItems": 50,
