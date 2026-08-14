@@ -76,6 +76,18 @@ class EntitlementModuleServiceTest {
   }
 
   @Test
+  void isNoOtherEntitlementExist_positive_noOtherTenant() {
+    when(repository.existsByModuleIdAndTenantIdNot(MODULE_ID, TENANT_ID)).thenReturn(false);
+    assertThat(service.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).isTrue();
+  }
+
+  @Test
+  void isNoOtherEntitlementExist_positive_otherTenantExists() {
+    when(repository.existsByModuleIdAndTenantIdNot(MODULE_ID, TENANT_ID)).thenReturn(true);
+    assertThat(service.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).isFalse();
+  }
+
+  @Test
   void save_positive() {
     when(mapper.map(any(ModuleRequest.class))).thenReturn(entitlementModuleEntity());
 

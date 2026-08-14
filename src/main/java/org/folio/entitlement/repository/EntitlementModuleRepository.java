@@ -20,6 +20,8 @@ public interface EntitlementModuleRepository extends JpaCqlRepository<Entitlemen
 
   boolean existsByModuleId(String moduleId);
 
+  boolean existsByModuleIdAndTenantIdNot(String moduleId, UUID tenantId);
+
   @Query("""
     select entity from EntitlementModuleEntity entity
       where entity.applicationId = :applicationId

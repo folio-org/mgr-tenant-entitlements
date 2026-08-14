@@ -12,19 +12,16 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
-import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import org.folio.common.domain.model.ModuleDescriptor;
-import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementModuleService;
-import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.folio.tools.kong.service.KongGatewayService;
@@ -32,6 +29,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -43,79 +41,82 @@ class KongModuleRouteCleanerTest {
 
   @Mock private KongGatewayService kongGatewayService;
   @Mock private EntitlementModuleService entitlementModuleService;
-  @Mock private ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
+  private ApiGatewayConfigurationProperties properties;
   private KongModuleRouteCleaner kongModuleRouteCleaner;
 
   @BeforeEach
   void setUp() {
-    kongModuleRouteCleaner = new KongModuleRouteCleaner(kongGatewayService,
-      defaultProperties(), entitlementModuleService);
-    kongModuleRouteCleaner.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
+    properties = mock(ApiGatewayConfigurationProperties.class, Answers.RETURNS_DEEP_STUBS);
+    kongModuleRouteCleaner = new KongModuleRouteCleaner(kongGatewayService, properties, entitlementModuleService);
   }
 
   @AfterEach
   void tearDown() {
-    reset(threadLocalModuleStageContext);
     TestUtils.verifyNoMoreInteractions(this);
   }
 
   @Test
   void execute_positive_lastTenant_routeManagementEnabled() {
-    when(entitlementModuleService.getModuleEntitlements(MODULE_ID, 2, 0))
-      .thenReturn(new Entitlements().totalRecords(1));
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
     kongModuleRouteCleaner.execute(stageContext);
 
-    verify(entitlementModuleService).getModuleEntitlements(MODULE_ID, 2, 0);
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
   void execute_positive_notLastTenant_noOp() {
-    when(entitlementModuleService.getModuleEntitlements(MODULE_ID, 2, 0))
-      .thenReturn(new Entitlements().totalRecords(2));
+    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
+    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(false);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
     kongModuleRouteCleaner.execute(stageContext);
 
-    verify(entitlementModuleService).getModuleEntitlements(MODULE_ID, 2, 0);
     verifyNoInteractions(kongGatewayService);
   }
 
   @Test
   void execute_positive_lastTenant_routeManagementDisabled() {
-    var cleaner = new KongModuleRouteCleaner(kongGatewayService,
-      propertiesWithoutRouteManagement(), entitlementModuleService);
-    cleaner.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
-
-    when(entitlementModuleService.getModuleEntitlements(MODULE_ID, 2, 0))
-      .thenReturn(new Entitlements().totalRecords(1));
+    when(properties.getRouteManagement().isEnabled()).thenReturn(false);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
+    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
-    cleaner.execute(stageContext);
+    kongModuleRouteCleaner.execute(stageContext);
 
-    verify(entitlementModuleService).getModuleEntitlements(MODULE_ID, 2, 0);
     verifyNoInteractions(kongGatewayService);
   }
 
   @Test
-  void execute_positive_tenantChecksEnabled_removesOnlyTenantFilter() {
-    var cleaner = new KongModuleRouteCleaner(kongGatewayService,
-      propertiesWithTenantChecks(), entitlementModuleService);
-    cleaner.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
+  void execute_positive_tenantChecksEnabled_notLastTenant_removesOnlyTenantFilter() {
+    when(properties.getTenantChecks().isEnabled()).thenReturn(true);
+    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(false);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
-    cleaner.execute(stageContext);
+    kongModuleRouteCleaner.execute(stageContext);
 
     verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
-    verifyNoInteractions(entitlementModuleService);
+  }
+
+  @Test
+  void execute_positive_tenantChecksEnabled_lastTenant_deletesServiceAndRoutes() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
+
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
+
+    kongModuleRouteCleaner.execute(stageContext);
+
+    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
+    verify(kongGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
@@ -126,22 +127,6 @@ class KongModuleRouteCleanerTest {
     kongModuleRouteCleaner.execute(stageContext);
 
     verifyNoInteractions(kongGatewayService, entitlementModuleService);
-  }
-
-  @Test
-  void execute_positive_lastTenant_deleteServiceRoutesThrowsNoSuchElement() {
-    when(entitlementModuleService.getModuleEntitlements(MODULE_ID, 2, 0))
-      .thenReturn(new Entitlements().totalRecords(1));
-    org.mockito.Mockito.doThrow(new NoSuchElementException())
-      .when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-
-    var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
-
-    kongModuleRouteCleaner.execute(stageContext);
-
-    verify(entitlementModuleService).getModuleEntitlements(MODULE_ID, 2, 0);
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-    verify(kongGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
@@ -165,21 +150,5 @@ class KongModuleRouteCleanerTest {
 
   private static Map<String, String> stageParams() {
     return Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-  }
-
-  private static ApiGatewayConfigurationProperties defaultProperties() {
-    return new ApiGatewayConfigurationProperties();
-  }
-
-  private static ApiGatewayConfigurationProperties propertiesWithTenantChecks() {
-    var props = new ApiGatewayConfigurationProperties();
-    props.getTenantChecks().setEnabled(true);
-    return props;
-  }
-
-  private static ApiGatewayConfigurationProperties propertiesWithoutRouteManagement() {
-    var props = new ApiGatewayConfigurationProperties();
-    props.getRouteManagement().setEnabled(false);
-    return props;
   }
 }

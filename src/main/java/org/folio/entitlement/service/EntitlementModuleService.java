@@ -47,6 +47,11 @@ public class EntitlementModuleService {
     return repository.existsByModuleId(moduleId);
   }
 
+  @Transactional(readOnly = true)
+  public boolean isNoOtherEntitlementExist(String moduleId, UUID tenantId) {
+    return !repository.existsByModuleIdAndTenantIdNot(moduleId, tenantId);
+  }
+
   public void save(ModuleRequest moduleRequest) {
     var entity = mapper.map(moduleRequest);
     repository.save(entity);
