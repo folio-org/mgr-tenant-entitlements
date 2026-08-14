@@ -160,6 +160,21 @@ class KongModuleRouteCreatorTest {
   }
 
   @Test
+  void cancel_positive_routeManagementEnabled_deleteServiceRoutesFails() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
+    doThrow(new RuntimeException("kong error")).when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
+
+    var stageContext = moduleStageContext(FLOW_STAGE_ID,
+      moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
+
+    assertThatCode(() -> kongModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
+
+    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
+    verify(kongGatewayService).deleteService(MODULE_ID);
+  }
+
+  @Test
   void cancel_positive_routeManagementEnabled_deleteServiceFails() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);

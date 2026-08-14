@@ -72,8 +72,8 @@ public class KongModuleRouteCreator extends ModuleDatabaseLoggingStage {
   private void deleteServiceRoutesQuietly(String moduleId) {
     try {
       kongGatewayService.deleteServiceRoutes(moduleId);
-    } catch (NoSuchElementException e) {
-      log.error("Kong service not found when deleting routes, skipping: moduleId = {}", moduleId);
+    } catch (Exception e) {
+      log.error("Failed to delete Kong service routes, skipping: moduleId = {}, error = {}", moduleId, e.getMessage());
     }
   }
 
