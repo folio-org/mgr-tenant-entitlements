@@ -3,7 +3,6 @@ package org.folio.entitlement.integration.kong;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DISCOVERY;
@@ -206,7 +205,7 @@ class KongModuleRouteCreatorTest {
   }
 
   @Test
-  void cancel_negative_tenantChecksEnabled_removeTenantThrowsException() {
+  void cancel_positive_tenantChecksEnabled_removeTenantThrowsException() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(properties.getTenantChecks().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(true);
@@ -216,9 +215,9 @@ class KongModuleRouteCreatorTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
-    assertThatThrownBy(() -> kongModuleRouteCreator.cancel(stageContext))
-      .isInstanceOf(RuntimeException.class)
-      .hasMessage("kong error");
+    kongModuleRouteCreator.cancel(stageContext);
+
+    verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
   @Test

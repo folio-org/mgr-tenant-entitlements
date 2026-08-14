@@ -26,8 +26,7 @@ public class KongModuleRouteCleaner extends ModuleDatabaseLoggingStage {
     var moduleId = context.getModuleId();
 
     if (properties.getTenantChecks().isEnabled()) {
-      kongGatewayService.removeTenantFromModuleRoutes(moduleId, context.getTenantName());
-      log.debug("Removed tenant from Kong routes: moduleId = {}, tenant = {}", moduleId, context.getTenantName());
+      removeTenantFromModuleRoutesQuietly(moduleId, context.getTenantName());
       return;
     }
 
@@ -60,6 +59,15 @@ public class KongModuleRouteCleaner extends ModuleDatabaseLoggingStage {
       kongGatewayService.deleteService(moduleId);
     } catch (Exception e) {
       log.debug("Failed to delete Kong service, skipping: moduleId = {}", moduleId);
+    }
+  }
+
+  private void removeTenantFromModuleRoutesQuietly(String moduleId, String tenantName) {
+    try {
+      kongGatewayService.removeTenantFromModuleRoutes(moduleId, tenantName);
+      log.debug("Removed tenant from Kong routes: moduleId = {}, tenant = {}", moduleId, tenantName);
+    } catch (Exception e) {
+      log.error("Failed to remove tenant from Kong routes, skipping: moduleId = {}, tenant = {}", moduleId, tenantName);
     }
   }
 }
