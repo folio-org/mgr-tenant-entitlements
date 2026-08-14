@@ -22,7 +22,6 @@ import org.springframework.web.client.HttpClientErrorException;
 @TestPropertySource(properties = {
   "application.kong.enabled=true",
   "application.keycloak.enabled=false",
-  "application.okapi.enabled=false"
 })
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 class KongRouteManagementIT extends BaseIntegrationTest {

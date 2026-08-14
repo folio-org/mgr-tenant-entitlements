@@ -1,5 +1,6 @@
 package org.folio.entitlement.integration.kong;
 
+import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
@@ -33,7 +34,12 @@ public class KongModuleRouteCleaner extends ModuleDatabaseLoggingStage {
   }
 
   private void deleteServiceAndRoutes(String moduleId) {
-    kongGatewayService.deleteServiceRoutes(moduleId);
+    try {
+      kongGatewayService.deleteServiceRoutes(moduleId);
+    } catch (NoSuchElementException e) {
+      log.debug("Kong service already absent, skipping cleanup: moduleId = {}", moduleId);
+      return;
+    }
     kongGatewayService.deleteService(moduleId);
     log.debug("Deleted Kong service and routes for last-entitled module: moduleId = {}", moduleId);
   }

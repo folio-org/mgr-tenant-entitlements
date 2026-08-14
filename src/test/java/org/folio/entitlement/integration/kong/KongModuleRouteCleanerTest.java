@@ -2,6 +2,7 @@ package org.folio.entitlement.integration.kong;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
@@ -12,6 +13,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -19,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementModuleService;
@@ -127,6 +130,19 @@ class KongModuleRouteCleanerTest {
     kongModuleRouteCleaner.execute(stageContext);
 
     verifyNoInteractions(kongGatewayService, entitlementModuleService);
+  }
+
+  @Test
+  void execute_positive_lastTenant_serviceNotFound_skipsCleanup() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
+    doThrow(new NoSuchElementException()).when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
+
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
+
+    assertThatCode(() -> kongModuleRouteCleaner.execute(stageContext)).doesNotThrowAnyException();
+
+    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
   }
 
   @Test
