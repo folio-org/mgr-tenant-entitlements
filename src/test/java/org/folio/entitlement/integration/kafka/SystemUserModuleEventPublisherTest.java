@@ -85,7 +85,7 @@ class SystemUserModuleEventPublisherTest {
     var flowParameters = moduleFlowParameters(request, moduleDescriptor);
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
 
-    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    var systemUserEvent = systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
@@ -105,7 +105,7 @@ class SystemUserModuleEventPublisherTest {
     var flowParameters = moduleFlowParameters(request, moduleDescriptor);
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
 
-    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    var systemUserEvent = systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
@@ -145,8 +145,8 @@ class SystemUserModuleEventPublisherTest {
       PARAM_APPLICATION_ID, APPLICATION_ID,
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
-    var v1UserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
-    var v2UserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.v2.entities.post"));
+    var v1UserEvent = systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"));
+    var v2UserEvent = systemUserEvent(MODULE_ID_V2, MODULE_NAME, List.of("foo.v2.entities.post"));
 
     when(systemUserEventProvider.getSystemUserEvent(v1ModuleDescriptor)).thenReturn(of(v1UserEvent));
     when(systemUserEventProvider.getSystemUserEvent(v2ModuleDescriptor)).thenReturn(of(v2UserEvent));
@@ -157,8 +157,8 @@ class SystemUserModuleEventPublisherTest {
 
     var expectedResourceEvent = ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("System user")
-      .newValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.v2.entities.post")))
-      .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
+      .newValue(systemUserEvent(MODULE_ID_V2, MODULE_NAME, List.of("foo.v2.entities.post")))
+      .oldValue(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post")))
       .build();
 
     verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_NAME,
@@ -191,7 +191,7 @@ class SystemUserModuleEventPublisherTest {
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
 
-    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    var systemUserEvent = systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
@@ -201,7 +201,7 @@ class SystemUserModuleEventPublisherTest {
 
     var expectedResourceEvent = ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("System user")
-      .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
+      .oldValue(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post")))
       .build();
 
     verify(kafkaEventPublisher).send(systemUserTenantTopic(), TENANT_NAME,
@@ -237,6 +237,10 @@ class SystemUserModuleEventPublisherTest {
     userDescriptor.setType(SYS_USER_TYPE);
     userDescriptor.setPermissions(List.of(permissions));
     return userDescriptor;
+  }
+
+  private static SystemUserEvent systemUserEvent(String moduleId, String moduleName, List<String> permissions) {
+    return SystemUserEvent.of(moduleId, moduleName, SYS_USER_TYPE, permissions);
   }
 
   private static ResourceEvent<SystemUserEvent> resourceEvent(SystemUserEvent entry) {

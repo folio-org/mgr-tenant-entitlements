@@ -8,6 +8,7 @@
   mod-authtoken security mode is no longer reachable. The `okapi.proxy.tenants.install.post`
   subPermissions were dropped from the module descriptor (MGRENTITLE-111)
 * Remove the application count limit from reinstall endpoint (MGRENTITLE-172)
+* Include the full module ID in system-user Kafka events for downstream entitlement processing tracking (MGRENTITLE-192)
 
 ---
 
