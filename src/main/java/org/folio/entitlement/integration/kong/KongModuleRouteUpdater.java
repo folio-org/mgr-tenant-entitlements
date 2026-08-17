@@ -3,7 +3,6 @@ package org.folio.entitlement.integration.kong;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;
@@ -26,10 +25,8 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
     if (context.getModuleType() == ModuleType.UI_MODULE) {
       return;
     }
-
     var moduleId = context.getModuleId();
     var location = context.getModuleDiscovery();
-
     if (location == null) {
       // deprecated module: removed from new app version, no discovery URL available
       if (entitlementModuleService.isNoOtherEntitlementExist(moduleId, context.getTenantId())
@@ -38,7 +35,6 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
       }
       return;
     }
-
     updateRoutes(moduleId, location, context);
     deleteUnusedInstalledModuleService(context);
   }
@@ -46,25 +42,20 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
   private void updateRoutes(String moduleId, String location, ModuleStageContext context) {
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
-
     kongGatewayService.upsertService(new Service().name(moduleId).url(location));
     log.debug("Upserted Kong service: moduleId = {}", moduleId);
-
     if (!isModuleUpdated(moduleDescriptor, installedModuleDescriptor)) {
       return;
     }
-
     if (properties.getTenantChecks().isEnabled() && installedModuleDescriptor != null) {
       kongGatewayService.removeTenantFromModuleRoutes(installedModuleDescriptor.getId(), context.getTenantName());
       log.debug("Removed tenant from Kong routes for installed module: moduleId = {}, tenant = {}",
         installedModuleDescriptor.getId(), context.getTenantName());
     }
-
     if (properties.getRouteManagement().isEnabled() && !entitlementModuleService.isEntitlementExist(moduleId)) {
       kongGatewayService.addRoutes(List.of(moduleDescriptor));
       log.debug("Added Kong routes for module: moduleId = {}", moduleId);
     }
-
     if (properties.getTenantChecks().isEnabled()) {
       kongGatewayService.addTenantToModuleRoutes(moduleId, context.getTenantName());
       log.debug("Added tenant to Kong routes: moduleId = {}, tenant = {}", moduleId, context.getTenantName());
@@ -83,29 +74,12 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
     if (entitlementModuleService.isNoOtherEntitlementExist(installedModuleId, context.getTenantId())
         && properties.getRouteManagement().isEnabled()) {
       deleteServiceAndRoutes(installedModuleId);
-      log.debug("Deleted Kong service and routes for old module version: moduleId = {}", installedModuleId);
     }
   }
 
   private void deleteServiceAndRoutes(String moduleId) {
-    deleteServiceRoutesQuietly(moduleId);
-    deleteServiceQuietly(moduleId);
+    kongGatewayService.deleteServiceRoutes(moduleId);
+    kongGatewayService.deleteService(moduleId);
     log.debug("Deleted Kong service and routes for deprecated module: moduleId = {}", moduleId);
-  }
-
-  private void deleteServiceRoutesQuietly(String moduleId) {
-    try {
-      kongGatewayService.deleteServiceRoutes(moduleId);
-    } catch (NoSuchElementException e) {
-      log.debug("Kong service not found when deleting routes, skipping: moduleId = {}", moduleId);
-    }
-  }
-
-  private void deleteServiceQuietly(String moduleId) {
-    try {
-      kongGatewayService.deleteService(moduleId);
-    } catch (Exception e) {
-      log.debug("Failed to delete Kong service, skipping: moduleId = {}", moduleId);
-    }
   }
 }

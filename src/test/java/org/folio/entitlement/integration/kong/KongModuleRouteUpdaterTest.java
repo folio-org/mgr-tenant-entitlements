@@ -243,6 +243,25 @@ class KongModuleRouteUpdaterTest {
   }
 
   @Test
+  void execute_positive_withInstalledModule_lastTenant_routeManagementDisabled_noDeleteOldService() {
+    var updater = new KongModuleRouteUpdater(kongGatewayService,
+      propertiesWithoutRouteManagement(), entitlementModuleService);
+    updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
+
+    when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(true);
+
+    var descriptor = moduleDescriptor();
+    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID,
+      moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
+
+    updater.execute(stageContext);
+
+    verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
+    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+  }
+
+  @Test
   void execute_positive_routeManagementEnabled_entitlementExists_skipsRouteCreation() {
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(true);
 
