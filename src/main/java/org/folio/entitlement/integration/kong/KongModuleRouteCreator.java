@@ -1,7 +1,6 @@
 package org.folio.entitlement.integration.kong;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.domain.model.ModuleStageContext;

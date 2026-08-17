@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.kong;
 
+import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdated;
+
 import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
@@ -40,16 +42,25 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
   }
 
   private void updateRoutes(String moduleId, String location, ModuleStageContext context) {
-    if (properties.getRouteManagement().isEnabled()) {
-      deleteServiceRoutesQuietly(moduleId);
-    }
+    var moduleDescriptor = context.getModuleDescriptor();
+    var installedModuleDescriptor = context.getInstalledModuleDescriptor();
 
     kongGatewayService.upsertService(new Service().name(moduleId).url(location));
     log.debug("Upserted Kong service: moduleId = {}", moduleId);
 
+    if (!isModuleUpdated(moduleDescriptor, installedModuleDescriptor)) {
+      return;
+    }
+
+    if (properties.getTenantChecks().isEnabled() && installedModuleDescriptor != null) {
+      kongGatewayService.removeTenantFromModuleRoutes(installedModuleDescriptor.getId(), context.getTenantName());
+      log.debug("Removed tenant from Kong routes for installed module: moduleId = {}, tenant = {}",
+        installedModuleDescriptor.getId(), context.getTenantName());
+    }
+
     if (properties.getRouteManagement().isEnabled()) {
-      kongGatewayService.addRoutes(List.of(context.getModuleDescriptor()));
-      log.debug("Added Kong routes for module: moduleId = {}", moduleId);
+      kongGatewayService.updateRoutes(List.of(moduleDescriptor));
+      log.debug("Updated Kong routes for module: moduleId = {}", moduleId);
     }
 
     if (properties.getTenantChecks().isEnabled()) {

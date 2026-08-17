@@ -4,6 +4,7 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DISCOVERY;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
@@ -21,7 +22,6 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -44,6 +44,7 @@ class KongModuleRouteUpdaterTest {
 
   private static final String MODULE_ID = "mod-foo-1.0.0";
   private static final String MODULE_LOCATION = "http://mod-foo:8080";
+  private static final String INSTALLED_MODULE_ID = "mod-foo-0.9.0";
 
   @Mock private KongGatewayService kongGatewayService;
   @Mock private EntitlementModuleService entitlementModuleService;
@@ -71,9 +72,8 @@ class KongModuleRouteUpdaterTest {
 
     kongModuleRouteUpdater.execute(stageContext);
 
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
+    verify(kongGatewayService).updateRoutes(List.of(descriptor));
   }
 
   @Test
@@ -87,9 +87,8 @@ class KongModuleRouteUpdaterTest {
 
     updater.execute(stageContext);
 
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
+    verify(kongGatewayService).updateRoutes(List.of(descriptor));
     verify(kongGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
@@ -116,21 +115,6 @@ class KongModuleRouteUpdaterTest {
     kongModuleRouteUpdater.execute(stageContext);
 
     verifyNoInteractions(kongGatewayService);
-  }
-
-  @Test
-  void execute_positive_deleteServiceRoutesThrowsNoSuchElement() {
-    var descriptor = moduleDescriptor();
-    var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
-
-    org.mockito.Mockito.doThrow(new NoSuchElementException())
-      .when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-
-    kongModuleRouteUpdater.execute(stageContext);
-
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
   }
 
   @Test
@@ -181,6 +165,39 @@ class KongModuleRouteUpdaterTest {
   }
 
   @Test
+  void execute_positive_moduleNotUpdated_onlyUpsertsService() {
+    var descriptor = moduleDescriptor();
+    var installed = moduleDescriptor();
+
+    var stageContext = moduleStageContext(FLOW_STAGE_ID,
+      moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
+
+    kongModuleRouteUpdater.execute(stageContext);
+
+    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+  }
+
+  @Test
+  void execute_positive_tenantChecksEnabled_withInstalledModule_removesTenantFromOldRoutes() {
+    var updater = new KongModuleRouteUpdater(kongGatewayService,
+      propertiesWithTenantChecks(), entitlementModuleService);
+    updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
+
+    var descriptor = moduleDescriptor();
+    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+
+    var stageContext = moduleStageContext(FLOW_STAGE_ID,
+      moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
+
+    updater.execute(stageContext);
+
+    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(kongGatewayService).removeTenantFromModuleRoutes(INSTALLED_MODULE_ID, TENANT_NAME);
+    verify(kongGatewayService).updateRoutes(List.of(descriptor));
+    verify(kongGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
+  }
+
+  @Test
   void getStageName_positive() {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(moduleDescriptor()), emptyMap());
 
@@ -202,6 +219,13 @@ class KongModuleRouteUpdaterTest {
   private static Map<?, ?> moduleFlowWithDiscovery(ModuleDescriptor descriptor) {
     var params = new HashMap<Object, Object>(moduleFlowParameters(entitlementRequest(), MODULE, descriptor));
     params.put(PARAM_MODULE_DISCOVERY, MODULE_LOCATION);
+    return params;
+  }
+
+  private static Map<?, ?> moduleFlowWithDiscoveryAndInstalled(ModuleDescriptor descriptor,
+      ModuleDescriptor installed) {
+    var params = new HashMap<Object, Object>(moduleFlowWithDiscovery(descriptor));
+    params.put(PARAM_INSTALLED_MODULE_DESCRIPTOR, installed);
     return params;
   }
 
