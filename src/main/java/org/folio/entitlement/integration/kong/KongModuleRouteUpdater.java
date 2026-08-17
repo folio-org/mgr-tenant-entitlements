@@ -32,13 +32,15 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
 
     if (location == null) {
       // deprecated module: removed from new app version, no discovery URL available
-      if (isLastEntitledTenant(moduleId) && properties.getRouteManagement().isEnabled()) {
+      if (entitlementModuleService.isNoOtherEntitlementExist(moduleId, context.getTenantId())
+          && properties.getRouteManagement().isEnabled()) {
         deleteServiceAndRoutes(moduleId);
       }
       return;
     }
 
     updateRoutes(moduleId, location, context);
+    deleteUnusedInstalledModuleService(context);
   }
 
   private void updateRoutes(String moduleId, String location, ModuleStageContext context) {
@@ -69,8 +71,20 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
     }
   }
 
-  private boolean isLastEntitledTenant(String moduleId) {
-    return entitlementModuleService.getModuleEntitlements(moduleId, 2, 0).getTotalRecords() <= 1;
+  private void deleteUnusedInstalledModuleService(ModuleStageContext context) {
+    var installedModuleDescriptor = context.getInstalledModuleDescriptor();
+    if (installedModuleDescriptor == null) {
+      return;
+    }
+    var installedModuleId = installedModuleDescriptor.getId();
+    if (installedModuleId.equals(context.getModuleId())) {
+      return;
+    }
+    if (entitlementModuleService.isNoOtherEntitlementExist(installedModuleId, context.getTenantId())
+        && properties.getRouteManagement().isEnabled()) {
+      deleteServiceAndRoutes(installedModuleId);
+      log.debug("Deleted Kong service and routes for old module version: moduleId = {}", installedModuleId);
+    }
   }
 
   private void deleteServiceAndRoutes(String moduleId) {

@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
-import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
@@ -125,30 +124,28 @@ class KongModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_deprecatedModule_lastTenant_routeManagementEnabled() {
-    when(entitlementModuleService.getModuleEntitlements(MODULE_ID, 2, 0))
-      .thenReturn(new Entitlements().totalRecords(1));
+    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowParameters(entitlementRequest(), MODULE, moduleDescriptor()), stageParams());
 
     kongModuleRouteUpdater.execute(stageContext);
 
-    verify(entitlementModuleService).getModuleEntitlements(MODULE_ID, 2, 0);
+    verify(entitlementModuleService).isNoOtherEntitlementExist(MODULE_ID, TENANT_ID);
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
   void execute_positive_deprecatedModule_notLastTenant_noOp() {
-    when(entitlementModuleService.getModuleEntitlements(MODULE_ID, 2, 0))
-      .thenReturn(new Entitlements().totalRecords(2));
+    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(false);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowParameters(entitlementRequest(), MODULE, moduleDescriptor()), stageParams());
 
     kongModuleRouteUpdater.execute(stageContext);
 
-    verify(entitlementModuleService).getModuleEntitlements(MODULE_ID, 2, 0);
+    verify(entitlementModuleService).isNoOtherEntitlementExist(MODULE_ID, TENANT_ID);
     verifyNoInteractions(kongGatewayService);
   }
 
@@ -158,15 +155,14 @@ class KongModuleRouteUpdaterTest {
       propertiesWithoutRouteManagement(), entitlementModuleService);
     updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
-    when(entitlementModuleService.getModuleEntitlements(MODULE_ID, 2, 0))
-      .thenReturn(new Entitlements().totalRecords(1));
+    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowParameters(entitlementRequest(), MODULE, moduleDescriptor()), stageParams());
 
     updater.execute(stageContext);
 
-    verify(entitlementModuleService).getModuleEntitlements(MODULE_ID, 2, 0);
+    verify(entitlementModuleService).isNoOtherEntitlementExist(MODULE_ID, TENANT_ID);
     verifyNoInteractions(kongGatewayService);
   }
 
@@ -185,6 +181,7 @@ class KongModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_tenantChecksEnabled_withInstalledModule_removesTenantFromOldRoutes() {
+    when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(false);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
     var updater = new KongModuleRouteUpdater(kongGatewayService,
@@ -199,11 +196,50 @@ class KongModuleRouteUpdaterTest {
 
     updater.execute(stageContext);
 
+    verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
     verify(kongGatewayService).removeTenantFromModuleRoutes(INSTALLED_MODULE_ID, TENANT_NAME);
     verify(kongGatewayService).addRoutes(List.of(descriptor));
     verify(kongGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
+  }
+
+  @Test
+  void execute_positive_withInstalledModule_lastTenant_deletesOldService() {
+    when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(true);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
+
+    var descriptor = moduleDescriptor();
+    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID,
+      moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
+
+    kongModuleRouteUpdater.execute(stageContext);
+
+    verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
+    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
+    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(kongGatewayService).addRoutes(List.of(descriptor));
+    verify(kongGatewayService).deleteServiceRoutes(INSTALLED_MODULE_ID);
+    verify(kongGatewayService).deleteService(INSTALLED_MODULE_ID);
+  }
+
+  @Test
+  void execute_positive_withInstalledModule_notLastTenant_noOpOnOldService() {
+    when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(false);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
+
+    var descriptor = moduleDescriptor();
+    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID,
+      moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
+
+    kongModuleRouteUpdater.execute(stageContext);
+
+    verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
+    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
+    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(kongGatewayService).addRoutes(List.of(descriptor));
   }
 
   @Test
