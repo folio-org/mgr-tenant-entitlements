@@ -58,9 +58,9 @@ public class KongModuleRouteUpdater extends ModuleDatabaseLoggingStage {
         installedModuleDescriptor.getId(), context.getTenantName());
     }
 
-    if (properties.getRouteManagement().isEnabled()) {
-      kongGatewayService.updateRoutes(List.of(moduleDescriptor));
-      log.debug("Updated Kong routes for module: moduleId = {}", moduleId);
+    if (properties.getRouteManagement().isEnabled() && !entitlementModuleService.isEntitlementExist(moduleId)) {
+      kongGatewayService.addRoutes(List.of(moduleDescriptor));
+      log.debug("Added Kong routes for module: moduleId = {}", moduleId);
     }
 
     if (properties.getTenantChecks().isEnabled()) {

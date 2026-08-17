@@ -67,17 +67,22 @@ class KongModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_routeManagementEnabled_tenantChecksDisabled() {
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
+
     var descriptor = moduleDescriptor();
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
 
     kongModuleRouteUpdater.execute(stageContext);
 
+    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).updateRoutes(List.of(descriptor));
+    verify(kongGatewayService).addRoutes(List.of(descriptor));
   }
 
   @Test
   void execute_positive_tenantChecksEnabled() {
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
+
     var updater = new KongModuleRouteUpdater(kongGatewayService,
       propertiesWithTenantChecks(), entitlementModuleService);
     updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
@@ -87,8 +92,9 @@ class KongModuleRouteUpdaterTest {
 
     updater.execute(stageContext);
 
+    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).updateRoutes(List.of(descriptor));
+    verify(kongGatewayService).addRoutes(List.of(descriptor));
     verify(kongGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
@@ -179,6 +185,8 @@ class KongModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_tenantChecksEnabled_withInstalledModule_removesTenantFromOldRoutes() {
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
+
     var updater = new KongModuleRouteUpdater(kongGatewayService,
       propertiesWithTenantChecks(), entitlementModuleService);
     updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
@@ -191,10 +199,24 @@ class KongModuleRouteUpdaterTest {
 
     updater.execute(stageContext);
 
+    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
     verify(kongGatewayService).removeTenantFromModuleRoutes(INSTALLED_MODULE_ID, TENANT_NAME);
-    verify(kongGatewayService).updateRoutes(List.of(descriptor));
+    verify(kongGatewayService).addRoutes(List.of(descriptor));
     verify(kongGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
+  }
+
+  @Test
+  void execute_positive_routeManagementEnabled_entitlementExists_skipsRouteCreation() {
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(true);
+
+    var descriptor = moduleDescriptor();
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
+
+    kongModuleRouteUpdater.execute(stageContext);
+
+    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
+    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
   }
 
   @Test
