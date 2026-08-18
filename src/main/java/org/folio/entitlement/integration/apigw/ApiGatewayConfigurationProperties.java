@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.kong;
+package org.folio.entitlement.integration.apigw;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.kong;
+package org.folio.entitlement.integration.apigw;
 
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.tools.kong.service.KongGatewayService;
@@ -10,23 +10,23 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConditionalOnProperty(name = "application.apigw.enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(ApiGatewayConfigurationProperties.class)
-public class KongConfiguration {
+public class ApiGatewayConfiguration {
 
   @Bean
-  public KongModuleRouteCreator kongModuleRouteCreator(KongGatewayService kongGatewayService,
+  public ApiGatewayModuleRouteCreator apiGatewayModuleRouteCreator(KongGatewayService kongGatewayService,
     ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
-    return new KongModuleRouteCreator(kongGatewayService, properties, entitlementModuleService);
+    return new ApiGatewayModuleRouteCreator(kongGatewayService, properties, entitlementModuleService);
   }
 
   @Bean
-  public KongModuleRouteUpdater kongModuleRouteUpdater(KongGatewayService kongGatewayService,
+  public ApiGatewayModuleRouteUpdater apiGatewayModuleRouteUpdater(KongGatewayService kongGatewayService,
     ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
-    return new KongModuleRouteUpdater(kongGatewayService, properties, entitlementModuleService);
+    return new ApiGatewayModuleRouteUpdater(kongGatewayService, properties, entitlementModuleService);
   }
 
   @Bean
-  public KongModuleRouteCleaner kongModuleRouteCleaner(KongGatewayService kongGatewayService,
+  public ApiGatewayModuleRouteCleaner apiGatewayModuleRouteCleaner(KongGatewayService kongGatewayService,
     ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
-    return new KongModuleRouteCleaner(kongGatewayService, properties, entitlementModuleService);
+    return new ApiGatewayModuleRouteCleaner(kongGatewayService, properties, entitlementModuleService);
   }
 }
