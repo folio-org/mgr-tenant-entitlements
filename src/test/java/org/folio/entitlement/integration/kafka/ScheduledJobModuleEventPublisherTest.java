@@ -26,12 +26,14 @@ import static org.folio.entitlement.support.TestValues.moduleStageContext;
 import static org.folio.integration.kafka.model.ResourceEventType.CREATE;
 import static org.folio.integration.kafka.model.ResourceEventType.DELETE;
 import static org.folio.integration.kafka.model.ResourceEventType.UPDATE;
-import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
@@ -45,7 +47,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -56,13 +59,18 @@ class ScheduledJobModuleEventPublisherTest {
   private static final String MODULE_ID = "mod-foo-1.0.0";
   private static final String MODULE_ID_V2 = "mod-foo-2.0.0";
 
-  @InjectMocks private ScheduledJobModuleEventPublisher moduleEventPublisher;
+  private ScheduledJobModuleEventPublisher moduleEventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
   @Mock private TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
+  @Captor private ArgumentCaptor<ResourceEvent<ScheduledTimers>> eventCaptor;
+  @Captor private ArgumentCaptor<String> messageKeyCaptor;
 
   @BeforeEach
   void setUp() {
     System.setProperty("env", "test-env");
+    moduleEventPublisher = new ScheduledJobModuleEventPublisher(true);
+    moduleEventPublisher.setKafkaEventPublisher(kafkaEventPublisher);
+    moduleEventPublisher.setTenantEntitlementKafkaProperties(tenantEntitlementKafkaProperties);
   }
 
   @AfterEach
@@ -73,58 +81,56 @@ class ScheduledJobModuleEventPublisherTest {
 
   @Test
   void execute_positive() {
-    var moduleDescriptor = fooModuleDescriptor();
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
-    var flowParameters = moduleFlowParameters(request, moduleDescriptor);
+    var flowParameters = moduleFlowParameters(request, fooModuleDescriptor());
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+    stageContext.withStageId(UUID.randomUUID());
 
+    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
-    var expectedNewHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
+    var expectedEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
-      .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, expectedNewHandlers))
+      .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, asList(fooTimerRoutingEntry(), barTimerRoutingEntry())))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_NAME,
-      fooTimerEvent);
+    assertThat(eventCaptor.getValue()).usingRecursiveComparison().ignoringFields("id").isEqualTo(expectedEvent);
+    assertThat(messageKeyCaptor.getValue()).isEqualTo(TENANT_NAME);
   }
 
   @Test
   void execute_positive_useTenantCollectionTopic() {
-    var moduleDescriptor = fooModuleDescriptor();
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
-    var flowParameters = moduleFlowParameters(request, moduleDescriptor);
+    var flowParameters = moduleFlowParameters(request, fooModuleDescriptor());
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+    stageContext.withStageId(UUID.randomUUID());
 
+    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantCollectionTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
 
     moduleEventPublisher.execute(stageContext);
 
-    var expectedNewHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
+    var expectedEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(CREATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
-      .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, expectedNewHandlers))
+      .newValue(ScheduledTimers.of(MODULE_ID, APPLICATION_ID, asList(fooTimerRoutingEntry(), barTimerRoutingEntry())))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantCollectionTopic(), TENANT_NAME,
-      fooTimerEvent);
+    assertThat(eventCaptor.getValue()).usingRecursiveComparison().ignoringFields("id").isEqualTo(expectedEvent);
+    assertThat(messageKeyCaptor.getValue()).isEqualTo(TENANT_NAME);
   }
 
   @Test
   void execute_positive_noTimerHandlers() {
-    var moduleDescriptor = new ModuleDescriptor().id(MODULE_ID);
     var request = EntitlementRequest.builder().tenantId(TENANT_ID).type(ENTITLE).build();
-    var flowParameters = moduleFlowParameters(request, moduleDescriptor);
+    var flowParameters = moduleFlowParameters(request, new ModuleDescriptor().id(MODULE_ID));
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
-
-    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
+    stageContext.withStageId(UUID.randomUUID());
 
     moduleEventPublisher.execute(stageContext);
 
-    verifyNoInteractions(kafkaEventPublisher);
+    verifyNoInteractions(kafkaEventPublisher, tenantEntitlementKafkaProperties);
   }
 
   @Test
@@ -137,20 +143,21 @@ class ScheduledJobModuleEventPublisherTest {
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+    stageContext.withStageId(UUID.randomUUID());
 
+    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
-    var expectedOldHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
+    var expectedEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(MODULE_ID_V2, APPLICATION_ID, List.of(fooTimerRoutingEntryV2())))
-      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
+      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, asList(fooTimerRoutingEntry(), barTimerRoutingEntry())))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_NAME,
-      fooTimerEvent);
+    assertThat(eventCaptor.getValue()).usingRecursiveComparison().ignoringFields("id").isEqualTo(expectedEvent);
+    assertThat(messageKeyCaptor.getValue()).isEqualTo(TENANT_NAME);
   }
 
   @Test
@@ -165,6 +172,7 @@ class ScheduledJobModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
     moduleEventPublisher.execute(stageContext);
+
     verifyNoInteractions(kafkaEventPublisher);
   }
 
@@ -177,19 +185,20 @@ class ScheduledJobModuleEventPublisherTest {
       PARAM_ENTITLED_APPLICATION_ID, ENTITLED_APPLICATION_ID,
       PARAM_APPLICATION_FLOW_ID, APPLICATION_FLOW_ID);
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+    stageContext.withStageId(UUID.randomUUID());
 
+    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
-    var expectedOldHandlers = asList(fooTimerRoutingEntry(), barTimerRoutingEntry());
-    var fooTimerEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
+    var expectedEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("Scheduled Job")
-      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, expectedOldHandlers))
+      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, asList(fooTimerRoutingEntry(), barTimerRoutingEntry())))
       .build();
 
-    verify(kafkaEventPublisher).send(scheduledJobsTenantTopic(), TENANT_NAME,
-      fooTimerEvent);
+    assertThat(eventCaptor.getValue()).usingRecursiveComparison().ignoringFields("id").isEqualTo(expectedEvent);
+    assertThat(messageKeyCaptor.getValue()).isEqualTo(TENANT_NAME);
   }
 
   @Test
