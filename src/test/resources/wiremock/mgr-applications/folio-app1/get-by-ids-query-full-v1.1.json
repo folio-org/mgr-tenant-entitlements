@@ -41,85 +41,18 @@
                   "version": "1.0.0",
                   "handlers": [
                     {
-                      "methods": [
-                        "POST"
-                      ],
-                      "pathPattern": "/folio-module1/events",
-                      "permissionsRequired": [
-                        "folio-module1.events.item.post"
-                      ]
+                      "methods": ["POST"],
+                      "pathPattern": "/folio-module1/events"
                     },
                     {
-                      "methods": [
-                        "GET"
-                      ],
-                      "pathPattern": "/folio-module1/events",
-                      "permissionsRequired": [
-                        "folio-module1.events.collection.get"
-                      ]
+                      "methods": ["GET"],
+                      "pathPattern": "/folio-module1/events"
                     },
                     {
-                      "methods": [
-                        "GET"
-                      ],
-                      "pathPattern": "/folio-module1/events/{id}",
-                      "permissionsRequired": [
-                        "folio-module1.events.item.get"
-                      ]
+                      "methods": ["GET"],
+                      "pathPattern": "/folio-module1/events/{id}"
                     }
                   ]
-                },
-                {
-                  "id": "_tenant",
-                  "version": "2.0",
-                  "interfaceType": "system",
-                  "handlers": [
-                    {
-                      "methods": [
-                        "POST"
-                      ],
-                      "pathPattern": "/_/tenant"
-                    },
-                    {
-                      "methods": [
-                        "GET",
-                        "DELETE"
-                      ],
-                      "pathPattern": "/_/tenant/{id}"
-                    }
-                  ]
-                },
-                {
-                  "id": "_timer",
-                  "version": "1.0",
-                  "interfaceType": "system",
-                  "handlers": [
-                    {
-                      "methods": [
-                        "POST"
-                      ],
-                      "pathPattern": "/folio-module1/events",
-                      "unit": "day",
-                      "delay": "5"
-                    }
-                  ]
-                }
-              ],
-              "permissionSets": [
-                {
-                  "permissionName": "folio-module1.events.item.post",
-                  "displayName": "Folio Module #1 - Save an event",
-                  "description": "Save folio-module1 event"
-                },
-                {
-                  "permissionName": "folio-module1.events.collection.get",
-                  "displayName": "Folio Module #1 - Get list of events by query",
-                  "description": "Get list of folio-module1 events by query"
-                },
-                {
-                  "permissionName": "folio-module1.events.item.get",
-                  "displayName": "Folio Module #1 - Get event by id",
-                  "description": "Get folio-module1 event by id"
                 }
               ]
             }

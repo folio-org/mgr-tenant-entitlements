@@ -41,70 +41,18 @@
                   "version": "1.0.0",
                   "handlers": [
                     {
-                      "methods": [
-                        "POST"
-                      ],
-                      "pathPattern": "/folio-module2/events",
-                      "permissionsRequired": [
-                        "folio-module2.events.item.post"
-                      ]
+                      "methods": ["POST"],
+                      "pathPattern": "/folio-module2/events"
                     },
                     {
-                      "methods": [
-                        "GET"
-                      ],
-                      "pathPattern": "/folio-module2/events",
-                      "permissionsRequired": [
-                        "folio-module2.events.collection.get"
-                      ]
+                      "methods": ["GET"],
+                      "pathPattern": "/folio-module2/events"
                     },
                     {
-                      "methods": [
-                        "GET"
-                      ],
-                      "pathPattern": "/folio-module2/events/{id}",
-                      "permissionsRequired": [
-                        "folio-module2.events.item.get"
-                      ]
+                      "methods": ["GET"],
+                      "pathPattern": "/folio-module2/events/{id}"
                     }
                   ]
-                },
-                {
-                  "id": "_tenant",
-                  "version": "2.0",
-                  "interfaceType": "system",
-                  "handlers": [
-                    {
-                      "methods": [
-                        "POST"
-                      ],
-                      "pathPattern": "/_/tenant"
-                    },
-                    {
-                      "methods": [
-                        "GET",
-                        "DELETE"
-                      ],
-                      "pathPattern": "/_/tenant/{id}"
-                    }
-                  ]
-                }
-              ],
-              "permissionSets": [
-                {
-                  "permissionName": "folio-module2.events.item.post",
-                  "displayName": "Folio Module #2 - Save an event",
-                  "description": "Save folio-module2 event"
-                },
-                {
-                  "permissionName": "folio-module2.events.collection.get",
-                  "displayName": "Folio Module #2 - Get list of events by query",
-                  "description": "Get list of folio-module2 events by query"
-                },
-                {
-                  "permissionName": "folio-module2.events.item.get",
-                  "displayName": "Folio Module #2 - Get event by id",
-                  "description": "Get folio-module2 event by id"
                 }
               ]
             }
