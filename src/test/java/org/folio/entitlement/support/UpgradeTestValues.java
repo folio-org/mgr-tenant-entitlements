@@ -30,7 +30,7 @@ public class UpgradeTestValues {
   public static final String FOLIO_APP6_V1_ID = "folio-app6-6.0.0";
   public static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
 
-  public static List<String> kongRoutesBeforeUpgrade() {
+  public static List<String> apiGatewayRoutesBeforeUpgrade() {
     return List.of(
       regexRouteExpression("^/folio-module1/entities/([^/]+)$", "GET"),
       exactRouteExpression("/folio-module1/entities", "POST"),
@@ -48,7 +48,7 @@ public class UpgradeTestValues {
     );
   }
 
-  public static List<String> kongRoutesAfterUpgrade() {
+  public static List<String> apiGatewayRoutesAfterUpgrade() {
     return List.of(
       regexRouteExpression("^/folio-module1/entities/([^/]+)$", "GET"),
       exactRouteExpression("/folio-module2/entities", "PUT"),

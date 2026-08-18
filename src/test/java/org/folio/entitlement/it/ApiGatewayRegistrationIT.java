@@ -20,7 +20,7 @@ import org.springframework.test.context.TestPropertySource;
   "application.apigw.tls.trust-store-password=secretpassword",
   "application.apigw.tls.trust-store-type=JKS"
 })
-class KongRegistrationIT extends BaseIntegrationTest {
+class ApiGatewayRegistrationIT extends BaseIntegrationTest {
 
   @Autowired private KongAdminClient kongAdminClient;
 

@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.kong;
+package org.folio.entitlement.integration.apigw;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,7 +39,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class KongModuleRouteUpdaterTest {
+class ApiGatewayModuleRouteUpdaterTest {
 
   private static final String MODULE_ID = "mod-foo-1.0.0";
   private static final String MODULE_LOCATION = "http://mod-foo:8080";
@@ -49,13 +49,13 @@ class KongModuleRouteUpdaterTest {
   @Mock private EntitlementModuleService entitlementModuleService;
   @Mock private ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
-  private KongModuleRouteUpdater kongModuleRouteUpdater;
+  private ApiGatewayModuleRouteUpdater apiGatewayModuleRouteUpdater;
 
   @BeforeEach
   void setUp() {
-    kongModuleRouteUpdater = new KongModuleRouteUpdater(kongGatewayService,
+    apiGatewayModuleRouteUpdater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       defaultProperties(), entitlementModuleService);
-    kongModuleRouteUpdater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
+    apiGatewayModuleRouteUpdater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
   }
 
   @AfterEach
@@ -71,7 +71,7 @@ class KongModuleRouteUpdaterTest {
     var descriptor = moduleDescriptor();
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
 
-    kongModuleRouteUpdater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
@@ -82,7 +82,7 @@ class KongModuleRouteUpdaterTest {
   void execute_positive_tenantChecksEnabled() {
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
-    var updater = new KongModuleRouteUpdater(kongGatewayService,
+    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithTenantChecks(), entitlementModuleService);
     updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
@@ -99,7 +99,7 @@ class KongModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_routeManagementDisabled() {
-    var updater = new KongModuleRouteUpdater(kongGatewayService,
+    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithoutRouteManagement(), entitlementModuleService);
     updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
@@ -117,7 +117,7 @@ class KongModuleRouteUpdaterTest {
     var flowParams = moduleFlowParameters(entitlementRequest(), UI_MODULE, descriptor);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParams, stageParams());
 
-    kongModuleRouteUpdater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verifyNoInteractions(kongGatewayService);
   }
@@ -129,7 +129,7 @@ class KongModuleRouteUpdaterTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowParameters(entitlementRequest(), MODULE, moduleDescriptor()), stageParams());
 
-    kongModuleRouteUpdater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isNoOtherEntitlementExist(MODULE_ID, TENANT_ID);
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
@@ -143,7 +143,7 @@ class KongModuleRouteUpdaterTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowParameters(entitlementRequest(), MODULE, moduleDescriptor()), stageParams());
 
-    kongModuleRouteUpdater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isNoOtherEntitlementExist(MODULE_ID, TENANT_ID);
     verifyNoInteractions(kongGatewayService);
@@ -151,7 +151,7 @@ class KongModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_deprecatedModule_lastTenant_routeManagementDisabled() {
-    var updater = new KongModuleRouteUpdater(kongGatewayService,
+    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithoutRouteManagement(), entitlementModuleService);
     updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
@@ -174,7 +174,7 @@ class KongModuleRouteUpdaterTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
 
-    kongModuleRouteUpdater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
   }
@@ -184,7 +184,7 @@ class KongModuleRouteUpdaterTest {
     when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(false);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
-    var updater = new KongModuleRouteUpdater(kongGatewayService,
+    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithTenantChecks(), entitlementModuleService);
     updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
@@ -214,7 +214,7 @@ class KongModuleRouteUpdaterTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
 
-    kongModuleRouteUpdater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
@@ -234,7 +234,7 @@ class KongModuleRouteUpdaterTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
 
-    kongModuleRouteUpdater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
@@ -244,7 +244,7 @@ class KongModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_withInstalledModule_lastTenant_routeManagementDisabled_noDeleteOldService() {
-    var updater = new KongModuleRouteUpdater(kongGatewayService,
+    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithoutRouteManagement(), entitlementModuleService);
     updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
@@ -268,7 +268,7 @@ class KongModuleRouteUpdaterTest {
     var descriptor = moduleDescriptor();
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
 
-    kongModuleRouteUpdater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
@@ -278,7 +278,8 @@ class KongModuleRouteUpdaterTest {
   void getStageName_positive() {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(moduleDescriptor()), emptyMap());
 
-    assertThat(kongModuleRouteUpdater.getStageName(stageContext)).isEqualTo(MODULE_ID + "-kongModuleRouteUpdater");
+    assertThat(apiGatewayModuleRouteUpdater.getStageName(stageContext))
+      .isEqualTo(MODULE_ID + "-apiGatewayModuleRouteUpdater");
   }
 
   private static ModuleDescriptor moduleDescriptor() {

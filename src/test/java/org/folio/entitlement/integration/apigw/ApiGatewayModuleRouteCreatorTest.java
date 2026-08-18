@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.kong;
+package org.folio.entitlement.integration.apigw;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -41,7 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class KongModuleRouteCreatorTest {
+class ApiGatewayModuleRouteCreatorTest {
 
   private static final String MODULE_ID = "mod-foo-1.0.0";
   private static final String MODULE_LOCATION = "http://mod-foo:8080";
@@ -50,12 +50,13 @@ class KongModuleRouteCreatorTest {
   @Mock private EntitlementModuleService entitlementModuleService;
 
   private ApiGatewayConfigurationProperties properties;
-  private KongModuleRouteCreator kongModuleRouteCreator;
+  private ApiGatewayModuleRouteCreator apiGatewayModuleRouteCreator;
 
   @BeforeEach
   void setUp() {
     properties = mock(ApiGatewayConfigurationProperties.class, Answers.RETURNS_DEEP_STUBS);
-    kongModuleRouteCreator = new KongModuleRouteCreator(kongGatewayService, properties, entitlementModuleService);
+    apiGatewayModuleRouteCreator = new ApiGatewayModuleRouteCreator(kongGatewayService, properties,
+      entitlementModuleService);
   }
 
   @AfterEach
@@ -71,7 +72,7 @@ class KongModuleRouteCreatorTest {
     var descriptor = moduleDescriptor();
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
 
-    kongModuleRouteCreator.execute(stageContext);
+    apiGatewayModuleRouteCreator.execute(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
@@ -86,7 +87,7 @@ class KongModuleRouteCreatorTest {
     var descriptor = moduleDescriptor();
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
 
-    kongModuleRouteCreator.execute(stageContext);
+    apiGatewayModuleRouteCreator.execute(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
@@ -101,7 +102,7 @@ class KongModuleRouteCreatorTest {
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(moduleDescriptor()), stageParams());
 
-    kongModuleRouteCreator.execute(stageContext);
+    apiGatewayModuleRouteCreator.execute(stageContext);
 
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
   }
@@ -111,7 +112,7 @@ class KongModuleRouteCreatorTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowParameters(entitlementRequest(), UI_MODULE, moduleDescriptor()), stageParams());
 
-    kongModuleRouteCreator.execute(stageContext);
+    apiGatewayModuleRouteCreator.execute(stageContext);
 
     verifyNoInteractions(kongGatewayService, entitlementModuleService);
   }
@@ -124,7 +125,7 @@ class KongModuleRouteCreatorTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
-    kongModuleRouteCreator.cancel(stageContext);
+    apiGatewayModuleRouteCreator.cancel(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
@@ -139,7 +140,7 @@ class KongModuleRouteCreatorTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
-    kongModuleRouteCreator.cancel(stageContext);
+    apiGatewayModuleRouteCreator.cancel(stageContext);
 
     verifyNoInteractions(kongGatewayService, entitlementModuleService);
   }
@@ -153,7 +154,7 @@ class KongModuleRouteCreatorTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
-    assertThatCode(() -> kongModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
+    assertThatCode(() -> apiGatewayModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
 
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).deleteService(MODULE_ID);
@@ -163,12 +164,12 @@ class KongModuleRouteCreatorTest {
   void cancel_positive_routeManagementEnabled_deleteServiceRoutesFails() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
-    doThrow(new RuntimeException("kong error")).when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
+    doThrow(new RuntimeException("gateway error")).when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
-    assertThatCode(() -> kongModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
+    assertThatCode(() -> apiGatewayModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
 
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).deleteService(MODULE_ID);
@@ -178,12 +179,12 @@ class KongModuleRouteCreatorTest {
   void cancel_positive_routeManagementEnabled_deleteServiceFails() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
-    doThrow(new RuntimeException("kong error")).when(kongGatewayService).deleteService(MODULE_ID);
+    doThrow(new RuntimeException("gateway error")).when(kongGatewayService).deleteService(MODULE_ID);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
-    assertThatCode(() -> kongModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
+    assertThatCode(() -> apiGatewayModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
 
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).deleteService(MODULE_ID);
@@ -198,7 +199,7 @@ class KongModuleRouteCreatorTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
-    kongModuleRouteCreator.cancel(stageContext);
+    apiGatewayModuleRouteCreator.cancel(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
@@ -213,7 +214,7 @@ class KongModuleRouteCreatorTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
-    kongModuleRouteCreator.cancel(stageContext);
+    apiGatewayModuleRouteCreator.cancel(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verifyNoInteractions(kongGatewayService);
@@ -224,13 +225,13 @@ class KongModuleRouteCreatorTest {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(properties.getTenantChecks().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(true);
-    doThrow(new RuntimeException("kong error")).when(kongGatewayService)
+    doThrow(new RuntimeException("gateway error")).when(kongGatewayService)
       .removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
-    kongModuleRouteCreator.cancel(stageContext);
+    apiGatewayModuleRouteCreator.cancel(stageContext);
 
     verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
   }
@@ -239,7 +240,7 @@ class KongModuleRouteCreatorTest {
   void cancel_positive_purgeOnRollbackDisabled() {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(moduleDescriptor()), stageParams());
 
-    kongModuleRouteCreator.cancel(stageContext);
+    apiGatewayModuleRouteCreator.cancel(stageContext);
 
     verifyNoInteractions(kongGatewayService, entitlementModuleService);
   }
@@ -249,7 +250,7 @@ class KongModuleRouteCreatorTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowParameters(entitlementRequest(), UI_MODULE, moduleDescriptor()), stageParams());
 
-    kongModuleRouteCreator.cancel(stageContext);
+    apiGatewayModuleRouteCreator.cancel(stageContext);
 
     verifyNoInteractions(kongGatewayService, entitlementModuleService);
   }
@@ -258,7 +259,7 @@ class KongModuleRouteCreatorTest {
   void shouldCancelIfFailed_positive() {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(moduleDescriptor()), stageParams());
 
-    var result = kongModuleRouteCreator.shouldCancelIfFailed(stageContext);
+    var result = apiGatewayModuleRouteCreator.shouldCancelIfFailed(stageContext);
 
     assertThat(result).isTrue();
   }
@@ -267,9 +268,9 @@ class KongModuleRouteCreatorTest {
   void getStageName_positive() {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(moduleDescriptor()), emptyMap());
 
-    var stageName = kongModuleRouteCreator.getStageName(stageContext);
+    var stageName = apiGatewayModuleRouteCreator.getStageName(stageContext);
 
-    assertThat(stageName).isEqualTo(MODULE_ID + "-kongModuleRouteCreator");
+    assertThat(stageName).isEqualTo(MODULE_ID + "-apiGatewayModuleRouteCreator");
   }
 
   private static ModuleDescriptor moduleDescriptor() {

@@ -1,4 +1,4 @@
-package org.folio.entitlement.integration.kong;
+package org.folio.entitlement.integration.apigw;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +38,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class KongModuleRouteCleanerTest {
+class ApiGatewayModuleRouteCleanerTest {
 
   private static final String MODULE_ID = "mod-foo-1.0.0";
 
@@ -46,12 +46,13 @@ class KongModuleRouteCleanerTest {
   @Mock private EntitlementModuleService entitlementModuleService;
 
   private ApiGatewayConfigurationProperties properties;
-  private KongModuleRouteCleaner kongModuleRouteCleaner;
+  private ApiGatewayModuleRouteCleaner apiGatewayModuleRouteCleaner;
 
   @BeforeEach
   void setUp() {
     properties = mock(ApiGatewayConfigurationProperties.class, Answers.RETURNS_DEEP_STUBS);
-    kongModuleRouteCleaner = new KongModuleRouteCleaner(kongGatewayService, properties, entitlementModuleService);
+    apiGatewayModuleRouteCleaner = new ApiGatewayModuleRouteCleaner(kongGatewayService, properties,
+      entitlementModuleService);
   }
 
   @AfterEach
@@ -66,7 +67,7 @@ class KongModuleRouteCleanerTest {
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
-    kongModuleRouteCleaner.execute(stageContext);
+    apiGatewayModuleRouteCleaner.execute(stageContext);
 
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).deleteService(MODULE_ID);
@@ -79,7 +80,7 @@ class KongModuleRouteCleanerTest {
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
-    kongModuleRouteCleaner.execute(stageContext);
+    apiGatewayModuleRouteCleaner.execute(stageContext);
 
     verifyNoInteractions(kongGatewayService);
   }
@@ -92,7 +93,7 @@ class KongModuleRouteCleanerTest {
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
-    kongModuleRouteCleaner.execute(stageContext);
+    apiGatewayModuleRouteCleaner.execute(stageContext);
 
     verifyNoInteractions(kongGatewayService);
   }
@@ -104,7 +105,7 @@ class KongModuleRouteCleanerTest {
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
-    kongModuleRouteCleaner.execute(stageContext);
+    apiGatewayModuleRouteCleaner.execute(stageContext);
 
     verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
   }
@@ -116,7 +117,7 @@ class KongModuleRouteCleanerTest {
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
-    kongModuleRouteCleaner.execute(stageContext);
+    apiGatewayModuleRouteCleaner.execute(stageContext);
 
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).deleteService(MODULE_ID);
@@ -127,7 +128,7 @@ class KongModuleRouteCleanerTest {
     var flowParams = moduleFlowParameters(entitlementRequest(), UI_MODULE, new ModuleDescriptor().id(MODULE_ID));
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParams, stageParams());
 
-    kongModuleRouteCleaner.execute(stageContext);
+    apiGatewayModuleRouteCleaner.execute(stageContext);
 
     verifyNoInteractions(kongGatewayService, entitlementModuleService);
   }
@@ -140,7 +141,7 @@ class KongModuleRouteCleanerTest {
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
-    assertThatCode(() -> kongModuleRouteCleaner.execute(stageContext)).doesNotThrowAnyException();
+    assertThatCode(() -> apiGatewayModuleRouteCleaner.execute(stageContext)).doesNotThrowAnyException();
 
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
   }
@@ -149,7 +150,8 @@ class KongModuleRouteCleanerTest {
   void getStageName_positive() {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), emptyMap());
 
-    assertThat(kongModuleRouteCleaner.getStageName(stageContext)).isEqualTo(MODULE_ID + "-kongModuleRouteCleaner");
+    assertThat(apiGatewayModuleRouteCleaner.getStageName(stageContext))
+      .isEqualTo(MODULE_ID + "-apiGatewayModuleRouteCleaner");
   }
 
   private static Map<?, ?> moduleFlowParams() {

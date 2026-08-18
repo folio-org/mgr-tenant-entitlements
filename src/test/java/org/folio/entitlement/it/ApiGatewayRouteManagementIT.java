@@ -25,7 +25,7 @@ import org.springframework.web.client.HttpClientErrorException;
   "application.apigw.tenant-checks.enabled=true"
 })
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
-class KongRouteManagementIT extends BaseIntegrationTest {
+class ApiGatewayRouteManagementIT extends BaseIntegrationTest {
 
   private static final String FOLIO_APP1_ID = "folio-app1-1.0.0";
   private static final String FOLIO_APP1_V1_1_ID = "folio-app1-1.1.0";

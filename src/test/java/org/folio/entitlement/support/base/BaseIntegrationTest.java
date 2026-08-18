@@ -26,7 +26,7 @@ import org.folio.entitlement.domain.dto.Entitlements;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.support.TestUtils;
-import org.folio.entitlement.support.extensions.EnableKongGateway;
+import org.folio.entitlement.support.extensions.EnableApiGateway;
 import org.folio.entitlement.support.extensions.EnablePostgres;
 import org.folio.test.FakeKafkaConsumer;
 import org.folio.test.base.BaseBackendIntegrationTest;
@@ -62,7 +62,7 @@ import org.springframework.test.web.servlet.ResultMatcher;
 @EnablePostgres
 @SpringBootTest
 @ActiveProfiles("it")
-@EnableKongGateway
+@EnableApiGateway
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = AFTER_CLASS)
 @TestExecutionListeners(mergeMode = MERGE_WITH_DEFAULTS, value = {
