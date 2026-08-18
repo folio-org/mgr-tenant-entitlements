@@ -20,7 +20,7 @@ import org.springframework.web.client.HttpClientErrorException;
 
 @IntegrationTest
 @TestPropertySource(properties = {
-  "application.kong.enabled=true",
+  "application.apigw.enabled=true",
   "application.keycloak.enabled=false",
   "application.apigw.tenant-checks.enabled=true"
 })

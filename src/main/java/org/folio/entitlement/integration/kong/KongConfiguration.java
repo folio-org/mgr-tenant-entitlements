@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConditionalOnProperty(name = "application.kong.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "application.apigw.enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(ApiGatewayConfigurationProperties.class)
 public class KongConfiguration {
 

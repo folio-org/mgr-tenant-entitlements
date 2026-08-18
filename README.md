@@ -107,17 +107,16 @@ docker run \
 | AM_CLIENT_TLS_TRUSTSTORE_PATH          | -                                   |  false   | Truststore file path for application-manager client.                                                                                                                                                       |
 | AM_CLIENT_TLS_TRUSTSTORE_PASSWORD      | -                                   |  false   | Truststore password for application-manager client.                                                                                                                                                        |
 | AM_CLIENT_TLS_TRUSTSTORE_TYPE          | -                                   |  false   | Truststore file type for application-manager client.                                                                                                                                                       |
-| kong.url                               | -                                   |   true   | Kong Admin URL used to perform HTTP requests for route management, required.                                                                                                                                      |
-| KONG_ADMIN_URL                         | -                                   |  false   | Alias for `kong.url`.                                                                                                                                                                                      |
-| KONG_INTEGRATION_ENABLED               | true                                |  false   | Defines if kong integration is enabled or disabled.<br/>If it set to `false` - it will exclude all kong-related beans from spring context.                                                                 |
-| KONG_CONNECT_TIMEOUT                   | -                                   |  false   | Defines the timeout in milliseconds for establishing a connection from Kong to upstream service. If the value is not provided then Kong defaults are applied.                                              |
-| KONG_READ_TIMEOUT                      | 360000                              |  false   | Defines the timeout in milliseconds between two successive read operations for transmitting a request from Kong to the upstream service. If the value is not provided then Kong defaults are applied.      |
-| KONG_WRITE_TIMEOUT                     | -                                   |  false   | Defines the timeout in milliseconds between two successive write operations for transmitting a request from Kong to the upstream service. If the value is not provided then Kong defaults are applied.     |
-| KONG_RETRIES                           | -                                   |  false   | Defines the number of retries to execute upon failure to proxy. If the value is not provided then Kong defaults are applied.                                                                               |
-| KONG_TLS_ENABLED                       | false                               |  false   | Allows to enable/disable TLS connection to Kong.                                                                                                                                                           |
-| KONG_TLS_TRUSTSTORE_PATH               | -                                   |  false   | Truststore file path for TLS connection to Kong.                                                                                                                                                           |
-| KONG_TLS_TRUSTSTORE_PASSWORD           | -                                   |  false   | Truststore password for TLS connection to Kong.                                                                                                                                                            |
-| KONG_TLS_TRUSTSTORE_TYPE               | -                                   |  false   | Truststore file type for TLS connection to Kong.                                                                                                                                                           |
+| APIGW_URL                              | -                                   |   true   | API Gateway Admin URL used for route management. Deprecated aliases: `KONG_ADMIN_URL`, `kong.url`.                                                                                                        |
+| APIGW_ENABLED                          | true                                |  false   | Enables/disables API Gateway integration. If set to `false`, excludes all gateway-related beans from Spring context. Deprecated alias: `KONG_INTEGRATION_ENABLED`.                                        |
+| APIGW_CONNECT_TIMEOUT                  | -                                   |  false   | Timeout (ms) for establishing a connection to the upstream service. Uses gateway defaults if not set. Deprecated alias: `KONG_CONNECT_TIMEOUT`.                                                           |
+| APIGW_READ_TIMEOUT                     | 360000                              |  false   | Timeout (ms) between successive read operations for transmitting a request to the upstream service. Deprecated alias: `KONG_READ_TIMEOUT`.                                                                |
+| APIGW_WRITE_TIMEOUT                    | -                                   |  false   | Timeout (ms) between successive write operations for transmitting a request to the upstream service. Deprecated alias: `KONG_WRITE_TIMEOUT`.                                                              |
+| APIGW_RETRIES                          | -                                   |  false   | Number of retries on upstream proxy failure. Uses gateway defaults if not set. Deprecated alias: `KONG_RETRIES`.                                                                                          |
+| APIGW_TLS_ENABLED                      | false                               |  false   | Enables TLS for the API Gateway connection. Deprecated alias: `KONG_TLS_ENABLED`.                                                                                                                         |
+| APIGW_TLS_TRUSTSTORE_PATH              | -                                   |  false   | Truststore file path for TLS connection to the API Gateway. Deprecated alias: `KONG_TLS_TRUSTSTORE_PATH`.                                                                                                 |
+| APIGW_TLS_TRUSTSTORE_PASSWORD          | -                                   |  false   | Truststore password for TLS connection to the API Gateway. Deprecated alias: `KONG_TLS_TRUSTSTORE_PASSWORD`.                                                                                              |
+| APIGW_TLS_TRUSTSTORE_TYPE              | -                                   |  false   | Truststore file type for TLS connection to the API Gateway. Deprecated alias: `KONG_TLS_TRUSTSTORE_TYPE`.                                                                                                 |
 | ENV                                    | folio                               |  false   | The logical name of the deployment (kafka topic prefix), must be unique across all environments using the same shared Kafka/Elasticsearch clusters, `a-z (any case)`, `0-9`, `-`, `_` symbols only allowed |
 | SECURITY_ENABLED                       | true                                |  false   | Allows to enable/disable security. If true and KC_INTEGRATION_ENABLED is also true - the Keycloak will be used as a security provider.                                                                     |
 | MT_CLIENT_TLS_ENABLED                  | false                               |  false   | Allows to enable/disable TLS connection to mgr-tenants module.                                                                                                                                             |
@@ -305,8 +304,6 @@ releasing the caller thread so existing retry logic can observe it.
 | RETRIES_KEYCLOAK_BACKOFF_DELAY      | 1000          |    false    | Keycloak calls retries initial delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MAXDELAY   | 30000         |    false    | Keycloak calls retries maximum delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER | 5             |    false    | Keycloak calls retries delay multiplier           |
-| RETRIES_KONG_BACKOFF_DELAY          | 1000          |    false    | Kong calls retries initial delay millisec         |
-| RETRIES_KONG_BACKOFF_MAXDELAY       | 30000         |    false    | Kong calls retries maximum delay millisec         |
 
 ### Flow Engine configuration
 
@@ -363,13 +360,13 @@ Routes as well populated with tags: `moduleId` and `tenantId` to be filtered.
 Routes per tenant can be found with:
 
 ```shell
-curl -XGET "$KONG_ADMIN_URL/routes?tags=$moduleId,$tenantId"
+curl -XGET "$APIGW_URL/routes?tags=$moduleId,$tenantId"
 ```
 
 or
 
 ```shell
-curl -XGET "$KONG_ADMIN_URL/services/$moduleId/routes?tags=$tenantId"
+curl -XGET "$APIGW_URL/services/$moduleId/routes?tags=$tenantId"
 ```
 
 ## Kafka Integration
