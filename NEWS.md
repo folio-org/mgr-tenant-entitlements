@@ -9,6 +9,9 @@
   subPermissions were dropped from the module descriptor (MGRENTITLE-111)
 * Remove the application count limit from reinstall endpoint (MGRENTITLE-172)
 * Include the full module ID in system-user Kafka events for downstream entitlement processing tracking (MGRENTITLE-192)
+* Generalize Kong configuration to API Gateway naming: new `APIGW_*` environment variables and `application.apigw.*`
+  properties. The `KONG_*`, `REGISTER_MODULE_IN_KONG` and `application.kong.*` names keep working, log a deprecation
+  warning at startup and are planned for removal in the Vetch release (EUREKA-887)
 
 ---
 

@@ -12,7 +12,7 @@ import org.springframework.test.context.TestPropertySource;
 @IntegrationTest
 @TestPropertySource(properties = {
   "application.router.path-prefix=mgr-tenant-entitlements",
-  "application.kong.module-self-url=http://mgr-tenant-entitlements:8000/mgr-tenant-entitlements"
+  "application.apigw.module-self-url=http://mgr-tenant-entitlements:8000/mgr-tenant-entitlements"
 })
 @Import(KeycloakTestClientConfiguration.class)
 class FolioEntitlementPathPrefixIT extends AbstractFolioEntitlementIT {
