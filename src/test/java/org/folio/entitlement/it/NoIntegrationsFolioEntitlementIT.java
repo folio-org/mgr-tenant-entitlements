@@ -88,7 +88,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 @TestPropertySource(properties = {
   "application.keycloak.enabled=false",
-  "application.kong.enabled=false",
+  "application.apigw.enabled=false",
   "application.clients.folio.connect-timeout=250ms",
   "application.clients.folio.read-timeout=250ms",
   "retries.module.backoff.delay=1",

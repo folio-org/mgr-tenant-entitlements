@@ -11,6 +11,7 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 * [Compiling](#compiling)
 * [Running It](#running-it)
 * [Environment Variables](#environment-variables)
+  * [Deprecated environment variables](#deprecated-environment-variables)
   * [Validators environment variables](#validators-environment-variables)
   * [Kafka environment variables](#kafka-environment-variables)
   * [SSL Configuration environment variables](#ssl-configuration-environment-variables)
@@ -24,8 +25,8 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
     * [Keycloak specific environment variables](#keycloak-specific-environment-variables)
   * [Retry configuration](#retry-configuration)
   * [Flow Engine configuration](#flow-engine-configuration)
-  * [Kong Service Registration](#kong-service-registration)
-  * [Kong Route Registration](#kong-route-registration)
+  * [Gateway Service Registration](#gateway-service-registration)
+  * [Gateway Route Registration](#gateway-route-registration)
 * [Kafka Integration](#kafka-integration)
   * [Events upon application being enabled/disabled](#events-upon-application-being-enableddisabled)
     * [Naming convention](#naming-convention)
@@ -100,24 +101,24 @@ docker run \
 | DB_DATABASE                            | okapi_modules                       |  false   | Postgres database name                                                                                                                                                                                     |
 | FLOW_ENGINE_THREADS_NUM                | 4                                   |  false   | Number of threads for the main flow engine executor pool                                                                                                                                                   |
 | FLOW_ENGINE_MODULE_INSTALLER_THREADS   | 4                                   |  false   | Number of threads for parallel module installation. Controls how many modules are being installed concurrently during entitlement operations                                                               |
-| MODULE_URL                             | http://mgr-tenant-entitlements:8081 |  false   | Module URL (module cannot define url for Kong registration by itself, because it can be under Load Balancer, so this value must be provided manually)                                                      |
+| MODULE_URL                             | http://mgr-tenant-entitlements:8081 |  false   | Module URL (module cannot define url for API Gateway registration by itself, because it can be under Load Balancer, so this value must be provided manually) |
 | tenant.url                             | -                                   |   true   | Tenant URL used to perform HTTP requests by `TenantManagerClient`.                                                                                                                                         |
 | am.url                                 | -                                   |   true   | Application Manager URL used to perform HTTP requests by `ApplicationManagerClient`.                                                                                                                       |
 | AM_CLIENT_TLS_ENABLED                  | false                               |  false   | Enables TLS for application-manager client.                                                                                                                                                                |
 | AM_CLIENT_TLS_TRUSTSTORE_PATH          | -                                   |  false   | Truststore file path for application-manager client.                                                                                                                                                       |
 | AM_CLIENT_TLS_TRUSTSTORE_PASSWORD      | -                                   |  false   | Truststore password for application-manager client.                                                                                                                                                        |
 | AM_CLIENT_TLS_TRUSTSTORE_TYPE          | -                                   |  false   | Truststore file type for application-manager client.                                                                                                                                                       |
-| kong.url                               | -                                   |   true   | Kong Admin URL used to perform HTTP requests for route management, required.                                                                                                                                      |
-| KONG_ADMIN_URL                         | -                                   |  false   | Alias for `kong.url`.                                                                                                                                                                                      |
-| KONG_INTEGRATION_ENABLED               | true                                |  false   | Defines if kong integration is enabled or disabled.<br/>If it set to `false` - it will exclude all kong-related beans from spring context.                                                                 |
-| KONG_CONNECT_TIMEOUT                   | -                                   |  false   | Defines the timeout in milliseconds for establishing a connection from Kong to upstream service. If the value is not provided then Kong defaults are applied.                                              |
-| KONG_READ_TIMEOUT                      | 360000                              |  false   | Defines the timeout in milliseconds between two successive read operations for transmitting a request from Kong to the upstream service. If the value is not provided then Kong defaults are applied.      |
-| KONG_WRITE_TIMEOUT                     | -                                   |  false   | Defines the timeout in milliseconds between two successive write operations for transmitting a request from Kong to the upstream service. If the value is not provided then Kong defaults are applied.     |
-| KONG_RETRIES                           | -                                   |  false   | Defines the number of retries to execute upon failure to proxy. If the value is not provided then Kong defaults are applied.                                                                               |
-| KONG_TLS_ENABLED                       | false                               |  false   | Allows to enable/disable TLS connection to Kong.                                                                                                                                                           |
-| KONG_TLS_TRUSTSTORE_PATH               | -                                   |  false   | Truststore file path for TLS connection to Kong.                                                                                                                                                           |
-| KONG_TLS_TRUSTSTORE_PASSWORD           | -                                   |  false   | Truststore password for TLS connection to Kong.                                                                                                                                                            |
-| KONG_TLS_TRUSTSTORE_TYPE               | -                                   |  false   | Truststore file type for TLS connection to Kong.                                                                                                                                                           |
+| kong.url                               | -                                   |  false   | Legacy alias for `APIGW_URL`, kept as the last fallback if no other value is provided. |
+| APIGW_URL                              | -                                   |   true   | API Gateway admin URL used to perform HTTP requests for route management, required. |
+| APIGW_ENABLED                          | true                                |  false   | Defines if API Gateway integration is enabled or disabled.<br/>If it set to `false` - it will exclude all gateway-related beans from spring context. |
+| APIGW_CONNECT_TIMEOUT                  | -                                   |  false   | Defines the timeout in milliseconds for establishing a connection from the API Gateway to upstream service. If the value is not provided then API Gateway defaults are applied. |
+| APIGW_READ_TIMEOUT                     | 360000                              |  false   | Defines the timeout in milliseconds between two successive read operations for transmitting a request from the API Gateway to the upstream service. If the value is not provided then API Gateway defaults are applied. |
+| APIGW_WRITE_TIMEOUT                    | -                                   |  false   | Defines the timeout in milliseconds between two successive write operations for transmitting a request from the API Gateway to the upstream service. If the value is not provided then API Gateway defaults are applied. |
+| APIGW_RETRIES                          | -                                   |  false   | Defines the number of retries to execute upon failure to proxy. If the value is not provided then API Gateway defaults are applied. |
+| APIGW_TLS_ENABLED                      | false                               |  false   | Allows to enable/disable TLS connection to the API Gateway. |
+| APIGW_TLS_TRUSTSTORE_PATH              | -                                   |  false   | Truststore file path for TLS connection to the API Gateway. |
+| APIGW_TLS_TRUSTSTORE_PASSWORD          | -                                   |  false   | Truststore password for TLS connection to the API Gateway. |
+| APIGW_TLS_TRUSTSTORE_TYPE              | -                                   |  false   | Truststore file type for TLS connection to the API Gateway. |
 | ENV                                    | folio                               |  false   | The logical name of the deployment (kafka topic prefix), must be unique across all environments using the same shared Kafka/Elasticsearch clusters, `a-z (any case)`, `0-9`, `-`, `_` symbols only allowed |
 | SECURITY_ENABLED                       | true                                |  false   | Allows to enable/disable security. If true and KC_INTEGRATION_ENABLED is also true - the Keycloak will be used as a security provider.                                                                     |
 | MT_CLIENT_TLS_ENABLED                  | false                               |  false   | Allows to enable/disable TLS connection to mgr-tenants module.                                                                                                                                             |
@@ -137,8 +138,31 @@ docker run \
 | FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE | 25                                  |  false   | Max cache size for the latest flow executions                                                                                                                                                              |
 | FLOW_ENGINE_PRINT_FLOW_RESULTS         | false                               |  false   | Defines if flow engine should print execution results in logs or not                                                                                                                                       |
 | FLOW_ENGINE_THREADS_NUM                | 4                                   |  false   | Defines the number of threads for Fork-Join Pool used by flow engine.                                                                                                                                      |
-| REGISTER_MODULE_IN_KONG                | true                                |  false   | Defines if module must be registered in Kong (it will create for itself service and list of routes from module descriptor)                                                                                 |
+| APIGW_REGISTER_MODULE                  | true                                |  false   | Defines if module must be registered in the API Gateway (it will create for itself service and list of routes from module descriptor) |
 | ROUTER_PATH_PREFIX                     |                                     |  false   | Defines routes prefix to be added to the generated endpoints by OpenAPI generator (`/foo/entites` -> `{{prefix}}/foo/entities`). Required if load balancing group has format like `{{host}}/{{moduleId}}`  |
+
+### Deprecated environment variables
+
+The Kong-specific configuration was generalized to the API Gateway naming. The names below are still functional:
+each one is applied only if its replacement is not set, and the module logs a `WARN` for every legacy name found at
+startup. They are planned for removal in the Vetch flower release.
+
+| Deprecated name                        | Replacement                                                    |
+|:---------------------------------------|:---------------------------------------------------------------|
+| KONG_ADMIN_URL                         | APIGW_URL                                                      |
+| KONG_INTEGRATION_ENABLED               | APIGW_ENABLED                                                  |
+| REGISTER_MODULE_IN_KONG                | APIGW_REGISTER_MODULE                                          |
+| KONG_CONNECT_TIMEOUT                   | APIGW_CONNECT_TIMEOUT                                          |
+| KONG_READ_TIMEOUT                      | APIGW_READ_TIMEOUT                                             |
+| KONG_WRITE_TIMEOUT                     | APIGW_WRITE_TIMEOUT                                            |
+| KONG_RETRIES                           | APIGW_RETRIES                                                  |
+| KONG_TLS_ENABLED                       | APIGW_TLS_ENABLED                                              |
+| KONG_TLS_TRUSTSTORE_PATH               | APIGW_TLS_TRUSTSTORE_PATH                                      |
+| KONG_TLS_TRUSTSTORE_PASSWORD           | APIGW_TLS_TRUSTSTORE_PASSWORD                                  |
+| KONG_TLS_TRUSTSTORE_TYPE               | APIGW_TLS_TRUSTSTORE_TYPE                                      |
+| `application.kong.<key>` properties    | `application.apigw.<key>`, e.g. `application.apigw.enabled`    |
+
+`kong.url` is also still supported as the last fallback for `APIGW_URL`, it is not reported at startup.
 
 ### Validators environment variables
 
@@ -305,8 +329,6 @@ releasing the caller thread so existing retry logic can observe it.
 | RETRIES_KEYCLOAK_BACKOFF_DELAY      | 1000          |    false    | Keycloak calls retries initial delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MAXDELAY   | 30000         |    false    | Keycloak calls retries maximum delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER | 5             |    false    | Keycloak calls retries delay multiplier           |
-| RETRIES_KONG_BACKOFF_DELAY          | 1000          |    false    | Kong calls retries initial delay millisec         |
-| RETRIES_KONG_BACKOFF_MAXDELAY       | 30000         |    false    | Kong calls retries maximum delay millisec         |
 
 ### Flow Engine configuration
 
@@ -340,15 +362,15 @@ FLOW_ENGINE_THREADS_NUM=10
 FLOW_ENGINE_MODULE_INSTALLER_THREADS=6
 ```
 
-### Kong Service Registration
+### Gateway Service Registration
 
-The Kong Gateway services are added on service discovery registration per application. Each Kong Service has tag equal
+The API Gateway services are added on service discovery registration per application. Each Kong Service has tag equal
 to `applicationId` to improve observability. Tags can be used to filter core entities, via the `?tags` querystring
 parameter.
 
-### Kong Route Registration
+### Gateway Route Registration
 
-The Kong routes registered per-tenant using header filter:
+The API Gateway routes registered per-tenant using header filter:
 
 ```json
 {
@@ -363,13 +385,13 @@ Routes as well populated with tags: `moduleId` and `tenantId` to be filtered.
 Routes per tenant can be found with:
 
 ```shell
-curl -XGET "$KONG_ADMIN_URL/routes?tags=$moduleId,$tenantId"
+curl -XGET "$APIGW_URL/routes?tags=$moduleId,$tenantId"
 ```
 
 or
 
 ```shell
-curl -XGET "$KONG_ADMIN_URL/services/$moduleId/routes?tags=$tenantId"
+curl -XGET "$APIGW_URL/services/$moduleId/routes?tags=$tenantId"
 ```
 
 ## Kafka Integration
@@ -401,7 +423,7 @@ _If `ignoreErrors` is set to `false` (which is default value) then the stage rol
 if one or more stages failed.
 Stage rollbacks will return the system to initial state:_
 - _All installed tenant modules will be uninstalled_
-- _All created Kong Gateway routes will be deleted for the application_
+- _All created API Gateway routes will be deleted for the application_
 - _All created Keycloak resources will be deleted for the application_
 
 _If the `ignoreErrors` is set to `true` - stage rollbacks are disabled for tenant entitlement and if
@@ -427,8 +449,8 @@ _The behaviour is the same as calling `POST /entitlements` with `ignoreErrors=tr
 _The `purge` flag defines whether the tenant application data will be deleted. If this flag is set to true -
 `mgr-tenant-entitlement` will delete all resources, including routes, keycloak authorization resources, and module
 database data (using tenant API) from the system. If this flag is set to `false` - sidecars for this tenant will
-be disabled and module requests will return an error, saying that the tenant is not enabled. Also routes in Kong will
-be deleted._
+be disabled and module requests will return an error, saying that the tenant is not enabled. Also routes in the API
+Gateway will be deleted._
 
 ### Is rollbacks are supported for the application uninstalling/upgrades?
 
