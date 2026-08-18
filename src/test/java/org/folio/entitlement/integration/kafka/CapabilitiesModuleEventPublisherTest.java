@@ -48,6 +48,7 @@ import org.folio.entitlement.support.TestUtils;
 import org.folio.integration.kafka.model.ResourceEvent;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,7 +57,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -64,11 +64,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CapabilitiesModuleEventPublisherTest {
 
-  @InjectMocks private CapabilitiesModuleEventPublisher moduleEventPublisher;
+  private CapabilitiesModuleEventPublisher moduleEventPublisher;
   @Mock private KafkaEventPublisher kafkaEventPublisher;
   @Mock private TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
   @Captor private ArgumentCaptor<ResourceEvent<CapabilityEventPayload>> eventCaptor;
   @Captor private ArgumentCaptor<String> messageKeyCaptor;
+
+  @BeforeEach
+  void setUp() {
+    moduleEventPublisher = new CapabilitiesModuleEventPublisher(false);
+    moduleEventPublisher.setKafkaEventPublisher(kafkaEventPublisher);
+    moduleEventPublisher.setTenantEntitlementKafkaProperties(tenantEntitlementKafkaProperties);
+  }
 
   @AfterEach
   void tearDown() {
@@ -174,19 +181,20 @@ class CapabilitiesModuleEventPublisherTest {
 
   @Test
   void execute_positive_eventPublished_eventIdMatchesStageId() {
-    var stageUUID = UUID.randomUUID();
+    var stageUuid = UUID.randomUUID();
     var descriptor = readModuleDescriptor("json/events/capabilities/be-module-desc.json");
     var contextData = Map.of(PARAM_TENANT_NAME, TENANT_NAME);
     var flowParameters = moduleFlowParameters(entitlementRequest(), descriptor);
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
-    stageContext.withStageId(stageUUID);
+    stageContext.withStageId(stageUuid);
 
-    doNothing().when(kafkaEventPublisher).send(eq(capabilitiesTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(capabilitiesTenantTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
-    assertThat(eventCaptor.getValue().getId()).isEqualTo(stageUUID.toString());
+    assertThat(eventCaptor.getValue().getId()).isEqualTo(stageUuid.toString());
   }
 
   @Test
@@ -201,7 +209,8 @@ class CapabilitiesModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     stageContext.withStageId(UUID.randomUUID());
 
-    doNothing().when(kafkaEventPublisher).send(eq(capabilitiesTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(capabilitiesTenantTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     publisher.execute(stageContext);

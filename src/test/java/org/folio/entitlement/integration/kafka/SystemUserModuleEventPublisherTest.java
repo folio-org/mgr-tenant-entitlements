@@ -95,7 +95,8 @@ class SystemUserModuleEventPublisherTest {
     var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
-    doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -121,7 +122,8 @@ class SystemUserModuleEventPublisherTest {
     var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
-    doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantCollectionTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantCollectionTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
 
     moduleEventPublisher.execute(stageContext);
@@ -169,7 +171,8 @@ class SystemUserModuleEventPublisherTest {
       .thenReturn(of(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"))));
     when(systemUserEventProvider.getSystemUserEvent(v2ModuleDescriptor))
       .thenReturn(of(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.v2.entities.post"))));
-    doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -216,7 +219,8 @@ class SystemUserModuleEventPublisherTest {
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor))
       .thenReturn(of(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"))));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
-    doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);

@@ -86,7 +86,8 @@ class ScheduledJobModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     stageContext.withStageId(UUID.randomUUID());
 
-    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -107,7 +108,8 @@ class ScheduledJobModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     stageContext.withStageId(UUID.randomUUID());
 
-    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantCollectionTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantCollectionTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
 
     moduleEventPublisher.execute(stageContext);
@@ -145,7 +147,8 @@ class ScheduledJobModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     stageContext.withStageId(UUID.randomUUID());
 
-    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -153,7 +156,8 @@ class ScheduledJobModuleEventPublisherTest {
     var expectedEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("Scheduled Job")
       .newValue(ScheduledTimers.of(MODULE_ID_V2, APPLICATION_ID, List.of(fooTimerRoutingEntryV2())))
-      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, asList(fooTimerRoutingEntry(), barTimerRoutingEntry())))
+      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID,
+        asList(fooTimerRoutingEntry(), barTimerRoutingEntry())))
       .build();
 
     assertThat(eventCaptor.getValue()).usingRecursiveComparison().ignoringFields("id").isEqualTo(expectedEvent);
@@ -187,14 +191,16 @@ class ScheduledJobModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     stageContext.withStageId(UUID.randomUUID());
 
-    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()),
+      messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
 
     var expectedEvent = ResourceEvent.<ScheduledTimers>baseBuilder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("Scheduled Job")
-      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID, asList(fooTimerRoutingEntry(), barTimerRoutingEntry())))
+      .oldValue(ScheduledTimers.of(MODULE_ID, ENTITLED_APPLICATION_ID,
+        asList(fooTimerRoutingEntry(), barTimerRoutingEntry())))
       .build();
 
     assertThat(eventCaptor.getValue()).usingRecursiveComparison().ignoringFields("id").isEqualTo(expectedEvent);

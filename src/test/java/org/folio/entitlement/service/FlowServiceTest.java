@@ -296,6 +296,76 @@ class FlowServiceTest {
     }
   }
 
+  @Nested
+  @DisplayName("getTopLevelFlow")
+  class GetTopLevelFlow {
+
+    @Test
+    void positive_whenIdIsApplicationFlowId() {
+      var appFlow = new ApplicationFlow().id(APPLICATION_FLOW_ID).flowId(FLOW_ID);
+      var flowEnt = flowEntity();
+      var expectedFlow = flow();
+
+      when(applicationFlowService.findById(APPLICATION_FLOW_ID)).thenReturn(Optional.of(appFlow));
+      when(flowRepository.getReferenceById(FLOW_ID)).thenReturn(flowEnt);
+      when(flowMapper.map(flowEnt)).thenReturn(expectedFlow);
+
+      var result = flowService.getTopLevelFlow(APPLICATION_FLOW_ID);
+
+      assertThat(result).isEqualTo(expectedFlow);
+    }
+
+    @Test
+    void positive_whenIdIsFlowId() {
+      var flowEnt = flowEntity();
+      var expectedFlow = flow();
+
+      when(applicationFlowService.findById(FLOW_ID)).thenReturn(Optional.empty());
+      when(flowRepository.getReferenceById(FLOW_ID)).thenReturn(flowEnt);
+      when(flowMapper.map(flowEnt)).thenReturn(expectedFlow);
+
+      var result = flowService.getTopLevelFlow(FLOW_ID);
+
+      assertThat(result).isEqualTo(expectedFlow);
+    }
+  }
+
+  @Nested
+  @DisplayName("finishFlowIfNoActiveStages")
+  class FinishFlowIfNoActiveStages {
+
+    @Test
+    void positive() {
+      var finishedAt = ZonedDateTime.now();
+
+      when(flowRepository.updateStatusByIdIfCurrentInAndNoStagesWithStatus(
+        FLOW_ID, EntityExecutionStatus.FINISHED, Set.of(EntityExecutionStatus.IN_PROGRESS), finishedAt))
+        .thenReturn(1);
+
+      var result = flowService.finishFlowIfNoActiveStages(FLOW_ID, finishedAt);
+
+      assertThat(result).isEqualTo(1);
+    }
+  }
+
+  @Nested
+  @DisplayName("failActiveFlow")
+  class FailActiveFlow {
+
+    @Test
+    void positive() {
+      var finishedAt = ZonedDateTime.now();
+
+      when(flowRepository.updateStatusIfCurrentIn(
+        FLOW_ID, EntityExecutionStatus.FAILED, Set.of(EntityExecutionStatus.IN_PROGRESS), finishedAt))
+        .thenReturn(1);
+
+      var result = flowService.failActiveFlow(FLOW_ID, finishedAt);
+
+      assertThat(result).isEqualTo(1);
+    }
+  }
+
   static class TestValues {
 
     static FlowEntity flowEntity() {

@@ -183,7 +183,6 @@ public class FlowService {
     return flowMapper.map(topLevelFlow);
   }
 
-
   public int finishFlowIfNoActiveStages(UUID flowId, ZonedDateTime finishedAt) {
     return flowRepository.updateStatusByIdIfCurrentInAndNoStagesWithStatus(flowId, FINISHED,
       Set.of(IN_PROGRESS), finishedAt);
