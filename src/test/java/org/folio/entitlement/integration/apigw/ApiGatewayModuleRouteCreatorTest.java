@@ -18,6 +18,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
@@ -77,6 +78,21 @@ class ApiGatewayModuleRouteCreatorTest {
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
     verify(kongGatewayService).addRoutes(List.of(descriptor));
+  }
+
+  @Test
+  void execute_positive_routeManagementEnabled_tenantChecksDisabled_moduleAlreadyEntitled() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(true);
+
+    var descriptor = moduleDescriptor();
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
+
+    apiGatewayModuleRouteCreator.execute(stageContext);
+
+    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+    verifyNoMoreInteractions(kongGatewayService);
   }
 
   @Test
