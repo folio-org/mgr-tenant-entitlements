@@ -27,7 +27,8 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
                                       ↓ (on failure) FailedFlowFinalizer
   ```
 - **Dependencies**: builds `ApplicationInstallationGraph` / `ModuleInstallationGraph`; validates interface integrity; handles optional vs required and cross-application deps.
-- **Integrations** (`integration/`): `am/`, `tm/`, `folio/`, `keycloak/`, `kafka/`, `token/`, `interceptor/`.
+- **Integrations** (`integration/`): `am/`, `tm/`, `folio/`, `keycloak/`, `kafka/`, `token/`, `interceptor/`, `apigw/`.
+- **API Gateway route lifecycle**: routes are created on first entitlement (`ApiGatewayModuleRouteCreator`) and deleted only when the last tenant revokes (`ApiGatewayModuleRouteCleaner`). Shared-route checks use `EntitlementModuleService.isEntitlementExist` / `isNoOtherEntitlementExist`.
 
 **Domain concepts**: Entitlement (tenant's right to an application + modules), Application, Module, Flow Execution (DB-tracked), Stage Context (thread-local, see `ThreadLocalModuleStageContext`).
 
@@ -40,8 +41,8 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
 - **DB**: Liquibase `changelog/changelog-master.xml`; note mixed dir naming (`changes/v1.0.0/`, `changes.v3.0.0/`).
 - **Security**: Keycloak via `@EnableMgrSecurity`; Caffeine token cache with auto-refresh for long ops.
 - **Retry**: configurable for Keycloak/FOLIO calls (`retry/` package) + stage-level retry.
-- **Tests**: `@UnitTest` (Mockito), `@IntegrationTest` (extend `BaseIntegrationTest`, Testcontainers + WireMock).
-- **Key env vars**: `MT_CLIENT_URL`, `AM_CLIENT_URL`, `APIGW_URL`; toggles `APIGW_ENABLED`/`KC_INTEGRATION_ENABLED`; `FLOW_ENGINE_*` (threads, timeout, cache); `VALIDATION_INTERFACE_*`; `ENV` (Kafka topic prefix). Full list in `README.md`.
+- **Tests**: `@UnitTest` (Mockito), `@IntegrationTest` (extend `BaseIntegrationTest`, Testcontainers + WireMock). Gateway ITs use `@EnableApiGateway` extension (see `ApiGatewayRegistrationIT`, `ApiGatewayRouteManagementIT`).
+- **Key env vars**: `MT_CLIENT_URL`, `AM_CLIENT_URL`, `APIGW_URL`; toggles `APIGW_ENABLED`/`KC_INTEGRATION_ENABLED`/`APIGW_ROUTEMANAGEMENT_ENABLED` (default `true`)/`APIGW_TENANT_CHECKS_ENABLED` (default `false`); `FLOW_ENGINE_*` (threads, timeout, cache); `VALIDATION_INTERFACE_*`; `ENV` (Kafka topic prefix). Full list in `README.md`.
 
 ## Pitfalls
 
@@ -50,5 +51,6 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
 - Watch ThreadLocal usage in `ThreadLocalModuleStageContext`.
 - Kafka topic names are prefixed with `ENV`.
 - Token refresh is automatic, but keep long operations cancellable.
+- `KONG_*` env vars are deprecated aliases that still bind via fallback expressions in `application.yml`; existing configs keep working, but new code should use `APIGW_*` names.
 
 Resources: `README.md` (env vars), `NEWS.md` (release notes).
