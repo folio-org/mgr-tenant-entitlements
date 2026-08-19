@@ -28,10 +28,10 @@ public class FolioModuleRevokeFlowFactory implements ModuleFlowFactory {
   public Flow createModuleFlow(Object flowId, FlowExecutionStrategy strategy, Map<?, ?> additionalFlowParameters) {
     return Flow.builder()
       .id(flowId)
-      .stage(combineStages("ApiGatewayCleanerStage", asList(apiGatewayModuleRouteCleaner)))
       .stage(folioModuleUninstaller)
       .stage(folioModuleEventPublisher)
-      .stage(combineStages("ResourcesCleanerParallelStage", asList(kcModuleResourceCleaner)))
+      .stage(combineStages("ResourcesCleanerParallelStage",
+        asList(apiGatewayModuleRouteCleaner, kcModuleResourceCleaner)))
       .executionStrategy(strategy)
       .flowParameters(additionalFlowParameters)
       .build();

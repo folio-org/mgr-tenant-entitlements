@@ -23,8 +23,8 @@ public class ApiGatewayModuleRouteCleaner extends ModuleDatabaseLoggingStage {
       return;
     }
     var moduleId = context.getModuleId();
-    var noOtherEntitlement = entitlementModuleService.isNoOtherEntitlementExist(moduleId, context.getTenantId());
-    if (noOtherEntitlement && properties.getRouteManagement().isEnabled()) {
+    var entitlementExists = entitlementModuleService.isEntitlementExist(moduleId);
+    if (!entitlementExists && properties.getRouteManagement().isEnabled()) {
       deleteServiceAndRoutes(moduleId);
       return;
     }

@@ -63,7 +63,7 @@ class ApiGatewayModuleRouteCleanerTest {
   @Test
   void execute_positive_lastTenant_routeManagementEnabled() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
-    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
@@ -77,7 +77,7 @@ class ApiGatewayModuleRouteCleanerTest {
   void execute_positive_lastTenant_routeManagementDisabled() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(false);
     when(properties.getTenantChecks().isEnabled()).thenReturn(false);
-    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
@@ -89,7 +89,7 @@ class ApiGatewayModuleRouteCleanerTest {
   @Test
   void execute_positive_tenantChecksEnabled_notLastTenant_removesOnlyTenantFilter() {
     when(properties.getTenantChecks().isEnabled()).thenReturn(true);
-    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(false);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(true);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
@@ -101,7 +101,7 @@ class ApiGatewayModuleRouteCleanerTest {
   @Test
   void execute_positive_tenantChecksEnabled_lastTenant_deletesServiceAndRoutes() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
-    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
@@ -124,7 +124,7 @@ class ApiGatewayModuleRouteCleanerTest {
   @Test
   void execute_positive_lastTenant_serviceNotFound_skipsCleanup() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
-    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
     doThrow(new NoSuchElementException()).when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
