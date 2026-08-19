@@ -339,12 +339,18 @@ FLOW_ENGINE_MODULE_INSTALLER_THREADS=6
 
 ### API Gateway Service Registration
 
-Gateway services are registered per application during service discovery. Each service is tagged with `applicationId`
-to improve observability. Tags can be used to filter gateway entities via the `?tags` query string parameter.
+A gateway service is upserted per module during entitlement, using `moduleId` as the service name and the
+module's discovery URL as the target.
 
 ### API Gateway Route Registration
 
-Routes are registered per tenant using a header filter:
+Routes are created from the module descriptor on the **first** entitlement of a module
+(controlled by `APIGW_ROUTEMANAGEMENT_ENABLED`, default `true`). Subsequent tenants entitling the same
+module reuse the existing routes.
+
+By default (`APIGW_TENANT_CHECKS_ENABLED=false`) routes are wildcard — any tenant can reach the module.
+When `APIGW_TENANT_CHECKS_ENABLED=true`, a tenant-specific header filter is added to each route on
+entitlement and removed on revoke:
 
 ```json
 {
@@ -354,9 +360,7 @@ Routes are registered per tenant using a header filter:
 }
 ```
 
-Routes as well populated with tags: `moduleId` and `tenantId` to be filtered.
-
-Routes per tenant can be found with:
+Routes are populated with tags `moduleId` and `tenantId` and can be queried with:
 
 ```shell
 curl -XGET "$APIGW_URL/routes?tags=$moduleId,$tenantId"
