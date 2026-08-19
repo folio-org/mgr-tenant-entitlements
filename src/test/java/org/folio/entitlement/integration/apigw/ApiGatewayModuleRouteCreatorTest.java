@@ -221,7 +221,7 @@ class ApiGatewayModuleRouteCreatorTest {
   }
 
   @Test
-  void cancel_positive_tenantChecksEnabled_removeTenantThrowsException() {
+  void cancel_positive_tenantChecksEnabled_removeTenantFromModuleRoutesThrowsException() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(properties.getTenantChecks().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(true);

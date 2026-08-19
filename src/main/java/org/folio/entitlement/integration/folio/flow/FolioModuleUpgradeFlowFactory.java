@@ -6,13 +6,13 @@ import static org.folio.entitlement.utils.FlowUtils.combineStages;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.integration.apigw.ApiGatewayModuleRouteUpdater;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.folio.stage.FolioModuleUpdater;
 import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceUpdater;
-import org.folio.entitlement.integration.apigw.ApiGatewayModuleRouteUpdater;
 import org.folio.entitlement.service.flow.ModuleFlowFactory;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
@@ -35,7 +35,8 @@ public class FolioModuleUpgradeFlowFactory implements ModuleFlowFactory {
     return Flow.builder()
       .id(flowId)
       .executionStrategy(strategy)
-      .stage(combineStages("ResourceUpdaterParallelStage", asList(kcModuleResourceUpdater, apiGatewayModuleRouteUpdater)))
+      .stage(combineStages("ResourceUpdaterParallelStage",
+        asList(kcModuleResourceUpdater, apiGatewayModuleRouteUpdater)))
       .stage(systemUserEventPublisher)
       .stage(folioModuleUpdater)
       .stage(folioModuleEventPublisher)

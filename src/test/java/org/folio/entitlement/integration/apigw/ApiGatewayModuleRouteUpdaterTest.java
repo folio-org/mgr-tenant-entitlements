@@ -14,7 +14,6 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
-import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -25,7 +24,6 @@ import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementModuleService;
-import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.folio.tools.kong.model.Service;
@@ -47,7 +45,6 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   @Mock private KongGatewayService kongGatewayService;
   @Mock private EntitlementModuleService entitlementModuleService;
-  @Mock private ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
   private ApiGatewayModuleRouteUpdater apiGatewayModuleRouteUpdater;
 
@@ -55,12 +52,10 @@ class ApiGatewayModuleRouteUpdaterTest {
   void setUp() {
     apiGatewayModuleRouteUpdater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       defaultProperties(), entitlementModuleService);
-    apiGatewayModuleRouteUpdater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
   }
 
   @AfterEach
   void tearDown() {
-    reset(threadLocalModuleStageContext);
     TestUtils.verifyNoMoreInteractions(this);
   }
 
@@ -84,7 +79,6 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithTenantChecks(), entitlementModuleService);
-    updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
     var descriptor = moduleDescriptor();
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
@@ -101,7 +95,6 @@ class ApiGatewayModuleRouteUpdaterTest {
   void execute_positive_routeManagementDisabled() {
     var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithoutRouteManagement(), entitlementModuleService);
-    updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
     var descriptor = moduleDescriptor();
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
@@ -153,7 +146,6 @@ class ApiGatewayModuleRouteUpdaterTest {
   void execute_positive_deprecatedModule_lastTenant_routeManagementDisabled() {
     var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithoutRouteManagement(), entitlementModuleService);
-    updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
     when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
 
@@ -186,7 +178,6 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithTenantChecks(), entitlementModuleService);
-    updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
     var descriptor = moduleDescriptor();
     var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
@@ -246,7 +237,6 @@ class ApiGatewayModuleRouteUpdaterTest {
   void execute_positive_withInstalledModule_lastTenant_routeManagementDisabled_noDeleteOldService() {
     var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
       propertiesWithoutRouteManagement(), entitlementModuleService);
-    updater.setThreadLocalModuleStageContext(threadLocalModuleStageContext);
 
     when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(true);
 

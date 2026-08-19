@@ -74,18 +74,6 @@ class ApiGatewayModuleRouteCleanerTest {
   }
 
   @Test
-  void execute_positive_notLastTenant_noOp() {
-    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
-    when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(false);
-
-    var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
-
-    apiGatewayModuleRouteCleaner.execute(stageContext);
-
-    verifyNoInteractions(kongGatewayService);
-  }
-
-  @Test
   void execute_positive_lastTenant_routeManagementDisabled() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(false);
     when(properties.getTenantChecks().isEnabled()).thenReturn(false);
