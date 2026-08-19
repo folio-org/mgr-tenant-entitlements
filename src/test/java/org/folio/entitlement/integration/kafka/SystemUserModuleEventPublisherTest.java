@@ -168,9 +168,9 @@ class SystemUserModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     when(systemUserEventProvider.getSystemUserEvent(v1ModuleDescriptor))
-      .thenReturn(of(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"))));
+      .thenReturn(of(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"))));
     when(systemUserEventProvider.getSystemUserEvent(v2ModuleDescriptor))
-      .thenReturn(of(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.v2.entities.post"))));
+      .thenReturn(of(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.v2.entities.post"))));
     doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
       messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
@@ -217,7 +217,7 @@ class SystemUserModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor))
-      .thenReturn(of(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"))));
+      .thenReturn(of(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"))));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
       messageKeyCaptor.capture(), eventCaptor.capture());
@@ -263,5 +263,9 @@ class SystemUserModuleEventPublisherTest {
     userDescriptor.setType(SYS_USER_TYPE);
     userDescriptor.setPermissions(List.of(permissions));
     return userDescriptor;
+  }
+
+  private static SystemUserEvent systemUserEvent(String moduleId, String moduleName, List<String> permissions) {
+    return SystemUserEvent.of(moduleId, moduleName, SYS_USER_TYPE, permissions);
   }
 }
