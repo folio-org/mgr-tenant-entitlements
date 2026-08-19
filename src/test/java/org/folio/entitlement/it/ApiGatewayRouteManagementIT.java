@@ -12,6 +12,7 @@ import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient;
+import org.folio.tools.kong.model.Route;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
@@ -114,15 +115,20 @@ class ApiGatewayRouteManagementIT extends BaseIntegrationTest {
       extendedEntitlements(entitlement(FOLIO_APP1_ID)));
 
     assertThat(kongAdminClient.getService(FOLIO_MODULE1_ID)).isNotNull();
-    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE1_ID, null).getData()).isNotEmpty();
+    var routesBeforeUpgrade = kongAdminClient.getRoutesByTag(FOLIO_MODULE1_ID, null).getData();
+    assertThat(routesBeforeUpgrade).isNotEmpty();
 
     upgradeApplications(entitlementRequest(FOLIO_APP1_V2_ID), queryParams,
       extendedEntitlements(entitlement(FOLIO_APP1_V2_ID)));
 
     assertThatThrownBy(() -> kongAdminClient.getService(FOLIO_MODULE1_ID))
       .isInstanceOf(HttpClientErrorException.NotFound.class);
+    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE1_ID, null).getData()).isEmpty();
     assertThat(kongAdminClient.getService(FOLIO_MODULE1_V2_ID)).isNotNull();
-    assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE1_V2_ID, null).getData()).isNotEmpty();
+    var routesAfterUpgrade = kongAdminClient.getRoutesByTag(FOLIO_MODULE1_V2_ID, null).getData();
+    assertThat(routesAfterUpgrade).isNotEmpty();
+    assertThat(routesAfterUpgrade).extracting(Route::getId)
+      .doesNotContainAnyElementsOf(routesBeforeUpgrade.stream().map(Route::getId).toList());
 
     revokeEntitlements(entitlementRequest(FOLIO_APP1_V2_ID), queryParams,
       extendedEntitlements(entitlement(FOLIO_APP1_V2_ID)));
