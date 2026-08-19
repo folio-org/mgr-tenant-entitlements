@@ -92,7 +92,7 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     stageContext.withStageId(UUID.randomUUID());
 
-    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    var systemUserEvent = systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
@@ -119,7 +119,7 @@ class SystemUserModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
     stageContext.withStageId(UUID.randomUUID());
 
-    var systemUserEvent = SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post"));
+    var systemUserEvent = systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"));
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantCollectionTopic()),
@@ -179,8 +179,8 @@ class SystemUserModuleEventPublisherTest {
 
     var expectedEvent = ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("System user")
-      .newValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.v2.entities.post")))
-      .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
+      .newValue(systemUserEvent(MODULE_ID_V2, MODULE_NAME, List.of("foo.v2.entities.post")))
+      .oldValue(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post")))
       .build();
 
     assertThat(eventCaptor.getValue()).usingRecursiveComparison().ignoringFields("id").isEqualTo(expectedEvent);
@@ -227,7 +227,7 @@ class SystemUserModuleEventPublisherTest {
 
     var expectedEvent = ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("System user")
-      .oldValue(SystemUserEvent.of(MODULE_NAME, SYS_USER_TYPE, List.of("foo.entities.post")))
+      .oldValue(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post")))
       .build();
 
     assertThat(eventCaptor.getValue()).usingRecursiveComparison().ignoringFields("id").isEqualTo(expectedEvent);

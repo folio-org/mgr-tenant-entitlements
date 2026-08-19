@@ -44,7 +44,8 @@ class SystemUserEventProviderTest {
     var moduleDescriptor = new ModuleDescriptor().id("test-module-0.0.1").user(userDescriptor);
 
     var result = systemUserEventProvider.getSystemUserEvent(moduleDescriptor);
-    assertThat(result).contains(SystemUserEvent.of("test-module", "module", List.of("test.permission")));
+    assertThat(result).contains(SystemUserEvent.of("test-module-0.0.1", "test-module", "module",
+      List.of("test.permission")));
     verifyNoInteractions(objectMapper);
   }
 
@@ -62,7 +63,8 @@ class SystemUserEventProviderTest {
     var moduleDescriptor = JACKSON3_OBJECT_MAPPER.readValue(moduleDescriptorJson, ModuleDescriptor.class);
     var result = systemUserEventProvider.getSystemUserEvent(moduleDescriptor);
 
-    assertThat(result).contains(SystemUserEvent.of("test-module", "system", List.of("test.permission")));
+    assertThat(result).contains(SystemUserEvent.of("test-module-0.0.1", "test-module", "system",
+      List.of("test.permission")));
     verify(objectMapper).convertValue(anyMap(), eq(UserDescriptor.class));
   }
 

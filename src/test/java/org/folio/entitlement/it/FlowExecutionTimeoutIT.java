@@ -47,7 +47,6 @@ import org.springframework.test.web.servlet.ResultActions;
 @TestPropertySource(properties = {
   "application.kong.enabled=false",
   "application.keycloak.enabled=false",
-  "application.okapi.enabled=false",
   "application.flow-engine.execution-timeout=1s",
   "application.clients.folio.connect-timeout=60s",
   "application.clients.folio.read-timeout=60s"

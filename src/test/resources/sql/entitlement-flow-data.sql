@@ -47,7 +47,7 @@ insert into flow_stage(flow_id, stage, status, started_at, finished_at, error_me
   ('bed2dc08-17f4-45f1-82da-84ffc65c5825', 'ApplicationDependencyValidator', 'FINISHED', '2023-01-01 12:01:16', '2023-01-01 12:01:20', null),
   ('bed2dc08-17f4-45f1-82da-84ffc65c5825', 'ApplicationDiscoveryValidator', 'FINISHED', '2023-01-01 12:01:21', '2023-01-01 12:01:25', null),
   ('bed2dc08-17f4-45f1-82da-84ffc65c5825', 'KongRouteCreator', 'FINISHED', '2023-01-01 12:01:26', '2023-01-01 12:01:30', null),
-  ('bed2dc08-17f4-45f1-82da-84ffc65c5825', 'OkapiModuleInstaller', 'FINISHED', '2023-01-01 12:01:31', '2023-01-01 12:01:35', null),
+  ('bed2dc08-17f4-45f1-82da-84ffc65c5825', 'FolioModuleInstaller', 'FINISHED', '2023-01-01 12:01:31', '2023-01-01 12:01:35', null),
   ('bed2dc08-17f4-45f1-82da-84ffc65c5825', 'EntitlementEventPublisher', 'FINISHED', '2023-01-01 12:01:36', '2023-01-01 12:01:40', null),
   ('bed2dc08-17f4-45f1-82da-84ffc65c5825', 'EntitlementFlowFinalizer', 'FINISHED', '2023-01-01 12:01:41', '2023-01-01 12:01:45', null),
 
@@ -57,7 +57,7 @@ insert into flow_stage(flow_id, stage, status, started_at, finished_at, error_me
   ('e9b839d8-140f-4ef2-b9db-38c289d220d6', 'ApplicationDependencyValidator', 'FINISHED', '2023-01-01 12:02:16', '2023-01-01 12:02:20', null),
   ('e9b839d8-140f-4ef2-b9db-38c289d220d6', 'ApplicationDiscoveryValidator', 'FINISHED', '2023-01-01 12:02:21', '2023-01-01 12:02:25', null),
   ('e9b839d8-140f-4ef2-b9db-38c289d220d6', 'KongRouteCreator', 'FINISHED', '2023-01-01 12:02:26', '2023-01-01 12:02:30', null),
-  ('e9b839d8-140f-4ef2-b9db-38c289d220d6', 'OkapiModuleInstaller', 'FINISHED', '2023-01-01 12:02:31', '2023-01-01 12:02:35', null),
+  ('e9b839d8-140f-4ef2-b9db-38c289d220d6', 'FolioModuleInstaller', 'FINISHED', '2023-01-01 12:02:31', '2023-01-01 12:02:35', null),
   ('e9b839d8-140f-4ef2-b9db-38c289d220d6', 'EntitlementEventPublisher', 'FINISHED', '2023-01-01 12:02:36', '2023-01-01 12:02:40', null),
   ('e9b839d8-140f-4ef2-b9db-38c289d220d6', 'EntitlementFlowFinalizer', 'FINISHED', '2023-01-01 12:02:41', '2023-01-01 12:02:45', null),
   ('def173a0-7b4c-4f45-b66c-5fe4aa7c8f98', 'FlowFinalizer', 'FINISHED', '2023-01-01 12:02:46', '2023-01-01 12:02:50', null),
@@ -69,7 +69,7 @@ insert into flow_stage(flow_id, stage, status, started_at, finished_at, error_me
   ('64f6b5ab-4894-45cf-b1b9-760c1c6b800b', 'ApplicationDependencyValidator', 'FINISHED', '2023-01-01 13:01:16', '2023-01-01 13:01:20', null),
   ('64f6b5ab-4894-45cf-b1b9-760c1c6b800b', 'ApplicationDiscoveryValidator', 'FINISHED', '2023-01-01 13:01:21', '2023-01-01 13:01:25', null),
   ('64f6b5ab-4894-45cf-b1b9-760c1c6b800b', 'KongRouteCreator', 'FINISHED', '2023-01-01 13:01:26', '2023-01-01 13:01:30', null),
-  ('64f6b5ab-4894-45cf-b1b9-760c1c6b800b', 'OkapiModuleInstaller', 'FINISHED', '2023-01-01 13:01:31', '2023-01-01 13:01:35', null),
+  ('64f6b5ab-4894-45cf-b1b9-760c1c6b800b', 'FolioModuleInstaller', 'FINISHED', '2023-01-01 13:01:31', '2023-01-01 13:01:35', null),
   ('64f6b5ab-4894-45cf-b1b9-760c1c6b800b', 'EntitlementEventPublisher', 'FINISHED', '2023-01-01 13:01:36', '2023-01-01 13:01:40', null),
   ('64f6b5ab-4894-45cf-b1b9-760c1c6b800b', 'EntitlementFlowFinalizer', 'FINISHED', '2023-01-01 13:01:41', '2023-01-01 13:01:45', null),
 
@@ -87,7 +87,7 @@ insert into flow_stage(flow_id, stage, status, started_at, finished_at, error_me
   ('d682652a-35e2-41c8-9908-d441901d7b0c', 'ApplicationDependencyValidator', 'FINISHED', '2023-01-01 13:05:16', '2023-01-01 13:05:20', null),
   ('d682652a-35e2-41c8-9908-d441901d7b0c', 'ApplicationDiscoveryValidator', 'FINISHED', '2023-01-01 13:05:21', '2023-01-01 13:05:25', null),
   ('d682652a-35e2-41c8-9908-d441901d7b0c', 'KongRouteCreator', 'FINISHED', '2023-01-01 13:05:26', '2023-01-01 13:05:30', null),
-  ('d682652a-35e2-41c8-9908-d441901d7b0c', 'OkapiModuleInstaller', 'FINISHED', '2023-01-01 13:05:31', '2023-01-01 13:05:35', null),
+  ('d682652a-35e2-41c8-9908-d441901d7b0c', 'FolioModuleInstaller', 'FINISHED', '2023-01-01 13:05:31', '2023-01-01 13:05:35', null),
   ('d682652a-35e2-41c8-9908-d441901d7b0c', 'EntitlementEventPublisher', 'FINISHED', '2023-01-01 13:05:36', '2023-01-01 13:05:40', null),
   ('d682652a-35e2-41c8-9908-d441901d7b0c', 'EntitlementFlowFinalizer', 'FINISHED', '2023-01-01 13:05:41', '2023-01-01 13:05:45', null),
 
@@ -97,7 +97,7 @@ insert into flow_stage(flow_id, stage, status, started_at, finished_at, error_me
   ('59bd05a6-4cb6-4f19-9a8f-c67e6fe27706', 'ApplicationDependencyValidator', 'FINISHED', '2023-01-01 13:06:16', '2023-01-01 13:06:20', null),
   ('59bd05a6-4cb6-4f19-9a8f-c67e6fe27706', 'ApplicationDiscoveryValidator', 'FINISHED', '2023-01-01 13:06:21', '2023-01-01 13:06:25', null),
   ('59bd05a6-4cb6-4f19-9a8f-c67e6fe27706', 'KongRouteCreator', 'FINISHED', '2023-01-01 13:06:26', '2023-01-01 13:06:30', null),
-  ('59bd05a6-4cb6-4f19-9a8f-c67e6fe27706', 'OkapiModuleInstaller', 'FINISHED', '2023-01-01 13:06:31', '2023-01-01 13:06:35', null),
+  ('59bd05a6-4cb6-4f19-9a8f-c67e6fe27706', 'FolioModuleInstaller', 'FINISHED', '2023-01-01 13:06:31', '2023-01-01 13:06:35', null),
   ('59bd05a6-4cb6-4f19-9a8f-c67e6fe27706', 'EntitlementEventPublisher', 'FINISHED', '2023-01-01 13:06:36', '2023-01-01 13:06:40', null),
   ('59bd05a6-4cb6-4f19-9a8f-c67e6fe27706', 'EntitlementFlowFinalizer', 'FINISHED', '2023-01-01 13:06:41', '2023-01-01 13:06:45', null),
   ('d3610151-68ff-495d-8b0c-cec170ed07c7', 'FlowFinalizer', 'FINISHED', '2023-01-01 13:06:46', '2023-01-01 13:06:50', null),
@@ -109,7 +109,7 @@ insert into flow_stage(flow_id, stage, status, started_at, finished_at, error_me
   ('aada83c2-26a4-46db-858a-ac56729e93fe', 'ApplicationDependencyValidator', 'FINISHED', '2023-01-01 14:00:16', '2023-01-01 14:00:20', null),
   ('aada83c2-26a4-46db-858a-ac56729e93fe', 'ApplicationDiscoveryValidator', 'FINISHED', '2023-01-01 14:00:21', '2023-01-01 14:00:25', null),
   ('aada83c2-26a4-46db-858a-ac56729e93fe', 'KongRouteCreator', 'FINISHED', '2023-01-01 14:00:26', '2023-01-01 14:00:30', null),
-  ('aada83c2-26a4-46db-858a-ac56729e93fe', 'OkapiModuleInstaller', 'FINISHED', '2023-01-01 14:00:31', '2023-01-01 14:00:35', null),
+  ('aada83c2-26a4-46db-858a-ac56729e93fe', 'FolioModuleInstaller', 'FINISHED', '2023-01-01 14:00:31', '2023-01-01 14:00:35', null),
   ('aada83c2-26a4-46db-858a-ac56729e93fe', 'EntitlementEventPublisher', 'FINISHED', '2023-01-01 14:00:36', '2023-01-01 14:00:40', null),
   ('aada83c2-26a4-46db-858a-ac56729e93fe', 'EntitlementFlowFinalizer', 'FINISHED', '2023-01-01 14:00:41', '2023-01-01 14:00:45', null),
 
@@ -119,7 +119,7 @@ insert into flow_stage(flow_id, stage, status, started_at, finished_at, error_me
   ('bedb449f-fbc5-4605-b2f6-2f0b9368845d', 'ApplicationDependencyValidator', 'FINISHED', '2023-01-02 14:01:16', '2023-01-02 14:01:20', null),
   ('bedb449f-fbc5-4605-b2f6-2f0b9368845d', 'ApplicationDiscoveryValidator', 'FINISHED', '2023-01-02 14:01:21', '2023-01-02 14:01:25', null),
   ('bedb449f-fbc5-4605-b2f6-2f0b9368845d', 'KongRouteCreator', 'FINISHED', '2023-01-02 14:01:26', '2023-01-02 14:01:30', null),
-  ('bedb449f-fbc5-4605-b2f6-2f0b9368845d', 'OkapiModuleInstaller', 'FINISHED', '2023-01-02 14:01:31', '2023-01-02 14:01:35', null),
+  ('bedb449f-fbc5-4605-b2f6-2f0b9368845d', 'FolioModuleInstaller', 'FINISHED', '2023-01-02 14:01:31', '2023-01-02 14:01:35', null),
   ('bedb449f-fbc5-4605-b2f6-2f0b9368845d', 'EntitlementEventPublisher', 'FINISHED', '2023-01-02 14:01:36', '2023-01-02 14:01:40', null),
   ('bedb449f-fbc5-4605-b2f6-2f0b9368845d', 'EntitlementFlowFinalizer', 'FINISHED', '2023-01-02 14:01:41', '2023-01-02 14:01:45', null),
   ('c7c51e7e-c475-433b-ae66-4457ee4b3fd3', 'FlowFinalizer', 'FINISHED', '2023-01-01 14:01:46', '2023-01-01 14:01:50', null);

@@ -39,7 +39,8 @@ public class EntitlementRequest {
   private final String tenantParameters;
 
   /**
-   * X-Okapi-Token value to proxy request to okapi (optional).
+   * Inbound X-Okapi-Token value, used to authenticate calls to mgr-applications and
+   * mgr-tenants (optional).
    */
   @ToString.Exclude
   private final String okapiToken;

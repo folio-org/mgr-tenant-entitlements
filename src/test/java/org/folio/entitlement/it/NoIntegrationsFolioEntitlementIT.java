@@ -11,8 +11,6 @@ import static org.folio.entitlement.support.KafkaEventAssertions.assertSystemUse
 import static org.folio.entitlement.support.TestConstants.COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.FOLIO_MODULE_INSTALLER_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES;
-import static org.folio.entitlement.support.TestConstants.OKAPI_MODULE_INSTALLER_BEAN_TYPES;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.capabilitiesTenantTopic;
@@ -90,7 +88,6 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 @TestPropertySource(properties = {
   "application.keycloak.enabled=false",
-  "application.okapi.enabled=false",
   "application.kong.enabled=false",
   "application.clients.folio.connect-timeout=250ms",
   "application.clients.folio.read-timeout=250ms",
@@ -713,7 +710,5 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
 
     checkMissingBeans(appContext, COMMON_KEYCLOAK_INTEGRATION_BEAN_TYPES);
     checkMissingBeans(appContext, FOLIO_KEYCLOAK_INTEGRATION_BEAN_TYPES);
-    checkMissingBeans(appContext, OKAPI_KEYCLOAK_INTEGRATION_BEAN_TYPES);
-    checkMissingBeans(appContext, OKAPI_MODULE_INSTALLER_BEAN_TYPES);
   }
 }

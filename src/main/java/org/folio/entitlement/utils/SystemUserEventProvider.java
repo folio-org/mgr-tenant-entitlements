@@ -30,7 +30,7 @@ public class SystemUserEventProvider {
 
   private static SystemUserEvent getSystemUserEvent(ModuleDescriptor moduleDescriptor, UserDescriptor systemUser) {
     var moduleName = SemverUtils.getName(moduleDescriptor.getId());
-    return SystemUserEvent.of(moduleName, systemUser.getType(), systemUser.getPermissions());
+    return SystemUserEvent.of(moduleDescriptor.getId(), moduleName, systemUser.getType(), systemUser.getPermissions());
   }
 
   public Optional<UserDescriptor> findSystemUser(ModuleDescriptor moduleDescriptor) {

@@ -2,6 +2,13 @@
 * Gracefully complete entitlement for desired state operation in no async mode (MGRENTITLE-161)
 * Upgrade dependencies for Kafka 4.2 compatibility in mgr-tenant-entitlements (MGRENTITLE-180)
 * Switch Kong integration test container to folioci/folio-kong image (APPPOCTOOL-37)
+* **Breaking:** Remove "Okapi integration" mode. `OKAPI_INTEGRATION_ENABLED`, `OKAPI_URL` and
+  `MOD_AUTHTOKEN_URL` are no longer supported; the Okapi entitle/revoke/upgrade flows and the
+  `OkapiModulesInstaller` stage are gone, leaving the folio module flow as the only path, and
+  mod-authtoken security mode is no longer reachable. The `okapi.proxy.tenants.install.post`
+  subPermissions were dropped from the module descriptor (MGRENTITLE-111)
+* Remove the application count limit from reinstall endpoint (MGRENTITLE-172)
+* Include the full module ID in system-user Kafka events for downstream entitlement processing tracking (MGRENTITLE-192)
 
 ---
 
