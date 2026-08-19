@@ -170,7 +170,7 @@ class SystemUserModuleEventPublisherTest {
     when(systemUserEventProvider.getSystemUserEvent(v1ModuleDescriptor))
       .thenReturn(of(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"))));
     when(systemUserEventProvider.getSystemUserEvent(v2ModuleDescriptor))
-      .thenReturn(of(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.v2.entities.post"))));
+      .thenReturn(of(systemUserEvent(MODULE_ID_V2, MODULE_NAME, List.of("foo.v2.entities.post"))));
     doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
       messageKeyCaptor.capture(), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
