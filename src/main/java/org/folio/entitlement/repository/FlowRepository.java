@@ -20,11 +20,14 @@ public interface FlowRepository extends AbstractFlowRepository<FlowEntity> {
   @Override
   @Query("""
     SELECT
-      EXISTS (SELECT 1 FROM FlowStageEntity fs WHERE fs.flowId = :flowId AND fs.status = :status)
+      EXISTS (SELECT 1 FROM FlowStageEntity fs
+              WHERE fs.flowId = :flowId AND fs.status = :status AND fs.id != :excludedStageId)
       OR EXISTS (SELECT 1 FROM ApplicationFlowEntity af WHERE af.flowId = :flowId AND af.status = :status)
     FROM FlowEntity f
     WHERE f.id = :flowId""")
-  boolean existsAnyStageByFlowIdAndStatus(@Param("flowId") UUID flowId, @Param("status") EntityExecutionStatus status);
+  boolean existsAnyStageByFlowIdAndStatusExcluding(@Param("flowId") UUID flowId,
+    @Param("status") EntityExecutionStatus status,
+    @Param("excludedStageId") UUID excludedStageId);
 
   @Modifying
   @Query("""

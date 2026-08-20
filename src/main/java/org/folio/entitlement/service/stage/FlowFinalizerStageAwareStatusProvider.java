@@ -17,7 +17,8 @@ public class FlowFinalizerStageAwareStatusProvider<T extends AbstractFlowEntity,
   @Override
   public ExecutionStatus getFinalStatus(C context) {
     var entitlementFlowId = context.getCurrentFlowId();
-    var isInProgress = flowRepository.existsAnyStageByFlowIdAndStatus(entitlementFlowId, IN_PROGRESS);
+    var isInProgress = flowRepository.existsAnyStageByFlowIdAndStatusExcluding(
+      entitlementFlowId, IN_PROGRESS, context.getStageId());
     return isInProgress ? ExecutionStatus.IN_PROGRESS : ExecutionStatus.FINISHED;
   }
 }

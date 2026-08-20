@@ -151,7 +151,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     assertThat(
       logs.stream().filter(logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(3);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "Flow stage FolioModuleInstaller folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
+      "folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(4);
 
@@ -172,7 +172,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     assertThat(
       logs.stream().filter(logLine -> logLine.contains("Error occurred for Folio Module call - retrying"))).hasSize(3);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
-      "Flow stage FolioModuleInstaller folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
+      "folio-module1-1.0.0-folioModuleInstaller execution error"))).hasSize(1);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "org.folio.entitlement.integration.IntegrationException: Failed to perform doPostTenant call"))).hasSize(4);
 
@@ -306,7 +306,7 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP1_ID), emptyEntitlements());
     assertThat(logs.stream().filter(
-      logLine -> logLine.contains("Flow stage TenantLoader TenantLoader execution error"))).hasSize(1);
+      logLine -> logLine.contains("TenantLoader execution error"))).hasSize(1);
     assertThat(logs.stream().filter(logLine -> logLine.contains(
       "jakarta.persistence.EntityNotFoundException: Tenant is not found: 6ad28dae-7c02-4f89-9320-153c55bf1914")))
       .hasSize(1);

@@ -122,8 +122,8 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       assertThat(logs.stream().filter(
           logLine -> logLine.contains("jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error")))
         .hasSize(6);
-      assertThat(logs.stream().filter(logLine -> logLine.contains("Flow stage KeycloakModuleResourceCreator "
-          + "folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
+      assertThat(logs.stream().filter(logLine -> logLine.contains(
+          "folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
         .hasSize(1);
     });
 
@@ -174,7 +174,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       assertThat(logs.stream().filter(logLine -> logLine.contains(
         "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(6);
       assertThat(logs.stream().filter(logLine -> logLine.contains(
-        "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
+        "folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
         .hasSize(1);
     });
 

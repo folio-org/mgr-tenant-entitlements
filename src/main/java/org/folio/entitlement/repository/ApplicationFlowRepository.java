@@ -85,8 +85,11 @@ public interface ApplicationFlowRepository extends AbstractFlowRepository<Applic
 
   @Override
   @Query("""
-    SELECT COUNT(entity) > 0 FROM FlowStageEntity entity WHERE entity.flowId = :flowId and entity.status = :status""")
-  boolean existsAnyStageByFlowIdAndStatus(@Param("flowId") UUID flowId, @Param("status") EntityExecutionStatus status);
+    SELECT COUNT(entity) > 0 FROM FlowStageEntity entity
+    WHERE entity.flowId = :flowId AND entity.status = :status AND entity.id != :excludedStageId""")
+  boolean existsAnyStageByFlowIdAndStatusExcluding(@Param("flowId") UUID flowId,
+    @Param("status") EntityExecutionStatus status,
+    @Param("excludedStageId") UUID excludedStageId);
 
   @Modifying
   @Query("""
