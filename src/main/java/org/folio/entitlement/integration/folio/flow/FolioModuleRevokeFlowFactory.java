@@ -6,6 +6,7 @@ import static org.folio.entitlement.utils.FlowUtils.combineStages;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.integration.apigw.ApiGatewayModuleRouteCleaner;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.folio.stage.FolioModuleUninstaller;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCleaner;
@@ -21,6 +22,7 @@ public class FolioModuleRevokeFlowFactory implements ModuleFlowFactory {
   private final FolioModuleEventPublisher folioModuleEventPublisher;
 
   private KeycloakModuleResourceCleaner kcModuleResourceCleaner;
+  private ApiGatewayModuleRouteCleaner apiGatewayModuleRouteCleaner;
 
   @Override
   public Flow createModuleFlow(Object flowId, FlowExecutionStrategy strategy, Map<?, ?> additionalFlowParameters) {
@@ -28,7 +30,8 @@ public class FolioModuleRevokeFlowFactory implements ModuleFlowFactory {
       .id(flowId)
       .stage(folioModuleUninstaller)
       .stage(folioModuleEventPublisher)
-      .stage(combineStages("ResourcesCleanerParallelStage", asList(kcModuleResourceCleaner)))
+      .stage(combineStages("ResourcesCleanerParallelStage",
+        asList(apiGatewayModuleRouteCleaner, kcModuleResourceCleaner)))
       .executionStrategy(strategy)
       .flowParameters(additionalFlowParameters)
       .build();
@@ -51,5 +54,10 @@ public class FolioModuleRevokeFlowFactory implements ModuleFlowFactory {
   @Autowired(required = false)
   public void setKcModuleResourceCleaner(KeycloakModuleResourceCleaner kcModuleResourceCleaner) {
     this.kcModuleResourceCleaner = kcModuleResourceCleaner;
+  }
+
+  @Autowired(required = false)
+  public void setApiGatewayModuleRouteCleaner(ApiGatewayModuleRouteCleaner apiGatewayModuleRouteCleaner) {
+    this.apiGatewayModuleRouteCleaner = apiGatewayModuleRouteCleaner;
   }
 }
