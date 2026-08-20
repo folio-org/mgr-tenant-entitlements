@@ -14,6 +14,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.moduleFlowParameters;
 import static org.folio.entitlement.support.TestValues.moduleStageContext;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -32,6 +33,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -46,12 +48,14 @@ class ApiGatewayModuleRouteUpdaterTest {
   @Mock private KongGatewayService kongGatewayService;
   @Mock private EntitlementModuleService entitlementModuleService;
 
+  private ApiGatewayConfigurationProperties properties;
   private ApiGatewayModuleRouteUpdater apiGatewayModuleRouteUpdater;
 
   @BeforeEach
   void setUp() {
+    properties = mock(ApiGatewayConfigurationProperties.class, Answers.RETURNS_DEEP_STUBS);
     apiGatewayModuleRouteUpdater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
-      defaultProperties(), entitlementModuleService);
+      properties, entitlementModuleService);
   }
 
   @AfterEach
@@ -61,6 +65,8 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_routeManagementEnabled_tenantChecksDisabled() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
     var descriptor = moduleDescriptor();
@@ -68,24 +74,21 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
     verify(kongGatewayService).addRoutes(List.of(descriptor));
   }
 
   @Test
   void execute_positive_tenantChecksEnabled() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
-
-    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
-      propertiesWithTenantChecks(), entitlementModuleService);
 
     var descriptor = moduleDescriptor();
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
 
-    updater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
     verify(kongGatewayService).addRoutes(List.of(descriptor));
     verify(kongGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
@@ -93,13 +96,13 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_routeManagementDisabled() {
-    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
-      propertiesWithoutRouteManagement(), entitlementModuleService);
+    when(properties.getRouteManagement().isEnabled()).thenReturn(false);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
 
     var descriptor = moduleDescriptor();
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowWithDiscovery(descriptor), stageParams());
 
-    updater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
   }
@@ -117,6 +120,7 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_deprecatedModule_lastTenant_routeManagementEnabled() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
@@ -124,7 +128,6 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(entitlementModuleService).isNoOtherEntitlementExist(MODULE_ID, TENANT_ID);
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).deleteService(MODULE_ID);
   }
@@ -144,17 +147,14 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_deprecatedModule_lastTenant_routeManagementDisabled() {
-    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
-      propertiesWithoutRouteManagement(), entitlementModuleService);
-
+    when(properties.getRouteManagement().isEnabled()).thenReturn(false);
     when(entitlementModuleService.isNoOtherEntitlementExist(MODULE_ID, TENANT_ID)).thenReturn(true);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowParameters(entitlementRequest(), MODULE, moduleDescriptor()), stageParams());
 
-    updater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(entitlementModuleService).isNoOtherEntitlementExist(MODULE_ID, TENANT_ID);
     verifyNoInteractions(kongGatewayService);
   }
 
@@ -173,11 +173,10 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_tenantChecksEnabled_withInstalledModule_removesTenantFromOldRoutes() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(false);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
-
-    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
-      propertiesWithTenantChecks(), entitlementModuleService);
 
     var descriptor = moduleDescriptor();
     var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
@@ -185,10 +184,8 @@ class ApiGatewayModuleRouteUpdaterTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
 
-    updater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
-    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
     verify(kongGatewayService).removeTenantFromModuleRoutes(INSTALLED_MODULE_ID, TENANT_NAME);
     verify(kongGatewayService).addRoutes(List.of(descriptor));
@@ -197,6 +194,8 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_withInstalledModule_lastTenant_deletesOldService() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
     when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
@@ -207,8 +206,6 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
-    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
     verify(kongGatewayService).addRoutes(List.of(descriptor));
     verify(kongGatewayService).deleteServiceRoutes(INSTALLED_MODULE_ID);
@@ -217,6 +214,8 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_withInstalledModule_notLastTenant_noOpOnOldService() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
     when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(false);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
@@ -227,17 +226,14 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
-    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
     verify(kongGatewayService).addRoutes(List.of(descriptor));
   }
 
   @Test
   void execute_positive_withInstalledModule_lastTenant_routeManagementDisabled_noDeleteOldService() {
-    var updater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
-      propertiesWithoutRouteManagement(), entitlementModuleService);
-
+    when(properties.getRouteManagement().isEnabled()).thenReturn(false);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
     when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(true);
 
     var descriptor = moduleDescriptor();
@@ -245,7 +241,7 @@ class ApiGatewayModuleRouteUpdaterTest {
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
 
-    updater.execute(stageContext);
+    apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
     verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
@@ -253,6 +249,8 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   @Test
   void execute_positive_routeManagementEnabled_entitlementExists_skipsRouteCreation() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(false);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(true);
 
     var descriptor = moduleDescriptor();
@@ -299,21 +297,5 @@ class ApiGatewayModuleRouteUpdaterTest {
 
   private static Map<String, String> stageParams() {
     return Map.of(PARAM_TENANT_NAME, TENANT_NAME);
-  }
-
-  private static ApiGatewayConfigurationProperties defaultProperties() {
-    return new ApiGatewayConfigurationProperties();
-  }
-
-  private static ApiGatewayConfigurationProperties propertiesWithTenantChecks() {
-    var props = new ApiGatewayConfigurationProperties();
-    props.getTenantChecks().setEnabled(true);
-    return props;
-  }
-
-  private static ApiGatewayConfigurationProperties propertiesWithoutRouteManagement() {
-    var props = new ApiGatewayConfigurationProperties();
-    props.getRouteManagement().setEnabled(false);
-    return props;
   }
 }

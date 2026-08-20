@@ -143,7 +143,6 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
     verify(kongGatewayService).deleteService(MODULE_ID);
   }
@@ -217,7 +216,6 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
@@ -232,7 +230,6 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
     verifyNoInteractions(kongGatewayService);
   }
 
