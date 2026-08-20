@@ -73,7 +73,7 @@ import org.folio.test.extensions.EnableKeycloakTlsMode;
 import org.folio.test.extensions.KeycloakRealms;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,8 +110,8 @@ class NoIntegrationsFolioEntitlementIT extends BaseIntegrationTest {
     fakeKafkaConsumer.registerTopic(systemUserTenantTopic(), ResourceEvent.class);
   }
 
-  @AfterAll
-  public static void resetLogCapture() {
+  @AfterEach
+  public void resetLogCapture() {
     stopCaptureLog4J2Logs();
   }
 
