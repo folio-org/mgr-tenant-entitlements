@@ -126,8 +126,9 @@ class ApiGatewayRouteManagementIT extends BaseIntegrationTest {
     assertThat(kongAdminClient.getRoutesByTag(FOLIO_MODULE1_ID, null).getData()).isEmpty();
     assertThat(kongAdminClient.getService(FOLIO_MODULE1_V2_ID)).isNotNull();
     var routesAfterUpgrade = kongAdminClient.getRoutesByTag(FOLIO_MODULE1_V2_ID, null).getData();
-    assertThat(routesAfterUpgrade).isNotEmpty();
-    assertThat(routesAfterUpgrade).extracting(Route::getId)
+    assertThat(routesAfterUpgrade)
+      .isNotEmpty()
+      .extracting(Route::getId)
       .doesNotContainAnyElementsOf(routesBeforeUpgrade.stream().map(Route::getId).toList());
 
     revokeEntitlements(entitlementRequest(FOLIO_APP1_V2_ID), queryParams,
@@ -194,9 +195,9 @@ class ApiGatewayRouteManagementIT extends BaseIntegrationTest {
 
     assertThat(kongAdminClient.getService(FOLIO_MODULE1_ID)).isNotNull();
     var routesAfterEntitle = kongAdminClient.getRoutesByTag(FOLIO_MODULE1_ID, null).getData();
-    assertThat(routesAfterEntitle).isNotEmpty();
-    assertThat(routesAfterEntitle).allSatisfy(route ->
-      assertThat(route.getExpression()).contains("x_okapi_tenant == \"test\""));
+    assertThat(routesAfterEntitle)
+      .isNotEmpty()
+      .allSatisfy(route -> assertThat(route.getExpression()).contains("x_okapi_tenant == \"test\""));
 
     upgradeApplications(entitlementRequest(FOLIO_APP1_V2_ID), queryParams,
       extendedEntitlements(entitlement(FOLIO_APP1_V2_ID)));
@@ -205,9 +206,9 @@ class ApiGatewayRouteManagementIT extends BaseIntegrationTest {
       .isInstanceOf(HttpClientErrorException.NotFound.class);
     assertThat(kongAdminClient.getService(FOLIO_MODULE1_V2_ID)).isNotNull();
     var routesAfterUpgrade = kongAdminClient.getRoutesByTag(FOLIO_MODULE1_V2_ID, null).getData();
-    assertThat(routesAfterUpgrade).isNotEmpty();
-    assertThat(routesAfterUpgrade).allSatisfy(route ->
-      assertThat(route.getExpression()).contains("x_okapi_tenant == \"test\""));
+    assertThat(routesAfterUpgrade)
+      .isNotEmpty()
+      .allSatisfy(route -> assertThat(route.getExpression()).contains("x_okapi_tenant == \"test\""));
 
     revokeEntitlements(entitlementRequest(FOLIO_APP1_V2_ID), queryParams,
       extendedEntitlements(entitlement(FOLIO_APP1_V2_ID)));

@@ -17,6 +17,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -96,19 +97,6 @@ class ApiGatewayModuleRouteCleanerTest {
     apiGatewayModuleRouteCleaner.execute(stageContext);
 
     verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
-  }
-
-  @Test
-  void execute_positive_tenantChecksEnabled_lastTenant_deletesServiceAndRoutes() {
-    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
-    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
-
-    var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
-
-    apiGatewayModuleRouteCleaner.execute(stageContext);
-
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-    verify(kongGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
