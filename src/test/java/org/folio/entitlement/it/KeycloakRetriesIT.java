@@ -41,7 +41,7 @@ import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient.KongResultList;
 import org.folio.tools.kong.model.Route;
 import org.folio.tools.kong.model.Service;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -76,8 +76,8 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     stubPost(getWireMockClient(), 1, urlEqualTo("/realms/master/protocol/openid-connect/token"), tokenResponse, 200);
   }
 
-  @AfterAll
-  public static void resetLogCapture() {
+  @AfterEach
+  public void resetLogCapture() {
     stopCaptureLog4J2Logs();
   }
 
