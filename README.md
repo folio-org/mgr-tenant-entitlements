@@ -171,6 +171,11 @@ docker run \
 | KAFKA_SYS_USER_TOPIC_REPLICATION_FACTOR      | -             |  false   | Replication factor for `system-user` topic.                                                                                                                |
 | KAFKA_SEND_DURATION_TIMEOUT                  | 10s           |  false   | A default duration for KafkaEventPublisher will wait for the message acknowledgment from kafka                                                             |
 | KAFKA_PRODUCER_TENANT_COLLECTION             | false         |  false   | Defines usage Kafka Topic Tenant Collection for tenant specific events                                                                                     |
+| KAFKA_RESOURCE_RESULT_TOPIC_PARTITIONS       | 1             |  false   | Amount of partitions for `resource-result` topic.                                                                                                          |
+| KAFKA_RESOURCE_RESULT_TOPIC_REPLICATION_FACTOR | -           |  false   | Replication factor for `resource-result` topic.                                                                                                            |
+| KAFKA_RESOURCE_RESULT_TOPIC_PATTERN          | `${ENV}.resource-result` | false | Topic pattern for the `resource-result` Kafka listener. Supports regex; defaults to the environment-prefixed topic name.             |
+| KAFKA_RESOURCE_RESULT_TOPIC_CONCURRENCY      | 1             |  false   | Number of concurrent consumers for the `resource-result` listener.                                                                                         |
+| EVENT_PUBLISHER_AWAIT_COMPLETION             | false         |  false   | When `true`, capability, system-user, and scheduled-job event-publishing stages leave the flow stage `IN_PROGRESS` after publishing and wait for a `resource-result` Kafka acknowledgment before marking it `FINISHED`. When `false` (default), stages finish immediately upon a successful publish. |
 
 ### SSL Configuration environment variables
 
