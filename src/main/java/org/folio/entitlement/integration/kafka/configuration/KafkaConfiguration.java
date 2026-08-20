@@ -1,7 +1,9 @@
 package org.folio.entitlement.integration.kafka.configuration;
 
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.folio.integration.kafka.consumer.EnableKafkaConsumer;
+import org.folio.integration.kafka.model.ResourceResultEvent;
 import org.folio.integration.kafka.producer.EnableKafkaProducer;
 import org.springframework.boot.kafka.autoconfigure.DefaultKafkaConsumerFactoryCustomizer;
 import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryCustomizer;
@@ -33,9 +35,25 @@ public class KafkaConfiguration implements KafkaListenerConfigurer {
     return factory -> factory.setValueSerializerSupplier(() -> new JacksonJsonSerializer<>(jsonMapper));
   }
 
+  /**
+   * Customizes json deserializer for apache kafka.
+   *
+   * <p>The target type is pinned to {@link ResourceResultEvent} because the application has a
+   * single {@code @KafkaListener} that consumes only that event type.  Pinning avoids reliance on
+   * {@code spring.json.type.id} headers, which incoming producers may omit.
+   *
+   * @param jsonMapper - {@link JsonMapper} bean from spring context
+   * @return {@link DefaultKafkaConsumerFactoryCustomizer} object
+   */
   @Bean
+  @SuppressWarnings("unchecked")
   public DefaultKafkaConsumerFactoryCustomizer customizeJsonDeserializer(JsonMapper jsonMapper) {
-    return factory -> factory.setValueDeserializer(new JacksonJsonDeserializer<>(jsonMapper));
+    // Raw cast required: DefaultKafkaConsumerFactoryCustomizer uses a wildcard-typed factory
+    // (DefaultKafkaConsumerFactory<?, ?>), so setValueDeserializer(Deserializer<V>) is
+    // effectively Deserializer<?>, which is incompatible with a concrete Deserializer<T>
+    // without an unchecked cast.
+    return factory -> factory.setValueDeserializer(
+      (Deserializer) new JacksonJsonDeserializer<>(ResourceResultEvent.class, jsonMapper));
   }
 
   @Override

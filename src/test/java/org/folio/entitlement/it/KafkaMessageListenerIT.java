@@ -33,8 +33,6 @@ import org.springframework.test.web.servlet.ResultActions;
   "application.environment=folio",
   "application.kong.enabled=false",
   "application.keycloak.enabled=false",
-  "spring.kafka.consumer.properties.spring.json.value.default.type"
-    + "=org.folio.integration.kafka.model.ResourceResultEvent",
 })
 class KafkaMessageListenerIT extends BaseIntegrationTest {
 
