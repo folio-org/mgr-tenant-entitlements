@@ -108,8 +108,9 @@ The application is built around the **Flow Engine** (`folio-flow-engine` library
    - Manages cross-application module dependencies
 
 5. **Integration Points** (in `integration/`):
-   - Active subpackages include `am/`, `tm/`, `okapi/`, `folio/`, `keycloak/`, `kafka/`, `token/`, and `interceptor/`
+   - Active subpackages include `am/`, `tm/`, `okapi/`, `folio/`, `keycloak/`, `kafka/`, `token/`, `interceptor/`, and `apigw/`
    - These packages cover application and tenant clients, Okapi/FOLIO interactions, auth/token handling, Kafka publishing, and request interception
+   - **API Gateway route lifecycle**: routes are created on first entitlement (`ApiGatewayModuleRouteCreator`) and deleted only when the last tenant revokes (`ApiGatewayModuleRouteCleaner`). Shared-route checks use `EntitlementModuleService.isEntitlementExist` / `isNoOtherEntitlementExist`.
 
 ### Key Domain Concepts
 
@@ -198,8 +199,8 @@ Critical environment variables (see README for full list):
 - `OKAPI_URL` / `okapi.url`: Okapi gateway URL
 - `MT_CLIENT_URL` / `tenant.url`: Tenant Manager URL
 - `AM_CLIENT_URL` / `am.url`: Application Manager URL
-- `KONG_ADMIN_URL` / `kong.url`: Kong Admin API URL
-- `KONG_INTEGRATION_ENABLED`: Enables Kong integration flows
+- `APIGW_URL`: API Gateway Admin API URL (deprecated aliases: `KONG_ADMIN_URL`, `kong.url`)
+- `APIGW_ENABLED`: Enables API Gateway integration; `APIGW_ROUTEMANAGEMENT_ENABLED` defaults to `true`, `APIGW_TENANT_CHECKS_ENABLED` defaults to `false`
 - `OKAPI_INTEGRATION_ENABLED`: Enables Okapi integration flows
 - `KC_INTEGRATION_ENABLED`: Enables Keycloak integration
 - `SECRET_STORE_TYPE`: Selects the secure storage backend used by the service
@@ -245,6 +246,7 @@ From `pom.xml`, these are excluded from code coverage:
 4. **Thread safety**: Be aware of ThreadLocal usage in `ThreadLocalModuleStageContext`
 5. **Kafka topics**: Topic names are prefixed with `ENV` variable
 6. **Long operations**: Token refresh is automatic but ensure operations are cancellable
+7. `KONG_*` env vars are deprecated aliases that still bind via fallback expressions in `application.yml`; existing configs keep working, but new code should use `APIGW_*` names.
 
 ## Additional Resources
 

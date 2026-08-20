@@ -41,7 +41,7 @@ class UpgradeValidationInterfaceIntegrityIT {
   @TestPropertySource(properties = {
     "application.keycloak.enabled=false",
     "application.okapi.enabled=false",
-    "application.kong.enabled=false",
+    "application.apigw.enabled=false",
   })
   class ValidationEnabled extends BaseIntegrationTest {
 
@@ -109,7 +109,7 @@ class UpgradeValidationInterfaceIntegrityIT {
   @TestPropertySource(properties = {
     "application.keycloak.enabled=false",
     "application.okapi.enabled=false",
-    "application.kong.enabled=false",
+    "application.apigw.enabled=false",
     "application.validation.interface-integrity.entitlement.enabled=false",
     "application.validation.interface-integrity.upgrade.enabled=false"
   })

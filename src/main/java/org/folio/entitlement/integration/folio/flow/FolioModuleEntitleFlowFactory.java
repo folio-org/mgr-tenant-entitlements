@@ -6,6 +6,7 @@ import static org.folio.entitlement.utils.FlowUtils.combineStages;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.EntitlementType;
+import org.folio.entitlement.integration.apigw.ApiGatewayModuleRouteCreator;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.folio.stage.FolioModuleInstaller;
 import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
@@ -27,12 +28,14 @@ public class FolioModuleEntitleFlowFactory implements ModuleFlowFactory {
   private final CapabilitiesModuleEventPublisher capabilitiesEventPublisher;
 
   private KeycloakModuleResourceCreator kcModuleResourceCreator;
+  private ApiGatewayModuleRouteCreator apiGatewayModuleRouteCreator;
 
   @Override
   public Flow createModuleFlow(Object flowId, FlowExecutionStrategy strategy, Map<?, ?> additionalFlowParameters) {
     return Flow.builder()
       .id(flowId)
-      .stage(combineStages("ResourceCreatorParallelStage", asList(kcModuleResourceCreator)))
+      .stage(combineStages("ResourceCreatorParallelStage",
+        asList(kcModuleResourceCreator, apiGatewayModuleRouteCreator)))
       .stage(systemUserEventPublisher)
       .stage(folioModuleInstaller)
       .stage(folioModuleEventPublisher)
@@ -61,5 +64,10 @@ public class FolioModuleEntitleFlowFactory implements ModuleFlowFactory {
   @Autowired(required = false)
   public void setKcModuleResourceCreator(KeycloakModuleResourceCreator kcModuleResourceCreator) {
     this.kcModuleResourceCreator = kcModuleResourceCreator;
+  }
+
+  @Autowired(required = false)
+  public void setApiGatewayModuleRouteCreator(ApiGatewayModuleRouteCreator apiGatewayModuleRouteCreator) {
+    this.apiGatewayModuleRouteCreator = apiGatewayModuleRouteCreator;
   }
 }

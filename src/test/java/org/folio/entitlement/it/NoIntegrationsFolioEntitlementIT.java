@@ -84,7 +84,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @TestPropertySource(properties = {
   "application.keycloak.enabled=false",
   "application.okapi.enabled=false",
-  "application.kong.enabled=false",
+  "application.apigw.enabled=false",
   "application.clients.folio.connect-timeout=250ms",
   "application.clients.folio.read-timeout=250ms",
   "retries.module.backoff.delay=1",

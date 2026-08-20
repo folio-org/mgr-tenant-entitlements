@@ -1,0 +1,65 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"folio-app1-3.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "folio-app1-3.0.0",
+          "name": "folio-app1",
+          "version": "3.0.0",
+          "modules": [
+            {
+              "id": "folio-module2-2.0.0",
+              "name": "folio-module2",
+              "version": "2.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module2-2.0.0",
+              "name": "Test Folio Module #2",
+              "provides": [
+                {
+                  "id": "folio-module2-api",
+                  "version": "1.0.0",
+                  "handlers": [
+                    {
+                      "methods": ["POST"],
+                      "pathPattern": "/folio-module2/events"
+                    },
+                    {
+                      "methods": ["GET"],
+                      "pathPattern": "/folio-module2/events"
+                    },
+                    {
+                      "methods": ["GET"],
+                      "pathPattern": "/folio-module2/events/{id}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

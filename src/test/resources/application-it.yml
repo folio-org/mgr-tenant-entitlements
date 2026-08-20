@@ -13,7 +13,7 @@ application:
     enabled: false
   flow-engine:
     print-flow-result: true
-  kong:
+  apigw:
     enabled: true
     register-module: false
     retries: 3

@@ -16,6 +16,7 @@ import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
+import org.folio.entitlement.integration.apigw.ApiGatewayModuleRouteCleaner;
 import org.folio.entitlement.integration.folio.stage.FolioModuleEventPublisher;
 import org.folio.entitlement.integration.folio.stage.FolioModuleUninstaller;
 import org.folio.entitlement.integration.keycloak.KeycloakModuleResourceCleaner;
@@ -40,24 +41,28 @@ class FolioModuleRevokeFlowFactoryTest {
 
   @Mock private FolioModuleUninstaller folioModuleUninstaller;
   @Mock private FolioModuleEventPublisher folioModuleEventPublisher;
+  @Mock private ApiGatewayModuleRouteCleaner apiGatewayModuleRouteCleaner;
   @Mock private KeycloakModuleResourceCleaner kcModuleResourceCleaner;
 
   @Test
   void createModuleFlow_positive_allConditionalStages() {
-    mockStageNames(kcModuleResourceCleaner, folioModuleUninstaller, folioModuleEventPublisher);
+    mockStageNames(kcModuleResourceCleaner, apiGatewayModuleRouteCleaner,
+      folioModuleUninstaller, folioModuleEventPublisher);
     revokeFlowFactory.setKcModuleResourceCleaner(kcModuleResourceCleaner);
+    revokeFlowFactory.setApiGatewayModuleRouteCleaner(apiGatewayModuleRouteCleaner);
 
     var flowParameters = moduleFlowParameters(entitlementRequest(), moduleDescriptor());
 
     var flow = revokeFlowFactory.createModuleFlow(FLOW_STAGE_ID, IGNORE_ON_ERROR, flowParameters);
     flowEngine.execute(flow);
 
-    var inOrder = Mockito.inOrder(kcModuleResourceCleaner,
+    var inOrder = Mockito.inOrder(apiGatewayModuleRouteCleaner, kcModuleResourceCleaner,
       folioModuleUninstaller, folioModuleEventPublisher);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, emptyMap());
     verifyStageExecution(inOrder, folioModuleUninstaller, stageContext);
     verifyStageExecution(inOrder, folioModuleEventPublisher, stageContext);
+    verifyStageExecution(inOrder, apiGatewayModuleRouteCleaner, stageContext);
     verifyStageExecution(inOrder, kcModuleResourceCleaner, stageContext);
   }
 

@@ -10,7 +10,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.folio.entitlement.support.extensions.EnableKongGateway;
+import org.folio.entitlement.support.extensions.EnableApiGateway;
 import org.folio.test.extensions.impl.WireMockExtension;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -20,15 +20,15 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.startupcheck.OneShotStartupCheckStrategy;
 
-public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+public class ApiGatewayExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
 
-  public static final String KONG_GATEWAY_URL_PROPERTY = "kong.gateway.url";
+  public static final String API_GATEWAY_PROXY_URL_PROPERTY = "kong.gateway.url";
   public static final String KONG_DOCKER_IMAGE = "kong:3.7.1-ubuntu";
-  public static final String KONG_URL_PROPERTY = "kong.url";
+  public static final String API_GATEWAY_URL_PROPERTY = "kong.url";
 
   @SuppressWarnings("resource")
   private static final GenericContainer<?> CONTAINER = new GenericContainer<>(KONG_DOCKER_IMAGE)
-    .withEnv(kongEnvironment())
+    .withEnv(apiGatewayEnvironment())
     .withNetwork(Network.SHARED)
     .withExposedPorts(8000, 8001)
     .withAccessToHost(true)
@@ -46,13 +46,13 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
 
     var enableWiremock = isWireMockEnabled(extensionContext);
 
-    String kongUrl = getUrlForExposedPort(8001);
+    String apiGatewayUrl = getUrlForExposedPort(8001);
     if (enableWiremock) {
-      kongUrl = prepareAndRunWiremock();
+      apiGatewayUrl = prepareAndRunWiremock();
     }
 
-    System.setProperty(KONG_URL_PROPERTY, kongUrl);
-    System.setProperty(KONG_GATEWAY_URL_PROPERTY, getUrlForExposedPort(8000));
+    System.setProperty(API_GATEWAY_URL_PROPERTY, apiGatewayUrl);
+    System.setProperty(API_GATEWAY_PROXY_URL_PROPERTY, getUrlForExposedPort(8000));
   }
 
   @Override
@@ -68,8 +68,8 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
 
   @Override
   public void afterAll(ExtensionContext extensionContext) {
-    System.clearProperty(KONG_URL_PROPERTY);
-    System.clearProperty(KONG_GATEWAY_URL_PROPERTY);
+    System.clearProperty(API_GATEWAY_URL_PROPERTY);
+    System.clearProperty(API_GATEWAY_PROXY_URL_PROPERTY);
   }
 
   private static String getUrlForExposedPort(int port) {
@@ -107,7 +107,7 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
     return environment;
   }
 
-  private static Map<String, String> kongEnvironment() {
+  private static Map<String, String> apiGatewayEnvironment() {
     var environment = new LinkedHashMap<>(kongMigrationEnvironment());
 
     environment.put("KONG_PROXY_ACCESS_LOG", "/dev/stdout");
@@ -124,8 +124,8 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
   }
 
   private static boolean isWireMockEnabled(ExtensionContext extensionContext) {
-    return extensionContext.getElement().map(element -> element.getAnnotation(EnableKongGateway.class))
-      .map(EnableKongGateway::enableWiremock).orElse(false);
+    return extensionContext.getElement().map(element -> element.getAnnotation(EnableApiGateway.class))
+      .map(EnableApiGateway::enableWiremock).orElse(false);
   }
 
   /**

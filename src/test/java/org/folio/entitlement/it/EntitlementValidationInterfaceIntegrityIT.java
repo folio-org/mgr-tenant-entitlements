@@ -40,7 +40,7 @@ class EntitlementValidationInterfaceIntegrityIT {
   @TestPropertySource(properties = {
     "application.keycloak.enabled=false",
     "application.okapi.enabled=false",
-    "application.kong.enabled=false",
+    "application.apigw.enabled=false",
     "application.validation.interface-integrity.entitlement.interface-collector.mode=scoped"
   })
   class ScopedInterfaceCollector extends BaseIntegrationTest {
@@ -83,7 +83,7 @@ class EntitlementValidationInterfaceIntegrityIT {
   @TestPropertySource(properties = {
     "application.keycloak.enabled=false",
     "application.okapi.enabled=false",
-    "application.kong.enabled=false",
+    "application.apigw.enabled=false",
     "application.validation.interface-integrity.entitlement.interface-collector.mode=combined"
   })
   class CombinedInterfaceCollector extends BaseIntegrationTest {
@@ -120,7 +120,7 @@ class EntitlementValidationInterfaceIntegrityIT {
   @TestPropertySource(properties = {
     "application.keycloak.enabled=false",
     "application.okapi.enabled=false",
-    "application.kong.enabled=false",
+    "application.apigw.enabled=false",
   })
   class EntitledApplication extends BaseIntegrationTest {
 
