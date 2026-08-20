@@ -19,6 +19,7 @@ import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.model.ApplicationStateTransitionPlan;
 import org.folio.entitlement.domain.model.CommonStageContext;
+import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.springframework.stereotype.Component;
 
@@ -32,22 +33,21 @@ public class ApplicationStateTransitionPlanner extends DatabaseLoggingStage<Comm
   @Override
   public void execute(CommonStageContext context) {
     var request = context.getEntitlementRequest();
-    var tenantId = request.getTenantId();
+    context.withApplicationStateTransitionPlan(plan(request));
+  }
 
-    var entitlements = entitlementService.findByTenantId(tenantId);
+  public ApplicationStateTransitionPlan plan(EntitlementRequest request) {
+    var entitlements = entitlementService.findByTenantId(request.getTenantId());
     var entitledApplicationByName = applicationNameToId(entitlements);
-
     var applicationByName = applicationNameToId(toStream(request.getApplications()));
-
     var difference = evaluateDiff(applicationByName, entitledApplicationByName);
-    log.info("Application differences evaluated for tenant: tenant = {}, difference = {}",
-      context.getTenantName(), difference);
+    var plan = ApplicationStateTransitionPlan.of(
+      difference.toEntitle(), difference.toUpgrade(), difference.toRevoke());
 
-    context.withApplicationStateTransitionPlan(ApplicationStateTransitionPlan.of(
-      difference.toEntitle(),
-      difference.toUpgrade(),
-      difference.toRevoke())
-    );
+    log.info("Application differences evaluated for tenant: tenant = {}, difference = {}",
+      request.getTenantId(), plan);
+
+    return plan;
   }
 
   private static Map<String, String> applicationNameToId(Stream<String> applicationIds) {

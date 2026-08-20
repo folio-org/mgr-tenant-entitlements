@@ -10,6 +10,7 @@
 * Remove the application count limit from reinstall endpoint (MGRENTITLE-172)
 * Include the full module ID in system-user Kafka events for downstream entitlement processing tracking (MGRENTITLE-192)
 * Move Kong mgmt logic from mgr-applications to mgr-tenant-entitlements (MGRENTITLE-174)
+* Support desired-state entitlement validation for entitle, upgrade, and revoke transitions (MGRENTITLE-186)
 
 ---
 
