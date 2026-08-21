@@ -31,7 +31,7 @@ import org.springframework.test.web.servlet.ResultActions;
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 @TestPropertySource(properties = {
   "application.environment=folio",
-  "application.kong.enabled=false",
+  "application.apigw.enabled=false",
   "application.keycloak.enabled=false",
 })
 class KafkaMessageListenerIT extends BaseIntegrationTest {

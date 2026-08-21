@@ -29,7 +29,7 @@ import org.springframework.test.web.servlet.ResultActions;
 @SqlMergeMode(MERGE)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 @TestPropertySource(properties = {
-  "application.kong.enabled=false",
+  "application.apigw.enabled=false",
   "application.keycloak.enabled=false",
 })
 class ResourceResultEventServiceIT extends BaseIntegrationTest {
