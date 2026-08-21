@@ -34,25 +34,28 @@ The `id` field on `FlowStage` (returned by `GET /entitlement-flows/{flowId}?incl
 
 ## Business rules and constraints
 
-- `EVENT_PUBLISHER_AWAIT_COMPLETION=false` (the default) leaves all existing behavior intact: event-publishing stages transition to `FINISHED` immediately on successful publish, and no `resource-result` consumer activity is required.
-- When `EVENT_PUBLISHER_AWAIT_COMPLETION=true`, the capability, system-user, and scheduled-job publishers leave their stage `IN_PROGRESS` after publishing. The stage only advances when a matching `ResourceResultEvent` arrives.
-- A `resource-result` event is processed only if the resolved stage is `IN_PROGRESS`. Events for stages already in a terminal status are silently dropped (idempotent — handles duplicate delivery).
-- On a `SUCCESS` result: the stage transitions to `FINISHED`; the application flow transitions to `FINISHED` if no other stages for that flow are still `IN_PROGRESS`; the top-level flow transitions to `FINISHED` if no application flows are still `IN_PROGRESS`.
-- On a `FAILURE` result: the stage transitions to `FAILED` with error details from `ResourceResultEvent.details`; the application flow transitions to `FAILED`; the top-level flow transitions to `FAILED`.
-- The flow finalizer (`AbstractFlowFinalizer`) will not stamp `finishedAt` on the flow while `FlowFinalizerStageAwareStatusProvider` reports any sibling stages still `IN_PROGRESS`. Entitlement/revoke/upgrade records are always persisted by the finalizer's `afterFlowStatusUpdate()` hook regardless of pending async stages.
+- `EVENT_PUBLISHER_AWAIT_COMPLETION` controls only whether event-publishing stages wait for confirmation. It does **not** gate the `resource-result` consumer: the listener is registered unconditionally, outbound events always carry the publishing stage's UUID, and inbound results are always applied.
+- With `EVENT_PUBLISHER_AWAIT_COMPLETION=false` (the default), publishing stages transition to `FINISHED` immediately on successful publish. A result that arrives afterwards therefore finds the stage already resolved and is ignored.
+- When `EVENT_PUBLISHER_AWAIT_COMPLETION=true`, the capability, system-user, and scheduled-job publishers leave their stage `IN_PROGRESS` after publishing. The stage only advances when a matching `ResourceResultEvent` arrives — there is currently no timeout or sweeper, so a result that never arrives leaves the stage and its flow `IN_PROGRESS` indefinitely.
+- A `resource-result` event is applied only if the resolved stage is still `IN_PROGRESS`. Events for stages already in a terminal status are dropped, which makes redelivery of the same result harmless.
+- On a `SUCCESS` result: the stage transitions to `FINISHED`; the application flow transitions to `FINISHED` if it has no stage rows still `IN_PROGRESS`; the top-level flow transitions to `FINISHED` if it has neither in-progress stage rows nor in-progress application flows. Note these checks consider only stage rows that **already exist** — rows are created as each stage starts, so stages that have not begun yet are not counted.
+- On a `FAILURE` result: the stage transitions to `FAILED` with error details from `ResourceResultEvent.details`; the application flow transitions to `FAILED`; the top-level flow transitions to `FAILED`. Sibling stages of the failed flow are left at their current status.
+- While async confirmations are pending, the flow finalizer (`AbstractFlowFinalizer`) leaves the flow row untouched — it does not stamp `finishedAt` — but still runs `afterFlowStatusUpdate()`, so entitlement/revoke/upgrade records are persisted. If the flow row has already reached a terminal status by the time the finalizer runs, the finalizer skips both the status write and those side effects.
 - Each `flow_stage` row carries a unique `stage_id` UUID (populated by Liquibase migration for existing rows via `gen_random_uuid()`). This value is the correlation key for the entire feedback loop.
 
 ## Error behavior
 
 - **Stage not found** by the UUID in the event: logged at `INFO`, event is dropped, no exception propagated to Kafka.
 - **Stage already in a terminal status**: logged at `INFO`, event is dropped (duplicate or late delivery).
-- **Unknown `ResourceResultStatus` value**: throws `IllegalStateException`; the listener will raise a consumer error and the message will be handled according to the listener container's error handler (no explicit dead-letter configuration is added by this feature).
+- **Missing or null `status`**: `ResourceResultEvent` declares no constraint on `status`, so validation admits the event and the handler lookup throws `NullPointerException` (`Map.of(...).get(null)`), not the `IllegalStateException` the surrounding guard is written for.
+- **Malformed `id`**: `id` is validated as `@NotBlank` only, so a value that is not a UUID throws `IllegalArgumentException` from `UUID.fromString`.
+- In both of the above cases the exception propagates to the listener container. No `ErrorHandlingDeserializer` and no dead-letter topic are configured by this feature, so handling falls back to the container default: the record is retried and then committed with only a log entry, and the result it carried is lost.
 
 ## Configuration
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `EVENT_PUBLISHER_AWAIT_COMPLETION` | `false` | When `true`, capability, system-user, and scheduled-job event-publishing stages leave their flow stage `IN_PROGRESS` after publishing and wait for a `resource-result` acknowledgment before finishing. |
+| `EVENT_PUBLISHER_AWAIT_COMPLETION` | `false` | When `true`, capability, system-user, and scheduled-job event-publishing stages leave their flow stage `IN_PROGRESS` after publishing and wait for a `resource-result` acknowledgment before finishing. Does not gate the consumer — inbound results are applied at either setting. Note the `@Value` fallbacks in the publisher classes currently default to `true`; the `false` above is the effective default because `application.yml` binds the keys explicitly. |
 | `KAFKA_RESOURCE_RESULT_TOPIC_PARTITIONS` | `1` | Partition count for the `resource-result` topic created at startup. |
 | `KAFKA_RESOURCE_RESULT_TOPIC_REPLICATION_FACTOR` | _(broker default)_ | Replication factor for the `resource-result` topic. |
 | `KAFKA_RESOURCE_RESULT_TOPIC_PATTERN` | `${ENV}.resource-result` | Topic pattern for the `resource-result` Kafka listener. Supports regex. |
