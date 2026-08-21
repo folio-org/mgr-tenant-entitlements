@@ -10,7 +10,7 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
-import java.util.function.Supplier;
+import java.util.function.IntSupplier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -142,8 +142,8 @@ public class ResourceResultEventService {
       .toString();
   }
 
-  private static void updateAndThen(Supplier<Integer> update, Runnable then) {
-    var updated = update.get();
+  private static void updateAndThen(IntSupplier update, Runnable then) {
+    var updated = update.getAsInt();
     if (updated > 0) {
       then.run();
     }
