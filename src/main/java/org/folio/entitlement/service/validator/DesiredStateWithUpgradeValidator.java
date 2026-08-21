@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.domain.model.ApplicationStateTransitionPlan;
 import org.folio.entitlement.domain.model.CommonStageContext;
+import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -22,12 +24,16 @@ public class DesiredStateWithUpgradeValidator extends DatabaseLoggingStage<Commo
 
   @Override
   public void execute(CommonStageContext context) {
-    var upgradeBucket = context.getApplicationStateTransitionPlan().upgradeBucket();
+    validate(context.getEntitlementRequest(), context.getApplicationStateTransitionPlan());
+  }
+
+  public void validate(EntitlementRequest request, ApplicationStateTransitionPlan transitionPlan) {
+    var upgradeBucket = transitionPlan.upgradeBucket();
     if (upgradeBucket.isEmpty()) {
       return;
     }
 
-    var tenantId = context.getEntitlementRequest().getTenantId();
+    var tenantId = request.getTenantId();
     var applicationIds = upgradeBucket.getApplicationIds();
 
     var tenantEntitlements = loadEntitlementsByApplicationNames(tenantId, applicationIds);

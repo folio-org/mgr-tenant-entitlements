@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.CANCELLED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
@@ -38,6 +39,7 @@ import org.folio.entitlement.service.flow.ApplicationFlowService;
 import org.folio.test.types.UnitTest;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -53,6 +55,7 @@ class ApplicationFlowValidatorTest {
 
   @InjectMocks private ApplicationFlowValidator validator;
   @Mock private ApplicationFlowService applicationFlowService;
+  @Mock private DesiredStateValidationService desiredStateValidationService;
 
   @DisplayName("validate_positive_entitleRequest")
   @MethodSource("positiveEntitlementEntitleFlowsDataProvider")
@@ -80,6 +83,15 @@ class ApplicationFlowValidatorTest {
     validator.validate(request);
 
     verify(applicationFlowService).findLastFlows(applicationId, tenantId);
+  }
+
+  @Test
+  void validate_positive_stateRequest_delegatesToDesiredStateValidation() {
+    var request = request(STATE);
+
+    validator.validate(request);
+
+    verify(desiredStateValidationService).validate(request);
   }
 
   @DisplayName("validate_negative_entitleRequest")
@@ -214,7 +226,7 @@ class ApplicationFlowValidatorTest {
 
   @ParameterizedTest
   @DisplayName("shouldValidate_parameterized")
-  @CsvSource({"ENTITLE,true", "REVOKE,true", "UPGRADE,true", ",true"})
+  @CsvSource({"ENTITLE,true", "REVOKE,true", "UPGRADE,true", "STATE,true", ",true"})
   void shouldValidate_parameterized(EntitlementRequestType type, boolean expected) {
     var request = EntitlementRequest.builder().type(type).build();
     var result = validator.shouldValidate(request);

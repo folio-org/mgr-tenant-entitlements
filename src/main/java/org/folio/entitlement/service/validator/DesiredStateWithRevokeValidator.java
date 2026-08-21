@@ -6,7 +6,9 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.LinkedHashSet;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.domain.model.ApplicationStateTransitionPlan;
 import org.folio.entitlement.domain.model.CommonStageContext;
+import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.springframework.stereotype.Component;
@@ -19,12 +21,16 @@ public class DesiredStateWithRevokeValidator extends DatabaseLoggingStage<Common
 
   @Override
   public void execute(CommonStageContext context) {
-    var revokeBucket = context.getApplicationStateTransitionPlan().revokeBucket();
+    validate(context.getEntitlementRequest(), context.getApplicationStateTransitionPlan());
+  }
+
+  public void validate(EntitlementRequest request, ApplicationStateTransitionPlan transitionPlan) {
+    var revokeBucket = transitionPlan.revokeBucket();
     if (revokeBucket.isEmpty()) {
       return;
     }
 
-    var tenantId = context.getEntitlementRequest().getTenantId();
+    var tenantId = request.getTenantId();
     var applicationIds = revokeBucket.getApplicationIds();
 
     var entitlements = entitlementCrudService.findByApplicationIds(tenantId, applicationIds);
