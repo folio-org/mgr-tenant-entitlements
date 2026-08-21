@@ -8,8 +8,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.Data;
@@ -25,6 +23,9 @@ import org.hibernate.type.SqlTypes;
 @IdClass(FlowStageKey.class)
 @Table(name = "flow_stage")
 public class FlowStageEntity {
+
+  @Column(name = "stage_id")
+  private UUID id;
 
   /**
    * A stage name.
@@ -65,7 +66,6 @@ public class FlowStageEntity {
    * Timestamp when a stage is started.
    */
   @CreationTimestamp
-  @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "started_at", updatable = false)
   private ZonedDateTime startedAt;
 
@@ -73,7 +73,6 @@ public class FlowStageEntity {
    * A timestamp when a stage is finished.
    */
   @UpdateTimestamp
-  @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "finished_at")
   private ZonedDateTime finishedAt;
 

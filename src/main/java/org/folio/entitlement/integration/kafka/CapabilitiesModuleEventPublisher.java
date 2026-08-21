@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.folio.common.domain.model.InterfaceDescriptor;
@@ -39,12 +38,17 @@ import org.folio.entitlement.integration.kafka.model.CapabilityEventPayload;
 import org.folio.entitlement.integration.kafka.model.Endpoint;
 import org.folio.entitlement.integration.kafka.model.FolioResource;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Log4j2
 @Component
-@RequiredArgsConstructor
 public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublisher<CapabilityEventPayload> {
+
+  public CapabilitiesModuleEventPublisher(
+    @Value("${application.event-publishing.capability.await-completion:true}") boolean awaitCompletion) {
+    super(awaitCompletion);
+  }
 
   @Override
   protected Optional<CapabilityEventPayload> getEventPayload(String appId, ModuleType type, ModuleDescriptor desc) {

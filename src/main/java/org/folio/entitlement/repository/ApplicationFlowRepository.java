@@ -82,4 +82,25 @@ public interface ApplicationFlowRepository extends AbstractFlowRepository<Applic
     @Param("status") EntityExecutionStatus status,
     @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
     @Param("finishedAt") ZonedDateTime finishedAt);
+
+  @Override
+  @Query("""
+    SELECT COUNT(entity) > 0 FROM FlowStageEntity entity
+    WHERE entity.flowId = :flowId AND entity.status = :status AND entity.id != :excludedStageId""")
+  boolean existsAnyStageByFlowIdAndStatusExcluding(@Param("flowId") UUID flowId,
+    @Param("status") EntityExecutionStatus status,
+    @Param("excludedStageId") UUID excludedStageId);
+
+  @Modifying
+  @Query("""
+    UPDATE ApplicationFlowEntity af
+    SET af.status = :status, af.finishedAt = :finishedAt
+    WHERE af.id = :id AND af.status IN :currentStatuses
+      AND NOT EXISTS (
+          SELECT 1 FROM FlowStageEntity s
+          WHERE s.flowId = af.id AND s.status IN :currentStatuses)""")
+  int updateStatusByIdIfCurrentInAndNoStagesWithStatus(@Param("id") UUID id,
+    @Param("status") EntityExecutionStatus status,
+    @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
+    @Param("finishedAt") ZonedDateTime finishedAt);
 }

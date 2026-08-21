@@ -2,7 +2,6 @@ package org.folio.entitlement.service.stage;
 
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
 
-import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.entity.ApplicationFlowEntity;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
@@ -18,11 +17,6 @@ public class FailedApplicationFlowFinalizer
    * @param applicationFlowRepository - {@link ApplicationFlowRepository} bean
    */
   public FailedApplicationFlowFinalizer(ApplicationFlowRepository applicationFlowRepository) {
-    super(applicationFlowRepository);
-  }
-
-  @Override
-  protected ExecutionStatus getFinalStatus() {
-    return FAILED;
+    super(applicationFlowRepository, context -> FAILED);
   }
 }

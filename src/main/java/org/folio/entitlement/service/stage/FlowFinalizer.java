@@ -16,8 +16,9 @@ public abstract class FlowFinalizer extends AbstractFlowFinalizer<FlowEntity, Co
    *
    * @param flowRepository - {@link ApplicationFlowRepository} bean
    */
-  protected FlowFinalizer(FlowRepository flowRepository, ApplicationFlowService applicationFlowService) {
-    super(flowRepository);
+  protected FlowFinalizer(FlowRepository flowRepository, FlowFinalizerStatusProvider<CommonStageContext> statusProvider,
+    ApplicationFlowService applicationFlowService) {
+    super(flowRepository, statusProvider);
     this.applicationFlowService = applicationFlowService;
   }
 

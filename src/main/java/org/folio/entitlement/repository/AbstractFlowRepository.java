@@ -14,6 +14,8 @@ import org.springframework.data.repository.query.Param;
 @NoRepositoryBean
 public interface AbstractFlowRepository<T extends AbstractFlowEntity> extends JpaCqlRepository<T, UUID> {
 
+  boolean existsAnyStageByFlowIdAndStatusExcluding(UUID flowId, EntityExecutionStatus status, UUID excludedStageId);
+
   /**
    * Compare-and-set on the flow status: the status check is a part of the statement, so a status set concurrently by
    * another writer cannot be overwritten. {@code finishedAt} is passed in because a bulk update bypasses

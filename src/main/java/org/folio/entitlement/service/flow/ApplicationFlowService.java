@@ -7,6 +7,8 @@ import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FINISHED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON_TERMINAL_STATUSES;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.toEntitlementType;
 
@@ -15,6 +17,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -38,9 +42,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ApplicationFlowService {
 
-  private final ApplicationFlowMapper applicationFlowMapper;
+  private final ApplicationFlowMapper mapper;
   private final FlowStageService flowStageService;
-  private final ApplicationFlowRepository applicationFlowRepository;
+  private final ApplicationFlowRepository repository;
   private final ApplicationDependencyService dependencyService;
 
   /**
@@ -52,8 +56,8 @@ public class ApplicationFlowService {
    */
   @Transactional(readOnly = true)
   public ApplicationFlow getById(UUID applicationFlowId, boolean includeStages) {
-    var applicationFlowEntity = applicationFlowRepository.getReferenceById(applicationFlowId);
-    var applicationFlow = applicationFlowMapper.map(applicationFlowEntity);
+    var applicationFlowEntity = repository.getReferenceById(applicationFlowId);
+    var applicationFlow = mapper.map(applicationFlowEntity);
 
     if (includeStages) {
       var entitlementStages = flowStageService.findByFlowId(applicationFlowId);
@@ -61,6 +65,10 @@ public class ApplicationFlowService {
     }
 
     return applicationFlow;
+  }
+
+  public Optional<ApplicationFlow> findById(UUID applicationFlowId) {
+    return repository.findById(applicationFlowId).map(mapper::map);
   }
 
   /**
@@ -75,10 +83,10 @@ public class ApplicationFlowService {
   public SearchResult<ApplicationFlow> find(String query, Integer limit, Integer offset) {
     var pageable = OffsetRequest.of(offset, limit);
     var foundEntities = isNotBlank(query)
-      ? applicationFlowRepository.findByCql(query, pageable)
-      : applicationFlowRepository.findAll(pageable);
+      ? repository.findByCql(query, pageable)
+      : repository.findAll(pageable);
 
-    var mappedRecords = foundEntities.map(applicationFlowMapper::map).getContent();
+    var mappedRecords = foundEntities.map(mapper::map).getContent();
     return SearchResult.of((int) foundEntities.getTotalElements(), mappedRecords);
   }
 
@@ -95,8 +103,8 @@ public class ApplicationFlowService {
       return Collections.emptyList();
     }
 
-    var entitlements = applicationFlowRepository.findLastFlows(applicationIds, tenantId);
-    return mapItems(entitlements, applicationFlowMapper::map);
+    var entitlements = repository.findLastFlows(applicationIds, tenantId);
+    return mapItems(entitlements, mapper::map);
   }
 
   /**
@@ -112,8 +120,8 @@ public class ApplicationFlowService {
       return Collections.emptyList();
     }
 
-    var entitlements = applicationFlowRepository.findLastFlowsByApplicationNames(applicationNames, tenantId);
-    return mapItems(entitlements, applicationFlowMapper::map);
+    var entitlements = repository.findLastFlowsByApplicationNames(applicationNames, tenantId);
+    return mapItems(entitlements, mapper::map);
   }
 
   /**
@@ -128,9 +136,9 @@ public class ApplicationFlowService {
     var dependencies = dependencyService.findAllByParentApplicationName(tenantId, parentApplicationId);
     var dependentAppIds = mapItems(dependencies, ApplicationDependencyEntity::getApplicationId);
 
-    var entitlements = applicationFlowRepository.findLastFlows(dependentAppIds, tenantId);
+    var entitlements = repository.findLastFlows(dependentAppIds, tenantId);
 
-    return mapItems(entitlements, applicationFlowMapper::map);
+    return mapItems(entitlements, mapper::map);
   }
 
   /**
@@ -141,8 +149,8 @@ public class ApplicationFlowService {
    * @return {@link List} with {@link ApplicationFlow} entities
    */
   public List<ApplicationFlow> findByFlowId(UUID flowId, boolean includeStages) {
-    var foundEntities = applicationFlowRepository.findByFlowId(flowId);
-    var applicationFlows = mapItems(foundEntities, applicationFlowMapper::map);
+    var foundEntities = repository.findByFlowId(flowId);
+    var applicationFlows = mapItems(foundEntities, mapper::map);
 
     if (includeStages) {
       var applicationFlowIds = mapItems(applicationFlows, ApplicationFlow::getId);
@@ -167,8 +175,8 @@ public class ApplicationFlowService {
       return emptyMap();
     }
 
-    return applicationFlowRepository.findByFlowIds(flowIds).stream()
-      .map(applicationFlowMapper::map)
+    return repository.findByFlowIds(flowIds).stream()
+      .map(mapper::map)
       .collect(groupingBy(ApplicationFlow::getFlowId));
   }
 
@@ -194,15 +202,15 @@ public class ApplicationFlowService {
   public List<ApplicationFlow> createQueuedApplicationFlows(UUID flowId, Collection<String> applicationIds,
     EntitlementType type, UUID tenantId) {
     var flowEntities = mapItems(applicationIds, appId ->
-      applicationFlowMapper.mapWithStatusQueued(tenantId, appId, flowId, type));
-    var savedFlowEntities = applicationFlowRepository.saveAll(flowEntities);
+      mapper.mapWithStatusQueued(tenantId, appId, flowId, type));
+    var savedFlowEntities = repository.saveAll(flowEntities);
 
-    return mapItems(savedFlowEntities, applicationFlowMapper::map);
+    return mapItems(savedFlowEntities, mapper::map);
   }
 
   @Transactional
   public void removeAllQueuedFlows(UUID flowId) {
-    applicationFlowRepository.removeQueuedFlows(flowId);
+    repository.removeQueuedFlows(flowId);
   }
 
   /**
@@ -215,6 +223,17 @@ public class ApplicationFlowService {
    */
   @Transactional
   public int failNonTerminalFlows(UUID flowId, ZonedDateTime finishedAt) {
-    return applicationFlowRepository.updateStatusByFlowIdIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
+    return repository.updateStatusByFlowIdIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
+  }
+
+  @Transactional
+  public int finishFlowIfNoActiveStages(UUID id, ZonedDateTime finishedAt) {
+    return repository.updateStatusByIdIfCurrentInAndNoStagesWithStatus(id, FINISHED,
+      Set.of(IN_PROGRESS), finishedAt);
+  }
+
+  @Transactional
+  public int failActiveFlow(UUID id, ZonedDateTime finishedAt) {
+    return repository.updateStatusIfCurrentIn(id, FAILED, Set.of(IN_PROGRESS), finishedAt);
   }
 }

@@ -5,8 +5,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.Temporal;
-import jakarta.persistence.TemporalType;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.Data;
@@ -39,7 +37,6 @@ public class AbstractFlowEntity {
    * An entitlement startup timestamp.
    */
   @CreationTimestamp
-  @Temporal(TemporalType.TIMESTAMP)
   @Column(name = "started_at", updatable = false)
   private ZonedDateTime startedAt;
 
@@ -48,6 +45,5 @@ public class AbstractFlowEntity {
    */
   @UpdateTimestamp
   @Column(name = "finished_at")
-  @Temporal(TemporalType.TIMESTAMP)
   private ZonedDateTime finishedAt;
 }

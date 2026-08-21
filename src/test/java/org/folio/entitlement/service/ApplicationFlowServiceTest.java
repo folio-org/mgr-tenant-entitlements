@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.folio.common.domain.model.OffsetRequest;
 import org.folio.common.domain.model.SearchResult;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
@@ -317,6 +318,42 @@ class ApplicationFlowServiceTest {
       var result = applicationFlowService.failNonTerminalFlows(FLOW_ID, finishedAt);
 
       assertThat(result).isEqualTo(2);
+    }
+  }
+
+  @Nested
+  @DisplayName("finishFlowIfNoActiveStages")
+  class FinishFlowIfNoActiveStages {
+
+    @Test
+    void positive() {
+      var finishedAt = ZonedDateTime.now();
+
+      when(repository.updateStatusByIdIfCurrentInAndNoStagesWithStatus(
+        APPLICATION_FLOW_ID, EntityExecutionStatus.FINISHED, Set.of(EntityExecutionStatus.IN_PROGRESS), finishedAt))
+        .thenReturn(1);
+
+      var result = applicationFlowService.finishFlowIfNoActiveStages(APPLICATION_FLOW_ID, finishedAt);
+
+      assertThat(result).isEqualTo(1);
+    }
+  }
+
+  @Nested
+  @DisplayName("failActiveFlow")
+  class FailActiveFlow {
+
+    @Test
+    void positive() {
+      var finishedAt = ZonedDateTime.now();
+
+      when(repository.updateStatusIfCurrentIn(
+        APPLICATION_FLOW_ID, EntityExecutionStatus.FAILED, Set.of(EntityExecutionStatus.IN_PROGRESS), finishedAt))
+        .thenReturn(1);
+
+      var result = applicationFlowService.failActiveFlow(APPLICATION_FLOW_ID, finishedAt);
+
+      assertThat(result).isEqualTo(1);
     }
   }
 

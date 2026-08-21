@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.folio.common.domain.model.SearchResult;
 import org.folio.entitlement.domain.dto.FlowStage;
@@ -115,6 +116,55 @@ class FlowStageServiceTest {
     var result = flowStageService.failNonTerminalStages(FLOW_ID, finishedAt);
 
     assertThat(result).isEqualTo(2);
+  }
+
+  @Test
+  void findById_positive() {
+    var entity = flowStageEntity();
+    var flowStage = flowStage();
+
+    when(flowStageRepository.findByStageId(APPLICATION_FLOW_ID)).thenReturn(Optional.of(entity));
+    when(flowStageMapper.map(entity)).thenReturn(flowStage);
+
+    var result = flowStageService.findById(APPLICATION_FLOW_ID);
+
+    assertThat(result).contains(flowStage);
+  }
+
+  @Test
+  void findById_positive_notFound() {
+    when(flowStageRepository.findByStageId(APPLICATION_FLOW_ID)).thenReturn(Optional.empty());
+
+    var result = flowStageService.findById(APPLICATION_FLOW_ID);
+
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void finishActiveStage_positive() {
+    var finishedAt = ZonedDateTime.now();
+
+    when(flowStageRepository.updateStatusByStageIdIfCurrentIn(
+      APPLICATION_FLOW_ID, EntityExecutionStatus.FINISHED, Set.of(EntityExecutionStatus.IN_PROGRESS), finishedAt))
+      .thenReturn(1);
+
+    var result = flowStageService.finishActiveStage(APPLICATION_FLOW_ID, finishedAt);
+
+    assertThat(result).isEqualTo(1);
+  }
+
+  @Test
+  void failActiveStage_positive() {
+    var finishedAt = ZonedDateTime.now();
+    var errDetails = "test-error";
+
+    when(flowStageRepository.markFailedByStageIdIfCurrentIn(
+      APPLICATION_FLOW_ID, errDetails, Set.of(EntityExecutionStatus.IN_PROGRESS), finishedAt))
+      .thenReturn(1);
+
+    var result = flowStageService.failActiveStage(APPLICATION_FLOW_ID, errDetails, finishedAt);
+
+    assertThat(result).isEqualTo(1);
   }
 
   private static FlowStage flowStage() {

@@ -6,6 +6,8 @@ import org.folio.flow.api.StageContext;
 
 public class IdentifiableStageContext extends AbstractStageContextWrapper {
 
+  public static final String PARAM_STAGE_ID = "stageId";
+
   /**
    * Creates {@link IdentifiableStageContext} wrapper from {@link StageContext}.
    *
@@ -26,5 +28,14 @@ public class IdentifiableStageContext extends AbstractStageContextWrapper {
    */
   public UUID getCurrentFlowId() {
     return UUID.fromString(context.flowId());
+  }
+
+  public UUID getStageId() {
+    return context.get(PARAM_STAGE_ID);
+  }
+
+  public IdentifiableStageContext withStageId(UUID stageId) {
+    context.put(PARAM_STAGE_ID, stageId);
+    return this;
   }
 }

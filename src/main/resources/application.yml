@@ -127,6 +127,9 @@ application:
         - name: entitlement
           num-partitions: ${KAFKA_ENTITLEMENT_TOPIC_PARTITIONS:1}
           replication-factor: ${KAFKA_ENTITLEMENT_TOPIC_REPLICATION_FACTOR:}
+        - name: resource-result
+          num-partitions: ${KAFKA_RESOURCE_RESULT_TOPIC_PARTITIONS:1}
+          replication-factor: ${KAFKA_RESOURCE_RESULT_TOPIC_REPLICATION_FACTOR:}
     tenant-topics:
       - name: mgr-tenant-entitlements.scheduled-job
         num-partitions: ${KAFKA_SCHEDULED_JOB_TOPIC_PARTITIONS:1}
@@ -137,6 +140,12 @@ application:
       - name: mgr-tenant-entitlements.system-user
         num-partitions: ${KAFKA_SYS_USER_TOPIC_PARTITIONS:1}
         replication-factor: ${KAFKA_SYS_USER_TOPIC_REPLICATION_FACTOR:}
+    consumer:
+      listener:
+        resource-result:
+          topic-pattern: ${KAFKA_RESOURCE_RESULT_TOPIC_PATTERN:${application.environment}.resource-result}
+          group-id: ${application.environment}-mgr-tenant-entitlements-resource-result-group
+          concurrency: ${KAFKA_RESOURCE_RESULT_TOPIC_CONCURRENCY:1}
   clients:
     folio:
       connect-timeout: ${FOLIO_CLIENT_CONNECT_TIMEOUT:10s}
@@ -187,6 +196,13 @@ application:
         enabled: ${VALIDATION_INTERFACE_INTEGRITY_UPGRADE_ENABLED:true}
       state:
         enabled: ${VALIDATION_INTERFACE_INTEGRITY_STATE_ENABLED:true}
+  event-publishing:
+    capability:
+      await-completion: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
+    system-user:
+      await-completion: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
+    scheduled-job:
+      await-completion: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
 
 folio:
   jpa:

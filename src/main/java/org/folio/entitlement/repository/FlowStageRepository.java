@@ -3,6 +3,7 @@ package org.folio.entitlement.repository;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.folio.entitlement.domain.entity.FlowStageEntity;
 import org.folio.entitlement.domain.entity.key.FlowStageKey;
@@ -16,16 +17,19 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, FlowStageKey> {
 
+  @Query("SELECT entity from FlowStageEntity entity WHERE entity.id = :stageId")
+  Optional<FlowStageEntity> findByStageId(@Param("stageId") UUID stageId);
+
   @Query("""
-    select entity from FlowStageEntity entity
-    where entity.flowId = :flowId
-    order by entity.startedAt asc""")
+    SELECT entity from FlowStageEntity entity
+    WHERE entity.flowId = :flowId
+    ORDER BY entity.startedAt asc""")
   List<FlowStageEntity> findByFlowId(@Param("flowId") UUID flowId);
 
   @Query(value = """
-    select entity from FlowStageEntity entity
-    where entity.flowId in :flowIds
-    order by entity.startedAt asc""")
+    SELECT entity from FlowStageEntity entity
+    WHERE entity.flowId in :flowIds
+    ORDER BY entity.startedAt asc""")
   List<FlowStageEntity> findByFlowIds(@Param("flowIds") Collection<UUID> flowIds);
 
   @Query(nativeQuery = true, value = """
@@ -45,11 +49,34 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
    * in because a bulk update bypasses {@link org.hibernate.annotations.UpdateTimestamp}.
    */
   @Modifying
-  @Query("UPDATE FlowStageEntity e SET e.status = :status, e.finishedAt = :finishedAt "
-    + "WHERE e.status IN :currentStatuses AND (e.flowId = :flowId "
-    + "OR e.flowId IN (SELECT af.id FROM ApplicationFlowEntity af WHERE af.flowId = :flowId))")
+  @Query("""
+    UPDATE FlowStageEntity e 
+    SET e.status = :status, e.finishedAt = :finishedAt
+    WHERE e.status IN :currentStatuses 
+      AND (e.flowId = :flowId
+          OR e.flowId IN (SELECT af.id FROM ApplicationFlowEntity af WHERE af.flowId = :flowId))""")
   int updateStatusByFlowIdIfCurrentIn(@Param("flowId") UUID flowId,
     @Param("status") EntityExecutionStatus status,
+    @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
+    @Param("finishedAt") ZonedDateTime finishedAt);
+
+  @Modifying
+  @Query("""
+    UPDATE FlowStageEntity e
+    SET e.status = :status, e.finishedAt = :finishedAt
+    WHERE e.id = :stageId AND e.status IN :currentStatuses""")
+  int updateStatusByStageIdIfCurrentIn(@Param("stageId") UUID stageId,
+    @Param("status") EntityExecutionStatus status,
+    @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
+    @Param("finishedAt") ZonedDateTime finishedAt);
+
+  @Modifying
+  @Query("""
+    UPDATE FlowStageEntity e
+    SET e.status = 'FAILED', e.errorMessage = :errDetails, e.finishedAt = :finishedAt
+    WHERE e.id = :stageId AND e.status IN :currentStatuses""")
+  int markFailedByStageIdIfCurrentIn(@Param("stageId") UUID stageId,
+    @Param("errDetails") String errDetails,
     @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
     @Param("finishedAt") ZonedDateTime finishedAt);
 }

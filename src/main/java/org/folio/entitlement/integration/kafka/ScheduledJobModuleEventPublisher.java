@@ -11,17 +11,21 @@ import static org.folio.integration.kafka.producer.KafkaUtils.getTenantTopicName
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.integration.kafka.model.ScheduledTimers;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class ScheduledJobModuleEventPublisher extends AbstractModuleEventPublisher<ScheduledTimers> {
+
+  public ScheduledJobModuleEventPublisher(
+    @Value("${application.event-publishing.scheduled-job.await-completion:true}") boolean awaitCompletion) {
+    super(awaitCompletion);
+  }
 
   @Override
   protected Optional<ScheduledTimers> getEventPayload(String appId, ModuleType type, ModuleDescriptor descriptor) {

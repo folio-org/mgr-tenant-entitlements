@@ -9,11 +9,14 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
+import org.folio.entitlement.domain.dto.ExecutionStatus;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.repository.FlowRepository;
 import org.folio.entitlement.support.TestUtils;
@@ -31,6 +34,7 @@ class FinishedFlowFinalizerTest {
 
   @InjectMocks private FinishedFlowFinalizer flowFinalizer;
 
+  @Mock private FlowFinalizerStatusProvider<CommonStageContext> statusProvider;
   @Mock private FlowRepository flowRepository;
 
   @AfterEach
@@ -40,6 +44,7 @@ class FinishedFlowFinalizerTest {
 
   @Test
   void execute_entitle_positive() {
+    when(statusProvider.getFinalStatus(any())).thenReturn(ExecutionStatus.FINISHED);
     when(flowRepository.updateStatusIfCurrentIn(
       eq(FLOW_ID), eq(FINISHED), eq(NON_TERMINAL_STATUSES), any(ZonedDateTime.class))).thenReturn(1);
 
@@ -52,6 +57,7 @@ class FinishedFlowFinalizerTest {
 
   @Test
   void execute_positive_flowAlreadyTerminal() {
+    when(statusProvider.getFinalStatus(any())).thenReturn(ExecutionStatus.FINISHED);
     when(flowRepository.updateStatusIfCurrentIn(
       eq(FLOW_ID), eq(FINISHED), eq(NON_TERMINAL_STATUSES), any(ZonedDateTime.class))).thenReturn(0);
 
@@ -60,6 +66,16 @@ class FinishedFlowFinalizerTest {
 
     verify(flowRepository).updateStatusIfCurrentIn(
       eq(FLOW_ID), eq(FINISHED), eq(NON_TERMINAL_STATUSES), any(ZonedDateTime.class));
+  }
+
+  @Test
+  void execute_positive_inProgressStatus_updateNotCalled() {
+    when(statusProvider.getFinalStatus(any())).thenReturn(ExecutionStatus.IN_PROGRESS);
+
+    var stageContext = commonStageContext(FLOW_ID, flowParameters(), Map.of());
+    flowFinalizer.execute(stageContext);
+
+    verify(flowRepository, never()).updateStatusIfCurrentIn(any(), any(), any(), any());
   }
 
   private static Map<?, ?> flowParameters() {

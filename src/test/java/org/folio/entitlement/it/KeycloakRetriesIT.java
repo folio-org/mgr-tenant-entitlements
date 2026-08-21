@@ -41,7 +41,7 @@ import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient.KongResultList;
 import org.folio.tools.kong.model.Route;
 import org.folio.tools.kong.model.Service;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
@@ -76,8 +76,8 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     stubPost(getWireMockClient(), 1, urlEqualTo("/realms/master/protocol/openid-connect/token"), tokenResponse, 200);
   }
 
-  @AfterAll
-  public static void resetLogCapture() {
+  @AfterEach
+  public void resetLogCapture() {
     stopCaptureLog4J2Logs();
   }
 
@@ -122,8 +122,8 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       assertThat(logs.stream().filter(
           logLine -> logLine.contains("jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error")))
         .hasSize(6);
-      assertThat(logs.stream().filter(logLine -> logLine.contains("Flow stage KeycloakModuleResourceCreator "
-          + "folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
+      assertThat(logs.stream().filter(logLine -> logLine.contains(
+          "folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
         .hasSize(1);
     });
 
@@ -174,7 +174,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       assertThat(logs.stream().filter(logLine -> logLine.contains(
         "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(6);
       assertThat(logs.stream().filter(logLine -> logLine.contains(
-        "Flow stage KeycloakModuleResourceCleaner folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
+        "folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
         .hasSize(1);
     });
 

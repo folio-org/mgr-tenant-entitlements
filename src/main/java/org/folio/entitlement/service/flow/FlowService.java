@@ -5,11 +5,14 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FINISHED;
+import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON_TERMINAL_STATUSES;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -28,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Log4j2
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class FlowService {
 
@@ -94,7 +98,6 @@ public class FlowService {
    * @return created {@link Flow} entity
    * @throws IllegalStateException if the flow row already exists
    */
-  @Transactional
   public Flow create(Flow flow) {
     var flowId = requireNonNull(flow.getId());
     var existingStatus = flowRepository.findStatusById(flowId);
@@ -117,7 +120,6 @@ public class FlowService {
    * <p>{@code saveAndFlush} surfaces a concurrent insert by the initializer as a data-access exception inside this
    * method - the caller falls back to {@link #failIfNotTerminal(UUID)} in a new transaction.</p>
    */
-  @Transactional
   public void createFailed(UUID flowId, EntitlementRequest request) {
     var flow = new Flow()
       .id(flowId)
@@ -143,7 +145,6 @@ public class FlowService {
    *
    * @return {@code true} when the flow was marked as failed, {@code false} when it already was in a terminal status
    */
-  @Transactional
   public boolean failIfNotTerminal(UUID flowId) {
     var finishedAt = ZonedDateTime.now(ZoneId.systemDefault());
     var updatedFlows = flowRepository.updateStatusIfCurrentIn(flowId, FAILED, NON_TERMINAL_STATUSES, finishedAt);
@@ -171,5 +172,23 @@ public class FlowService {
   @Transactional(readOnly = true)
   public Optional<ExecutionStatus> findStatus(UUID flowId) {
     return flowRepository.findStatusById(flowId).map(status -> ExecutionStatus.valueOf(status.name()));
+  }
+
+  @Transactional(readOnly = true)
+  public Flow getTopLevelFlow(UUID flowId) {
+    var topLevelFlow = applicationFlowService.findById(flowId)
+      .map(appFlow -> flowRepository.getReferenceById(appFlow.getFlowId()))
+      .orElseGet(() -> flowRepository.getReferenceById(flowId));
+
+    return flowMapper.map(topLevelFlow);
+  }
+
+  public int finishFlowIfNoActiveStages(UUID flowId, ZonedDateTime finishedAt) {
+    return flowRepository.updateStatusByIdIfCurrentInAndNoStagesWithStatus(flowId, FINISHED,
+      Set.of(IN_PROGRESS), finishedAt);
+  }
+
+  public int failActiveFlow(UUID id, ZonedDateTime finishedAt) {
+    return flowRepository.updateStatusIfCurrentIn(id, FAILED, Set.of(IN_PROGRESS), finishedAt);
   }
 }
