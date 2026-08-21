@@ -15,7 +15,7 @@ import org.springframework.test.context.TestPropertySource;
   "application.security.enabled=true",
   "application.router.path-prefix=mte",
   "application.keycloak.import.enabled=true",
-  "application.kong.module-self-url=http://mgr-tenant-entitlements:8000/mte"
+  "application.apigw.module-self-url=http://mgr-tenant-entitlements:8000/mte"
 })
 class FolioEntitlementSecuredPathPrefixIT extends AbstractFolioEntitlementIT {
 

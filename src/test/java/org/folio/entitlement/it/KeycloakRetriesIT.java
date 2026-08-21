@@ -59,7 +59,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @SqlMergeMode(MERGE)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 @TestPropertySource(properties = {"application.keycloak.enabled=true",
-  "application.kong.enabled=false", "application.clients.folio.connect-timeout=250ms",
+  "application.apigw.enabled=false", "application.clients.folio.connect-timeout=250ms",
   "application.clients.folio.read-timeout=250ms", "retries.module.backoff.delay=1",
   "retries.module.backoff.multiplier=1", "application.keycloak.admin.clientId=mgr-component-app"})
 @Import(KeycloakRetriesIT.TestConfiguration.class)

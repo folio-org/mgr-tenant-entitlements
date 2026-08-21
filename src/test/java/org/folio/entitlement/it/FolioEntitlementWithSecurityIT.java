@@ -14,7 +14,7 @@ import org.springframework.test.context.TestPropertySource;
 @TestPropertySource(properties = {
   "application.security.enabled=true",
   "application.keycloak.import.enabled=true",
-  "application.kong.module-self-url=http://mgr-tenant-entitlements:8000"
+  "application.apigw.module-self-url=http://mgr-tenant-entitlements:8000"
 })
 class FolioEntitlementWithSecurityIT extends FolioEntitlementIT {
 

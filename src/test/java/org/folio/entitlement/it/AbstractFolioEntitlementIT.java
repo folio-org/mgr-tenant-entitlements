@@ -84,7 +84,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @EnableKeycloakTlsMode
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 @TestPropertySource(properties = {
-  "application.kong.enabled=true",
+  "application.apigw.enabled=true",
   "application.keycloak.enabled=true",
   "application.clients.folio.connect-timeout=250ms",
   "application.clients.folio.read-timeout=250ms"

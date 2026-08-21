@@ -16,7 +16,7 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.folio.entitlement.support.extensions.EnableKongGateway;
+import org.folio.entitlement.support.extensions.EnableApiGateway;
 import org.folio.test.extensions.impl.WireMockExtension;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -26,12 +26,12 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 
-public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
+public class ApiGatewayExtension implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback {
 
-  public static final String KONG_GATEWAY_URL_PROPERTY = "kong.gateway.url";
-  public static final String KONG_URL_PROPERTY = "kong.url";
+  public static final String API_GATEWAY_URL_PROPERTY = "kong.url";
+  public static final String API_GATEWAY_PROXY_URL_PROPERTY = "kong.gateway.url";
 
-  private static final String ENV_KONG_READINESS_TIMEOUT = "TESTCONTAINERS_KONG_READINESS_TIMEOUT";
+  private static final String ENV_API_GATEWAY_READINESS_TIMEOUT = "TESTCONTAINERS_KONG_READINESS_TIMEOUT";
   private static final long DEFAULT_CONTAINER_READINESS_TIMEOUT = 120;
   // folioci/folio-kong runs migrations, starts Kong temporarily for deck sync, stops Kong,
   // then restarts as the final foreground process. This log line appears just before the stop.
@@ -43,8 +43,8 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
   static {
     var env = System.getenv();
     CONTAINER_READINESS_TIMEOUT = Long.parseLong(
-      env.getOrDefault(ENV_KONG_READINESS_TIMEOUT, String.valueOf(DEFAULT_CONTAINER_READINESS_TIMEOUT)));
-    CONTAINER = kongContainer(getKongImageName());
+      env.getOrDefault(ENV_API_GATEWAY_READINESS_TIMEOUT, String.valueOf(DEFAULT_CONTAINER_READINESS_TIMEOUT)));
+    CONTAINER = apiGatewayContainer(getKongImageName());
   }
 
   private static WireMock wireMockClient;
@@ -53,18 +53,18 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
   public void beforeAll(ExtensionContext extensionContext) {
     if (!CONTAINER.isRunning()) {
       CONTAINER.start();
-      waitForKongFinalReady();
+      waitForApiGatewayReady();
     }
 
     var enableWiremock = isWireMockEnabled(extensionContext);
 
-    String kongUrl = getUrlForExposedPort(8001);
+    String apiGatewayUrl = getUrlForExposedPort(8001);
     if (enableWiremock) {
-      kongUrl = prepareAndRunWiremock();
+      apiGatewayUrl = prepareAndRunWiremock();
     }
 
-    System.setProperty(KONG_URL_PROPERTY, kongUrl);
-    System.setProperty(KONG_GATEWAY_URL_PROPERTY, getUrlForExposedPort(8000));
+    System.setProperty(API_GATEWAY_URL_PROPERTY, apiGatewayUrl);
+    System.setProperty(API_GATEWAY_PROXY_URL_PROPERTY, getUrlForExposedPort(8000));
   }
 
   @Override
@@ -80,20 +80,20 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
 
   @Override
   public void afterAll(ExtensionContext extensionContext) {
-    System.clearProperty(KONG_URL_PROPERTY);
-    System.clearProperty(KONG_GATEWAY_URL_PROPERTY);
+    System.clearProperty(API_GATEWAY_URL_PROPERTY);
+    System.clearProperty(API_GATEWAY_PROXY_URL_PROPERTY);
   }
 
   // Waits for the stop+restart cycle that folioci/folio-kong performs after deck sync.
   // CONTAINER.start() returns when the init-done log line fires; Kong then briefly stops before
   // coming back as the foreground process. We poll until we observe unavailable?available.
-  private static void waitForKongFinalReady() {
+  private static void waitForApiGatewayReady() {
     var wasUnavailable = new AtomicBoolean(false);
     await()
       .pollInterval(200, MILLISECONDS)
       .atMost(30, SECONDS)
       .until(() -> {
-        var available = CONTAINER.isRunning() && isKongStatusOk();
+        var available = CONTAINER.isRunning() && isApiGatewayStatusOk();
         if (!available) {
           wasUnavailable.set(true);
         }
@@ -101,7 +101,7 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
       });
   }
 
-  private static boolean isKongStatusOk() {
+  private static boolean isApiGatewayStatusOk() {
     try {
       var url = URI.create(getUrlForExposedPort(8001) + "/status").toURL();
       var connection = (HttpURLConnection) url.openConnection();
@@ -121,9 +121,9 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
   }
 
   @SuppressWarnings("resource")
-  private static GenericContainer<?> kongContainer(String imageName) {
+  private static GenericContainer<?> apiGatewayContainer(String imageName) {
     return new GenericContainer<>(imageName)
-      .withEnv(kongEnvironment())
+      .withEnv(apiGatewayEnvironment())
       .withNetwork(Network.SHARED)
       .withExposedPorts(8000, 8001)
       .withAccessToHost(true)
@@ -132,7 +132,7 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
         .withStartupTimeout(Duration.ofSeconds(CONTAINER_READINESS_TIMEOUT)));
   }
 
-  private static Map<String, String> kongEnvironment() {
+  private static Map<String, String> apiGatewayEnvironment() {
     var environment = new LinkedHashMap<String, String>();
 
     environment.put("KONG_DATABASE", "postgres");
@@ -153,8 +153,8 @@ public class KongGatewayExtension implements BeforeAllCallback, AfterAllCallback
   }
 
   private static boolean isWireMockEnabled(ExtensionContext extensionContext) {
-    return extensionContext.getElement().map(element -> element.getAnnotation(EnableKongGateway.class))
-      .map(EnableKongGateway::enableWiremock).orElse(false);
+    return extensionContext.getElement().map(element -> element.getAnnotation(EnableApiGateway.class))
+      .map(EnableApiGateway::enableWiremock).orElse(false);
   }
 
   /**
