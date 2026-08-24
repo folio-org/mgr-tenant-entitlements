@@ -11,7 +11,9 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.model.ApplicationStateTransitionBucket;
+import org.folio.entitlement.domain.model.ApplicationStateTransitionPlan;
 import org.folio.entitlement.domain.model.CommonStageContext;
+import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -25,8 +27,10 @@ public class DesiredStateApplicationFlowValidator extends DatabaseLoggingStage<C
 
   @Override
   public void execute(CommonStageContext context) {
-    var request = context.getEntitlementRequest();
-    var transitionPlan = context.getApplicationStateTransitionPlan();
+    validate(context.getEntitlementRequest(), context.getApplicationStateTransitionPlan());
+  }
+
+  public void validate(EntitlementRequest request, ApplicationStateTransitionPlan transitionPlan) {
 
     var validationErrors = transitionPlan.nonEmptyBuckets()
       .flatMap(transitionBucket -> validateApplicationFlowsInBucket(transitionBucket, request.getTenantId()))
