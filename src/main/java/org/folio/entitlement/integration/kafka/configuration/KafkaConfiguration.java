@@ -33,7 +33,7 @@ public class KafkaConfiguration implements KafkaListenerConfigurer {
   /**
    * Suffix of the topic that unprocessable {@code resource-result} records are republished to.
    */
-  public static final String DLT_SUFFIX = ".DLT";
+  public static final String DLT_SUFFIX = ".dlt";
 
   private static final long RETRY_INTERVAL_MS = 1_000L;
   private static final long MAX_RETRIES = 3L;

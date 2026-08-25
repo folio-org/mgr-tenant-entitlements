@@ -127,12 +127,12 @@ application:
         - name: entitlement
           num-partitions: ${KAFKA_ENTITLEMENT_TOPIC_PARTITIONS:1}
           replication-factor: ${KAFKA_ENTITLEMENT_TOPIC_REPLICATION_FACTOR:}
-        - name: resource-result
+        - name: mgr-tenant-entitlements.resource-result
           num-partitions: ${KAFKA_RESOURCE_RESULT_TOPIC_PARTITIONS:1}
           replication-factor: ${KAFKA_RESOURCE_RESULT_TOPIC_REPLICATION_FACTOR:}
         # Unprocessable resource-result records are republished here rather than committed away, so a lost
         # confirmation can be replayed instead of leaving its flow stuck IN_PROGRESS.
-        - name: resource-result.DLT
+        - name: mgr-tenant-entitlements.resource-result.dlt
           num-partitions: ${KAFKA_RESOURCE_RESULT_TOPIC_PARTITIONS:1}
           replication-factor: ${KAFKA_RESOURCE_RESULT_TOPIC_REPLICATION_FACTOR:}
     tenant-topics:
@@ -148,7 +148,7 @@ application:
     consumer:
       listener:
         resource-result:
-          topic-pattern: ${KAFKA_RESOURCE_RESULT_TOPIC_PATTERN:${application.environment}.resource-result}
+          topic-pattern: ${KAFKA_RESOURCE_RESULT_TOPIC_PATTERN:${application.environment}.mgr-tenant-entitlements.resource-result}
           group-id: ${application.environment}-mgr-tenant-entitlements-resource-result-group
           concurrency: ${KAFKA_RESOURCE_RESULT_TOPIC_CONCURRENCY:1}
   clients:

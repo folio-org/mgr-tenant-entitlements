@@ -36,7 +36,7 @@ import org.springframework.test.web.servlet.ResultActions;
 })
 class KafkaMessageListenerIT extends BaseIntegrationTest {
 
-  private static final String TOPIC = "folio.resource-result";
+  private static final String TOPIC = "folio.mgr-tenant-entitlements.resource-result";
 
   private static final UUID FLOW_ID = UUID.fromString("aa000000-0000-0000-0000-000000000001");
   private static final UUID S1_ID = UUID.fromString("cc000000-0000-0000-0000-000000000001");
