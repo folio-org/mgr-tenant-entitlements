@@ -11,6 +11,7 @@ import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.NON
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -190,5 +191,10 @@ public class FlowService {
 
   public int failActiveFlow(UUID id, ZonedDateTime finishedAt) {
     return flowRepository.updateStatusIfCurrentIn(id, FAILED, Set.of(IN_PROGRESS), finishedAt);
+  }
+
+  @Transactional(readOnly = true)
+  public List<UUID> findStaleAsyncFlowIds(ZonedDateTime cutoff) {
+    return flowRepository.findIdsAwaitingAsyncBefore(IN_PROGRESS, cutoff);
   }
 }

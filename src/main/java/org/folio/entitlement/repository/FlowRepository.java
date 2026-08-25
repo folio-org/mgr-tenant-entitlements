@@ -2,6 +2,7 @@ package org.folio.entitlement.repository;
 
 import java.time.ZonedDateTime;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.folio.entitlement.domain.entity.FlowEntity;
@@ -17,6 +18,21 @@ public interface FlowRepository extends AbstractFlowRepository<FlowEntity> {
   @Query("SELECT e.status FROM FlowEntity e WHERE e.id = :flowId")
   Optional<EntityExecutionStatus> findStatusById(@Param("flowId") UUID flowId);
 
+  /**
+   * Finds flows that have been waiting for asynchronous stage confirmations for longer than the given cutoff.
+   *
+   * <p>Only top-level flows need scanning: a flow cannot be completed while any of its application flows is still
+   * in progress, so an application flow stuck on a confirmation always keeps its parent anchored too, and failing
+   * the parent cascades down to the application flows and their stages.</p>
+   */
+  @Query("""
+    SELECT f.id FROM FlowEntity f
+    WHERE f.status = :status
+      AND f.awaitingAsyncSince IS NOT NULL
+      AND f.awaitingAsyncSince < :cutoff""")
+  List<UUID> findIdsAwaitingAsyncBefore(@Param("status") EntityExecutionStatus status,
+    @Param("cutoff") ZonedDateTime cutoff);
+
   @Override
   @Query("""
     SELECT
@@ -29,11 +45,18 @@ public interface FlowRepository extends AbstractFlowRepository<FlowEntity> {
     @Param("status") EntityExecutionStatus status,
     @Param("excludedStageId") UUID excludedStageId);
 
+  /**
+   * Completes a top-level flow that is waiting on asynchronous stage confirmations. See
+   * {@link ApplicationFlowRepository#updateStatusByIdIfCurrentInAndNoStagesWithStatus} for why the
+   * {@code awaitingAsyncSince IS NOT NULL} predicate is required rather than relying on the {@code NOT EXISTS}
+   * checks alone.
+   */
   @Modifying
   @Query("""
     UPDATE FlowEntity f
     SET f.status = :status, f.finishedAt = :finishedAt
     WHERE f.id = :flowId AND f.status IN :currentStatuses
+      AND f.awaitingAsyncSince IS NOT NULL
       AND NOT EXISTS (
           SELECT 1 FROM FlowStageEntity s
           WHERE s.flowId = f.id AND s.status IN :currentStatuses)

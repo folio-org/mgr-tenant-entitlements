@@ -175,6 +175,8 @@ docker run \
 | KAFKA_RESOURCE_RESULT_TOPIC_PATTERN          | `${ENV}.resource-result` | false | Topic pattern for the `resource-result` Kafka listener. Supports regex; defaults to the environment-prefixed topic name.             |
 | KAFKA_RESOURCE_RESULT_TOPIC_CONCURRENCY      | 1             |  false   | Number of concurrent consumers for the `resource-result` listener.                                                                                         |
 | EVENT_PUBLISHER_AWAIT_COMPLETION             | false         |  false   | When `true`, capability, system-user, and scheduled-job event-publishing stages leave the flow stage `IN_PROGRESS` after publishing and wait for a `resource-result` Kafka acknowledgment before marking it `FINISHED`. When `false` (default), stages finish immediately upon a successful publish. |
+| ASYNC_CONFIRMATION_TIMEOUT                   | 30m           |  false   | How long a flow may wait for async stage confirmations before the sweeper marks it `FAILED`. Uses Spring `Duration` syntax (e.g. `30m`, `1h`). Only applies when `EVENT_PUBLISHER_AWAIT_COMPLETION=true`. |
+| ASYNC_CONFIRMATION_SWEEP_INTERVAL            | 5m            |  false   | Fixed delay between successive sweeper runs. Uses Spring `Duration` syntax (e.g. `5m`, `1h`). |
 
 ### SSL Configuration environment variables
 
