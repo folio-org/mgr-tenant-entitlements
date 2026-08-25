@@ -117,6 +117,17 @@ class ResourceResultEventServiceIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Sql("classpath:/sql/resource-result-event/single-stage-no-anchor.sql")
+  void processEvent_positive_noAnchor_stageFinished_flowStaysInProgress() throws Exception {
+    resourceResultEventService.processEvent(event(S1_ID, SUCCESS, null));
+
+    getFlow(FLOW_ID, true)
+      .andExpect(jsonPath("$.status", is("in_progress")))
+      .andExpect(jsonPath("$.applicationFlows[0].status", is("in_progress")))
+      .andExpect(jsonPath(stageStatusPath(STAGE1_NAME), contains("finished")));
+  }
+
+  @Test
   void processEvent_positive_stageNotFound_noException() {
     var unknownStageId = UUID.fromString("ff000000-0000-0000-0000-000000000001");
 
