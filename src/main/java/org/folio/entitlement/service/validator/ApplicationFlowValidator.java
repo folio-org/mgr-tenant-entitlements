@@ -1,6 +1,7 @@
 package org.folio.entitlement.service.validator;
 
 import static org.folio.common.utils.SemverUtils.getNames;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.APPLICATION_FLOW;
 import static org.folio.entitlement.service.validator.ValidatorUtils.validateApplicationFlow;
@@ -24,6 +25,7 @@ public class ApplicationFlowValidator extends DatabaseLoggingStage<CommonStageCo
   implements EntitlementRequestValidator {
 
   private final ApplicationFlowService applicationFlowService;
+  private final DesiredStateValidationService desiredStateValidationService;
 
   @Override
   public void execute(CommonStageContext context) {
@@ -46,6 +48,11 @@ public class ApplicationFlowValidator extends DatabaseLoggingStage<CommonStageCo
    */
   @Override
   public void validate(EntitlementRequest request) {
+    if (request.getType() == STATE) {
+      desiredStateValidationService.validate(request);
+      return;
+    }
+
     var applicationIds = request.getApplications();
     var entitlementType = toEntitlementType(request.getType());
     var applicationFlows = entitlementType == REVOKE
