@@ -70,12 +70,19 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
     @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
     @Param("finishedAt") ZonedDateTime finishedAt);
 
+  /**
+   * Compare-and-set that fails a stage and records why. {@code errorType} is bound rather than hardcoded so an
+   * async failure can be told apart from a locally thrown one, and the status is bound as a parameter for
+   * consistency with the sibling statements above.
+   */
   @Modifying
   @Query("""
     UPDATE FlowStageEntity e
-    SET e.status = 'FAILED', e.errorMessage = :errDetails, e.finishedAt = :finishedAt
+    SET e.status = :status, e.errorType = :errorType, e.errorMessage = :errDetails, e.finishedAt = :finishedAt
     WHERE e.id = :stageId AND e.status IN :currentStatuses""")
   int markFailedByStageIdIfCurrentIn(@Param("stageId") UUID stageId,
+    @Param("status") EntityExecutionStatus status,
+    @Param("errorType") String errorType,
     @Param("errDetails") String errDetails,
     @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
     @Param("finishedAt") ZonedDateTime finishedAt);

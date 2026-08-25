@@ -123,8 +123,18 @@ public class FlowStageService {
     return repository.updateStatusByStageIdIfCurrentIn(id, FINISHED, Set.of(IN_PROGRESS), finishedAt);
   }
 
+  /**
+   * Fails a stage that is still awaiting an async confirmation.
+   *
+   * <p>{@code errorType} and {@code errDetails} are both required to be non-null by callers:
+   * {@code findLastFailedStage} selects on {@code error_message IS NOT NULL}, so a failed stage with no message is
+   * invisible to error reporting even though the flow above it reads as failed.</p>
+   *
+   * @return 1 when this call resolved the stage, 0 when it was already resolved by another writer
+   */
   @Transactional
-  public int failActiveStage(UUID id, String errDetails, ZonedDateTime finishedAt) {
-    return repository.markFailedByStageIdIfCurrentIn(id, errDetails, Set.of(IN_PROGRESS), finishedAt);
+  public int failActiveStage(UUID id, String errorType, String errDetails, ZonedDateTime finishedAt) {
+    return repository.markFailedByStageIdIfCurrentIn(id, FAILED, errorType, errDetails, Set.of(IN_PROGRESS),
+      finishedAt);
   }
 }

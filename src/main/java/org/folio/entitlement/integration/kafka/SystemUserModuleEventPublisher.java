@@ -20,8 +20,9 @@ public class SystemUserModuleEventPublisher extends AbstractModuleEventPublisher
 
   private final SystemUserEventProvider systemUserEventProvider;
 
+  // Fallback must match the default bound in application.yml - see CapabilitiesModuleEventPublisher.
   public SystemUserModuleEventPublisher(
-    @Value("${application.event-publishing.system-user.await-completion:true}") boolean awaitCompletion,
+    @Value("${application.event-publishing.system-user.await-completion:false}") boolean awaitCompletion,
     SystemUserEventProvider systemUserEventProvider) {
     super(awaitCompletion);
     this.systemUserEventProvider = systemUserEventProvider;

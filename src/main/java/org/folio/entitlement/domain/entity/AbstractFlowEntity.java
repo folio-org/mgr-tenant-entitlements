@@ -46,4 +46,17 @@ public class AbstractFlowEntity {
   @UpdateTimestamp
   @Column(name = "finished_at")
   private ZonedDateTime finishedAt;
+
+  /**
+   * When the flow finished all of its synchronous work and started waiting for asynchronous stage confirmations,
+   * {@code null} when the flow is not waiting on anything.
+   *
+   * <p>Written once by the flow finalizer and never rewritten. This is deliberately not {@code finishedAt}: that
+   * column is touched by {@link UpdateTimestamp} on every row update, so it cannot be used to measure how long a
+   * flow has been waiting. Two things depend on this distinction - a flow cannot be completed by an inbound
+   * result until the anchor is set (which is what prevents a fast result from finishing a flow that still has
+   * unstarted stages), and the staleness sweeper measures its timeout from it.</p>
+   */
+  @Column(name = "awaiting_async_since")
+  private ZonedDateTime awaitingAsyncSince;
 }

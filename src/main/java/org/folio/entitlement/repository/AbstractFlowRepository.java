@@ -28,4 +28,21 @@ public interface AbstractFlowRepository<T extends AbstractFlowEntity> extends Jp
     @Param("status") EntityExecutionStatus status,
     @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
     @Param("finishedAt") ZonedDateTime finishedAt);
+
+  /**
+   * Records that the flow has finished its synchronous work and is now waiting for asynchronous stage
+   * confirmations. Until this anchor is set, no inbound result may complete the flow - which is what stops a fast
+   * downstream response from finishing a flow whose remaining stages have not started yet and therefore have no
+   * rows to be seen.
+   *
+   * <p>Set-once by design: the {@code IS NULL} guard means a re-entered or retried finalizer cannot push the
+   * anchor forward, which would otherwise reset the staleness clock the sweeper measures from. {@code finishedAt}
+   * is deliberately not touched here - the flow has not finished.</p>
+   *
+   * @return 1 when the anchor was written, 0 when it was already set
+   */
+  @Modifying
+  @Query("UPDATE #{#entityName} e SET e.awaitingAsyncSince = :awaitingAsyncSince "
+    + "WHERE e.id = :id AND e.awaitingAsyncSince IS NULL")
+  int markAwaitingAsync(@Param("id") UUID id, @Param("awaitingAsyncSince") ZonedDateTime awaitingAsyncSince);
 }

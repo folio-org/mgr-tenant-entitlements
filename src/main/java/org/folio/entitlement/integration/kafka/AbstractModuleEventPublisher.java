@@ -117,9 +117,21 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
     return Optional.empty();
   }
 
+  /**
+   * Resolves the status this stage should record on success.
+   *
+   * <p>Defaults to {@code FINISHED} rather than returning whatever is in the context. Two reasons: {@code execute}
+   * has an early-return path (module descriptor unchanged and version unchanged) that sets nothing, and the flow
+   * engine merges the context data of parallel sibling stages, so an unset key can read back a *different*
+   * publisher's status rather than null. The attribute is keyed by stage id to close the second case at source.</p>
+   */
   @Override
   protected EntityExecutionStatus getSuccessStatus(ModuleStageContext context) {
-    return context.get(EVENT_PUBLISHER_SUCCESS_STATUS);
+    return context.get(successStatusKey(context), FINISHED);
+  }
+
+  private static String successStatusKey(ModuleStageContext context) {
+    return EVENT_PUBLISHER_SUCCESS_STATUS + "-" + context.getStageId();
   }
 
   /**
@@ -150,6 +162,6 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
   }
 
   private void setSuccessStatus(EntityExecutionStatus status, ModuleStageContext ctx) {
-    ctx.put(EVENT_PUBLISHER_SUCCESS_STATUS, status);
+    ctx.put(successStatusKey(ctx), status);
   }
 }

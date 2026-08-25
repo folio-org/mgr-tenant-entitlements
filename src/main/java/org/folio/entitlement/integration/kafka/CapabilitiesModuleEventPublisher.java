@@ -45,8 +45,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublisher<CapabilityEventPayload> {
 
+  // Fallback must match the default bound in application.yml: awaiting a confirmation that no downstream service
+  // is sending leaves every flow IN_PROGRESS, so the safe value is the one that preserves synchronous behaviour.
   public CapabilitiesModuleEventPublisher(
-    @Value("${application.event-publishing.capability.await-completion:true}") boolean awaitCompletion) {
+    @Value("${application.event-publishing.capability.await-completion:false}") boolean awaitCompletion) {
     super(awaitCompletion);
   }
 

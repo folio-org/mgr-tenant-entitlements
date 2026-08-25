@@ -17,7 +17,7 @@ public class KafkaMessageListener {
 
   @KafkaListener(
     id = "resource-result-event-listener",
-    containerFactory = "kafkaListenerContainerFactory",
+    containerFactory = "resourceResultContainerFactory",
     groupId = "#{kafkaConsumerProperties.listener['resource-result'].groupId}",
     topicPattern = "#{kafkaConsumerProperties.listener['resource-result'].topicPattern}",
     concurrency = "#{kafkaConsumerProperties.listener['resource-result'].concurrency}")

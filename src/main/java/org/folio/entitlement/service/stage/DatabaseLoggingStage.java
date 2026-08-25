@@ -43,10 +43,25 @@ public abstract class DatabaseLoggingStage<C extends IdentifiableStageContext> i
     context.withStageId(stageId);
   }
 
+  /**
+   * Records the stage outcome, unless the stage is deliberately being left pending.
+   *
+   * <p>A publisher configured to await async confirmation returns {@code IN_PROGRESS} here. {@link #onStart(C)}
+   * already persisted that status, so re-asserting it carries no information - and it is actively harmful: a
+   * downstream result that resolved this stage between {@code execute} and this callback would be overwritten and
+   * the stage pinned at {@code IN_PROGRESS} for good, since the result has already been consumed.</p>
+   */
   @Override
   @Transactional
   public void onSuccess(C context) {
     var status = getSuccessStatus(context);
+
+    if (status == IN_PROGRESS) {
+      log.debug("Flow stage {} is left 'In Progress' pending async confirmation [stageId: {}]",
+        getStageName(context), context.getStageId());
+      return;
+    }
+
     setEntitlementStageStatus(context, status, null);
   }
 

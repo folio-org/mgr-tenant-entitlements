@@ -91,11 +91,21 @@ public interface ApplicationFlowRepository extends AbstractFlowRepository<Applic
     @Param("status") EntityExecutionStatus status,
     @Param("excludedStageId") UUID excludedStageId);
 
+  /**
+   * Completes an application flow that is waiting on asynchronous stage confirmations.
+   *
+   * <p>The {@code awaitingAsyncSince IS NOT NULL} predicate is load-bearing. Stage rows are created lazily as each
+   * stage starts, so {@code NOT EXISTS(... IN_PROGRESS ...)} on its own only means "nothing is running at this
+   * instant" - it is blind to stages that have not begun. Requiring the anchor means the flow's finalizer has
+   * already declared the synchronous work complete, which is the only point at which an empty in-progress set
+   * genuinely implies there is no work left.</p>
+   */
   @Modifying
   @Query("""
     UPDATE ApplicationFlowEntity af
     SET af.status = :status, af.finishedAt = :finishedAt
     WHERE af.id = :id AND af.status IN :currentStatuses
+      AND af.awaitingAsyncSince IS NOT NULL
       AND NOT EXISTS (
           SELECT 1 FROM FlowStageEntity s
           WHERE s.flowId = af.id AND s.status IN :currentStatuses)""")

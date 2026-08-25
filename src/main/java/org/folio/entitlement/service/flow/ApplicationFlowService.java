@@ -67,6 +67,7 @@ public class ApplicationFlowService {
     return applicationFlow;
   }
 
+  @Transactional(readOnly = true)
   public Optional<ApplicationFlow> findById(UUID applicationFlowId) {
     return repository.findById(applicationFlowId).map(mapper::map);
   }

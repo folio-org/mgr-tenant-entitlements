@@ -22,8 +22,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class ScheduledJobModuleEventPublisher extends AbstractModuleEventPublisher<ScheduledTimers> {
 
+  // Fallback must match the default bound in application.yml - see CapabilitiesModuleEventPublisher.
   public ScheduledJobModuleEventPublisher(
-    @Value("${application.event-publishing.scheduled-job.await-completion:true}") boolean awaitCompletion) {
+    @Value("${application.event-publishing.scheduled-job.await-completion:false}") boolean awaitCompletion) {
     super(awaitCompletion);
   }
 
