@@ -11,6 +11,10 @@
 * Include the full module ID in system-user Kafka events for downstream entitlement processing tracking (MGRENTITLE-192)
 * Move Kong mgmt logic from mgr-applications to mgr-tenant-entitlements (MGRENTITLE-174)
 * Support desired-state entitlement validation for entitle, upgrade, and revoke transitions (MGRENTITLE-186)
+* Deprecate the Kong-specific gateway configuration in favour of the API Gateway naming: `KONG_*`,
+  `REGISTER_MODULE_IN_KONG` and `application.kong.*` keep working through fallbacks and log a startup `WARN`,
+  the `application.kong.*` bridge block was removed from `application.yml`, and the legacy names are planned for
+  removal in the Vetch release (EUREKA-887)
 
 ---
 
