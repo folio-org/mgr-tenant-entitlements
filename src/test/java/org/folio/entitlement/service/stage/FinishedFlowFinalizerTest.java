@@ -71,6 +71,7 @@ class FinishedFlowFinalizerTest {
   @Test
   void execute_positive_inProgressStatus_updateNotCalled() {
     when(statusProvider.getFinalStatus(any())).thenReturn(ExecutionStatus.IN_PROGRESS);
+    when(flowRepository.markAwaitingAsync(eq(FLOW_ID), any(ZonedDateTime.class))).thenReturn(1);
 
     var stageContext = commonStageContext(FLOW_ID, flowParameters(), Map.of());
     flowFinalizer.execute(stageContext);

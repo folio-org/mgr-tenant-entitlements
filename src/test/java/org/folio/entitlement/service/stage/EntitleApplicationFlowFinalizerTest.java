@@ -81,6 +81,7 @@ class EntitleApplicationFlowFinalizerTest {
   @Test
   void execute_positive_inProgressStatus_updateNotCalledButEntitlementSaved() {
     when(statusProvider.getFinalStatus(any())).thenReturn(ExecutionStatus.IN_PROGRESS);
+    when(applicationFlowRepository.markAwaitingAsync(eq(APPLICATION_FLOW_ID), any(ZonedDateTime.class))).thenReturn(1);
 
     var entitlementRequest = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
     var flowParameters = flowParameters(entitlementRequest, TestValues.appDescriptor());

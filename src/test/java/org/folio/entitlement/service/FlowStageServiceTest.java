@@ -156,13 +156,15 @@ class FlowStageServiceTest {
   @Test
   void failActiveStage_positive() {
     var finishedAt = ZonedDateTime.now();
+    var errorType = "TestFailure";
     var errDetails = "test-error";
 
     when(flowStageRepository.markFailedByStageIdIfCurrentIn(
-      APPLICATION_FLOW_ID, errDetails, Set.of(EntityExecutionStatus.IN_PROGRESS), finishedAt))
+      APPLICATION_FLOW_ID, EntityExecutionStatus.FAILED, errorType, errDetails,
+      Set.of(EntityExecutionStatus.IN_PROGRESS), finishedAt))
       .thenReturn(1);
 
-    var result = flowStageService.failActiveStage(APPLICATION_FLOW_ID, errDetails, finishedAt);
+    var result = flowStageService.failActiveStage(APPLICATION_FLOW_ID, errorType, errDetails, finishedAt);
 
     assertThat(result).isEqualTo(1);
   }

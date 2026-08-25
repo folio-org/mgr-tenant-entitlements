@@ -26,13 +26,13 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public abstract class AbstractFlowFinalizer<T extends AbstractFlowEntity, C extends IdentifiableStageContext>
   extends DatabaseLoggingStage<C> {
 
-  private final AbstractFlowRepository<T> abstractFlowRepository;
-  private final FlowFinalizerStatusProvider<C> statusProvider;
-
   // Setter-injected rather than constructor-injected: every concrete finalizer calls super(...) explicitly, and
   // threading one more argument through ten subclasses buys nothing. Matches how DatabaseLoggingStage takes its
   // own collaborators.
-  protected FlowCompletionService flowCompletionService;
+  private FlowCompletionService flowCompletionService;
+
+  private final AbstractFlowRepository<T> abstractFlowRepository;
+  private final FlowFinalizerStatusProvider<C> statusProvider;
 
   /**
    * Sets the final flow status with a single compare-and-set statement and runs {@link #afterFlowStatusUpdate(C)}

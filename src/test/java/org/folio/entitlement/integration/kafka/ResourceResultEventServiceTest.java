@@ -2,8 +2,8 @@ package org.folio.entitlement.integration.kafka;
 
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
+import static org.folio.entitlement.integration.kafka.ResourceResultEventService.ASYNC_FAILURE_ERROR_TYPE;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
-import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -13,11 +13,9 @@ import static org.mockito.Mockito.when;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
-import org.folio.entitlement.domain.dto.Flow;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.service.FlowStageService;
-import org.folio.entitlement.service.flow.ApplicationFlowService;
-import org.folio.entitlement.service.flow.FlowService;
+import org.folio.entitlement.service.flow.FlowCompletionService;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.integration.kafka.model.ResourceResultEvent;
 import org.folio.integration.kafka.model.ResourceResultStatus;
@@ -34,12 +32,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class ResourceResultEventServiceTest {
 
   private static final UUID STAGE_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
+  private static final String NO_DETAILS_MESSAGE = "Downstream service reported a failure with no details";
 
   @InjectMocks private ResourceResultEventService eventService;
 
   @Mock private FlowStageService stageService;
-  @Mock private ApplicationFlowService applicationFlowService;
-  @Mock private FlowService flowService;
+  @Mock private FlowCompletionService flowCompletionService;
 
   @AfterEach
   void tearDown() {
@@ -62,17 +60,40 @@ class ResourceResultEventServiceTest {
   }
 
   @Test
+  void processEvent_positive_nullStatus_ignored() {
+    eventService.processEvent(ResourceResultEvent.builder()
+      .id(STAGE_ID.toString())
+      .tenant(TENANT_NAME)
+      .build());
+  }
+
+  @Test
+  void processEvent_positive_nonUuidId_ignored() {
+    eventService.processEvent(ResourceResultEvent.builder()
+      .id("not-a-uuid")
+      .tenant(TENANT_NAME)
+      .status(ResourceResultStatus.SUCCESS)
+      .build());
+  }
+
+  @Test
   void processEvent_positive_successResult_stageAndFlowsFinished() {
     var stage = new FlowStage().id(STAGE_ID).flowId(APPLICATION_FLOW_ID).status(IN_PROGRESS);
     when(stageService.findById(STAGE_ID)).thenReturn(Optional.of(stage));
-    when(flowService.getTopLevelFlow(APPLICATION_FLOW_ID)).thenReturn(new Flow().id(FLOW_ID));
+    when(stageService.finishActiveStage(eq(STAGE_ID), any(ZonedDateTime.class))).thenReturn(1);
 
     eventService.processEvent(resourceResultEvent(ResourceResultStatus.SUCCESS));
 
-    verify(stageService).finishActiveStage(eq(STAGE_ID), any(ZonedDateTime.class));
-    verify(applicationFlowService).finishFlowIfNoActiveStages(eq(APPLICATION_FLOW_ID), any(ZonedDateTime.class));
-    verify(flowService).getTopLevelFlow(APPLICATION_FLOW_ID);
-    verify(flowService).finishFlowIfNoActiveStages(eq(FLOW_ID), any(ZonedDateTime.class));
+    verify(flowCompletionService).completeIfNoActiveStages(eq(APPLICATION_FLOW_ID), any(ZonedDateTime.class));
+  }
+
+  @Test
+  void processEvent_positive_successResult_casLost_ignored() {
+    var stage = new FlowStage().id(STAGE_ID).flowId(APPLICATION_FLOW_ID).status(IN_PROGRESS);
+    when(stageService.findById(STAGE_ID)).thenReturn(Optional.of(stage));
+    when(stageService.finishActiveStage(eq(STAGE_ID), any(ZonedDateTime.class))).thenReturn(0);
+
+    eventService.processEvent(resourceResultEvent(ResourceResultStatus.SUCCESS));
   }
 
   @Test
@@ -80,14 +101,34 @@ class ResourceResultEventServiceTest {
     var details = "Module registration failed";
     var stage = new FlowStage().id(STAGE_ID).flowId(APPLICATION_FLOW_ID).status(IN_PROGRESS);
     when(stageService.findById(STAGE_ID)).thenReturn(Optional.of(stage));
-    when(flowService.getTopLevelFlow(APPLICATION_FLOW_ID)).thenReturn(new Flow().id(FLOW_ID));
+    when(stageService.failActiveStage(
+      eq(STAGE_ID), eq(ASYNC_FAILURE_ERROR_TYPE), eq(details), any(ZonedDateTime.class))).thenReturn(1);
 
     eventService.processEvent(resourceResultEvent(ResourceResultStatus.FAILURE, details));
 
-    verify(stageService).failActiveStage(eq(STAGE_ID), eq(details), any(ZonedDateTime.class));
-    verify(applicationFlowService).failActiveFlow(eq(APPLICATION_FLOW_ID), any(ZonedDateTime.class));
-    verify(flowService).getTopLevelFlow(APPLICATION_FLOW_ID);
-    verify(flowService).failActiveFlow(eq(FLOW_ID), any(ZonedDateTime.class));
+    verify(flowCompletionService).failFlows(eq(APPLICATION_FLOW_ID), any(ZonedDateTime.class));
+  }
+
+  @Test
+  void processEvent_positive_failureResult_casLost_ignored() {
+    var stage = new FlowStage().id(STAGE_ID).flowId(APPLICATION_FLOW_ID).status(IN_PROGRESS);
+    when(stageService.findById(STAGE_ID)).thenReturn(Optional.of(stage));
+    when(stageService.failActiveStage(
+      eq(STAGE_ID), eq(ASYNC_FAILURE_ERROR_TYPE), any(String.class), any(ZonedDateTime.class))).thenReturn(0);
+
+    eventService.processEvent(resourceResultEvent(ResourceResultStatus.FAILURE, "some-error"));
+  }
+
+  @Test
+  void processEvent_positive_failureResult_nullDetails_usesDefaultMessage() {
+    var stage = new FlowStage().id(STAGE_ID).flowId(APPLICATION_FLOW_ID).status(IN_PROGRESS);
+    when(stageService.findById(STAGE_ID)).thenReturn(Optional.of(stage));
+    when(stageService.failActiveStage(
+      eq(STAGE_ID), eq(ASYNC_FAILURE_ERROR_TYPE), eq(NO_DETAILS_MESSAGE), any(ZonedDateTime.class))).thenReturn(1);
+
+    eventService.processEvent(resourceResultEvent(ResourceResultStatus.FAILURE));
+
+    verify(flowCompletionService).failFlows(eq(APPLICATION_FLOW_ID), any(ZonedDateTime.class));
   }
 
   private static ResourceResultEvent resourceResultEvent(ResourceResultStatus status) {

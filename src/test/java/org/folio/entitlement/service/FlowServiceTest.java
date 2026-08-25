@@ -366,6 +366,23 @@ class FlowServiceTest {
     }
   }
 
+  @Nested
+  @DisplayName("findStaleAsyncFlowIds")
+  class FindStaleAsyncFlowIds {
+
+    @Test
+    void positive() {
+      var cutoff = ZonedDateTime.now();
+
+      when(flowRepository.findIdsAwaitingAsyncBefore(EntityExecutionStatus.IN_PROGRESS, cutoff))
+        .thenReturn(List.of(FLOW_ID));
+
+      var result = flowService.findStaleAsyncFlowIds(cutoff);
+
+      assertThat(result).containsExactly(FLOW_ID);
+    }
+  }
+
   static class TestValues {
 
     static FlowEntity flowEntity() {
