@@ -82,7 +82,7 @@ public class KafkaConfiguration implements KafkaListenerConfigurer {
       kafkaProperties.buildConsumerProperties(), new StringDeserializer(), valueDeserializer);
 
     var recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
-      (record, exception) -> new TopicPartition(record.topic() + DLT_SUFFIX, record.partition()));
+      (rec, exception) -> new TopicPartition(rec.topic() + DLT_SUFFIX, rec.partition()));
 
     var errorHandler = new DefaultErrorHandler(recoverer, new FixedBackOff(RETRY_INTERVAL_MS, MAX_RETRIES));
     errorHandler.addNotRetryableExceptions(IllegalArgumentException.class);

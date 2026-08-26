@@ -4,6 +4,7 @@ import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
 
 import jakarta.validation.Valid;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -70,7 +71,7 @@ public class ResourceResultEventService {
   }
 
   private void applySuccessResult(FlowStage stage, ResourceResultEvent result) {
-    var finishedAt = ZonedDateTime.now();
+    var finishedAt = ZonedDateTime.now(ZoneId.systemDefault());
 
     if (stageService.finishActiveStage(stage.getId(), finishedAt) == 0) {
       // Lost the compare-and-set: a concurrent delivery of this result already resolved the stage. Returning here
@@ -87,7 +88,7 @@ public class ResourceResultEventService {
   }
 
   private void applyFailureResult(FlowStage stage, ResourceResultEvent result) {
-    var finishedAt = ZonedDateTime.now();
+    var finishedAt = ZonedDateTime.now(ZoneId.systemDefault());
     var details = defaultIfBlank(result.getDetails(), NO_DETAILS_MESSAGE);
 
     if (stageService.failActiveStage(stage.getId(), ASYNC_FAILURE_ERROR_TYPE, details, finishedAt) == 0) {
