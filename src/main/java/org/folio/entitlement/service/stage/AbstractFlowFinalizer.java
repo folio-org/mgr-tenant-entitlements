@@ -16,10 +16,9 @@ import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.domain.model.IdentifiableStageContext;
 import org.folio.entitlement.repository.AbstractFlowRepository;
 import org.folio.entitlement.service.flow.FlowCompletionService;
+import org.folio.entitlement.utils.TransactionHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Log4j2
 @RequiredArgsConstructor
@@ -30,6 +29,7 @@ public abstract class AbstractFlowFinalizer<T extends AbstractFlowEntity, C exte
   // threading one more argument through ten subclasses buys nothing. Matches how DatabaseLoggingStage takes its
   // own collaborators.
   private FlowCompletionService flowCompletionService;
+  private TransactionHelper transactionHelper;
 
   private final AbstractFlowRepository<T> abstractFlowRepository;
   private final FlowFinalizerStatusProvider<C> statusProvider;
@@ -97,22 +97,20 @@ public abstract class AbstractFlowFinalizer<T extends AbstractFlowEntity, C exte
     super.onSuccess(context);
 
     var entitlementFlowId = context.getCurrentFlowId();
-    if (TransactionSynchronizationManager.isSynchronizationActive()) {
-      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-        @Override
-        public void afterCommit() {
-          flowCompletionService.completeIfNoActiveStages(
-            entitlementFlowId, ZonedDateTime.now(ZoneId.systemDefault()));
-        }
-      });
-    } else {
-      flowCompletionService.completeIfNoActiveStages(entitlementFlowId, ZonedDateTime.now(ZoneId.systemDefault()));
-    }
+    var time = ZonedDateTime.now(ZoneId.systemDefault());
+
+    transactionHelper.executeAfterCommitInNewTrx(status -> flowCompletionService.completeIfNoActiveStages(
+      entitlementFlowId, time));
   }
 
   @Autowired
   public void setFlowCompletionService(FlowCompletionService flowCompletionService) {
     this.flowCompletionService = flowCompletionService;
+  }
+
+  @Autowired
+  public void setTransactionHelper(TransactionHelper transactionHelper) {
+    this.transactionHelper = transactionHelper;
   }
 
   protected void afterFlowStatusUpdate(C context) {}
