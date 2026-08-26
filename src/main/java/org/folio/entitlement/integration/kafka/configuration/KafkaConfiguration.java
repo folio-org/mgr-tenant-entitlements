@@ -78,7 +78,7 @@ public class KafkaConfiguration implements KafkaListenerConfigurer {
     var valueDeserializer = new ErrorHandlingDeserializer<>(
       new JacksonJsonDeserializer<>(ResourceResultEvent.class, jsonMapper));
 
-    var consumerFactory = new DefaultKafkaConsumerFactory<String, ResourceResultEvent>(
+    var consumerFactory = new DefaultKafkaConsumerFactory<>(
       kafkaProperties.buildConsumerProperties(), new StringDeserializer(), valueDeserializer);
 
     var recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,

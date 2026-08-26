@@ -17,7 +17,7 @@ public class AsyncConfirmationSweeper {
 
   private final FlowService flowService;
 
-  @Value("${application.async-confirmation.timeout:30m}")
+  @Value("${application.async-confirmation.timeout:90m}")
   private Duration asyncConfirmationTimeout;
 
   /**

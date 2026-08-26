@@ -209,7 +209,7 @@ application:
     scheduled-job:
       await-completion: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
   async-confirmation:
-    timeout: ${ASYNC_CONFIRMATION_TIMEOUT:30m}
+    timeout: ${ASYNC_CONFIRMATION_TIMEOUT:90m}
     sweep-interval: ${ASYNC_CONFIRMATION_SWEEP_INTERVAL:5m}
 
 folio:
