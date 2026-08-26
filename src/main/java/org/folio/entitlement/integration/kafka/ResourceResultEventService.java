@@ -36,10 +36,6 @@ public class ResourceResultEventService {
   /**
    * Applies a downstream result to the flow stage that produced the originating event.
    *
-   * <p>Structurally invalid events are dropped rather than rethrown: the listener commits the offset and the
-   * record does not go round the container's retry loop, because no number of retries can make a malformed id or
-   * a missing status valid.</p>
-   *
    * @param event - inbound {@link ResourceResultEvent}
    */
   @Transactional
@@ -47,16 +43,7 @@ public class ResourceResultEventService {
     log.info("Processing resource result event: {}", () -> eventToString(event));
 
     var status = event.getStatus();
-    if (status == null) {
-      // ResourceResultEvent declares no constraint on status, so @Valid admits this.
-      log.warn("Resource result event has no status, event is ignored: {}", () -> eventToString(event));
-      return;
-    }
-
-    var stageId = parseStageId(event);
-    if (stageId == null) {
-      return;
-    }
+    var stageId = UUID.fromString(event.getId());
 
     stageService.findById(stageId).ifPresentOrElse(
       stage -> applyStageResult(stage, event, status),
@@ -113,16 +100,6 @@ public class ResourceResultEventService {
       () -> flowStageToString(stage), () -> eventToString(result));
 
     flowCompletionService.failFlows(stage.getFlowId(), finishedAt);
-  }
-
-  private static UUID parseStageId(ResourceResultEvent event) {
-    try {
-      return UUID.fromString(event.getId());
-    } catch (IllegalArgumentException e) {
-      // id is validated as @NotBlank only, so a non-UUID value reaches this point.
-      log.warn("Resource result event id is not a valid UUID, event is ignored: {}", eventToString(event));
-      return null;
-    }
   }
 
   private static String flowStageToString(FlowStage stage) {

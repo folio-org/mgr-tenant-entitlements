@@ -1,5 +1,6 @@
 package org.folio.entitlement.integration.kafka;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.integration.kafka.ResourceResultEventService.ASYNC_FAILURE_ERROR_TYPE;
@@ -60,20 +61,15 @@ class ResourceResultEventServiceTest {
   }
 
   @Test
-  void processEvent_positive_nullStatus_ignored() {
-    eventService.processEvent(ResourceResultEvent.builder()
-      .id(STAGE_ID.toString())
-      .tenant(TENANT_NAME)
-      .build());
-  }
-
-  @Test
-  void processEvent_positive_nonUuidId_ignored() {
-    eventService.processEvent(ResourceResultEvent.builder()
+  void processEvent_negative_nonUuidId_throwsIllegalArgument() {
+    var event = ResourceResultEvent.builder()
       .id("not-a-uuid")
       .tenant(TENANT_NAME)
       .status(ResourceResultStatus.SUCCESS)
-      .build());
+      .build();
+
+    assertThatThrownBy(() -> eventService.processEvent(event))
+      .isInstanceOf(IllegalArgumentException.class);
   }
 
   @Test
