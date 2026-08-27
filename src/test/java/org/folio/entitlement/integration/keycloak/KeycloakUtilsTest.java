@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.ArrayList;
+import java.util.List;
+import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
@@ -16,15 +18,20 @@ class KeycloakUtilsTest {
 
   @Test
   void withPubSubResources_returnsCopyWithHandlers() {
+    var existingInterface = new InterfaceDescriptor();
+    existingInterface.setId("pubsub");
+    existingInterface.setVersion("1.0");
+
     ModuleDescriptor original = new ModuleDescriptor();
     original.setId("mod-pubsub-1.1.0");
-    original.setProvides(new ArrayList<>());
+    original.setProvides(new ArrayList<>(List.of(existingInterface)));
 
     ModuleDescriptor result = KeycloakUtils.withPubSubResources(original);
 
-    assertEquals(1, result.getProvides().size());
-    assertEquals(12, result.getProvides().getFirst().getHandlers().size());
-    assertEquals(0, original.getProvides().size(), "Original descriptor must not be mutated");
+    assertEquals(2, result.getProvides().size());
+    assertEquals("pubsub", result.getProvides().get(0).getId(), "Original interface must be present in result");
+    assertEquals(12, result.getProvides().get(1).getHandlers().size());
+    assertEquals(1, original.getProvides().size(), "Original descriptor must not be mutated");
   }
 
   @Test
