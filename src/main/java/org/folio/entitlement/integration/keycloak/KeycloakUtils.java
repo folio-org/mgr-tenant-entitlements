@@ -16,23 +16,47 @@ import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class KeycloakUtils {
 
-  public static void addPubSubResources(ModuleDescriptor newDescriptor) {
-    if (newDescriptor != null && newDescriptor.getId() != null && newDescriptor.getId().startsWith("mod-pubsub")) {
-      InterfaceDescriptor interfaceDescriptor = new InterfaceDescriptor();
-      interfaceDescriptor.setId("pubsub-event-handlers");
-      interfaceDescriptor.setVersion("1.1");
+  private static final String PUBSUB_MODULE_ID_PREFIX = "mod-pubsub";
+  private static final String PUBSUB_EVENT_HANDLERS_INTERFACE_ID = "pubsub-event-handlers";
+  private static final String PUBSUB_EVENT_HANDLERS_INTERFACE_VERSION = "1.1";
 
-      ArrayList<RoutingEntry> handlers = new ArrayList<>();
-      for (Map.Entry<String, PermissionMappingValue> mapping : KafkaEventUtils.getPermissionMapping().entrySet()) {
-        RoutingEntry routingEntry = new RoutingEntry();
-        routingEntry.setMethods(List.of(mapping.getValue().getMethod()));
-        routingEntry.setPathPattern(mapping.getValue().getEndpoint());
-        routingEntry.setPermissionsRequired(List.of(mapping.getKey()));
-        handlers.add(routingEntry);
-      }
-
-      interfaceDescriptor.setHandlers(handlers);
-      newDescriptor.getProvides().add(interfaceDescriptor);
+  public static ModuleDescriptor withPubSubResources(ModuleDescriptor descriptor) {
+    if (descriptor == null || descriptor.getId() == null || !descriptor.getId().startsWith(PUBSUB_MODULE_ID_PREFIX)) {
+      return descriptor;
     }
+    var enrichedProvides = new ArrayList<>(descriptor.getProvides());
+    enrichedProvides.add(buildPubSubEventHandlersInterface());
+    return new ModuleDescriptor()
+      .id(descriptor.getId())
+      .description(descriptor.getDescription())
+      .replaces(descriptor.getReplaces())
+      .tags(descriptor.getTags())
+      .requires(descriptor.getRequires())
+      .provides(enrichedProvides)
+      .optional(descriptor.getOptional())
+      .filters(descriptor.getFilters())
+      .permissionSets(descriptor.getPermissionSets())
+      .env(descriptor.getEnv())
+      .uiDescriptor(descriptor.getUiDescriptor())
+      .launchDescriptor(descriptor.getLaunchDescriptor())
+      .user(descriptor.getUser())
+      .metadata(descriptor.getMetadata())
+      .extensions(descriptor.getExtensions());
+  }
+
+  private static InterfaceDescriptor buildPubSubEventHandlersInterface() {
+    var handlers = new ArrayList<RoutingEntry>();
+    for (Map.Entry<String, PermissionMappingValue> mapping : KafkaEventUtils.getPermissionMapping().entrySet()) {
+      var routingEntry = new RoutingEntry();
+      routingEntry.setMethods(List.of(mapping.getValue().getMethod()));
+      routingEntry.setPathPattern(mapping.getValue().getEndpoint());
+      routingEntry.setPermissionsRequired(List.of(mapping.getKey()));
+      handlers.add(routingEntry);
+    }
+    var interfaceDescriptor = new InterfaceDescriptor();
+    interfaceDescriptor.setId(PUBSUB_EVENT_HANDLERS_INTERFACE_ID);
+    interfaceDescriptor.setVersion(PUBSUB_EVENT_HANDLERS_INTERFACE_VERSION);
+    interfaceDescriptor.setHandlers(handlers);
+    return interfaceDescriptor;
   }
 }
