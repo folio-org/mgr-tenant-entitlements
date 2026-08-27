@@ -20,24 +20,8 @@ public class KeycloakUtils {
     if (descriptor == null || descriptor.getId() == null || !descriptor.getId().startsWith("mod-pubsub")) {
       return descriptor;
     }
-
-    InterfaceDescriptor interfaceDescriptor = new InterfaceDescriptor();
-    interfaceDescriptor.setId("pubsub-event-handlers");
-    interfaceDescriptor.setVersion("1.1");
-
-    ArrayList<RoutingEntry> handlers = new ArrayList<>();
-    for (Map.Entry<String, PermissionMappingValue> mapping : KafkaEventUtils.getPermissionMapping().entrySet()) {
-      RoutingEntry routingEntry = new RoutingEntry();
-      routingEntry.setMethods(List.of(mapping.getValue().getMethod()));
-      routingEntry.setPathPattern(mapping.getValue().getEndpoint());
-      routingEntry.setPermissionsRequired(List.of(mapping.getKey()));
-      handlers.add(routingEntry);
-    }
-    interfaceDescriptor.setHandlers(handlers);
-
     var enrichedProvides = new ArrayList<>(descriptor.getProvides());
-    enrichedProvides.add(interfaceDescriptor);
-
+    enrichedProvides.add(buildPubSubEventHandlersInterface());
     return new ModuleDescriptor()
       .id(descriptor.getId())
       .description(descriptor.getDescription())
@@ -54,5 +38,21 @@ public class KeycloakUtils {
       .user(descriptor.getUser())
       .metadata(descriptor.getMetadata())
       .extensions(descriptor.getExtensions());
+  }
+
+  private static InterfaceDescriptor buildPubSubEventHandlersInterface() {
+    var handlers = new ArrayList<RoutingEntry>();
+    for (Map.Entry<String, PermissionMappingValue> mapping : KafkaEventUtils.getPermissionMapping().entrySet()) {
+      var routingEntry = new RoutingEntry();
+      routingEntry.setMethods(List.of(mapping.getValue().getMethod()));
+      routingEntry.setPathPattern(mapping.getValue().getEndpoint());
+      routingEntry.setPermissionsRequired(List.of(mapping.getKey()));
+      handlers.add(routingEntry);
+    }
+    var interfaceDescriptor = new InterfaceDescriptor();
+    interfaceDescriptor.setId("pubsub-event-handlers");
+    interfaceDescriptor.setVersion("1.1");
+    interfaceDescriptor.setHandlers(handlers);
+    return interfaceDescriptor;
   }
 }
