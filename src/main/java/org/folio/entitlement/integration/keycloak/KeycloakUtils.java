@@ -16,8 +16,12 @@ import org.folio.entitlement.integration.kafka.model.PermissionMappingValue;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class KeycloakUtils {
 
+  private static final String PUBSUB_MODULE_ID_PREFIX = "mod-pubsub";
+  private static final String PUBSUB_EVENT_HANDLERS_INTERFACE_ID = "pubsub-event-handlers";
+  private static final String PUBSUB_EVENT_HANDLERS_INTERFACE_VERSION = "1.1";
+
   public static ModuleDescriptor withPubSubResources(ModuleDescriptor descriptor) {
-    if (descriptor == null || descriptor.getId() == null || !descriptor.getId().startsWith("mod-pubsub")) {
+    if (descriptor == null || descriptor.getId() == null || !descriptor.getId().startsWith(PUBSUB_MODULE_ID_PREFIX)) {
       return descriptor;
     }
     var enrichedProvides = new ArrayList<>(descriptor.getProvides());
@@ -50,8 +54,8 @@ public class KeycloakUtils {
       handlers.add(routingEntry);
     }
     var interfaceDescriptor = new InterfaceDescriptor();
-    interfaceDescriptor.setId("pubsub-event-handlers");
-    interfaceDescriptor.setVersion("1.1");
+    interfaceDescriptor.setId(PUBSUB_EVENT_HANDLERS_INTERFACE_ID);
+    interfaceDescriptor.setVersion(PUBSUB_EVENT_HANDLERS_INTERFACE_VERSION);
     interfaceDescriptor.setHandlers(handlers);
     return interfaceDescriptor;
   }
