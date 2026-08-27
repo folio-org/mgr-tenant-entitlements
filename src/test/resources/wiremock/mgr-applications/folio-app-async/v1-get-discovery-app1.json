@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications/folio-app-async-1.0.0/discovery",
+    "queryParameters": {
+      "limit": {
+        "equalTo": "100"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "discovery": [
+        {
+          "id": "folio-module-async-1.0.0",
+          "name": "folio-module-async",
+          "version": "1.0.0",
+          "location": "{{request.baseUrl}}/folio-module-async"
+        }
+      ],
+      "totalRecords": 1
+    },
+    "transformers": [
+      "response-template"
+    ]
+  }
+}
