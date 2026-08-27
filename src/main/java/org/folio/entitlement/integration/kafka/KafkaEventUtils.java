@@ -41,12 +41,14 @@ public class KafkaEventUtils {
    * @param <T> generic type for event payload
    * @return {@link Optional} of {@link ResourceEvent}, it will be empty if old and new values are not valid
    */
-  public static <T> Optional<ResourceEvent<T>> createEvent(String resource, String tenant, T newPayload, T oldPayload) {
+  public static <T> Optional<ResourceEvent<T>> createEvent(String id, String resource, String tenant,
+    T newPayload, T oldPayload) {
     if (newPayload == null && oldPayload == null) {
       return Optional.empty();
     }
 
     var scheduledJobEvent = ResourceEvent.<T>baseBuilder()
+      .id(id)
       .tenant(tenant)
       .type(getResourceEventType(newPayload, oldPayload))
       .resourceName(resource)

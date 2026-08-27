@@ -1,0 +1,24 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+  <changeSet id="add-stage-id-to-flow-stage" author="dmtkachenko">
+    <addColumn tableName="flow_stage">
+      <column name="stage_id" type="uuid"/>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="populate-stage-id-in-existing-stages" author="dmtkachenko">
+    <update tableName="flow_stage">
+      <column name="stage_id" valueComputed="gen_random_uuid()"/>
+    </update>
+  </changeSet>
+
+  <changeSet id="add-constrains-to-stage-id" author="dmtkachenko">
+    <addNotNullConstraint tableName="flow_stage" columnName="stage_id" constraintName="nn_flow_stage_stage_id"/>
+    <addUniqueConstraint tableName="flow_stage" columnNames="stage_id" constraintName="unq_flow_stage_stage_id"/>
+  </changeSet>
+
+</databaseChangeLog>

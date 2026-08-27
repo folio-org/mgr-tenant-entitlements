@@ -75,9 +75,13 @@ public final class KafkaEventAssertions {
     await().untilAsserted(() -> assertEventsSequence(systemUserTenantTopic(), type, events));
   }
 
-  private static <T> void assertEventsSequence(String topic, TypeReference<T> type, List<T> events) {
+  private static <T> void assertEventsSequence(String topic, TypeReference<ResourceEvent<T>> type,
+    List<ResourceEvent<T>> events) {
     var consumerRecords = getEvents(topic, type);
     var eventValues = mapItems(consumerRecords, ConsumerRecord::value);
-    assertThat(eventValues).containsAll(events);
+    // id is set to the stage UUID by AbstractModuleEventPublisher; ignore it when comparing event payloads
+    assertThat(eventValues)
+      .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id").containsAll(events)
+      .allSatisfy(event -> assertThat(event.getId()).isNotBlank());
   }
 }

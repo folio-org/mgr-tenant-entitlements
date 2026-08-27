@@ -1,0 +1,33 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                   https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+  <!--
+    Records when a flow stopped doing synchronous work and started waiting for asynchronous stage confirmations.
+    No back-fill: NULL means "not waiting on anything", which is correct for every existing row.
+  -->
+  <changeSet id="add-awaiting-async-since-to-flow" author="dmtkachenko">
+    <addColumn tableName="flow">
+      <column name="awaiting_async_since" type="TIMESTAMP WITH TIME ZONE"/>
+    </addColumn>
+  </changeSet>
+
+  <changeSet id="add-awaiting-async-since-to-application-flow" author="dmtkachenko">
+    <addColumn tableName="application_flow">
+      <column name="awaiting_async_since" type="TIMESTAMP WITH TIME ZONE"/>
+    </addColumn>
+  </changeSet>
+
+  <!-- Supports the staleness sweeper, which scans for anchors older than the configured timeout. -->
+  <changeSet id="add-index-on-awaiting-async-since" author="dmtkachenko">
+    <createIndex tableName="flow" indexName="idx_flow_awaiting_async_since">
+      <column name="awaiting_async_since"/>
+    </createIndex>
+    <createIndex tableName="application_flow" indexName="idx_application_flow_awaiting_async_since">
+      <column name="awaiting_async_since"/>
+    </createIndex>
+  </changeSet>
+
+</databaseChangeLog>

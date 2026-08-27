@@ -18,6 +18,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.ZonedDateTime;
+import org.folio.entitlement.domain.dto.ExecutionStatus;
+import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.repository.ApplicationFlowRepository;
 import org.folio.entitlement.service.EntitlementCrudService;
@@ -37,6 +39,7 @@ class RevokeApplicationFlowFinalizerTest {
 
   @InjectMocks private RevokeApplicationFlowFinalizer revokeApplicationFlowFinalizer;
 
+  @Mock private FlowFinalizerStatusProvider<ApplicationStageContext> statusProvider;
   @Mock private EntitlementCrudService entitlementCrudService;
   @Mock private ApplicationFlowRepository applicationFlowRepository;
 
@@ -47,6 +50,7 @@ class RevokeApplicationFlowFinalizerTest {
 
   @Test
   void execute_positive() {
+    when(statusProvider.getFinalStatus(any())).thenReturn(ExecutionStatus.FINISHED);
     when(applicationFlowRepository.updateStatusIfCurrentIn(
       eq(APPLICATION_FLOW_ID), eq(FINISHED), eq(NON_TERMINAL_STATUSES), any(ZonedDateTime.class))).thenReturn(1);
 
@@ -61,6 +65,7 @@ class RevokeApplicationFlowFinalizerTest {
 
   @Test
   void execute_positive_flowAlreadyTerminal_entitlementNotDeleted() {
+    when(statusProvider.getFinalStatus(any())).thenReturn(ExecutionStatus.FINISHED);
     when(applicationFlowRepository.updateStatusIfCurrentIn(
       eq(APPLICATION_FLOW_ID), eq(FINISHED), eq(NON_TERMINAL_STATUSES), any(ZonedDateTime.class))).thenReturn(0);
 

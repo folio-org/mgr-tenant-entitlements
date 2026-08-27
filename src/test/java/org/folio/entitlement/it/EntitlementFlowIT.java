@@ -98,8 +98,8 @@ class EntitlementFlowIT extends BaseIntegrationTest {
     assertThat(entitlementFlow).isEqualTo(new Flow()
       .id(FLOW_ID_1).status(FINISHED).type(ENTITLE).tenantId(TENANT_ID_1)
       .stages(List.of(
-        stage(FLOW_ID_1, "FlowInitializer", "2023-01-01T12:01:01", "2023-01-01T12:01:02"),
-        stage(FLOW_ID_1, "FlowFinalizer", "2023-01-01T12:02:46", "2023-01-01T12:02:50")))
+        stage(stageId(1), FLOW_ID_1, "FlowInitializer", "2023-01-01T12:01:01", "2023-01-01T12:01:02"),
+        stage(stageId(20), FLOW_ID_1, "FlowFinalizer", "2023-01-01T12:02:46", "2023-01-01T12:02:50")))
       .startedAt(timestampFrom("2023-01-01T12:01:00"))
       .finishedAt(timestampFrom("2023-01-01T12:02:59"))
       .applicationFlows(List.of(
@@ -195,7 +195,8 @@ class EntitlementFlowIT extends BaseIntegrationTest {
       .andReturn();
 
     var applicationFlowStages = parseResponse(applicationFlowStageResponse, FlowStage.class);
-    var expectedStage = stage(APP_FLOW_ID_1, "KongRouteCreator", "2023-01-01T12:01:26", "2023-01-01T12:01:30");
+    var expectedStage =
+      stage(stageId(7), APP_FLOW_ID_1, "KongRouteCreator", "2023-01-01T12:01:26", "2023-01-01T12:01:30");
     assertThat(applicationFlowStages).isEqualTo(expectedStage);
   }
 
@@ -212,29 +213,29 @@ class EntitlementFlowIT extends BaseIntegrationTest {
 
   private static List<FlowStage> entitlementStages1() {
     return List.of(
-      stage(APP_FLOW_ID_1, "EntitlementFlowInitializer", "2023-01-01T12:01:03", "2023-01-01T12:01:05"),
-      stage(APP_FLOW_ID_1, "TenantLoader", "2023-01-01T12:01:06", "2023-01-01T12:01:10"),
-      stage(APP_FLOW_ID_1, "ApplicationDescriptorLoader", "2023-01-01T12:01:11", "2023-01-01T12:01:15"),
-      stage(APP_FLOW_ID_1, "ApplicationDependencyValidator", "2023-01-01T12:01:16", "2023-01-01T12:01:20"),
-      stage(APP_FLOW_ID_1, "ApplicationDiscoveryValidator", "2023-01-01T12:01:21", "2023-01-01T12:01:25"),
-      stage(APP_FLOW_ID_1, "KongRouteCreator", "2023-01-01T12:01:26", "2023-01-01T12:01:30"),
-      stage(APP_FLOW_ID_1, "FolioModuleInstaller", "2023-01-01T12:01:31", "2023-01-01T12:01:35"),
-      stage(APP_FLOW_ID_1, "EntitlementEventPublisher", "2023-01-01T12:01:36", "2023-01-01T12:01:40"),
-      stage(APP_FLOW_ID_1, "EntitlementFlowFinalizer", "2023-01-01T12:01:41", "2023-01-01T12:01:45")
+      stage(stageId(2), APP_FLOW_ID_1, "EntitlementFlowInitializer", "2023-01-01T12:01:03", "2023-01-01T12:01:05"),
+      stage(stageId(3), APP_FLOW_ID_1, "TenantLoader", "2023-01-01T12:01:06", "2023-01-01T12:01:10"),
+      stage(stageId(4), APP_FLOW_ID_1, "ApplicationDescriptorLoader", "2023-01-01T12:01:11", "2023-01-01T12:01:15"),
+      stage(stageId(5), APP_FLOW_ID_1, "ApplicationDependencyValidator", "2023-01-01T12:01:16", "2023-01-01T12:01:20"),
+      stage(stageId(6), APP_FLOW_ID_1, "ApplicationDiscoveryValidator", "2023-01-01T12:01:21", "2023-01-01T12:01:25"),
+      stage(stageId(7), APP_FLOW_ID_1, "KongRouteCreator", "2023-01-01T12:01:26", "2023-01-01T12:01:30"),
+      stage(stageId(8), APP_FLOW_ID_1, "FolioModuleInstaller", "2023-01-01T12:01:31", "2023-01-01T12:01:35"),
+      stage(stageId(9), APP_FLOW_ID_1, "EntitlementEventPublisher", "2023-01-01T12:01:36", "2023-01-01T12:01:40"),
+      stage(stageId(10), APP_FLOW_ID_1, "EntitlementFlowFinalizer", "2023-01-01T12:01:41", "2023-01-01T12:01:45")
     );
   }
 
   private static List<FlowStage> entitlementStages2() {
     return List.of(
-      stage(APP_FLOW_ID_2, "EntitlementFlowInitializer", "2023-01-01T12:02:01", "2023-01-01T12:02:05"),
-      stage(APP_FLOW_ID_2, "TenantLoader", "2023-01-01T12:02:06", "2023-01-01T12:02:10"),
-      stage(APP_FLOW_ID_2, "ApplicationDescriptorLoader", "2023-01-01T12:02:11", "2023-01-01T12:02:15"),
-      stage(APP_FLOW_ID_2, "ApplicationDependencyValidator", "2023-01-01T12:02:16", "2023-01-01T12:02:20"),
-      stage(APP_FLOW_ID_2, "ApplicationDiscoveryValidator", "2023-01-01T12:02:21", "2023-01-01T12:02:25"),
-      stage(APP_FLOW_ID_2, "KongRouteCreator", "2023-01-01T12:02:26", "2023-01-01T12:02:30"),
-      stage(APP_FLOW_ID_2, "FolioModuleInstaller", "2023-01-01T12:02:31", "2023-01-01T12:02:35"),
-      stage(APP_FLOW_ID_2, "EntitlementEventPublisher", "2023-01-01T12:02:36", "2023-01-01T12:02:40"),
-      stage(APP_FLOW_ID_2, "EntitlementFlowFinalizer", "2023-01-01T12:02:41", "2023-01-01T12:02:45")
+      stage(stageId(11), APP_FLOW_ID_2, "EntitlementFlowInitializer", "2023-01-01T12:02:01", "2023-01-01T12:02:05"),
+      stage(stageId(12), APP_FLOW_ID_2, "TenantLoader", "2023-01-01T12:02:06", "2023-01-01T12:02:10"),
+      stage(stageId(13), APP_FLOW_ID_2, "ApplicationDescriptorLoader", "2023-01-01T12:02:11", "2023-01-01T12:02:15"),
+      stage(stageId(14), APP_FLOW_ID_2, "ApplicationDependencyValidator", "2023-01-01T12:02:16", "2023-01-01T12:02:20"),
+      stage(stageId(15), APP_FLOW_ID_2, "ApplicationDiscoveryValidator", "2023-01-01T12:02:21", "2023-01-01T12:02:25"),
+      stage(stageId(16), APP_FLOW_ID_2, "KongRouteCreator", "2023-01-01T12:02:26", "2023-01-01T12:02:30"),
+      stage(stageId(17), APP_FLOW_ID_2, "FolioModuleInstaller", "2023-01-01T12:02:31", "2023-01-01T12:02:35"),
+      stage(stageId(18), APP_FLOW_ID_2, "EntitlementEventPublisher", "2023-01-01T12:02:36", "2023-01-01T12:02:40"),
+      stage(stageId(19), APP_FLOW_ID_2, "EntitlementFlowFinalizer", "2023-01-01T12:02:41", "2023-01-01T12:02:45")
     );
   }
 
@@ -277,8 +278,13 @@ class EntitlementFlowIT extends BaseIntegrationTest {
     return Date.from(LocalDateTime.parse(value).atZone(ZoneId.of("UTC")).toInstant());
   }
 
-  private static FlowStage stage(UUID appId, String name, String startedAt, String finishedAt) {
+  private static UUID stageId(long n) {
+    return UUID.fromString(String.format("dd000000-0000-0000-0000-%012d", n));
+  }
+
+  private static FlowStage stage(UUID stageId, UUID appId, String name, String startedAt, String finishedAt) {
     return new FlowStage()
+      .id(stageId)
       .name(name)
       .flowId(appId)
       .status(FINISHED)
