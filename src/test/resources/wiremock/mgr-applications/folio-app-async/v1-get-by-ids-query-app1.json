@@ -1,0 +1,102 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"folio-app-async-1.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "folio-app-async-1.0.0",
+          "name": "folio-app-async",
+          "version": "1.0.0",
+          "modules": [
+            {
+              "id": "folio-module-async-1.0.0",
+              "name": "folio-module-async",
+              "version": "1.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module-async-1.0.0",
+              "name": "Async Module",
+              "provides": [
+                {
+                  "id": "folio-module-async-api",
+                  "version": "1.0",
+                  "handlers": [
+                    {
+                      "methods": ["GET"],
+                      "pathPattern": "/folio-module-async/entities",
+                      "permissionsRequired": ["folio-module-async.entity.collection.get"]
+                    },
+                    {
+                      "methods": ["POST"],
+                      "pathPattern": "/folio-module-async/entities",
+                      "permissionsRequired": ["folio-module-async.entity.item.post"]
+                    }
+                  ]
+                },
+                {
+                  "id": "_tenant",
+                  "version": "2.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": ["POST"],
+                      "pathPattern": "/_/tenant"
+                    },
+                    {
+                      "methods": ["GET", "DELETE"],
+                      "pathPattern": "/_/tenant/{id}"
+                    }
+                  ]
+                },
+                {
+                  "id": "_timer",
+                  "version": "1.0",
+                  "interfaceType": "system",
+                  "handlers": [
+                    {
+                      "methods": ["POST"],
+                      "pathPattern": "/folio-module-async/scheduled-timer"
+                    }
+                  ]
+                }
+              ],
+              "permissionSets": [
+                {
+                  "permissionName": "folio-module-async.entity.collection.get",
+                  "displayName": "Async Module - Get entity list",
+                  "description": "Get a list of async module entities"
+                },
+                {
+                  "permissionName": "folio-module-async.entity.item.post",
+                  "displayName": "Async Module - Create entity",
+                  "description": "Create an async module entity"
+                }
+              ],
+              "user": {
+                "type": "module",
+                "permissions": [
+                  "folio-module-async.entity.collection.get"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}
