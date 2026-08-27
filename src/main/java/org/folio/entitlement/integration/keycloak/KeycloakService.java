@@ -63,9 +63,9 @@ public class KeycloakService {
       throw new IntegrationException("Failed to update authorization scopes in Keycloak", scopeErrorParameters);
     }
 
-    var keycloakDescriptor = KeycloakUtils.withPubSubResources(newDescriptor);
+    var descriptorForKeycloak = KeycloakUtils.withPubSubResources(newDescriptor);
 
-    var newAuthResources = getAuthorizationResources(keycloakDescriptor);
+    var newAuthResources = getAuthorizationResources(descriptorForKeycloak);
     var prevAuthResources = getAuthorizationResources(prevDescriptor);
 
     var newResources = filterAndMap(newAuthResources.entrySet(),
