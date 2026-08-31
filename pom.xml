@@ -57,7 +57,7 @@
     <!-- Plugins versions -->
     <maven-checkstyle.version>14.0.0</maven-checkstyle.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
-    <openapi-generator.version>7.24.0</openapi-generator.version>
+    <openapi-generator.version>7.25.0</openapi-generator.version>
 
     <sonar.coverage.exclusions>
       <!--
@@ -292,7 +292,7 @@
 
     <dependency>
       <groupId>org.folio</groupId>
-      <artifactId>folio-kafka-common</artifactId>
+      <artifactId>folio-kafka-consumer</artifactId>
       <version>${applications-poc-tools.version}</version>
     </dependency>
 

@@ -23,16 +23,21 @@ public class LogTestUtil {
     var logLines = Collections.synchronizedList(new ArrayList<String>());
     var listAppender = createAppender(logLines);
     listAppender.start();
-    var rootLogger = ((LoggerContext) LogManager.getContext(false)).getRootLogger();
-    rootLogger.removeAppender(listAppender);
-    rootLogger.addAppender(listAppender);
-
+    var ctx = (LoggerContext) LogManager.getContext(false);
+    var config = ctx.getConfiguration();
+    // Add to every named logger config (including those with additivity=false) and root
+    config.getLoggers().values().forEach(lc -> lc.addAppender(listAppender, null, null));
+    config.getRootLogger().addAppender(listAppender, null, null);
+    ctx.updateLoggers();
     return logLines;
   }
 
   public static void stopCaptureLog4J2Logs() {
-    var rootLogger = ((LoggerContext) LogManager.getContext(false)).getRootLogger();
-    rootLogger.removeAppender(createAppender(new ArrayList<>()));
+    var ctx = (LoggerContext) LogManager.getContext(false);
+    var config = ctx.getConfiguration();
+    config.getLoggers().values().forEach(lc -> lc.removeAppender(APPENDER_NAME));
+    config.getRootLogger().removeAppender(APPENDER_NAME);
+    ctx.updateLoggers();
   }
 
   private static AbstractAppender createAppender(Collection<String> logLines) {

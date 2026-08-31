@@ -23,6 +23,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 @UnitTest
 class KafkaEventUtilsTest {
 
+  private static final String EVENT_ID = "test-event-id";
+
   @ParameterizedTest
   @DisplayName("getResourceEventType_positive_parameterized")
   @CsvSource({"v2,v1,UPDATE", "v2,,CREATE", ", v1,DELETE", ",,DELETE"})
@@ -36,13 +38,13 @@ class KafkaEventUtilsTest {
   @DisplayName("getResourceEventType_parameterized")
   void createEvent_positive(String newValue, String oldValue, ResourceEvent<String> event) {
     var resourceName = "test-resource";
-    var result = KafkaEventUtils.createEvent(resourceName, TENANT_NAME, newValue, oldValue);
+    var result = KafkaEventUtils.createEvent(EVENT_ID, resourceName, TENANT_NAME, newValue, oldValue);
     assertThat(result).isEqualTo(Optional.ofNullable(event));
   }
 
   @Test
   void createEvent_positive_resultImplementsSharedTenantAwareEvent() {
-    var result = KafkaEventUtils.createEvent("test-resource", TENANT_NAME, "v2", null);
+    var result = KafkaEventUtils.createEvent(EVENT_ID, "test-resource", TENANT_NAME, "v2", null);
 
     assertThat(result).isPresent();
     assertThat(result.orElseThrow()).isInstanceOf(TenantAwareEvent.class);
@@ -59,6 +61,7 @@ class KafkaEventUtilsTest {
 
   private static ResourceEvent<String> resourceEvent(ResourceEventType eventType, String newValue, String oldValue) {
     return ResourceEvent.<String>baseBuilder()
+      .id(EVENT_ID)
       .tenant(TENANT_NAME)
       .type(eventType)
       .resourceName("test-resource")
