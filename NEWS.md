@@ -3,6 +3,7 @@
 * Move Kong mgmt logic from mgr-applications to mgr-tenant-entitlements (MGRENTITLE-174)
   - Configure route management in mgr-tenant-entitlements with `APIGW_ROUTEMANAGEMENT_ENABLED` (default `true`); replace the former mgr-applications `ROUTEMANAGEMENT_ENABLE` setting.
 * [Kong] Module routes are incorrectly assigned to multiple gateway services (MGRENTITLE-197)
+* Deprecate the Kong-specific gateway configuration in favour of the API Gateway naming (EUREKA-887)
 
 ## Version `4.0.3` (15.10.2026)
 * Add DeployConfig.json to mgr-tenant-entitlements (ADR-0013 Configuration Management) ([MGRENTITLE-193](https://folio-org.atlassian.net/browse/MGRENTITLE-193))

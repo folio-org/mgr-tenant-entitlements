@@ -246,7 +246,7 @@ From `pom.xml`, these are excluded from code coverage:
 4. **Thread safety**: Be aware of ThreadLocal usage in `ThreadLocalModuleStageContext`
 5. **Kafka topics**: Topic names are prefixed with `ENV` variable
 6. **Long operations**: Token refresh is automatic but ensure operations are cancellable
-7. `KONG_*` env vars are deprecated aliases that still bind via fallback expressions in `application.yml`; existing configs keep working, but new code should use `APIGW_*` names.
+7. `KONG_*` env vars and `application.kong.*` properties are deprecated aliases that still bind via fallback expressions in `application.yml` and log a startup `WARN`; existing configs keep working until the Vetch release, but new code should use `APIGW_*` / `application.apigw.*` names.
 
 ## Additional Resources
 
