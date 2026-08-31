@@ -12,6 +12,7 @@
 * Move Kong mgmt logic from mgr-applications to mgr-tenant-entitlements (MGRENTITLE-174)
 * Async Entitlement processing feedback loop - Kafka Processing (MGRENTITLE-158)
 * Support desired-state entitlement validation for entitle, upgrade, and revoke transitions (MGRENTITLE-186)
+* Deprecate the Kong-specific gateway configuration in favour of the API Gateway naming (EUREKA-887)
 * [Kong] Module routes are incorrectly assigned to multiple gateway services (MGRENTITLE-197)
 
 ---

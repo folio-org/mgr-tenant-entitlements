@@ -11,6 +11,7 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
 * [Compiling](#compiling)
 * [Running It](#running-it)
 * [Environment Variables](#environment-variables)
+  * [Deprecated environment variables](#deprecated-environment-variables)
   * [Validators environment variables](#validators-environment-variables)
   * [Kafka environment variables](#kafka-environment-variables)
   * [SSL Configuration environment variables](#ssl-configuration-environment-variables)
@@ -117,6 +118,8 @@ docker run \
 | APIGW_TLS_TRUSTSTORE_PATH              | -                                   |  false   | Truststore file path for TLS connection to the API Gateway. Deprecated alias: `KONG_TLS_TRUSTSTORE_PATH`.                                                                                                 |
 | APIGW_TLS_TRUSTSTORE_PASSWORD          | -                                   |  false   | Truststore password for TLS connection to the API Gateway. Deprecated alias: `KONG_TLS_TRUSTSTORE_PASSWORD`.                                                                                              |
 | APIGW_TLS_TRUSTSTORE_TYPE              | -                                   |  false   | Truststore file type for TLS connection to the API Gateway. Deprecated alias: `KONG_TLS_TRUSTSTORE_TYPE`.                                                                                                 |
+| APIGW_ROUTEMANAGEMENT_ENABLED          | true                                |  false   | Enables creation and removal of module routes in the API Gateway during entitlement/revoke. If `false`, only gateway services are managed.                                                                |
+| APIGW_TENANT_CHECKS_ENABLED            | false                               |  false   | Adds a tenant-specific header filter to each module route instead of a wildcard route. Deprecated alias: `KONG_TENANT_CHECKS_ENABLED`.                                                                    |
 | ENV                                    | folio                               |  false   | The logical name of the deployment (kafka topic prefix), must be unique across all environments using the same shared Kafka/Elasticsearch clusters, `a-z (any case)`, `0-9`, `-`, `_` symbols only allowed |
 | SECURITY_ENABLED                       | true                                |  false   | Allows to enable/disable security. If true and KC_INTEGRATION_ENABLED is also true - the Keycloak will be used as a security provider.                                                                     |
 | MT_CLIENT_TLS_ENABLED                  | false                               |  false   | Allows to enable/disable TLS connection to mgr-tenants module.                                                                                                                                             |
@@ -138,6 +141,30 @@ docker run \
 | FLOW_ENGINE_THREADS_NUM                | 4                                   |  false   | Defines the number of threads for Fork-Join Pool used by flow engine.                                                                                                                                      |
 | APIGW_REGISTER_MODULE                  | true                                |  false   | Defines whether the module registers itself in the API Gateway (creates its own service and routes from the module descriptor). Deprecated alias: `REGISTER_MODULE_IN_KONG`.                              |
 | ROUTER_PATH_PREFIX                     |                                     |  false   | Defines routes prefix to be added to the generated endpoints by OpenAPI generator (`/foo/entites` -> `{{prefix}}/foo/entities`). Required if load balancing group has format like `{{host}}/{{moduleId}}`  |
+
+### Deprecated environment variables
+
+The Kong-specific configuration was generalized to the API Gateway naming. The names below are still functional:
+each one is applied only if its replacement is not set, and the module logs a `WARN` for every legacy name found at
+startup. They are planned for removal in the Vetch flower release.
+
+| Deprecated name                     | Replacement                                                 |
+|:------------------------------------|:------------------------------------------------------------|
+| KONG_ADMIN_URL                      | APIGW_URL                                                   |
+| KONG_INTEGRATION_ENABLED            | APIGW_ENABLED                                               |
+| REGISTER_MODULE_IN_KONG             | APIGW_REGISTER_MODULE                                       |
+| KONG_CONNECT_TIMEOUT                | APIGW_CONNECT_TIMEOUT                                       |
+| KONG_READ_TIMEOUT                   | APIGW_READ_TIMEOUT                                          |
+| KONG_WRITE_TIMEOUT                  | APIGW_WRITE_TIMEOUT                                         |
+| KONG_RETRIES                        | APIGW_RETRIES                                               |
+| KONG_TLS_ENABLED                    | APIGW_TLS_ENABLED                                           |
+| KONG_TLS_TRUSTSTORE_PATH            | APIGW_TLS_TRUSTSTORE_PATH                                   |
+| KONG_TLS_TRUSTSTORE_PASSWORD        | APIGW_TLS_TRUSTSTORE_PASSWORD                               |
+| KONG_TLS_TRUSTSTORE_TYPE            | APIGW_TLS_TRUSTSTORE_TYPE                                   |
+| KONG_TENANT_CHECKS_ENABLED          | APIGW_TENANT_CHECKS_ENABLED                                 |
+| `application.kong.<key>` properties | `application.apigw.<key>`, e.g. `application.apigw.enabled` |
+
+`kong.url` is also still supported as the last fallback for `APIGW_URL`, it is not reported at startup.
 
 ### Validators environment variables
 

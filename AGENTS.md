@@ -51,6 +51,6 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
 - Watch ThreadLocal usage in `ThreadLocalModuleStageContext`.
 - Kafka topic names are prefixed with `ENV`.
 - Token refresh is automatic, but keep long operations cancellable.
-- `KONG_*` env vars are deprecated aliases that still bind via fallback expressions in `application.yml`; existing configs keep working, but new code should use `APIGW_*` names.
+- `KONG_*` env vars and `application.kong.*` properties are deprecated aliases that still bind via fallback expressions in `application.yml` and log a startup `WARN`; existing configs keep working until the Vetch release, but new code should use `APIGW_*` / `application.apigw.*` names.
 
 Resources: `README.md` (env vars), `NEWS.md` (release notes).
