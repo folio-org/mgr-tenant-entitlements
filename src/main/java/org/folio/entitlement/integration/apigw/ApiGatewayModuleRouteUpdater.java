@@ -5,18 +5,18 @@ import static org.folio.entitlement.utils.EntitlementServiceUtils.isModuleUpdate
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.folio.common.gateway.ApiGatewayService;
+import org.folio.common.gateway.model.GatewayServiceDefinition;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
-import org.folio.tools.kong.model.Service;
-import org.folio.tools.kong.service.KongGatewayService;
 
 @Log4j2
 @RequiredArgsConstructor
 public class ApiGatewayModuleRouteUpdater extends ModuleDatabaseLoggingStage {
 
-  private final KongGatewayService kongGatewayService;
+  private final ApiGatewayService apiGatewayService;
   private final ApiGatewayConfigurationProperties properties;
   private final EntitlementModuleService entitlementModuleService;
 
@@ -42,22 +42,22 @@ public class ApiGatewayModuleRouteUpdater extends ModuleDatabaseLoggingStage {
   private void updateRoutes(String moduleId, String location, ModuleStageContext context) {
     var moduleDescriptor = context.getModuleDescriptor();
     var installedModuleDescriptor = context.getInstalledModuleDescriptor();
-    kongGatewayService.upsertService(new Service().name(moduleId).url(location));
+    apiGatewayService.upsertService(new GatewayServiceDefinition().name(moduleId).url(location));
     log.debug("Upserted API gateway service: moduleId = {}", moduleId);
     if (!isModuleUpdated(moduleDescriptor, installedModuleDescriptor)) {
       return;
     }
     if (properties.getTenantChecks().isEnabled() && installedModuleDescriptor != null) {
-      kongGatewayService.removeTenantFromModuleRoutes(installedModuleDescriptor.getId(), context.getTenantName());
+      apiGatewayService.removeTenantFromModuleRoutes(installedModuleDescriptor.getId(), context.getTenantName());
       log.debug("Removed tenant from API gateway routes for installed module: moduleId = {}, tenant = {}",
         installedModuleDescriptor.getId(), context.getTenantName());
     }
     if (properties.getRouteManagement().isEnabled() && !entitlementModuleService.isEntitlementExist(moduleId)) {
-      kongGatewayService.addRoutes(List.of(moduleDescriptor));
+      apiGatewayService.addRoutes(List.of(moduleDescriptor));
       log.debug("Added API gateway routes for module: moduleId = {}", moduleId);
     }
     if (properties.getTenantChecks().isEnabled()) {
-      kongGatewayService.addTenantToModuleRoutes(moduleId, context.getTenantName());
+      apiGatewayService.addTenantToModuleRoutes(moduleId, context.getTenantName());
       log.debug("Added tenant to API gateway routes: moduleId = {}, tenant = {}", moduleId, context.getTenantName());
     }
   }
@@ -78,8 +78,8 @@ public class ApiGatewayModuleRouteUpdater extends ModuleDatabaseLoggingStage {
   }
 
   private void deleteServiceAndRoutes(String moduleId) {
-    kongGatewayService.deleteServiceRoutes(moduleId);
-    kongGatewayService.deleteService(moduleId);
+    apiGatewayService.deleteServiceRoutes(moduleId);
+    apiGatewayService.deleteService(moduleId);
     log.debug("Deleted API gateway service and routes for deprecated module: moduleId = {}", moduleId);
   }
 }

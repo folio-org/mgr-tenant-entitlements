@@ -23,11 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.common.gateway.ApiGatewayService;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
-import org.folio.tools.kong.service.KongGatewayService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class ApiGatewayModuleRouteCleanerTest {
 
   private static final String MODULE_ID = "mod-foo-1.0.0";
 
-  @Mock private KongGatewayService kongGatewayService;
+  @Mock private ApiGatewayService apiGatewayService;
   @Mock private EntitlementModuleService entitlementModuleService;
 
   private ApiGatewayConfigurationProperties properties;
@@ -51,7 +51,7 @@ class ApiGatewayModuleRouteCleanerTest {
   @BeforeEach
   void setUp() {
     properties = mock(ApiGatewayConfigurationProperties.class, Answers.RETURNS_DEEP_STUBS);
-    apiGatewayModuleRouteCleaner = new ApiGatewayModuleRouteCleaner(kongGatewayService, properties,
+    apiGatewayModuleRouteCleaner = new ApiGatewayModuleRouteCleaner(apiGatewayService, properties,
       entitlementModuleService);
   }
 
@@ -69,8 +69,8 @@ class ApiGatewayModuleRouteCleanerTest {
 
     apiGatewayModuleRouteCleaner.execute(stageContext);
 
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-    verify(kongGatewayService).deleteService(MODULE_ID);
+    verify(apiGatewayService).deleteServiceRoutes(MODULE_ID);
+    verify(apiGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
@@ -83,7 +83,7 @@ class ApiGatewayModuleRouteCleanerTest {
 
     apiGatewayModuleRouteCleaner.execute(stageContext);
 
-    verifyNoInteractions(kongGatewayService);
+    verifyNoInteractions(apiGatewayService);
   }
 
   @Test
@@ -95,7 +95,7 @@ class ApiGatewayModuleRouteCleanerTest {
 
     apiGatewayModuleRouteCleaner.execute(stageContext);
 
-    verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
+    verify(apiGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
   @Test
@@ -105,20 +105,20 @@ class ApiGatewayModuleRouteCleanerTest {
 
     apiGatewayModuleRouteCleaner.execute(stageContext);
 
-    verifyNoInteractions(kongGatewayService, entitlementModuleService);
+    verifyNoInteractions(apiGatewayService, entitlementModuleService);
   }
 
   @Test
   void execute_positive_lastTenant_serviceNotFound_skipsCleanup() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
-    doThrow(new NoSuchElementException()).when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
+    doThrow(new NoSuchElementException()).when(apiGatewayService).deleteServiceRoutes(MODULE_ID);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, moduleFlowParams(), stageParams());
 
     assertThatCode(() -> apiGatewayModuleRouteCleaner.execute(stageContext)).doesNotThrowAnyException();
 
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
+    verify(apiGatewayService).deleteServiceRoutes(MODULE_ID);
   }
 
   @Test

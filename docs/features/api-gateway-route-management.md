@@ -47,6 +47,8 @@ Triggered as a parallel stage within the existing entitlement flows (defined in 
 |----------|---------|
 | `APIGW_URL` (`application.apigw.url`) | API Gateway admin URL (required when integration is enabled) |
 | `APIGW_ENABLED` (`application.apigw.enabled`, default `true`) | Enables or disables the entire API Gateway integration |
+| `APIGW_TYPE` (`application.apigw.type`, default `kong`) | Selects the active gateway implementation: `kong` or `apisix` |
+| `APIGW_API_KEY` (`application.apigw.api-key`) | APISIX Admin API key (`X-API-KEY` header); required when `APIGW_TYPE=apisix` |
 | `APIGW_ROUTEMANAGEMENT_ENABLED` (`application.apigw.route-management.enabled`, default `true`) | Controls whether routes are created/deleted from module descriptors; set to `false` to let an external system own routes |
 | `APIGW_TENANT_CHECKS_ENABLED` (`application.apigw.tenant-checks.enabled`, default `false`) | When `true`, adds per-tenant header filters to routes; when `false`, routes are shared across all tenants |
 | `APIGW_REGISTER_MODULE` (`application.apigw.register-module`, default `true`) | Whether this service itself is registered in the gateway on startup |
@@ -59,6 +61,28 @@ Triggered as a parallel stage within the existing entitlement flows (defined in 
 | `APIGW_TLS_TRUSTSTORE_PASSWORD` | Password for the TLS truststore |
 | `APIGW_TLS_TRUSTSTORE_TYPE` | Type of the TLS truststore |
 
+## Gateway selection (Kong vs APISIX)
+
+The route stages depend on the gateway-agnostic `org.folio.common.gateway.ApiGatewayService` contract; the
+active implementation is selected by `APIGW_TYPE`:
+
+- `kong` (default) — `folio-integration-kong`. Routes use Kong 3.x expressions; module routes are tagged
+  `[moduleId, interfaceId]`; per-tenant filters rewrite the `x_okapi_tenant` clause in the expression.
+- `apisix` — `folio-integration-apisix`. Routes use `uri` matching plus lua-resty-expr `vars` conditions:
+  path patterns become a prefix-wildcard `uri` narrowed by an anchored regex `["uri","~~","^…$"]`; the
+  tenant placeholder is `["http_x_okapi_tenant","~~",".*"]` and per-tenant filters replace it with
+  `["http_x_okapi_tenant","in",[…]]`; module routes carry `labels` `{module, interface}` instead of tags.
+  Requires `APIGW_API_KEY`; `APIGW_URL` points at the APISIX Admin API origin (e.g. `http://apisix:9180`).
+
+Only one gateway is managed at a time. Route ids are deterministic (`sha1Hex(path|methods|moduleId|interfaceId)`)
+in both implementations, and route-set updates never re-submit unchanged routes, so tenant filters survive
+upgrades. **Switching `APIGW_TYPE` in a live environment does not backfill routes for already-entitled
+applications** — the newly selected gateway is only populated by subsequent entitle/upgrade/revoke operations.
+The converse also holds: after a switch, revoke and upgrade run only against the newly selected gateway, so the
+**old gateway keeps all previously created services and routes** (including those of modules revoked after the
+switch) and continues proxying if it remains in the traffic path. On a type switch, drain or manually clean up
+the old gateway's state, or remove it from the traffic path.
+
 ## Dependencies and interactions
 
-- **API Gateway (Kong)**: All route and service lifecycle operations are performed against the gateway admin API at `APIGW_URL`. The gateway must be reachable for entitlement operations to succeed when `APIGW_ENABLED=true`.
+- **API Gateway (Kong or Apache APISIX)**: All route and service lifecycle operations are performed against the gateway admin API at `APIGW_URL`. The gateway must be reachable for entitlement operations to succeed when `APIGW_ENABLED=true`.
