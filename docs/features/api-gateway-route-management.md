@@ -74,8 +74,9 @@ active implementation is selected by `APIGW_TYPE`:
   `["http_x_okapi_tenant","in",[…]]`; module routes carry `labels` `{module, interface}` instead of tags.
   Requires `APIGW_API_KEY`; `APIGW_URL` points at the APISIX Admin API origin (e.g. `http://apisix:9180`).
 
-Only one gateway is managed at a time. Route ids are deterministic (`sha1Hex(path|methods|moduleId|interfaceId)`)
-in both implementations, and route-set updates never re-submit unchanged routes, so tenant filters survive
+Only one gateway is managed at a time. Route identity is deterministic (`sha1Hex(path|methods|moduleId|interfaceId)`)
+in both implementations (the route id in APISIX, the route name in Kong), and route-set updates never re-submit
+unchanged routes, so tenant filters survive
 upgrades. **Switching `APIGW_TYPE` in a live environment does not backfill routes for already-entitled
 applications** — the newly selected gateway is only populated by subsequent entitle/upgrade/revoke operations.
 The converse also holds: after a switch, revoke and upgrade run only against the newly selected gateway, so the
