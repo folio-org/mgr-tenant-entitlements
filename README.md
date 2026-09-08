@@ -108,8 +108,10 @@ docker run \
 | AM_CLIENT_TLS_TRUSTSTORE_PATH          | -                                   |  false   | Truststore file path for application-manager client.                                                                                                                                                       |
 | AM_CLIENT_TLS_TRUSTSTORE_PASSWORD      | -                                   |  false   | Truststore password for application-manager client.                                                                                                                                                        |
 | AM_CLIENT_TLS_TRUSTSTORE_TYPE          | -                                   |  false   | Truststore file type for application-manager client.                                                                                                                                                       |
-| APIGW_URL                              | -                                   |   true   | API Gateway Admin URL used for route management. Deprecated aliases: `KONG_ADMIN_URL`, `kong.url`.                                                                                                        |
+| APIGW_URL                              | -                                   |   true   | API Gateway Admin URL used for route management. For `APIGW_TYPE=apisix` this is the Admin API origin only, e.g. `http://apisix:9180` (no `/apisix/admin` path). Deprecated aliases: `KONG_ADMIN_URL`, `kong.url`.                                                                                                        |
 | APIGW_ENABLED                          | true                                |  false   | Enables/disables API Gateway integration. If set to `false`, excludes all gateway-related beans from Spring context. Deprecated alias: `KONG_INTEGRATION_ENABLED`.                                        |
+| APIGW_TYPE                             | kong                                |  false   | Active API Gateway implementation: `kong` or `apisix`. Selects which integration library manages services/routes; `APIGW_URL` and `APIGW_TLS_*` apply to the selected gateway.                            |
+| APIGW_API_KEY                          | -                                   |  false   | APISIX Admin API key (sent as `X-API-KEY`). Required when `APIGW_TYPE=apisix`; ignored for Kong.                                                                                                          |
 | APIGW_CONNECT_TIMEOUT                  | -                                   |  false   | Timeout (ms) for establishing a connection to the upstream service. Uses gateway defaults if not set. Deprecated alias: `KONG_CONNECT_TIMEOUT`.                                                           |
 | APIGW_READ_TIMEOUT                     | 360000                              |  false   | Timeout (ms) between successive read operations for transmitting a request to the upstream service. Deprecated alias: `KONG_READ_TIMEOUT`.                                                                |
 | APIGW_WRITE_TIMEOUT                    | -                                   |  false   | Timeout (ms) between successive write operations for transmitting a request to the upstream service. Deprecated alias: `KONG_WRITE_TIMEOUT`.                                                              |
@@ -478,7 +480,7 @@ flow execution implementation is the same as calling the entitlement process usi
 
 ## Integration Testing
 
-Integration tests use Testcontainers for PostgreSQL and Kong. The following environment variables
+Integration tests use Testcontainers for PostgreSQL and Kong; the APISIX ITs additionally start APISIX and etcd. The following environment variables
 let you redirect containers to a private registry or adjust startup behaviour without changing
 source code.
 
@@ -487,6 +489,9 @@ source code.
 | `TESTCONTAINERS_POSTGRES_IMAGE`          | `postgres:16-alpine`            | PostgreSQL container image           |
 | `TESTCONTAINERS_KONG_IMAGE`              | `folioci/folio-kong:latest`     | Kong container image                 |
 | `TESTCONTAINERS_KONG_READINESS_TIMEOUT`  | `120`                           | Seconds to wait for Kong startup     |
+| `TESTCONTAINERS_APISIX_IMAGE`            | `folioci/folio-apisix:latest`   | APISIX container image (APISIX ITs)  |
+| `TESTCONTAINERS_ETCD_IMAGE`              | `quay.io/coreos/etcd:v3.5.21`   | etcd container image (APISIX ITs)    |
+| `TESTCONTAINERS_APISIX_READINESS_TIMEOUT` | `120`                          | Seconds to wait for APISIX startup   |
 
 ## AI Documentation
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/folio-org/mgr-tenant-entitlements)

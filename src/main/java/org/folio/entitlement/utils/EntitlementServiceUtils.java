@@ -22,11 +22,11 @@ import org.apache.commons.collections4.IterableUtils;
 import org.folio.common.domain.model.Module;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.domain.model.error.Parameter;
+import org.folio.common.gateway.exception.ApiGatewayIntegrationException;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
-import org.folio.tools.kong.exception.KongIntegrationException;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class EntitlementServiceUtils {
@@ -180,8 +180,8 @@ public class EntitlementServiceUtils {
       return integrationException.getErrors();
     }
 
-    if (throwable instanceof KongIntegrationException kongIntegrationException) {
-      return kongIntegrationException.getErrors();
+    if (throwable instanceof ApiGatewayIntegrationException apiGatewayIntegrationException) {
+      return apiGatewayIntegrationException.getErrors();
     }
 
     if (throwable instanceof RequestValidationException requestValidationException) {

@@ -1,4 +1,8 @@
 ## Version `v4.1.0` (In Progress)
+* Integration with Apache APISIX: gateway selection via `APIGW_TYPE` (`kong` default, `apisix`), APISIX admin key via
+  `APIGW_API_KEY`; route stages now use the gateway-agnostic `ApiGatewayService` from applications-poc-tools.
+  Switching a live environment's type does not backfill existing entitlements' routes, and state previously
+  written to the old gateway is not cleaned up — drain it manually or remove it from the traffic path (MGRENTITLE-173)
 * Gracefully complete entitlement for desired state operation in no async mode (MGRENTITLE-161)
 * Upgrade dependencies for Kafka 4.2 compatibility in mgr-tenant-entitlements (MGRENTITLE-180)
 * Switch Kong integration test container to folioci/folio-kong image (APPPOCTOOL-37)

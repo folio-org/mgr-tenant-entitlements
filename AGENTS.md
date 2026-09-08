@@ -41,7 +41,7 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
 - **DB**: Liquibase `changelog/changelog-master.xml`; note mixed dir naming (`changes/v1.0.0/`, `changes.v3.0.0/`).
 - **Security**: Keycloak via `@EnableMgrSecurity`; Caffeine token cache with auto-refresh for long ops.
 - **Retry**: configurable for Keycloak/FOLIO calls (`retry/` package) + stage-level retry.
-- **Tests**: `@UnitTest` (Mockito), `@IntegrationTest` (extend `BaseIntegrationTest`, Testcontainers + WireMock). Gateway ITs use `@EnableApiGateway` extension (see `ApiGatewayRegistrationIT`, `ApiGatewayRouteManagementIT`).
+- **Tests**: `@UnitTest` (Mockito), `@IntegrationTest` (extend `BaseIntegrationTest`, Testcontainers + WireMock). Gateway ITs use `@EnableApiGateway` extension (see `ApiGatewayRegistrationIT`, `ApiGatewayRouteManagementIT`). APISIX ITs additionally use `@EnableApisixGateway` (etcd + `folioci/folio-apisix:latest` containers; the image is amd64-only — on arm64 set `TESTCONTAINERS_APISIX_IMAGE` to a locally built image or rely on emulation). See `ApisixRouteManagementIT`, `ApisixRegistrationIT`.
 - **Key env vars**: `MT_CLIENT_URL`, `AM_CLIENT_URL`, `APIGW_URL`; toggles `APIGW_ENABLED`/`KC_INTEGRATION_ENABLED`/`APIGW_ROUTEMANAGEMENT_ENABLED` (default `true`)/`APIGW_TENANT_CHECKS_ENABLED` (default `false`); `FLOW_ENGINE_*` (threads, timeout, cache); `VALIDATION_INTERFACE_*`; `ENV` (Kafka topic prefix). Full list in `README.md`.
 
 ## Pitfalls

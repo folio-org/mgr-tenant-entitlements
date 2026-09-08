@@ -302,6 +302,12 @@
       <version>${applications-poc-tools.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.folio</groupId>
+      <artifactId>folio-integration-apisix</artifactId>
+      <version>${applications-poc-tools.version}</version>
+    </dependency>
+
     <!-- OAS generation -->
     <dependency>
       <groupId>org.openapitools</groupId>
