@@ -4,6 +4,7 @@
   - Configure route management in mgr-tenant-entitlements with `APIGW_ROUTEMANAGEMENT_ENABLED` (default `true`); replace the former mgr-applications `ROUTEMANAGEMENT_ENABLE` setting.
 * [Kong] Module routes are incorrectly assigned to multiple gateway services (MGRENTITLE-197)
 * Deprecate the Kong-specific gateway configuration in favour of the API Gateway naming (EUREKA-887)
+* Add Apache APISIX support for gateway route management (MGRENTITLE-173)
 
 ## Version `4.0.4` (20.10.2026)
 * Trillium CSP#1 - Upgrade to SpringBoot 4.1 ([MGRENTITLE-209](https://folio-org.atlassian.net/browse/MGRENTITLE-209))

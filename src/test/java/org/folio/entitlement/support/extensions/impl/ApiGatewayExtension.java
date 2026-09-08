@@ -11,6 +11,7 @@ import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.folio.entitlement.support.extensions.EnableApiGateway;
+import org.folio.entitlement.support.extensions.EnableApisixGateway;
 import org.folio.test.extensions.impl.WireMockExtension;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -38,6 +39,10 @@ public class ApiGatewayExtension implements BeforeAllCallback, AfterAllCallback,
 
   @Override
   public void beforeAll(ExtensionContext extensionContext) {
+    if (isApisixOnly(extensionContext)) {
+      return;
+    }
+
     if (!CONTAINER.isRunning()) {
       runMigrationWithContainer("kong migrations bootstrap");
       runMigrationWithContainer("kong migrations up && kong migrations finish");
@@ -68,8 +73,20 @@ public class ApiGatewayExtension implements BeforeAllCallback, AfterAllCallback,
 
   @Override
   public void afterAll(ExtensionContext extensionContext) {
+    if (isApisixOnly(extensionContext)) {
+      return;
+    }
+
     System.clearProperty(API_GATEWAY_URL_PROPERTY);
     System.clearProperty(API_GATEWAY_PROXY_URL_PROPERTY);
+  }
+
+  // APISIX ITs select type=apisix, deactivating every Kong bean — starting the Kong container for them
+  // only couples APISIX tests to Kong image availability.
+  private static boolean isApisixOnly(ExtensionContext extensionContext) {
+    return extensionContext.getTestClass()
+      .map(testClass -> testClass.isAnnotationPresent(EnableApisixGateway.class))
+      .orElse(false);
   }
 
   private static String getUrlForExposedPort(int port) {

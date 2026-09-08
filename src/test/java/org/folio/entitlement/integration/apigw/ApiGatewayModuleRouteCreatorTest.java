@@ -26,12 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.common.gateway.ApiGatewayService;
+import org.folio.common.gateway.model.GatewayServiceDefinition;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
-import org.folio.tools.kong.model.Service;
-import org.folio.tools.kong.service.KongGatewayService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,7 +47,7 @@ class ApiGatewayModuleRouteCreatorTest {
   private static final String MODULE_ID = "mod-foo-1.0.0";
   private static final String MODULE_LOCATION = "http://mod-foo:8080";
 
-  @Mock private KongGatewayService kongGatewayService;
+  @Mock private ApiGatewayService apiGatewayService;
   @Mock private EntitlementModuleService entitlementModuleService;
 
   private ApiGatewayConfigurationProperties properties;
@@ -56,7 +56,7 @@ class ApiGatewayModuleRouteCreatorTest {
   @BeforeEach
   void setUp() {
     properties = mock(ApiGatewayConfigurationProperties.class, Answers.RETURNS_DEEP_STUBS);
-    apiGatewayModuleRouteCreator = new ApiGatewayModuleRouteCreator(kongGatewayService, properties,
+    apiGatewayModuleRouteCreator = new ApiGatewayModuleRouteCreator(apiGatewayService, properties,
       entitlementModuleService);
   }
 
@@ -76,8 +76,8 @@ class ApiGatewayModuleRouteCreatorTest {
     apiGatewayModuleRouteCreator.execute(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).addRoutes(List.of(descriptor));
   }
 
   @Test
@@ -91,8 +91,8 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.execute(stageContext);
 
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verifyNoMoreInteractions(kongGatewayService);
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
+    verifyNoMoreInteractions(apiGatewayService);
   }
 
   @Test
@@ -106,9 +106,9 @@ class ApiGatewayModuleRouteCreatorTest {
     apiGatewayModuleRouteCreator.execute(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
-    verify(kongGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).addRoutes(List.of(descriptor));
+    verify(apiGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
   @Test
@@ -120,7 +120,7 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.execute(stageContext);
 
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
   }
 
   @Test
@@ -130,7 +130,7 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.execute(stageContext);
 
-    verifyNoInteractions(kongGatewayService, entitlementModuleService);
+    verifyNoInteractions(apiGatewayService, entitlementModuleService);
   }
 
   @Test
@@ -143,8 +143,8 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-    verify(kongGatewayService).deleteService(MODULE_ID);
+    verify(apiGatewayService).deleteServiceRoutes(MODULE_ID);
+    verify(apiGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
@@ -157,52 +157,52 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verifyNoInteractions(kongGatewayService, entitlementModuleService);
+    verifyNoInteractions(apiGatewayService, entitlementModuleService);
   }
 
   @Test
   void cancel_positive_routeManagementEnabled_serviceNotFound() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
-    doThrow(new NoSuchElementException()).when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
+    doThrow(new NoSuchElementException()).when(apiGatewayService).deleteServiceRoutes(MODULE_ID);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
     assertThatCode(() -> apiGatewayModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
 
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-    verify(kongGatewayService).deleteService(MODULE_ID);
+    verify(apiGatewayService).deleteServiceRoutes(MODULE_ID);
+    verify(apiGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
   void cancel_positive_routeManagementEnabled_deleteServiceRoutesFails() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
-    doThrow(new RuntimeException("gateway error")).when(kongGatewayService).deleteServiceRoutes(MODULE_ID);
+    doThrow(new RuntimeException("gateway error")).when(apiGatewayService).deleteServiceRoutes(MODULE_ID);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
     assertThatCode(() -> apiGatewayModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
 
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-    verify(kongGatewayService).deleteService(MODULE_ID);
+    verify(apiGatewayService).deleteServiceRoutes(MODULE_ID);
+    verify(apiGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
   void cancel_positive_routeManagementEnabled_deleteServiceFails() {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
-    doThrow(new RuntimeException("gateway error")).when(kongGatewayService).deleteService(MODULE_ID);
+    doThrow(new RuntimeException("gateway error")).when(apiGatewayService).deleteService(MODULE_ID);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscovery(moduleDescriptor(), true), stageParams());
 
     assertThatCode(() -> apiGatewayModuleRouteCreator.cancel(stageContext)).doesNotThrowAnyException();
 
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-    verify(kongGatewayService).deleteService(MODULE_ID);
+    verify(apiGatewayService).deleteServiceRoutes(MODULE_ID);
+    verify(apiGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
@@ -216,7 +216,7 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
+    verify(apiGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
   @Test
@@ -230,7 +230,7 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verifyNoInteractions(kongGatewayService);
+    verifyNoInteractions(apiGatewayService);
   }
 
   @Test
@@ -238,7 +238,7 @@ class ApiGatewayModuleRouteCreatorTest {
     when(properties.getRouteManagement().isEnabled()).thenReturn(true);
     when(properties.getTenantChecks().isEnabled()).thenReturn(true);
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(true);
-    doThrow(new RuntimeException("gateway error")).when(kongGatewayService)
+    doThrow(new RuntimeException("gateway error")).when(apiGatewayService)
       .removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
@@ -246,7 +246,7 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verify(kongGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
+    verify(apiGatewayService).removeTenantFromModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
   @Test
@@ -255,7 +255,7 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verifyNoInteractions(kongGatewayService, entitlementModuleService);
+    verifyNoInteractions(apiGatewayService, entitlementModuleService);
   }
 
   @Test
@@ -265,7 +265,7 @@ class ApiGatewayModuleRouteCreatorTest {
 
     apiGatewayModuleRouteCreator.cancel(stageContext);
 
-    verifyNoInteractions(kongGatewayService, entitlementModuleService);
+    verifyNoInteractions(apiGatewayService, entitlementModuleService);
   }
 
   @Test

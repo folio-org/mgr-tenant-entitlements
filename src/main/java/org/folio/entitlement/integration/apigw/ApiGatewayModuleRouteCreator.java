@@ -3,18 +3,18 @@ package org.folio.entitlement.integration.apigw;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.folio.common.gateway.ApiGatewayService;
+import org.folio.common.gateway.model.GatewayServiceDefinition;
 import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.integration.kafka.model.ModuleType;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.stage.ModuleDatabaseLoggingStage;
-import org.folio.tools.kong.model.Service;
-import org.folio.tools.kong.service.KongGatewayService;
 
 @Log4j2
 @RequiredArgsConstructor
 public class ApiGatewayModuleRouteCreator extends ModuleDatabaseLoggingStage {
 
-  private final KongGatewayService kongGatewayService;
+  private final ApiGatewayService apiGatewayService;
   private final ApiGatewayConfigurationProperties properties;
   private final EntitlementModuleService entitlementModuleService;
 
@@ -25,14 +25,14 @@ public class ApiGatewayModuleRouteCreator extends ModuleDatabaseLoggingStage {
     }
     var moduleId = context.getModuleId();
     var location = context.getModuleDiscovery();
-    kongGatewayService.upsertService(new Service().name(moduleId).url(location));
+    apiGatewayService.upsertService(new GatewayServiceDefinition().name(moduleId).url(location));
     log.debug("Upserted API gateway service: moduleId = {}", moduleId);
     if (properties.getRouteManagement().isEnabled() && !entitlementModuleService.isEntitlementExist(moduleId)) {
-      kongGatewayService.addRoutes(List.of(context.getModuleDescriptor()));
+      apiGatewayService.addRoutes(List.of(context.getModuleDescriptor()));
       log.debug("Added API gateway routes for module: moduleId = {}", moduleId);
     }
     if (properties.getTenantChecks().isEnabled()) {
-      kongGatewayService.addTenantToModuleRoutes(moduleId, context.getTenantName());
+      apiGatewayService.addTenantToModuleRoutes(moduleId, context.getTenantName());
       log.debug("Added tenant to API gateway routes: moduleId = {}, tenant = {}", moduleId, context.getTenantName());
     }
   }
@@ -70,7 +70,7 @@ public class ApiGatewayModuleRouteCreator extends ModuleDatabaseLoggingStage {
 
   private void deleteServiceRoutesQuietly(String moduleId) {
     try {
-      kongGatewayService.deleteServiceRoutes(moduleId);
+      apiGatewayService.deleteServiceRoutes(moduleId);
     } catch (Exception e) {
       log.error("Failed to delete API gateway service routes, skipping: moduleId = {}, error = {}", moduleId,
         e.getMessage());
@@ -79,7 +79,7 @@ public class ApiGatewayModuleRouteCreator extends ModuleDatabaseLoggingStage {
 
   private void deleteServiceQuietly(String moduleId) {
     try {
-      kongGatewayService.deleteService(moduleId);
+      apiGatewayService.deleteService(moduleId);
     } catch (Exception e) {
       log.error("Failed to delete API gateway service, skipping: moduleId = {}", moduleId);
     }
@@ -87,7 +87,7 @@ public class ApiGatewayModuleRouteCreator extends ModuleDatabaseLoggingStage {
 
   private void removeTenantFromModuleRoutesQuietly(String moduleId, String tenantName) {
     try {
-      kongGatewayService.removeTenantFromModuleRoutes(moduleId, tenantName);
+      apiGatewayService.removeTenantFromModuleRoutes(moduleId, tenantName);
     } catch (Exception e) {
       log.error("Failed to remove tenant from API gateway routes, skipping: moduleId = {}, tenant = {}", moduleId,
         tenantName);

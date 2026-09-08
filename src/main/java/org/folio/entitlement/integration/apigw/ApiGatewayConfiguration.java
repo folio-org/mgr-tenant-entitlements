@@ -1,7 +1,7 @@
 package org.folio.entitlement.integration.apigw;
 
+import org.folio.common.gateway.ApiGatewayService;
 import org.folio.entitlement.service.EntitlementModuleService;
-import org.folio.tools.kong.service.KongGatewayService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -13,20 +13,20 @@ import org.springframework.context.annotation.Configuration;
 public class ApiGatewayConfiguration {
 
   @Bean
-  public ApiGatewayModuleRouteCreator apiGatewayModuleRouteCreator(KongGatewayService kongGatewayService,
+  public ApiGatewayModuleRouteCreator apiGatewayModuleRouteCreator(ApiGatewayService apiGatewayService,
     ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
-    return new ApiGatewayModuleRouteCreator(kongGatewayService, properties, entitlementModuleService);
+    return new ApiGatewayModuleRouteCreator(apiGatewayService, properties, entitlementModuleService);
   }
 
   @Bean
-  public ApiGatewayModuleRouteUpdater apiGatewayModuleRouteUpdater(KongGatewayService kongGatewayService,
+  public ApiGatewayModuleRouteUpdater apiGatewayModuleRouteUpdater(ApiGatewayService apiGatewayService,
     ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
-    return new ApiGatewayModuleRouteUpdater(kongGatewayService, properties, entitlementModuleService);
+    return new ApiGatewayModuleRouteUpdater(apiGatewayService, properties, entitlementModuleService);
   }
 
   @Bean
-  public ApiGatewayModuleRouteCleaner apiGatewayModuleRouteCleaner(KongGatewayService kongGatewayService,
+  public ApiGatewayModuleRouteCleaner apiGatewayModuleRouteCleaner(ApiGatewayService apiGatewayService,
     ApiGatewayConfigurationProperties properties, EntitlementModuleService entitlementModuleService) {
-    return new ApiGatewayModuleRouteCleaner(kongGatewayService, properties, entitlementModuleService);
+    return new ApiGatewayModuleRouteCleaner(apiGatewayService, properties, entitlementModuleService);
   }
 }

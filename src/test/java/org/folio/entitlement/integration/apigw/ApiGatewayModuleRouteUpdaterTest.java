@@ -23,12 +23,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
+import org.folio.common.gateway.ApiGatewayService;
+import org.folio.common.gateway.model.GatewayServiceDefinition;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
-import org.folio.tools.kong.model.Service;
-import org.folio.tools.kong.service.KongGatewayService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class ApiGatewayModuleRouteUpdaterTest {
   private static final String MODULE_LOCATION = "http://mod-foo:8080";
   private static final String INSTALLED_MODULE_ID = "mod-foo-0.9.0";
 
-  @Mock private KongGatewayService kongGatewayService;
+  @Mock private ApiGatewayService apiGatewayService;
   @Mock private EntitlementModuleService entitlementModuleService;
 
   private ApiGatewayConfigurationProperties properties;
@@ -54,7 +54,7 @@ class ApiGatewayModuleRouteUpdaterTest {
   @BeforeEach
   void setUp() {
     properties = mock(ApiGatewayConfigurationProperties.class, Answers.RETURNS_DEEP_STUBS);
-    apiGatewayModuleRouteUpdater = new ApiGatewayModuleRouteUpdater(kongGatewayService,
+    apiGatewayModuleRouteUpdater = new ApiGatewayModuleRouteUpdater(apiGatewayService,
       properties, entitlementModuleService);
   }
 
@@ -74,8 +74,8 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).addRoutes(List.of(descriptor));
   }
 
   @Test
@@ -89,9 +89,9 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
-    verify(kongGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).addRoutes(List.of(descriptor));
+    verify(apiGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
   @Test
@@ -104,7 +104,7 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
   }
 
   @Test
@@ -115,7 +115,7 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verifyNoInteractions(kongGatewayService);
+    verifyNoInteractions(apiGatewayService);
   }
 
   @Test
@@ -128,8 +128,8 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(kongGatewayService).deleteServiceRoutes(MODULE_ID);
-    verify(kongGatewayService).deleteService(MODULE_ID);
+    verify(apiGatewayService).deleteServiceRoutes(MODULE_ID);
+    verify(apiGatewayService).deleteService(MODULE_ID);
   }
 
   @Test
@@ -142,7 +142,7 @@ class ApiGatewayModuleRouteUpdaterTest {
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isNoOtherEntitlementExist(MODULE_ID, TENANT_ID);
-    verifyNoInteractions(kongGatewayService);
+    verifyNoInteractions(apiGatewayService);
   }
 
   @Test
@@ -155,7 +155,7 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verifyNoInteractions(kongGatewayService);
+    verifyNoInteractions(apiGatewayService);
   }
 
   @Test
@@ -168,7 +168,7 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
   }
 
   @Test
@@ -186,10 +186,10 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).removeTenantFromModuleRoutes(INSTALLED_MODULE_ID, TENANT_NAME);
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
-    verify(kongGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).removeTenantFromModuleRoutes(INSTALLED_MODULE_ID, TENANT_NAME);
+    verify(apiGatewayService).addRoutes(List.of(descriptor));
+    verify(apiGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
   @Test
@@ -206,10 +206,10 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
-    verify(kongGatewayService).deleteServiceRoutes(INSTALLED_MODULE_ID);
-    verify(kongGatewayService).deleteService(INSTALLED_MODULE_ID);
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).addRoutes(List.of(descriptor));
+    verify(apiGatewayService).deleteServiceRoutes(INSTALLED_MODULE_ID);
+    verify(apiGatewayService).deleteService(INSTALLED_MODULE_ID);
   }
 
   @Test
@@ -226,8 +226,8 @@ class ApiGatewayModuleRouteUpdaterTest {
 
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
-    verify(kongGatewayService).addRoutes(List.of(descriptor));
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).addRoutes(List.of(descriptor));
   }
 
   @Test
@@ -244,7 +244,7 @@ class ApiGatewayModuleRouteUpdaterTest {
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
   }
 
   @Test
@@ -259,7 +259,7 @@ class ApiGatewayModuleRouteUpdaterTest {
     apiGatewayModuleRouteUpdater.execute(stageContext);
 
     verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
-    verify(kongGatewayService).upsertService(new Service().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
   }
 
   @Test

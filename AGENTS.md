@@ -42,7 +42,7 @@ mvn clean install -Pcoverage
 
 **Test Requirements:**
 - Unit tests use `@UnitTest`
-- Integration tests are centered on `BaseIntegrationTest` and use `@IntegrationTest`
+- Integration tests are centered on `BaseIntegrationTest` and use `@IntegrationTest`; APISIX ITs additionally use `@EnableApisixGateway` with etcd + `folioci/folio-apisix:latest` (amd64-only; arm64 uses emulation or `TESTCONTAINERS_APISIX_IMAGE`), as in `ApisixRouteManagementIT` and `ApisixRegistrationIT`.
 - Test coverage spans `configuration`, `controller`, `integration`, `it`, `service`, `support`, and `utils`, with nested coverage under `service/stage`, `service/flow`, and `service/validator`
 
 ### Linting
