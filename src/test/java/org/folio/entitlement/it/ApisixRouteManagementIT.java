@@ -70,8 +70,7 @@ class ApisixRouteManagementIT extends BaseIntegrationTest {
 
     assertThat(apisixAdminClient.getService(FOLIO_MODULE1_ID).getValue()).isNotNull();
     var routes = getModuleRoutes(FOLIO_MODULE1_ID);
-    assertThat(routes).isNotEmpty();
-    assertThat(routes).allSatisfy(route -> assertThat(getTenants(route)).contains("test"));
+    assertThat(routes).isNotEmpty().allSatisfy(route -> assertThat(getTenants(route)).contains("test"));
 
     revokeEntitlements(entitlementRequest(FOLIO_APP1_ID), queryParams,
       extendedEntitlements(entitlement(FOLIO_APP1_ID)));
@@ -171,9 +170,9 @@ class ApisixRouteManagementIT extends BaseIntegrationTest {
 
   private static List<String> getTenants(ApisixRoute route) {
     return route.getVars().stream()
-      .filter(var -> TENANT_VAR.equals(var.get(0)) && "in".equals(var.get(1)))
+      .filter(condition -> TENANT_VAR.equals(condition.get(0)) && "in".equals(condition.get(1)))
       .findFirst()
-      .map(var -> ((List<?>) var.get(2)).stream().map(Object::toString).toList())
+      .map(condition -> ((List<?>) condition.get(2)).stream().map(Object::toString).toList())
       .orElse(List.of());
   }
 }
