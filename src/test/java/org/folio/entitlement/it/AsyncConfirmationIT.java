@@ -19,8 +19,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.awaitility.Awaitility;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.integration.kafka.KafkaEventUtils;
@@ -59,6 +61,8 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
   private static final String RESULT_TOPIC = "folio.mgr-tenant-entitlements.resource-result";
   private static final String FOLIO_APP_ASYNC_1_ID = "folio-app-async-1.0.0";
   private static final String FOLIO_APP_ASYNC_2_ID = "folio-app-async-2.0.0";
+  private static final String FOLIO_APP_ASYNC_MID_ID = "folio-app-async-mid-1.0.0";
+  private static final String FOLIO_APP_ASYNC_LEAF_ID = "folio-app-async-leaf-1.0.0";
 
   private static final String CAP_STAGE = "folio-module-async-1.0.0-capabilitiesModuleEventPublisher";
   private static final String SCHED_STAGE = "folio-module-async-1.0.0-scheduledJobModuleEventPublisher";
@@ -304,6 +308,158 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
           "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_2_ID + "')].status",
           contains("finished")))
     );
+  }
+
+  @Test
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-by-ids-query-hierarchy.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-discovery-app1.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-discovery-hierarchy-mid.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-discovery-hierarchy-leaf.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json",
+    "/wiremock/folio-module-async/install.json",
+    "/wiremock/folio-module-async-mid/install.json",
+    "/wiremock/folio-module-async-leaf/install.json"
+  })
+  void entitle_positive_hierarchyChain_allStagesSucceed() throws Exception {
+    var mvcResult = entitleApplications(
+      entitlementRequest(TENANT_ID, FOLIO_APP_ASYNC_1_ID, FOLIO_APP_ASYNC_MID_ID, FOLIO_APP_ASYNC_LEAF_ID),
+      QUERY_PARAMS,
+      extendedEntitlements(entitlement(FOLIO_APP_ASYNC_1_ID), entitlement(FOLIO_APP_ASYNC_MID_ID),
+        entitlement(FOLIO_APP_ASYNC_LEAF_ID)));
+    final var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
+
+    Awaitility.await().atMost(10, SECONDS)
+      .until(() -> FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class).size() >= 3);
+    final var schedStageId = awaitStageId(scheduledJobsTenantTopic(), 0);
+    final var sysUserStageId = awaitStageId(systemUserTenantTopic(), 0);
+
+    var capEvents = FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class);
+    sendResult(capEventId(capEvents, FOLIO_APP_ASYNC_1_ID), SUCCESS, CAPABILITY_RESOURCE_NAME, null);
+    sendResult(capEventId(capEvents, FOLIO_APP_ASYNC_MID_ID), SUCCESS, CAPABILITY_RESOURCE_NAME, null);
+    sendResult(capEventId(capEvents, FOLIO_APP_ASYNC_LEAF_ID), SUCCESS, CAPABILITY_RESOURCE_NAME, null);
+    sendResult(schedStageId, SUCCESS, SCHEDULED_JOB_RESOURCE_NAME, null);
+    sendResult(sysUserStageId, SUCCESS, SYSTEM_USER_RESOURCE_NAME, null);
+
+    Awaitility.await().atMost(30, SECONDS).untilAsserted(() ->
+      getFlow(flowId, false)
+        .andExpect(jsonPath("$.status", is("finished")))
+        .andExpect(jsonPath(
+          "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_1_ID + "')].status",
+          contains("finished")))
+        .andExpect(jsonPath(
+          "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_MID_ID + "')].status",
+          contains("finished")))
+        .andExpect(jsonPath(
+          "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_LEAF_ID + "')].status",
+          contains("finished")))
+    );
+  }
+
+  @Test
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-by-ids-query-hierarchy.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-discovery-app1.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-discovery-hierarchy-mid.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-discovery-hierarchy-leaf.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json",
+    "/wiremock/folio-module-async/install.json",
+    "/wiremock/folio-module-async-mid/install.json",
+    "/wiremock/folio-module-async-leaf/install.json"
+  })
+  void entitle_positive_hierarchyChain_rootAndMiddleComplete_leafPending() throws Exception {
+    var mvcResult = entitleApplications(
+      entitlementRequest(TENANT_ID, FOLIO_APP_ASYNC_1_ID, FOLIO_APP_ASYNC_MID_ID, FOLIO_APP_ASYNC_LEAF_ID),
+      QUERY_PARAMS,
+      extendedEntitlements(entitlement(FOLIO_APP_ASYNC_1_ID), entitlement(FOLIO_APP_ASYNC_MID_ID),
+        entitlement(FOLIO_APP_ASYNC_LEAF_ID)));
+    final var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
+
+    Awaitility.await().atMost(10, SECONDS)
+      .until(() -> FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class).size() >= 3);
+    var schedStageId = awaitStageId(scheduledJobsTenantTopic(), 0);
+    final var sysUserStageId = awaitStageId(systemUserTenantTopic(), 0);
+
+    var capEvents = FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class);
+    sendResult(capEventId(capEvents, FOLIO_APP_ASYNC_1_ID), SUCCESS, CAPABILITY_RESOURCE_NAME, null);
+    sendResult(capEventId(capEvents, FOLIO_APP_ASYNC_MID_ID), SUCCESS, CAPABILITY_RESOURCE_NAME, null);
+    sendResult(schedStageId, SUCCESS, SCHEDULED_JOB_RESOURCE_NAME, null);
+    sendResult(sysUserStageId, SUCCESS, SYSTEM_USER_RESOURCE_NAME, null);
+
+    Awaitility.await()
+      .during(3, SECONDS)
+      .atMost(5, SECONDS)
+      .untilAsserted(() ->
+        getFlow(flowId, false)
+          .andExpect(jsonPath("$.status", is("in_progress")))
+          .andExpect(jsonPath(
+            "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_1_ID + "')].status",
+            contains("finished")))
+          .andExpect(jsonPath(
+            "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_MID_ID + "')].status",
+            contains("finished")))
+          .andExpect(jsonPath(
+            "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_LEAF_ID + "')].status",
+            contains("in_progress")))
+      );
+  }
+
+  @Test
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-by-ids-query-hierarchy.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-discovery-app1.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-discovery-hierarchy-mid.json",
+    "/wiremock/mgr-applications/folio-app-async/v1-get-discovery-hierarchy-leaf.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json",
+    "/wiremock/folio-module-async/install.json",
+    "/wiremock/folio-module-async-mid/install.json",
+    "/wiremock/folio-module-async-leaf/install.json"
+  })
+  void entitle_positive_hierarchyChain_onlyRootCompletes_middleAndLeafPending() throws Exception {
+    var mvcResult = entitleApplications(
+      entitlementRequest(TENANT_ID, FOLIO_APP_ASYNC_1_ID, FOLIO_APP_ASYNC_MID_ID, FOLIO_APP_ASYNC_LEAF_ID),
+      QUERY_PARAMS,
+      extendedEntitlements(entitlement(FOLIO_APP_ASYNC_1_ID), entitlement(FOLIO_APP_ASYNC_MID_ID),
+        entitlement(FOLIO_APP_ASYNC_LEAF_ID)));
+    final var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
+
+    Awaitility.await().atMost(10, SECONDS)
+      .until(() -> FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class).size() >= 3);
+    var schedStageId = awaitStageId(scheduledJobsTenantTopic(), 0);
+    var sysUserStageId = awaitStageId(systemUserTenantTopic(), 0);
+
+    var capEvents = FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class);
+    sendResult(capEventId(capEvents, FOLIO_APP_ASYNC_1_ID), SUCCESS, CAPABILITY_RESOURCE_NAME, null);
+    sendResult(schedStageId, SUCCESS, SCHEDULED_JOB_RESOURCE_NAME, null);
+    sendResult(sysUserStageId, SUCCESS, SYSTEM_USER_RESOURCE_NAME, null);
+
+    Awaitility.await()
+      .during(3, SECONDS)
+      .atMost(5, SECONDS)
+      .untilAsserted(() ->
+        getFlow(flowId, false)
+          .andExpect(jsonPath("$.status", is("in_progress")))
+          .andExpect(jsonPath(
+            "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_1_ID + "')].status",
+            contains("finished")))
+          .andExpect(jsonPath(
+            "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_MID_ID + "')].status",
+            contains("in_progress")))
+          .andExpect(jsonPath(
+            "$.applicationFlows[?(@.applicationId == '" + FOLIO_APP_ASYNC_LEAF_ID + "')].status",
+            contains("in_progress")))
+      );
+  }
+
+  private static UUID capEventId(List<ConsumerRecord<String, ResourceEvent>> events, String appId) {
+    return events.stream()
+      .filter(r -> appId.equals(appIdFrom(r.value().getNewValue())))
+      .map(r -> UUID.fromString(r.value().getId()))
+      .findFirst()
+      .orElseThrow();
   }
 
   private UUID awaitStageId(String topic, int index) {

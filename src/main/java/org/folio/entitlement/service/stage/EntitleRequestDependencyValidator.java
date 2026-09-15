@@ -9,6 +9,7 @@ import static org.folio.common.utils.SemverUtils.applicationSatisfies;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
+import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,15 +41,17 @@ public class EntitleRequestDependencyValidator extends DatabaseLoggingStage<Appl
     var applicationDescriptor = context.getApplicationDescriptor();
     var tenantId = context.getEntitlementRequest().getTenantId();
 
-    var notInstalledApplications = findNotEntitledAppDependencies(applicationDescriptor.getDependencies(), tenantId);
-    if (isNotEmpty(notInstalledApplications)) {
+    var notInstallingApplications = findNotEntitledOrNotInProgressAppDependencies(
+      applicationDescriptor.getDependencies(), tenantId);
+
+    if (isNotEmpty(notInstallingApplications)) {
       throw new IllegalStateException(
-        "The following application dependencies must be installed first: "
-          + notInstalledApplications.stream().map(Dependency::nameVersion).sorted().collect(joining(", ")));
+        "The following application dependencies must be installed first or be in progress: "
+          + notInstallingApplications.stream().map(Dependency::nameVersion).sorted().collect(joining(", ")));
     }
   }
 
-  private Set<Dependency> findNotEntitledAppDependencies(List<Dependency> dependencies, UUID tenantId) {
+  private Set<Dependency> findNotEntitledOrNotInProgressAppDependencies(List<Dependency> dependencies, UUID tenantId) {
     if (CollectionUtils.isEmpty(dependencies)) {
       return emptySet();
     }
@@ -57,12 +60,12 @@ public class EntitleRequestDependencyValidator extends DatabaseLoggingStage<Appl
 
     var lastFlows = applicationFlowService.findLastFlowsByNames(dependencyByName.keySet(), tenantId);
 
-    var entitledApplicationIds = lastFlows.stream()
+    var entitledOrInProgressApplicationIds = lastFlows.stream()
       .filter(satisfiesDependencyVersion(dependencyByName)
-        .and(EntitleRequestDependencyValidator::isFinishedEntitlement))
+        .and(EntitleRequestDependencyValidator::isFinishedOrInProgressEntitlement))
       .map(ApplicationFlow::getApplicationId);
 
-    return removeEntitled(dependencyByName, entitledApplicationIds);
+    return removeEntitledOrInProgress(dependencyByName, entitledOrInProgressApplicationIds);
   }
 
   private static Predicate<ApplicationFlow> satisfiesDependencyVersion(Map<String, Dependency> dependencyByName) {
@@ -73,15 +76,16 @@ public class EntitleRequestDependencyValidator extends DatabaseLoggingStage<Appl
     };
   }
 
-  private static boolean isFinishedEntitlement(ApplicationFlow flow) {
-    return flow.getStatus() == FINISHED && (flow.getType() == ENTITLE || flow.getType() == UPGRADE);
+  private static boolean isFinishedOrInProgressEntitlement(ApplicationFlow flow) {
+    return (flow.getStatus() == FINISHED || flow.getStatus() == IN_PROGRESS)
+      && (flow.getType() == ENTITLE || flow.getType() == UPGRADE);
   }
 
-  private static Set<Dependency> removeEntitled(Map<String, Dependency> dependencyByName,
-    Stream<String> entitledApplicationIds) {
+  private static Set<Dependency> removeEntitledOrInProgress(Map<String, Dependency> dependencyByName,
+    Stream<String> applicationIds) {
     var deps = new HashMap<>(dependencyByName);
 
-    entitledApplicationIds.forEach(removeDependencyByAppId(deps));
+    applicationIds.forEach(removeDependencyByAppId(deps));
 
     return Set.copyOf(deps.values());
   }

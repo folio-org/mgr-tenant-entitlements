@@ -5,6 +5,7 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
+import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
@@ -26,7 +27,6 @@ import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.model.EntitlementRequest;
-import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
 import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
@@ -42,12 +42,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class EntitleRequestDependencyValidatorTest {
 
   @InjectMocks private EntitleRequestDependencyValidator dependencyValidator;
-  @Mock private ApplicationManagerService applicationManagerService;
   @Mock private ApplicationFlowService applicationFlowService;
 
   @AfterEach
   void tearDown() {
-    verifyNoMoreInteractions(applicationManagerService, applicationFlowService);
+    verifyNoMoreInteractions(applicationFlowService);
   }
 
   @Test
@@ -92,7 +91,7 @@ class EntitleRequestDependencyValidatorTest {
 
     dependencyValidator.execute(stageContext);
 
-    verifyNoInteractions(applicationManagerService);
+    verifyNoInteractions(applicationFlowService);
   }
 
   @Test
@@ -108,8 +107,63 @@ class EntitleRequestDependencyValidatorTest {
 
     assertThatThrownBy(() -> dependencyValidator.execute(stageContext))
       .isInstanceOf(IllegalStateException.class)
-      .hasMessage("The following application dependencies must be installed first: "
+      .hasMessage("The following application dependencies must be installed first or be in progress: "
         + "app-bar 2.3.9, app-baz 4.2.1, app-foo 1.2.0");
+  }
+
+  @Test
+  void execute_positive_inProgressEntitle() {
+    var dependencyIds = List.of("app-foo-1.2.0", "app-bar-2.3.9", "app-baz-4.2.1");
+    var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
+    var expectedFlows = mapItems(dependencyIds,
+      applicationId -> flow(applicationId, EntitlementType.ENTITLE, IN_PROGRESS));
+    when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(expectedFlows);
+
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    var stageContext = appStageContext(FLOW_ID, flowParameters(request, applicationDescriptor()),
+      Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    dependencyValidator.execute(stageContext);
+
+    verify(applicationFlowService).findLastFlowsByNames(dependencyNames, TENANT_ID);
+  }
+
+  @Test
+  void execute_positive_inProgressUpgrade() {
+    var dependencyIds = List.of("app-foo-1.2.0", "app-bar-2.3.9", "app-baz-4.2.1");
+    var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
+    var expectedFlows = mapItems(dependencyIds,
+      applicationId -> flow(applicationId, EntitlementType.UPGRADE, IN_PROGRESS));
+    when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(expectedFlows);
+
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    var stageContext = appStageContext(FLOW_ID, flowParameters(request, applicationDescriptor()),
+      Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    dependencyValidator.execute(stageContext);
+
+    verify(applicationFlowService).findLastFlowsByNames(dependencyNames, TENANT_ID);
+  }
+
+  @Test
+  void execute_negative_inProgressRevokeIsNotAccepted() {
+    var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
+    var expectedFlows = List.of(
+      flow("app-foo-1.2.0", EntitlementType.REVOKE, IN_PROGRESS),
+      flow("app-bar-2.3.9", EntitlementType.REVOKE, IN_PROGRESS),
+      flow("app-baz-4.2.1", EntitlementType.REVOKE, IN_PROGRESS));
+    when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(expectedFlows);
+
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    var stageContext = appStageContext(FLOW_ID, flowParameters(request, applicationDescriptor()),
+      Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    assertThatThrownBy(() -> dependencyValidator.execute(stageContext))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("The following application dependencies must be installed first or be in progress: "
+        + "app-bar 2.3.9, app-baz 4.2.1, app-foo 1.2.0");
+
+    verify(applicationFlowService).findLastFlowsByNames(dependencyNames, TENANT_ID);
   }
 
   private static ApplicationDescriptor applicationDescriptor() {
