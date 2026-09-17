@@ -20,7 +20,6 @@
 * [Kong] Module routes are incorrectly assigned to multiple gateway services (MGRENTITLE-197)
 * Filter wildcard permissionsRequired entries from mgr-tenant-entitlements capability warnings (MGRENTITLE-182)
 
-
 ---
 
 ## Version `4.0.0` (16.04.2026)
