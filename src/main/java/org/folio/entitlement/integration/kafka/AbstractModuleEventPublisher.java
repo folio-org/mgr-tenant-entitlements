@@ -141,9 +141,10 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
   }
 
   private String getTopicName(String tenantName) {
-    return tenantEntitlementKafkaProperties.isProducerTenantCollection()
-      ? getTopicNameByTenant(tenantEntitlementKafkaProperties.getTenantCollectionQualifier())
-      : getTopicNameByTenant(tenantName);
+    var topicTenant = tenantEntitlementKafkaProperties.isProducerTenantCollection()
+      ? tenantEntitlementKafkaProperties.getTenantCollectionQualifier()
+      : tenantName;
+    return getTopicNameByTenant(topicTenant);
   }
 
   private void sendEvent(ResourceEvent<T> event, ModuleStageContext ctx) {
