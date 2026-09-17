@@ -8,7 +8,6 @@ import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
-import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.integration.kafka.producer.KafkaUtils.getTenantTopicName;
 
 import java.util.ArrayList;
@@ -94,7 +93,7 @@ public class KafkaTenantTopicCreator extends DatabaseLoggingStage<CommonStageCon
 
   private String getTopicTenantValue(String tenant) {
     return tenantEntitlementKafkaProperties.isProducerTenantCollection()
-      ? TOPIC_TENANT_COLLECTION_KEY : tenant;
+      ? tenantEntitlementKafkaProperties.getTenantCollectionQualifier() : tenant;
   }
 
   private static boolean isEntitleOrDesiredStateWithEntitle(CommonStageContext context) {
