@@ -176,7 +176,7 @@ docker run \
 | KAFKA_SYS_USER_TOPIC_PARTITIONS              | 1             |  false   | Amount of partitions for `system-user` topic.                                                                                                              |
 | KAFKA_SYS_USER_TOPIC_REPLICATION_FACTOR      | -             |  false   | Replication factor for `system-user` topic.                                                                                                                |
 | KAFKA_SEND_DURATION_TIMEOUT                  | 10s           |  false   | A default duration for KafkaEventPublisher will wait for the message acknowledgment from kafka                                                             |
-| KAFKA_PRODUCER_TENANT_COLLECTION             | false         |  false   | Defines usage Kafka Topic Tenant Collection for tenant specific events                                                                                     |
+| KAFKA_PRODUCER_TENANT_COLLECTION             | -             |  false   | Tenant collection name for tenant specific topics, e.g. `ALL`; must match `[A-Z][A-Z0-9]{0,30}`. If unset, empty or `false`, per-tenant topics are used. `true` is supported for backward compatibility and means `ALL`. Any other value fails the module startup. |
 
 ### SSL Configuration environment variables
 

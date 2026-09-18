@@ -13,6 +13,7 @@ import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUES
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_ID;
@@ -109,6 +110,7 @@ class SystemUserModuleEventPublisherTest {
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
+    when(tenantEntitlementKafkaProperties.getTenantCollectionQualifier()).thenReturn(TOPIC_TENANT_COLLECTION_KEY);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParameters, contextData);
     moduleEventPublisher.execute(stageContext);
@@ -218,13 +220,6 @@ class SystemUserModuleEventPublisherTest {
     var result = moduleEventPublisher.getStageName(stageContext);
 
     assertThat(result).isEqualTo("mod-foo-1.0.0-systemUserModuleEventPublisher");
-  }
-
-  @Test
-  void getTopicNameByTenantCollection_positive() {
-    var actual = moduleEventPublisher.getTopicNameByTenantCollection();
-
-    assertThat(actual).isEqualTo("test-env.ALL.mgr-tenant-entitlements.system-user");
   }
 
   private static ModuleDescriptor moduleDescriptor(String moduleId, UserDescriptor userDescriptor) {

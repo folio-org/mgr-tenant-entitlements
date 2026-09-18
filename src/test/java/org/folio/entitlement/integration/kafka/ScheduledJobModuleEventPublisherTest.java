@@ -12,6 +12,7 @@ import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUES
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.ENTITLED_APPLICATION_ID;
@@ -100,6 +101,7 @@ class ScheduledJobModuleEventPublisherTest {
     var stageContext = moduleStageContext(FLOW_ID, flowParameters, Map.of(PARAM_TENANT_NAME, TENANT_NAME));
 
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
+    when(tenantEntitlementKafkaProperties.getTenantCollectionQualifier()).thenReturn(TOPIC_TENANT_COLLECTION_KEY);
 
     moduleEventPublisher.execute(stageContext);
 
@@ -202,13 +204,6 @@ class ScheduledJobModuleEventPublisherTest {
     var result = moduleEventPublisher.getStageName(stageContext);
 
     assertThat(result).isEqualTo("mod-foo-1.0.0-scheduledJobModuleEventPublisher");
-  }
-
-  @Test
-  void getTopicNameByTenantCollection_positive() {
-    var actual = moduleEventPublisher.getTopicNameByTenantCollection();
-
-    assertThat(actual).isEqualTo("test-env.ALL.mgr-tenant-entitlements.scheduled-job");
   }
 
   private static ModuleDescriptor fooModuleDescriptor() {

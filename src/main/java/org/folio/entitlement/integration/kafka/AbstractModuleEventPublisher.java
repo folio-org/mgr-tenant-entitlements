@@ -75,13 +75,6 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
   protected abstract String getTopicNameByTenant(String tenantName);
 
   /**
-   * Creates topic tenants collection name.
-   *
-   * @return kafka topic tenants collection name
-   */
-  protected abstract String getTopicNameByTenantCollection();
-
-  /**
    * Returns resource name for {@link ResourceEvent} object.
    *
    * @return resource name
@@ -116,7 +109,9 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
   }
 
   private String getTopicName(String tenantName) {
-    return tenantEntitlementKafkaProperties.isProducerTenantCollection()
-      ? getTopicNameByTenantCollection() : getTopicNameByTenant(tenantName);
+    var topicTenant = tenantEntitlementKafkaProperties.isProducerTenantCollection()
+      ? tenantEntitlementKafkaProperties.getTenantCollectionQualifier()
+      : tenantName;
+    return getTopicNameByTenant(topicTenant);
   }
 }
