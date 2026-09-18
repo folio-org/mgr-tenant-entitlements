@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.TOPIC_TENANT_COLLECTION_KEY;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
@@ -85,6 +86,7 @@ class KafkaTenantTopicCreatorTest {
 
     when(kafkaAdminService.findTopics(Set.of(TEST_TENANT_COLLECTION_TOPIC))).thenReturn(emptyList());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
+    when(tenantEntitlementKafkaProperties.getTenantCollectionQualifier()).thenReturn(TOPIC_TENANT_COLLECTION_KEY);
 
     var stageContext = stageContext(entitlementRequest);
     topicCreator.execute(stageContext);
@@ -92,6 +94,23 @@ class KafkaTenantTopicCreatorTest {
     assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isTrue();
     verify(tenantEntitlementKafkaProperties).getTenantTopics();
     verify(kafkaAdminService).createTopic(new NewTopic(TEST_TENANT_COLLECTION_TOPIC, 10, (short) 1));
+  }
+
+  @Test
+  void execute_positive_useCustomTenantCollectionTopic() {
+    var entitlementRequest = entitlementRequest(ENTITLE);
+    var customTopic = "folio.COLLECTIONA.test-topic";
+
+    when(kafkaAdminService.findTopics(Set.of(customTopic))).thenReturn(emptyList());
+    when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
+    when(tenantEntitlementKafkaProperties.getTenantCollectionQualifier()).thenReturn("COLLECTIONA");
+
+    var stageContext = stageContext(entitlementRequest);
+    topicCreator.execute(stageContext);
+
+    assertThat(stageContext.<Boolean>get(KAFKA_TENANT_TOPIC_CREATOR_CREATED)).isTrue();
+    verify(tenantEntitlementKafkaProperties).getTenantTopics();
+    verify(kafkaAdminService).createTopic(new NewTopic(customTopic, 10, (short) 1));
   }
 
   @Test

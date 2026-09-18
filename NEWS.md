@@ -19,6 +19,7 @@
 * Deprecate the Kong-specific gateway configuration in favour of the API Gateway naming (EUREKA-887)
 * [Kong] Module routes are incorrectly assigned to multiple gateway services (MGRENTITLE-197)
 * Filter wildcard permissionsRequired entries from mgr-tenant-entitlements capability warnings (MGRENTITLE-182)
+* Accept a tenant collection name (e.g. `ALL`) in `KAFKA_PRODUCER_TENANT_COLLECTION`, as other FOLIO modules do (MGRENTITLE-202)
 
 ---
 
