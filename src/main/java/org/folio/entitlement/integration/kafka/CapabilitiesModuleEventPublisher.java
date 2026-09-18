@@ -45,6 +45,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublisher<CapabilityEventPayload> {
 
+  private static final String WILDCARD_PERMISSION = "*";
+
   // Fallback must match the default bound in application.yml: awaiting a confirmation that no downstream service
   // is sending leaves every flow IN_PROGRESS, so the safe value is the one that preserves synchronous behaviour.
   public CapabilitiesModuleEventPublisher(
@@ -159,7 +161,10 @@ public class CapabilitiesModuleEventPublisher extends AbstractModuleEventPublish
   private static List<Entry<String, List<Endpoint>>> getPermissionEndpointsEntries(RoutingEntry handler) {
     var staticPath = handler.getStaticPath();
     var endpoints = mapItems(getMethods(handler), httpMethod -> Endpoint.of(staticPath, httpMethod));
-    return mapItems(handler.getPermissionsRequired(), permission -> new SimpleImmutableEntry<>(permission, endpoints));
+    var permissions = emptyIfNull(handler.getPermissionsRequired()).stream()
+      .filter(not(WILDCARD_PERMISSION::equals))
+      .toList();
+    return mapItems(permissions, permission -> new SimpleImmutableEntry<>(permission, endpoints));
   }
 
   private static ResourceHolder getFolioResourcesWithEndpoints(String moduleId,

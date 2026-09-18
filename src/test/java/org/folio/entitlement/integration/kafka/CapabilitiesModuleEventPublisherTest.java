@@ -291,7 +291,17 @@ class CapabilitiesModuleEventPublisherTest {
       arguments("module descriptor with unmatched permissions", MODULE,
         readModuleDescriptor("json/events/capabilities/module-desc-with-unmatched-perms.json"),
         null,
-        List.of(readCapabilityEvent("json/events/capabilities/desc-with-unmatched-perms-event.json")))
+        List.of(readCapabilityEvent("json/events/capabilities/desc-with-unmatched-perms-event.json"))),
+
+      arguments("wildcard-only permission in handler", MODULE,
+        readModuleDescriptor("json/events/capabilities/module-desc-with-wildcard-only-perms.json"),
+        null,
+        List.of(readCapabilityEvent("json/events/capabilities/desc-with-wildcard-only-perms-event.json"))),
+
+      arguments("mixed wildcard and named permission in handler", MODULE,
+        readModuleDescriptor("json/events/capabilities/module-desc-with-mixed-wildcard-perms.json"),
+        null,
+        List.of(readCapabilityEvent("json/events/capabilities/desc-with-mixed-wildcard-perms-event.json")))
     );
   }
 }
