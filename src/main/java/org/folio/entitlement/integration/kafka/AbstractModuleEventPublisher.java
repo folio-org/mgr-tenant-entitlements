@@ -151,7 +151,7 @@ public abstract class AbstractModuleEventPublisher<T> extends ModuleDatabaseLogg
     var messageKey = ctx.getTenantName();
     var tenant = ctx.getTenantName();
 
-    kafkaEventPublisher.send(getTopicName(tenant), messageKey, event);
+    kafkaEventPublisher.send(getTopicName(tenant), messageKey, tenant, event);
 
     setSuccessStatus(awaitCompletion ? IN_PROGRESS : FINISHED, ctx);
   }

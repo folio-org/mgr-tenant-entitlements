@@ -99,7 +99,8 @@ class CapabilitiesModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     var topicName = capabilitiesTenantTopic();
-    doNothing().when(kafkaEventPublisher).send(eq(topicName), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher)
+      .send(eq(topicName), messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -120,7 +121,8 @@ class CapabilitiesModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     var topicName = capabilitiesTenantCollectionTopic();
-    doNothing().when(kafkaEventPublisher).send(eq(topicName), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher)
+      .send(eq(topicName), messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
     when(tenantEntitlementKafkaProperties.getTenantCollectionQualifier()).thenReturn(TOPIC_TENANT_COLLECTION_KEY);
 
@@ -159,7 +161,8 @@ class CapabilitiesModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     var topicName = capabilitiesTenantTopic();
-    doNothing().when(kafkaEventPublisher).send(eq(topicName), messageKeyCaptor.capture(), eventCaptor.capture());
+    doNothing().when(kafkaEventPublisher)
+      .send(eq(topicName), messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -195,7 +198,7 @@ class CapabilitiesModuleEventPublisherTest {
     stageContext.withStageId(stageUuid);
 
     doNothing().when(kafkaEventPublisher).send(eq(capabilitiesTenantTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -216,7 +219,7 @@ class CapabilitiesModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     doNothing().when(kafkaEventPublisher).send(eq(capabilitiesTenantTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     publisher.execute(stageContext);
@@ -251,7 +254,7 @@ class CapabilitiesModuleEventPublisherTest {
     moduleEventPublisher.execute(stageContext);
 
     var topicName = getTenantTopicName(CAPABILITIES_TOPIC, "COLLECTIONA");
-    verify(kafkaEventPublisher).send(eq(topicName), eq(TENANT_NAME), any());
+    verify(kafkaEventPublisher).send(eq(topicName), eq(TENANT_NAME), eq(TENANT_NAME), any());
   }
 
   private static EntitlementRequest entitlementRequest() {

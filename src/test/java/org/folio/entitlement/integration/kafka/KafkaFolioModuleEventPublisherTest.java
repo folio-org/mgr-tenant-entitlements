@@ -35,6 +35,6 @@ class KafkaFolioModuleEventPublisherTest {
 
     entitlementEventPublisher.publish(event);
 
-    verify(kafkaEventPublisher).send(entitlementTopic(), tenantName + "_" + moduleId, event);
+    verify(kafkaEventPublisher).send(entitlementTopic(), tenantName + "_" + moduleId, tenantName, event);
   }
 }

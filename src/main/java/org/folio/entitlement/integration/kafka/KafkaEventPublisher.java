@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.kafka.configuration.TenantEntitlementKafkaProperties;
+import org.folio.integration.kafka.consumer.KafkaTenantHeaders;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -20,16 +22,21 @@ public class KafkaEventPublisher {
   private final TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
 
   /**
-   * Sends event using provided topic name, message key and message body.
+   * Sends event using provided topic name, message key, tenant and message body.
+   *
+   * <p>The message is published with {@code x-okapi-tenant} and {@code folio.tenantId} Kafka headers set to
+   * {@code tenant}, so consumers can identify the tenant before deserializing the body.</p>
    *
    * @param topic - kafka topic name as {@link String}
-   * @param body - event body as {@link Object}
    * @param key - message key as {@link String}
+   * @param tenant - tenant name as {@link String}
+   * @param body - event body as {@link Object}
    */
-  public void send(String topic, String key, Object body) {
+  public void send(String topic, String key, String tenant, Object body) {
     var sendDurationTimeoutInMillis = tenantEntitlementKafkaProperties.getSendDurationTimeout().toMillis();
+    var producerRecord = new ProducerRecord<>(topic, null, key, body, KafkaTenantHeaders.tenantHeaders(tenant));
     try {
-      kafkaTemplate.send(topic, key, body).get(sendDurationTimeoutInMillis, MILLISECONDS);
+      kafkaTemplate.send(producerRecord).get(sendDurationTimeoutInMillis, MILLISECONDS);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IntegrationException("Failed to send event", getErrorParameters(topic, key), e);
