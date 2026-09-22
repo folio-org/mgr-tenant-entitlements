@@ -44,7 +44,7 @@ public final class KafkaEventAssertions {
   public static void assertEntitlementEvents(List<EntitlementEvent> events) {
     await().untilAsserted(() -> {
       var consumerRecords = getEvents(entitlementTopic(), EntitlementEvent.class);
-      consumerRecords.forEach(record -> assertTenantHeaders(record, record.value().getTenantName()));
+      consumerRecords.forEach(r -> assertTenantHeaders(r, r.value().getTenantName()));
       var entitlementEvents = mapItems(consumerRecords, ConsumerRecord::value);
       assertThat(entitlementEvents).containsAll(events);
     });
@@ -83,7 +83,7 @@ public final class KafkaEventAssertions {
   private static <T> void assertEventsSequence(String topic, TypeReference<ResourceEvent<T>> type,
     List<ResourceEvent<T>> events) {
     var consumerRecords = getEvents(topic, type);
-    consumerRecords.forEach(record -> assertTenantHeaders(record, record.value().getTenant()));
+    consumerRecords.forEach(r -> assertTenantHeaders(r, r.value().getTenant()));
     var eventValues = mapItems(consumerRecords, ConsumerRecord::value);
     // id is set to the stage UUID by AbstractModuleEventPublisher; ignore it when comparing event payloads
     assertThat(eventValues)
@@ -91,13 +91,13 @@ public final class KafkaEventAssertions {
       .allSatisfy(event -> assertThat(event.getId()).isNotBlank());
   }
 
-  private static void assertTenantHeaders(ConsumerRecord<String, ?> record, String tenant) {
+  private static void assertTenantHeaders(ConsumerRecord<String, ?> consumerRecord, String tenant) {
     var tenantBytes = tenant.getBytes(UTF_8);
-    assertThat(record.headers().lastHeader(TENANT))
-      .as("%s header on topic %s", TENANT, record.topic()).isNotNull()
+    assertThat(consumerRecord.headers().lastHeader(TENANT))
+      .as("%s header on topic %s", TENANT, consumerRecord.topic()).isNotNull()
       .extracting(Header::value).isEqualTo(tenantBytes);
-    assertThat(record.headers().lastHeader(FOLIO_TENANT_ID))
-      .as("%s header on topic %s", FOLIO_TENANT_ID, record.topic()).isNotNull()
+    assertThat(consumerRecord.headers().lastHeader(FOLIO_TENANT_ID))
+      .as("%s header on topic %s", FOLIO_TENANT_ID, consumerRecord.topic()).isNotNull()
       .extracting(Header::value).isEqualTo(tenantBytes);
   }
 }

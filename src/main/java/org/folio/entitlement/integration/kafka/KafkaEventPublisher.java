@@ -22,10 +22,7 @@ public class KafkaEventPublisher {
   private final TenantEntitlementKafkaProperties tenantEntitlementKafkaProperties;
 
   /**
-   * Sends event using provided topic name, message key, tenant and message body.
-   *
-   * <p>The message is published with {@code x-okapi-tenant} and {@code folio.tenantId} Kafka headers set to
-   * {@code tenant}, so consumers can identify the tenant before deserializing the body.</p>
+   * Sends event using provided topic name, message key, tenant, and message body.
    *
    * @param topic - kafka topic name as {@link String}
    * @param key - message key as {@link String}
