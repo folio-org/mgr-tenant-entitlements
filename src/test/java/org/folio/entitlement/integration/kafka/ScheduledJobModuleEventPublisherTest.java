@@ -88,7 +88,7 @@ class ScheduledJobModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -110,7 +110,7 @@ class ScheduledJobModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantCollectionTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
     when(tenantEntitlementKafkaProperties.getTenantCollectionQualifier()).thenReturn(TOPIC_TENANT_COLLECTION_KEY);
 
@@ -150,7 +150,7 @@ class ScheduledJobModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -194,7 +194,7 @@ class ScheduledJobModuleEventPublisherTest {
     stageContext.withStageId(UUID.randomUUID());
 
     doNothing().when(kafkaEventPublisher).send(eq(scheduledJobsTenantTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);

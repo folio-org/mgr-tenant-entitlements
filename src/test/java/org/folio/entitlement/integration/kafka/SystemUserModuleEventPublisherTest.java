@@ -97,7 +97,7 @@ class SystemUserModuleEventPublisherTest {
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -124,7 +124,7 @@ class SystemUserModuleEventPublisherTest {
     when(systemUserEventProvider.getSystemUserEvent(moduleDescriptor)).thenReturn(of(systemUserEvent));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantCollectionTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(true);
     when(tenantEntitlementKafkaProperties.getTenantCollectionQualifier()).thenReturn(TOPIC_TENANT_COLLECTION_KEY);
 
@@ -174,7 +174,7 @@ class SystemUserModuleEventPublisherTest {
     when(systemUserEventProvider.getSystemUserEvent(v2ModuleDescriptor))
       .thenReturn(of(systemUserEvent(MODULE_ID_V2, MODULE_NAME, List.of("foo.v2.entities.post"))));
     doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
@@ -222,7 +222,7 @@ class SystemUserModuleEventPublisherTest {
       .thenReturn(of(systemUserEvent(MODULE_ID, MODULE_NAME, List.of("foo.entities.post"))));
     when(systemUserEventProvider.getSystemUserEvent(null)).thenReturn(empty());
     doNothing().when(kafkaEventPublisher).send(eq(systemUserTenantTopic()),
-      messageKeyCaptor.capture(), eventCaptor.capture());
+      messageKeyCaptor.capture(), eq(TENANT_NAME), eventCaptor.capture());
     when(tenantEntitlementKafkaProperties.isProducerTenantCollection()).thenReturn(false);
 
     moduleEventPublisher.execute(stageContext);
