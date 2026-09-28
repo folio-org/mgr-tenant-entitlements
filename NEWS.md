@@ -1,3 +1,6 @@
+## Version `4.0.2` (28.09.2026)
+* Align KAFKA_PRODUCER_TENANT_COLLECTION with FOLIO standard string value (MGRENTITLE-202)
+
 ## Version `4.0.1` (09.06.2026)
 * Missing Keycloak resources during entitlement (MGRENTITLE-179)
 * Updating dependencies to address security vulnerabilities
