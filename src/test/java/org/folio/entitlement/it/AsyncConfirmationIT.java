@@ -64,9 +64,11 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
   private static final String FOLIO_APP_ASYNC_MID_ID = "folio-app-async-mid-1.0.0";
   private static final String FOLIO_APP_ASYNC_LEAF_ID = "folio-app-async-leaf-1.0.0";
 
-  private static final String CAP_STAGE = "folio-module-async-1.0.0-capabilitiesModuleEventPublisher";
-  private static final String SCHED_STAGE = "folio-module-async-1.0.0-scheduledJobModuleEventPublisher";
-  private static final String SYS_USER_STAGE = "folio-module-async-1.0.0-systemUserModuleEventPublisher";
+  private static final String FOLIO_MODULE_ASYNC_1_ID = "folio-module-async-1.0.0";
+
+  private static final String CAP_STAGE = FOLIO_MODULE_ASYNC_1_ID + "-capabilitiesModuleEventPublisher";
+  private static final String SCHED_STAGE = FOLIO_MODULE_ASYNC_1_ID + "-scheduledJobModuleEventPublisher";
+  private static final String SYS_USER_STAGE = FOLIO_MODULE_ASYNC_1_ID + "-systemUserModuleEventPublisher";
 
   private static final String CAPABILITY_RESOURCE_NAME = KafkaEventUtils.CAPABILITY_RESOURCE_NAME;
   private static final String SCHEDULED_JOB_RESOURCE_NAME = KafkaEventUtils.SCHEDULED_JOB_RESOURCE_NAME;
@@ -103,8 +105,8 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
     final var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
 
     var capStageId = awaitStageId(capabilitiesTenantTopic(), 0);
-    var schedStageId = awaitStageId(scheduledJobsTenantTopic(), 0);
-    var sysUserStageId = awaitStageId(systemUserTenantTopic(), 0);
+    var schedStageId = awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
+    var sysUserStageId = awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
     sendResult(capStageId, SUCCESS, CAPABILITY_RESOURCE_NAME, null);
     sendResult(schedStageId, SUCCESS, SCHEDULED_JOB_RESOURCE_NAME, null);
@@ -137,8 +139,8 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
     final var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
 
     var capStageId = awaitStageId(capabilitiesTenantTopic(), 0);
-    awaitStageId(scheduledJobsTenantTopic(), 0);
-    awaitStageId(systemUserTenantTopic(), 0);
+    awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
+    awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
     sendResult(capStageId, SUCCESS, CAPABILITY_RESOURCE_NAME, null);
 
@@ -231,8 +233,8 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
 
     Awaitility.await().atMost(10, SECONDS)
       .until(() -> FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class).size() >= 2);
-    var schedStageId = awaitStageId(scheduledJobsTenantTopic(), 0);
-    var sysUserStageId = awaitStageId(systemUserTenantTopic(), 0);
+    var schedStageId = awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
+    var sysUserStageId = awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
     var capEvents = FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class);
     var app1CapId = capEvents.stream()
@@ -278,8 +280,8 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
 
     Awaitility.await().atMost(10, SECONDS)
       .until(() -> FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class).size() >= 2);
-    var schedStageId = awaitStageId(scheduledJobsTenantTopic(), 0);
-    final var sysUserStageId = awaitStageId(systemUserTenantTopic(), 0);
+    var schedStageId = awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
+    final var sysUserStageId = awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
     var capEvents = FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class);
     var app1CapId = capEvents.stream()
@@ -332,8 +334,8 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
 
     Awaitility.await().atMost(60, SECONDS)
       .until(() -> FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class).size() >= 3);
-    final var schedStageId = awaitStageId(scheduledJobsTenantTopic(), 0);
-    final var sysUserStageId = awaitStageId(systemUserTenantTopic(), 0);
+    final var schedStageId = awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
+    final var sysUserStageId = awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
     var capEvents = FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class);
     sendResult(capEventId(capEvents, FOLIO_APP_ASYNC_1_ID), SUCCESS, CAPABILITY_RESOURCE_NAME, null);
@@ -379,8 +381,8 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
 
     Awaitility.await().atMost(10, SECONDS)
       .until(() -> FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class).size() >= 3);
-    var schedStageId = awaitStageId(scheduledJobsTenantTopic(), 0);
-    final var sysUserStageId = awaitStageId(systemUserTenantTopic(), 0);
+    var schedStageId = awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
+    final var sysUserStageId = awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
     var capEvents = FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class);
     sendResult(capEventId(capEvents, FOLIO_APP_ASYNC_1_ID), SUCCESS, CAPABILITY_RESOURCE_NAME, null);
@@ -428,8 +430,8 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
 
     Awaitility.await().atMost(10, SECONDS)
       .until(() -> FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class).size() >= 3);
-    var schedStageId = awaitStageId(scheduledJobsTenantTopic(), 0);
-    var sysUserStageId = awaitStageId(systemUserTenantTopic(), 0);
+    var schedStageId = awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
+    var sysUserStageId = awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
     var capEvents = FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class);
     sendResult(capEventId(capEvents, FOLIO_APP_ASYNC_1_ID), SUCCESS, CAPABILITY_RESOURCE_NAME, null);
@@ -467,6 +469,25 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
       .until(() -> FakeKafkaConsumer.getEvents(topic, ResourceEvent.class).size() > index);
     return UUID.fromString(
       FakeKafkaConsumer.getEvents(topic, ResourceEvent.class).get(index).value().getId());
+  }
+
+  private UUID awaitStageIdByModuleId(String topic, String moduleId) {
+    Awaitility.await().atMost(10, SECONDS)
+      .until(() -> FakeKafkaConsumer.getEvents(topic, ResourceEvent.class).stream()
+        .anyMatch(r -> moduleId.equals(moduleIdFrom(r.value().getNewValue()))));
+    return FakeKafkaConsumer.getEvents(topic, ResourceEvent.class).stream()
+      .filter(r -> moduleId.equals(moduleIdFrom(r.value().getNewValue())))
+      .map(r -> UUID.fromString(r.value().getId()))
+      .findFirst()
+      .orElseThrow();
+  }
+
+  @SuppressWarnings("unchecked")
+  private static String moduleIdFrom(Object newValue) {
+    if (newValue instanceof Map<?, ?> map) {
+      return (String) map.get("moduleId");
+    }
+    return null;
   }
 
   private void sendResult(UUID stageId, ResourceResultStatus status, String resourceName, String details) {
