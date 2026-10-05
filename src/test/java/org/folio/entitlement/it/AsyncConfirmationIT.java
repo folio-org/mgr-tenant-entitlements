@@ -475,7 +475,6 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
       .orElseThrow();
   }
 
-  @SuppressWarnings("unchecked")
   private static String moduleIdFrom(Object newValue) {
     if (newValue instanceof Map<?, ?> map) {
       return (String) map.get("moduleId");
@@ -500,7 +499,6 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
       .andExpect(status().isOk());
   }
 
-  @SuppressWarnings("unchecked")
   private static String appIdFrom(Object newValue) {
     if (newValue instanceof Map<?, ?> map) {
       return (String) map.get("applicationId");
