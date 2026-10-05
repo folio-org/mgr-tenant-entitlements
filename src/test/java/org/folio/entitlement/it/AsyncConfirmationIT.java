@@ -104,7 +104,7 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
       extendedEntitlements(entitlement(FOLIO_APP_ASYNC_1_ID)));
     final var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
 
-    var capStageId = awaitStageId(capabilitiesTenantTopic(), 0);
+    var capStageId = awaitStageIdByModuleId(capabilitiesTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
     var schedStageId = awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
     var sysUserStageId = awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
@@ -138,7 +138,7 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
       extendedEntitlements(entitlement(FOLIO_APP_ASYNC_1_ID)));
     final var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
 
-    var capStageId = awaitStageId(capabilitiesTenantTopic(), 0);
+    var capStageId = awaitStageIdByModuleId(capabilitiesTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
     awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
     awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
@@ -172,7 +172,7 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
       extendedEntitlements(entitlement(FOLIO_APP_ASYNC_1_ID)));
     var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
 
-    var capStageId = awaitStageId(capabilitiesTenantTopic(), 0);
+    var capStageId = awaitStageIdByModuleId(capabilitiesTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
     sendResult(capStageId, FAILURE, CAPABILITY_RESOURCE_NAME, "downstream-error");
 
@@ -200,7 +200,7 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
       extendedEntitlements(entitlement(FOLIO_APP_ASYNC_1_ID)));
     var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
 
-    var capStageId = awaitStageId(capabilitiesTenantTopic(), 0);
+    var capStageId = awaitStageIdByModuleId(capabilitiesTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
 
     sendResult(capStageId, FAILURE, CAPABILITY_RESOURCE_NAME, null);
 
@@ -462,13 +462,6 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
       .map(r -> UUID.fromString(r.value().getId()))
       .findFirst()
       .orElseThrow();
-  }
-
-  private UUID awaitStageId(String topic, int index) {
-    Awaitility.await().atMost(10, SECONDS)
-      .until(() -> FakeKafkaConsumer.getEvents(topic, ResourceEvent.class).size() > index);
-    return UUID.fromString(
-      FakeKafkaConsumer.getEvents(topic, ResourceEvent.class).get(index).value().getId());
   }
 
   private UUID awaitStageIdByModuleId(String topic, String moduleId) {
