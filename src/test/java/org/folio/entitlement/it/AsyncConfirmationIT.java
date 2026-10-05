@@ -332,7 +332,7 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
         entitlement(FOLIO_APP_ASYNC_LEAF_ID)));
     final var flowId = parseResponse(mvcResult, ExtendedEntitlements.class).getFlowId();
 
-    Awaitility.await().atMost(60, SECONDS)
+    Awaitility.await().atMost(10, SECONDS)
       .until(() -> FakeKafkaConsumer.getEvents(capabilitiesTenantTopic(), ResourceEvent.class).size() >= 3);
     final var schedStageId = awaitStageIdByModuleId(scheduledJobsTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
     final var sysUserStageId = awaitStageIdByModuleId(systemUserTenantTopic(), FOLIO_MODULE_ASYNC_1_ID);
@@ -344,7 +344,7 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
     sendResult(schedStageId, SUCCESS, SCHEDULED_JOB_RESOURCE_NAME, null);
     sendResult(sysUserStageId, SUCCESS, SYSTEM_USER_RESOURCE_NAME, null);
 
-    Awaitility.await().atMost(180, SECONDS).untilAsserted(() ->
+    Awaitility.await().atMost(30, SECONDS).untilAsserted(() ->
       getFlow(flowId, false)
         .andExpect(jsonPath("$.status", is("finished")))
         .andExpect(jsonPath(
