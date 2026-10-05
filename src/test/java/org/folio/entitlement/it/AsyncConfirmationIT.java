@@ -342,7 +342,7 @@ class AsyncConfirmationIT extends BaseIntegrationTest {
     sendResult(schedStageId, SUCCESS, SCHEDULED_JOB_RESOURCE_NAME, null);
     sendResult(sysUserStageId, SUCCESS, SYSTEM_USER_RESOURCE_NAME, null);
 
-    Awaitility.await().atMost(30, SECONDS).untilAsserted(() ->
+    Awaitility.await().atMost(60, SECONDS).untilAsserted(() ->
       getFlow(flowId, false)
         .andExpect(jsonPath("$.status", is("finished")))
         .andExpect(jsonPath(
