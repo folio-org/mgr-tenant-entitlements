@@ -21,6 +21,7 @@
 * Filter wildcard permissionsRequired entries from mgr-tenant-entitlements capability warnings (MGRENTITLE-182)
 * Accept a tenant collection name (e.g. `ALL`) in `KAFKA_PRODUCER_TENANT_COLLECTION`, as other FOLIO modules do (MGRENTITLE-202)
 * Add `x-okapi-tenant` and `folio.tenantId` Kafka headers to published events (MGRENTITLE-203)
+* Add DeployConfig.json to mgr-tenant-entitlements (ADR-0013 Configuration Management) ([MGRENTITLE-193](https://folio-org.atlassian.net/browse/MGRENTITLE-193))
 ---
 
 ## Version `4.0.0` (16.04.2026)
