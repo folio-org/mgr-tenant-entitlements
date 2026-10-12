@@ -1,3 +1,6 @@
+## Version `4.0.3` (15.10.2026)
+* Add DeployConfig.json to mgr-tenant-entitlements (ADR-0013 Configuration Management) ([MGRENTITLE-193](https://folio-org.atlassian.net/browse/MGRENTITLE-193))
+
 ## Version `4.0.2` (28.09.2026)
 * Align KAFKA_PRODUCER_TENANT_COLLECTION with FOLIO standard string value (MGRENTITLE-202)
 
