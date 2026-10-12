@@ -1,0 +1,601 @@
+{
+  "_disclaimer": "Default values are calibrated against a reference bugfest environment. See ADR-0013 (Module configuration management) for the governance model behind this file. Resource values and JVM limits must be adjusted to the target host capacity.",
+  "description": "mgr-tenant-entitlements configuration template",
+  "moduleDefaults": {
+    "resources": [
+      {
+        "name": "cpu",
+        "value": "64",
+        "description": "CPU request/limit for the mgr-tenant-entitlements container"
+      },
+      {
+        "name": "memory",
+        "value": "1024",
+        "description": "Memory hard limit for the mgr-tenant-entitlements container in MiB"
+      },
+      {
+        "name": "memoryReservation",
+        "value": "896",
+        "description": "Memory reservation (soft limit) for the mgr-tenant-entitlements container in MiB"
+      }
+    ],
+    "java": [
+      {
+        "name": "xmx",
+        "value": "512m",
+        "description": "Maximum Java heap size"
+      },
+      {
+        "name": "MaxMetaspaceSize",
+        "value": "256m",
+        "description": "Maximum Java metaspace size"
+      },
+      {
+        "name": "MetaspaceSize",
+        "value": "88m",
+        "description": "Initial Java metaspace size"
+      }
+    ],
+    "deployment": {
+      "isHaSupported": true,
+      "replicasRecommendedCount": 2,
+      "description": "mgr-tenant-entitlements keeps entitlement flow state in PostgreSQL and its async-confirmation sweeper only fails flows that are stale in the database, so replicas can run side by side behind a load balancer. A synchronous entitlement request is executed by the replica that received it. Two replicas are recommended for availability."
+    },
+    "kong": {
+      "timeouts": {
+        "connect": "60s",
+        "send": "60s",
+        "read": "360s"
+      },
+      "description": "Kong proxy timeouts applied when the module registers itself in the gateway. The read timeout is raised to 360s because a synchronous entitlement request runs the whole flow (module installation, route and Keycloak setup) before it responds; connect and send keep the Kong defaults."
+    },
+    "EnvVars": [
+      {
+        "name": "DB_HOST",
+        "value": null,
+        "description": "PostgreSQL database host",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "DB_PORT",
+        "value": "5432",
+        "description": "PostgreSQL database port",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "DB_USERNAME",
+        "value": null,
+        "description": "PostgreSQL database username (sourced from secret store)",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "DB_PASSWORD",
+        "value": null,
+        "description": "PostgreSQL database password (sourced from secret store)",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "DB_DATABASE",
+        "value": null,
+        "description": "PostgreSQL database name holding the mgr-tenant-entitlements schema",
+        "type": "DB",
+        "essential": true
+      },
+      {
+        "name": "KAFKA_HOST",
+        "value": null,
+        "description": "Kafka broker host. Used to publish entitlement, capability, system-user and scheduled-job events and to consume resource-result confirmations",
+        "type": "KAFKA",
+        "essential": true
+      },
+      {
+        "name": "KAFKA_PORT",
+        "value": "9092",
+        "description": "Kafka broker port",
+        "type": "KAFKA",
+        "essential": true
+      },
+      {
+        "name": "KAFKA_SECURITY_PROTOCOL",
+        "value": "PLAINTEXT",
+        "description": "Security protocol used to communicate with Kafka brokers (PLAINTEXT or SSL)",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "ENV",
+        "value": null,
+        "description": "Logical deployment name, used as the Kafka topic prefix; must be unique across all environments sharing the same Kafka cluster and match the value used by the other modules. Falls back to 'folio' when unset",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_PRODUCER_TENANT_COLLECTION",
+        "value": "ALL",
+        "description": "Tenant collection name for tenant-specific topics; must match [A-Z][A-Z0-9]{0,30}. ALL is the value used by the other FOLIO modules. When unset, empty or false, per-tenant topics are used. Any other value fails the module startup",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_SEND_DURATION_TIMEOUT",
+        "value": "30s",
+        "description": "How long the event publisher waits for a Kafka acknowledgment before the send fails",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_ENTITLEMENT_TOPIC_PARTITIONS",
+        "value": "1",
+        "description": "Number of partitions of the entitlement topic created at startup",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_ENTITLEMENT_TOPIC_REPLICATION_FACTOR",
+        "value": "2",
+        "description": "Replication factor of the entitlement topic; the broker default applies when unset",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_SCHEDULED_JOB_TOPIC_PARTITIONS",
+        "value": "1",
+        "description": "Number of partitions of the scheduled-job topics created for entitled tenants",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_SCHEDULED_JOB_TOPIC_REPLICATION_FACTOR",
+        "value": "2",
+        "description": "Replication factor of the scheduled-job topics; the broker default applies when unset",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_CAPABILITY_TOPIC_PARTITIONS",
+        "value": "1",
+        "description": "Number of partitions of the capability topics created for entitled tenants",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_CAPABILITY_TOPIC_REPLICATION_FACTOR",
+        "value": "2",
+        "description": "Replication factor of the capability topics; the broker default applies when unset",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_SYS_USER_TOPIC_PARTITIONS",
+        "value": "1",
+        "description": "Number of partitions of the system-user topics created for entitled tenants",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_SYS_USER_TOPIC_REPLICATION_FACTOR",
+        "value": "2",
+        "description": "Replication factor of the system-user topics; the broker default applies when unset",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_RESOURCE_RESULT_TOPIC_PARTITIONS",
+        "value": "1",
+        "description": "Number of partitions of the resource-result topic and its dead-letter topic",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_RESOURCE_RESULT_TOPIC_REPLICATION_FACTOR",
+        "value": null,
+        "description": "Replication factor of the resource-result topic and its dead-letter topic; the broker default applies when unset",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "KAFKA_RESOURCE_RESULT_TOPIC_CONCURRENCY",
+        "value": "1",
+        "description": "Number of concurrent consumers of the resource-result listener",
+        "type": "KAFKA",
+        "essential": false
+      },
+      {
+        "name": "EVENT_PUBLISHER_AWAIT_COMPLETION",
+        "value": "false",
+        "description": "When true, capability, system-user and scheduled-job publishing stages stay IN_PROGRESS after publishing and wait for a resource-result Kafka acknowledgment before finishing. When false, stages finish as soon as the publish succeeds",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "ASYNC_CONFIRMATION_TIMEOUT",
+        "value": "90m",
+        "description": "How long a flow may wait for async stage confirmations before the sweeper marks it FAILED. Applies only when EVENT_PUBLISHER_AWAIT_COMPLETION is true",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "ASYNC_CONFIRMATION_SWEEP_INTERVAL",
+        "value": "5m",
+        "description": "Fixed delay between runs of the sweeper that fails flows with overdue async confirmations",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "FLOW_ENGINE_THREADS_NUM",
+        "value": "4",
+        "description": "Number of threads in the flow engine executor pool; controls overall parallelism of entitlement flow stages",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "FLOW_ENGINE_MODULE_INSTALLER_THREADS",
+        "value": "4",
+        "description": "Number of threads dedicated to module installation; controls how many modules are installed concurrently. Keep it at or below FLOW_ENGINE_THREADS_NUM",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "FLOW_ENGINE_EXECUTION_TIMEOUT",
+        "value": "30m",
+        "description": "Maximum execution time of a synchronous entitlement request. On expiry the flow and its in-progress stages are marked FAILED and the request returns 400. Asynchronous executions are not bounded by it",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "VALIDATION_INTERFACE_INTEGRITY_ENTITLEMENT_ENABLED",
+        "value": "true",
+        "description": "Enables interface-integrity validation for entitlement operations",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "VALIDATION_INTERFACE_INTEGRITY_UPGRADE_ENABLED",
+        "value": "true",
+        "description": "Enables interface-integrity validation for upgrade operations",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "VALIDATION_INTERFACE_INTEGRITY_STATE_ENABLED",
+        "value": "true",
+        "description": "Enables interface-integrity validation for desired-state requests",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "VALIDATION_INTERFACE_COLLECTOR_MODE",
+        "value": "combined",
+        "description": "How required and provided interfaces are collected for validation: scoped collects them per application and its dependencies, combined collects them across all applications together",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "VALIDATION_INTERFACE_COLLECTOR_EXCLUDE_ENTITLED_REQUIRED",
+        "value": "true",
+        "description": "When true, required interfaces of already entitled applications are not collected",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_CONNECT_TIMEOUT",
+        "value": "10s",
+        "description": "Connect timeout of the HTTP client used to call FOLIO modules during entitlement",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_READ_TIMEOUT",
+        "value": "300s",
+        "description": "Read timeout of the HTTP client used to call FOLIO modules; raised well above the 30s code default to match the reference environment",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "MT_CLIENT_URL",
+        "value": null,
+        "description": "Base URL of mgr-tenants, called to read tenant data. The tenant.url property is accepted as an alias",
+        "type": "CONFIG",
+        "essential": true
+      },
+      {
+        "name": "AM_CLIENT_URL",
+        "value": null,
+        "description": "Base URL of mgr-applications, called to read application descriptors. The am.url property is accepted as an alias",
+        "type": "CONFIG",
+        "essential": true
+      },
+      {
+        "name": "RETRIES_MODULE_MAX",
+        "value": "3",
+        "description": "Maximum number of retries for failed calls to FOLIO modules",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "RETRIES_MODULE_BACKOFF_DELAY",
+        "value": "1000",
+        "description": "Initial delay in milliseconds between retries of FOLIO module calls",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "RETRIES_MODULE_BACKOFF_MAXDELAY",
+        "value": "30000",
+        "description": "Maximum delay in milliseconds between retries of FOLIO module calls",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "RETRIES_MODULE_BACKOFF_MULTIPLIER",
+        "value": "5",
+        "description": "Multiplier applied to the delay after each retry of a FOLIO module call",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "RETRIES_KEYCLOAK_MAX",
+        "value": "3",
+        "description": "Maximum number of retries for failed calls to Keycloak",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "RETRIES_KEYCLOAK_BACKOFF_DELAY",
+        "value": "1000",
+        "description": "Initial delay in milliseconds between retries of Keycloak calls",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "RETRIES_KEYCLOAK_BACKOFF_MAXDELAY",
+        "value": "30000",
+        "description": "Maximum delay in milliseconds between retries of Keycloak calls",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER",
+        "value": "5",
+        "description": "Multiplier applied to the delay after each retry of a Keycloak call",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "SERVER_PORT",
+        "value": "8081",
+        "description": "HTTP port the module listens on",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "MAX_HTTP_REQUEST_HEADER_SIZE",
+        "value": "200KB",
+        "description": "Maximum size of the HTTP request header; raised above the server default to accommodate large JWTs",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "ROUTER_PATH_PREFIX",
+        "value": null,
+        "description": "Prefix added to every endpoint path exposed by the module (/entitlements becomes {prefix}/entitlements). Set it when the load-balancer group has the form {host}/{moduleId}",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "JAVA_OPTS",
+        "value": null,
+        "description": "Additional JVM options for the mgr-tenant-entitlements process (heap sizing, GC, agent flags, etc.)",
+        "type": "CONFIG",
+        "essential": true
+      },
+      {
+        "name": "SECURITY_ENABLED",
+        "value": "true",
+        "description": "Enables request authentication and authorization. With KC_INTEGRATION_ENABLED=true, Keycloak acts as the security provider",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "APIGW_ENABLED",
+        "value": "true",
+        "description": "Enables API gateway integration. When false, all gateway-related beans are excluded: the module neither registers itself nor manages module routes",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "APIGW_TYPE",
+        "value": "kong",
+        "description": "API gateway implementation used for route management and self-registration: kong or apisix",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "APIGW_URL",
+        "value": null,
+        "description": "Admin URL of the API gateway. For apisix, the Admin API origin without the /apisix/admin path",
+        "type": "CONFIG",
+        "essential": true
+      },
+      {
+        "name": "APIGW_API_KEY",
+        "value": null,
+        "description": "APISIX Admin API key sent as X-API-KEY. Required when APIGW_TYPE=apisix, ignored for kong",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "APIGW_REGISTER_MODULE",
+        "value": "true",
+        "description": "Defines whether the module registers itself in the API gateway (creates its own service and routes from its module descriptor) at startup",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "MODULE_URL",
+        "value": "http://mgr-tenant-entitlements:8081",
+        "description": "URL at which the API gateway reaches this module; used as the upstream when the module self-registers. The module cannot determine it behind a load balancer",
+        "type": "CONFIG",
+        "essential": true
+      },
+      {
+        "name": "APIGW_READ_TIMEOUT",
+        "value": "360000",
+        "description": "Read timeout in milliseconds set on the gateway service of this module at self-registration; keep it in line with the kong read timeout",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "APIGW_ROUTEMANAGEMENT_ENABLED",
+        "value": "true",
+        "description": "Enables creation and removal of module routes in the API gateway during entitlement and revoke. When false, only gateway services are managed",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "APIGW_TENANT_CHECKS_ENABLED",
+        "value": "false",
+        "description": "When true, a tenant-specific header filter is added to each module route on entitlement instead of a wildcard route, and removed on revoke",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "SECRET_STORE_TYPE",
+        "value": null,
+        "description": "Secure store backend holding the Keycloak admin client secret. Supported values: EPHEMERAL, AWS_SSM, VAULT, FSSP",
+        "type": "CONFIG",
+        "essential": true
+      },
+      {
+        "name": "SECURE_STORE_ENV",
+        "value": null,
+        "description": "First segment of the secure store key, for example prod or test. Defaults to the value of ENV, with fallback to 'folio'",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "SECRET_STORE_AWS_SSM_REGION",
+        "value": null,
+        "description": "AWS region of the SSM client. Applies when SECRET_STORE_TYPE=AWS_SSM; when unset the AWS default region provider chain is used",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "SECRET_STORE_AWS_SSM_USE_IAM",
+        "value": "true",
+        "description": "Use the IAM role of the running task for SSM authorization instead of explicit credentials. Applies when SECRET_STORE_TYPE=AWS_SSM",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "KC_INTEGRATION_ENABLED",
+        "value": "true",
+        "description": "Enables Keycloak integration: Keycloak-based security, creation of Keycloak resources on entitlement, and token refresh for long-running operations. When false, all Keycloak-related beans are excluded",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_URL",
+        "value": "http://keycloak:8080",
+        "description": "Base URL of Keycloak, used for resource management and token requests",
+        "type": "KC",
+        "essential": true
+      },
+      {
+        "name": "KC_JWKS_BASE_URL",
+        "value": null,
+        "description": "Override base URL for JWKS retrieval. When empty, the issuer URL from the token iss claim is used. Set it to reach Keycloak through an internal address instead of the public one",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_IMPORT_ENABLED",
+        "value": "true",
+        "description": "At startup, creates or updates the module's own records in Keycloak (resource server, client, resources, permissions, roles, policies) from its internal module descriptor",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_ADMIN_CLIENT_ID",
+        "value": "folio-backend-admin-client",
+        "description": "Keycloak admin client used for resource management and for refreshing tokens during long-running operations. Its secret is read from the secure store, not from an environment variable",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_ADMIN_GRANT_TYPE",
+        "value": "client_credentials",
+        "description": "OAuth2 grant type used to obtain the Keycloak admin token",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_ADMIN_CONNECT_TIMEOUT",
+        "value": "10s",
+        "description": "Connect timeout of the Keycloak admin client (Spring Duration syntax, e.g. 10s, 500ms)",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_ADMIN_READ_TIMEOUT",
+        "value": "60s",
+        "description": "Read timeout of the Keycloak admin client (Spring Duration syntax, e.g. 60s, 2m)",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_CLIENT_ID",
+        "value": "mgr-tenant-entitlements",
+        "description": "Client ID under which the module registers itself in Keycloak when KC_IMPORT_ENABLED=true",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_LOGIN_CLIENT_SUFFIX",
+        "value": "-application",
+        "description": "Suffix appended to the tenant name to derive the login client ID used when creating client resources during entitlement (e.g. diku-application). Must match the value used by mgr-tenants and the module sidecars",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_AUTH_TOKEN_VALIDATE_URI",
+        "value": "false",
+        "description": "When true, validates that the Keycloak URL matches the issuer of the incoming JWT",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_JWKS_REFRESH_INTERVAL",
+        "value": "60",
+        "description": "Interval in minutes between scheduled JWKS cache refreshes for the realm JWT parser",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_FORCED_JWKS_REFRESH_INTERVAL",
+        "value": "60",
+        "description": "Interval in minutes for forced JWKS refreshes of the realm JWT parser; applies to signing key rotation",
+        "type": "KC",
+        "essential": false
+      },
+      {
+        "name": "KC_AUTHORIZATION_CACHE_MAX_SIZE",
+        "value": "50",
+        "description": "Maximum number of Keycloak access tokens held in the token cache",
+        "type": "CACHE",
+        "essential": false
+      },
+      {
+        "name": "KC_AUTHORIZATION_CACHE_TTL_OFFSET",
+        "value": "5000",
+        "description": "Offset in milliseconds subtracted from the token lifetime when computing the cache TTL of a cached access token, so a token is dropped before it expires",
+        "type": "CACHE",
+        "essential": false
+      }
+    ]
+  }
+}
