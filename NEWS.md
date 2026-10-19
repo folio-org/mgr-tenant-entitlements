@@ -1,3 +1,6 @@
+## Version `4.0.4` (In Progress)
+* Update applications-poc-tools to 4.0.6
+
 ## Version `4.0.3` (15.10.2026)
 * Add DeployConfig.json to mgr-tenant-entitlements (ADR-0013 Configuration Management) ([MGRENTITLE-193](https://folio-org.atlassian.net/browse/MGRENTITLE-193))
 
