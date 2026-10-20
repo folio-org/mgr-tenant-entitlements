@@ -122,7 +122,7 @@ class SystemUserEventPublisherTest {
 
     eventPublisher.execute(stageContext);
 
-    var expectedResourceEvent = ResourceEvent.<SystemUserEvent>builder()
+    var expectedResourceEvent = ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(UPDATE).tenant(TENANT_NAME).resourceName("System user")
       .newValue(fooUserEventV2)
       .oldValue(fooUserEventV1)
@@ -130,7 +130,7 @@ class SystemUserEventPublisherTest {
     var expectedMessageKey = TENANT_ID.toString();
     verify(kafkaEventPublisher).send(systemUserTenantTopic(), expectedMessageKey, expectedResourceEvent);
 
-    var expectedDeprecatedResourceEvent = ResourceEvent.<SystemUserEvent>builder()
+    var expectedDeprecatedResourceEvent = ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(DELETE).tenant(TENANT_NAME).resourceName("System user")
       .oldValue(barUserEvent)
       .build();
@@ -188,7 +188,7 @@ class SystemUserEventPublisherTest {
   }
 
   private static ResourceEvent<SystemUserEvent> resourceEvent(SystemUserEvent entry) {
-    return ResourceEvent.<SystemUserEvent>builder()
+    return ResourceEvent.<SystemUserEvent>baseBuilder()
       .type(CREATE)
       .tenant(TENANT_NAME)
       .resourceName("System user")
