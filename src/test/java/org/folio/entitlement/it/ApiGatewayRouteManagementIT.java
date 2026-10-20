@@ -23,6 +23,7 @@ import org.springframework.web.client.HttpClientErrorException;
 @TestPropertySource(properties = {
   "application.apigw.enabled=true",
   "application.keycloak.enabled=false",
+  "application.okapi.enabled=false",
   "application.apigw.tenant-checks.enabled=true"
 })
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
