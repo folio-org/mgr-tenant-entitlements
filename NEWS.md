@@ -1,4 +1,4 @@
-## Version `4.0.5` (In Progress)
+## Version `4.0.5` (23.10.2026)
 * Update applications-poc-tools to 4.0.6
 * Move Kong mgmt logic from mgr-applications to mgr-tenant-entitlements (MGRENTITLE-174)
   - Configure route management in mgr-tenant-entitlements with `APIGW_ROUTEMANAGEMENT_ENABLED` (default `true`); replace the former mgr-applications `ROUTEMANAGEMENT_ENABLE` setting.
