@@ -410,24 +410,60 @@ curl -XGET "$APIGW_URL/services/$moduleId/routes?tags=$tenantId"
 
 ## Kafka Integration
 
-### Events upon application being enabled/disabled
+mgr-tenant-entitlements publishes three Kafka events as modules are entitled/upgraded/revoked, and consumes a
+feedback-loop acknowledgment of its own published events.
 
-* The mte publishes lightweight kafka events when application is enabled/disabled.
-* The topic is being created on application startup.
+### Events upon application being enabled/disabled/upgraded
+
+* `EntitlementEventPublisher` publishes a lightweight event on the env-scoped `entitlement` topic (not
+  tenant-specific) whenever a module is entitled/upgraded/revoked.
+* The topic is created on application startup.
 
 #### Naming convention
 
-topic naming convention:`<prefix>_entitlement`
+topic naming convention: `{ENV}.entitlement`
 
-* Prefix is passed in as environment variable (for FSE it's usually the cluster identifier, e.g. "evrk")
+* `{ENV}` is the value of the `ENV` environment variable (for FSE it's usually the cluster identifier, e.g. "evrk")
 
 #### Event structure
 
 ```json
 {
-  "applicationId": "application1-1.2.3"
+  "type": "ENTITLE",
+  "moduleId": "mod-foo-1.2.3",
+  "tenantName": "diku",
+  "tenantId": "11111111-1111-1111-1111-111111111111"
 }
 ```
+
+### System-user and capability/capabilitySet creation events
+
+* `SystemUserModuleEventPublisher` publishes a system-user-creation event on the tenant-scoped
+  `mgr-tenant-entitlements.system-user` topic.
+* `CapabilitiesModuleEventPublisher` publishes a capability-creation event on the tenant-scoped
+  `mgr-tenant-entitlements.capability` topic. There is no separate capabilitySet topic/payload: the event's
+  `resources` list already covers both capability and capability-set resources.
+* Both topics (and the scheduled-job topic, not yet declared in the module descriptor — see below) follow the
+  tenant-topic naming convention `{ENV}.mgr-tenant-entitlements.<name>.<tenant>` (or the configured tenant
+  collection, when `KAFKA_PRODUCER_TENANT_COLLECTION` is set), created at runtime by `KafkaTenantTopicCreator`.
+
+### Feedback loop: `resource-result`
+
+* Downstream consumers of the system-user/capability/scheduled-job events above acknowledge processing on the
+  env-scoped `mgr-tenant-entitlements.resource-result` topic, consumed here by `KafkaMessageListener`. This is
+  gated per event type by `application.event-publishing.*.await-completion` and is not guaranteed to have a
+  producer in every deployment. Unprocessable records are republished to
+  `mgr-tenant-entitlements.resource-result.dlt` rather than dropped.
+
+### Module descriptor declaration
+
+The module descriptor declares, under `producesEvents`, the event identifiers `mgr-tenant-entitlements.entitlement.v1`,
+`mgr-tenant-entitlements.system-user.created.v1` and `mgr-tenant-entitlements.capability.created.v1`; and, under
+`consumesEvents`, `mgr-tenant-entitlements.resource-result.v1` (`optional: true`, since it has no guaranteed
+producer). Event identifier must stay independent of the topic/channel address, following
+that feedback's `<module>.<resource>.<event-type>.<version>` shape (e.g. its `inventory.instance.created.v1`
+example): module-qualified, dotted, and major-versioned. capabilitySet is not declared as a separate event (no
+backing publisher/topic exists), and the scheduled-job event is left undeclared pending architect confirmation.
 
 ## FAQ
 
