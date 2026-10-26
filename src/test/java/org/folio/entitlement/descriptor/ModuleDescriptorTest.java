@@ -158,6 +158,7 @@ class ModuleDescriptorTest {
         .matches("[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){1,}\\.v\\d+")
         .startsWith(descriptor.getName() + ".");
       assertThat(rawTopicNames).as("event identifier must not be a bare topic/channel name: %s", identifier)
+        .isNotEmpty()
         .doesNotContain(identifier);
     });
   }
