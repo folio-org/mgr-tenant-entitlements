@@ -6,7 +6,9 @@ import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CAPABILITI
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.CONSUMED_EVENT_RESOURCE_RESULT;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.PRODUCED_EVENT_CAPABILITY;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.PRODUCED_EVENT_ENTITLEMENT;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.PRODUCED_EVENT_SCHEDULED_JOB;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.PRODUCED_EVENT_SYSTEM_USER;
+import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SCHEDULED_JOB_TOPIC;
 import static org.folio.entitlement.integration.kafka.KafkaEventUtils.SYSTEM_USER_TOPIC;
 import static org.folio.entitlement.support.TestUtils.readModuleDescriptor;
 
@@ -108,10 +110,15 @@ class ModuleDescriptorTest {
   }
 
   /**
-   * mgr-tenant-entitlements publishes the entitlement, system-user-creation and capability-creation events.
+   * mgr-tenant-entitlements publishes the entitlement, system-user, capability and scheduled-job events.
    * capabilitySet is not declared separately: there is no backing publisher/topic for it, only the single
-   * {@code capability} event, whose payload already covers both resource kinds (MGRENTITLE-211). The
-   * scheduled-job event is deliberately excluded pending architect confirmation.
+   * {@code capability} event, whose payload already covers both resource kinds (MGRENTITLE-211).
+   *
+   * <p>System-user/capability/scheduled-job are not "creation" events despite the Jira story's wording: each
+   * carries CREATE, UPDATE or DELETE on the same topic (see {@code KafkaEventUtils.getResourceEventType}),
+   * confirmed by {@code SystemUserModuleEventPublisherTest}/{@code CapabilitiesModuleEventPublisherTest}/
+   * {@code ScheduledJobModuleEventPublisherTest} exercising UPDATE and DELETE against the same topic the CREATE
+   * case uses — so one lifecycle-generic identifier per event, not a create-only one.</p>
    */
   @Test
   void moduleDescriptor_positive_publishedEventsDeclared() {
@@ -120,7 +127,8 @@ class ModuleDescriptorTest {
       .toList();
 
     assertThat(producedEvents).containsExactlyInAnyOrder(
-      PRODUCED_EVENT_ENTITLEMENT, PRODUCED_EVENT_SYSTEM_USER, PRODUCED_EVENT_CAPABILITY);
+      PRODUCED_EVENT_ENTITLEMENT, PRODUCED_EVENT_SYSTEM_USER, PRODUCED_EVENT_CAPABILITY,
+      PRODUCED_EVENT_SCHEDULED_JOB);
   }
 
   /**
@@ -147,7 +155,7 @@ class ModuleDescriptorTest {
    */
   @Test
   void moduleDescriptor_positive_eventIdentifiersFollowNamingConvention() {
-    var rawTopicNames = Set.of("entitlement", SYSTEM_USER_TOPIC, CAPABILITIES_TOPIC,
+    var rawTopicNames = Set.of("entitlement", SYSTEM_USER_TOPIC, CAPABILITIES_TOPIC, SCHEDULED_JOB_TOPIC,
       "mgr-tenant-entitlements.resource-result");
 
     var allIdentifiers = allEventIdentifiers();
@@ -176,15 +184,15 @@ class ModuleDescriptorTest {
   }
 
   /**
-   * The system-user and capability identifiers correspond to {@link org.folio.entitlement.integration.kafka
-   * .KafkaEventUtils#SYSTEM_USER_TOPIC}/{@code CAPABILITIES_TOPIC}, the tenant-scoped topics those publishers
-   * actually use, configured under {@code application.kafka.tenant-topics}. {@code SCHEDULED_JOB_TOPIC} is
-   * deliberately not asserted here: that event stays undeclared pending architect confirmation.
+   * The system-user, capability and scheduled-job identifiers correspond to
+   * {@link org.folio.entitlement.integration.kafka.KafkaEventUtils#SYSTEM_USER_TOPIC}/{@code CAPABILITIES_TOPIC}/
+   * {@code SCHEDULED_JOB_TOPIC}, the tenant-scoped topics those publishers actually use, configured under
+   * {@code application.kafka.tenant-topics}.
    */
   @Test
   void moduleDescriptor_positive_tenantScopedTopicsStillConfigured() {
     assertThat(configuredTopicNames("application.kafka.tenant-topics["))
-      .contains(SYSTEM_USER_TOPIC, CAPABILITIES_TOPIC);
+      .contains(SYSTEM_USER_TOPIC, CAPABILITIES_TOPIC, SCHEDULED_JOB_TOPIC);
   }
 
   private static Set<String> allEventIdentifiers() {

@@ -410,7 +410,7 @@ curl -XGET "$APIGW_URL/services/$moduleId/routes?tags=$tenantId"
 
 ## Kafka Integration
 
-mgr-tenant-entitlements publishes three Kafka events as modules are entitled/upgraded/revoked, and consumes a
+mgr-tenant-entitlements publishes four Kafka events as modules are entitled/upgraded/revoked, and consumes a
 feedback-loop acknowledgment of its own published events.
 
 ### Events upon application being enabled/disabled/upgraded
@@ -436,16 +436,20 @@ topic naming convention: `{ENV}.entitlement`
 }
 ```
 
-### System-user and capability/capabilitySet creation events
+### System-user, capability/capabilitySet and scheduled-job events
 
-* `SystemUserModuleEventPublisher` publishes a system-user-creation event on the tenant-scoped
-  `mgr-tenant-entitlements.system-user` topic.
-* `CapabilitiesModuleEventPublisher` publishes a capability-creation event on the tenant-scoped
-  `mgr-tenant-entitlements.capability` topic. There is no separate capabilitySet topic/payload: the event's
+* `SystemUserModuleEventPublisher`, `CapabilitiesModuleEventPublisher` and `ScheduledJobModuleEventPublisher`
+  each publish to their own tenant-scoped topic (`mgr-tenant-entitlements.system-user`,
+  `mgr-tenant-entitlements.capability`, `mgr-tenant-entitlements.scheduled-job` respectively) via the shared
+  `AbstractModuleEventPublisher`. There is no separate capabilitySet topic/payload: the capability event's
   `resources` list already covers both capability and capability-set resources.
-* Both topics (and the scheduled-job topic, not yet declared in the module descriptor — see below) follow the
-  tenant-topic naming convention `{ENV}.mgr-tenant-entitlements.<name>.<tenant>` (or the configured tenant
-  collection, when `KAFKA_PRODUCER_TENANT_COLLECTION` is set), created at runtime by `KafkaTenantTopicCreator`.
+* **These are lifecycle events, not creation-only**: the same topic carries `CREATE`, `UPDATE` or `DELETE`
+  (`ResourceEvent.type`) depending on whether a module is newly entitled, changed, or dropped from an
+  application version bump. DELETE is reachable today only via the **Upgrade** flow (a module removed during a
+  version bump); a full tenant **Revoke** (uninstall) does not emit DELETE on these three topics.
+* All three topics follow the tenant-topic naming convention `{ENV}.mgr-tenant-entitlements.<name>.<tenant>`
+  (or the configured tenant collection, when `KAFKA_PRODUCER_TENANT_COLLECTION` is set), created at runtime by
+  `KafkaTenantTopicCreator`.
 
 ### Feedback loop: `resource-result`
 
@@ -458,12 +462,14 @@ topic naming convention: `{ENV}.entitlement`
 ### Module descriptor declaration
 
 The module descriptor declares, under `producesEvents`, the event identifiers `mgr-tenant-entitlements.entitlement.v1`,
-`mgr-tenant-entitlements.system-user.created.v1` and `mgr-tenant-entitlements.capability.created.v1`; and, under
-`consumesEvents`, `mgr-tenant-entitlements.resource-result.v1` (`optional: true`, since it has no guaranteed
-producer). Event identifier must stay independent of the topic/channel address, following
+`mgr-tenant-entitlements.system-user.v1`, `mgr-tenant-entitlements.capability.v1` and
+`mgr-tenant-entitlements.scheduled-job.v1`; and, under `consumesEvents`, `mgr-tenant-entitlements.resource-result.v1`
+(`optional: true`, since it has no guaranteed producer). These identifiers are deliberately not the Kafka topic
+names above: per the [EUREKA-847 "Event Identifier as Dependency Unit"](https://folio-org.atlassian.net/wiki/spaces/FOLIJET/pages/2380136468)
+naming-convention feedback, an event identifier must stay independent of the topic/channel address, following
 that feedback's `<module>.<resource>.<event-type>.<version>` shape (e.g. its `inventory.instance.created.v1`
-example): module-qualified, dotted, and major-versioned. capabilitySet is not declared as a separate event (no
-backing publisher/topic exists), and the scheduled-job event is left undeclared pending architect confirmation.
+example): module-qualified, dotted, and major-versioned. capabilitySet is not declared as a separate event
+(no backing publisher/topic exists).
 
 ## FAQ
 

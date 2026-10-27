@@ -22,10 +22,10 @@
 * Accept a tenant collection name (e.g. `ALL`) in `KAFKA_PRODUCER_TENANT_COLLECTION`, as other FOLIO modules do (MGRENTITLE-202)
 * Add `x-okapi-tenant` and `folio.tenantId` Kafka headers to published events (MGRENTITLE-203)
 * Add DeployConfig.json to mgr-tenant-entitlements (ADR-0013 Configuration Management) ([MGRENTITLE-193](https://folio-org.atlassian.net/browse/MGRENTITLE-193))
-* Declare the entitlement, system-user-creation and capability-creation events in `producesEvents`, and the
+* Declare the entitlement, system-user, capability and scheduled-job events in `producesEvents`, and the
   `resource-result` feedback-loop acknowledgment as an optional `consumesEvents` entry, in the module descriptor
-  for `app-mgr-services` bundling. capabilitySet is not declared separately (no backing publisher/topic exists);
-  the scheduled-job event is left undeclared pending architect confirmation ([MGRENTITLE-211](https://folio-org.atlassian.net/browse/MGRENTITLE-211))
+  for `app-mgr-services` bundling. capabilitySet is not declared separately (no backing
+  publisher/topic exists) ([MGRENTITLE-211](https://folio-org.atlassian.net/browse/MGRENTITLE-211))
 ---
 
 ## Version `4.0.0` (16.04.2026)
