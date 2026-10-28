@@ -28,6 +28,11 @@ public class KafkaEventUtils {
   public static final String CAPABILITY_RESOURCE_NAME = "Capability";
   public static final String SYSTEM_USER_RESOURCE_NAME = "System user";
   public static final String SCHEDULED_JOB_RESOURCE_NAME = "Scheduled Job";
+  public static final String PRODUCED_EVENT_ENTITLEMENT = "mgr-tenant-entitlements.entitlement.v1";
+  public static final String PRODUCED_EVENT_SYSTEM_USER = "mgr-tenant-entitlements.system-user.v1";
+  public static final String PRODUCED_EVENT_CAPABILITY = "mgr-tenant-entitlements.capability.v1";
+  public static final String PRODUCED_EVENT_SCHEDULED_JOB = "mgr-tenant-entitlements.scheduled-job.v1";
+  public static final String CONSUMED_EVENT_RESOURCE_RESULT = "mgr-tenant-entitlements.resource-result.v1";
 
   private static Map<String, PermissionMappingValue> permissionMapping = Collections.emptyMap();
 

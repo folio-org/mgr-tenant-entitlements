@@ -164,6 +164,15 @@
     }
   ],
   "requires": [ ],
+  "producesEvents": [
+    { "event": "mgr-tenant-entitlements.entitlement.v1" },
+    { "event": "mgr-tenant-entitlements.system-user.v1" },
+    { "event": "mgr-tenant-entitlements.capability.v1" },
+    { "event": "mgr-tenant-entitlements.scheduled-job.v1" }
+  ],
+  "consumesEvents": [
+    { "event": "mgr-tenant-entitlements.resource-result.v1", "optional": true }
+  ],
   "permissionSets": [
     {
       "description": "Installs/enables application for tenant",

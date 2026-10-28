@@ -410,24 +410,66 @@ curl -XGET "$APIGW_URL/services/$moduleId/routes?tags=$tenantId"
 
 ## Kafka Integration
 
-### Events upon application being enabled/disabled
+mgr-tenant-entitlements publishes four Kafka events as modules are entitled/upgraded/revoked, and consumes a
+feedback-loop acknowledgment of its own published events.
 
-* The mte publishes lightweight kafka events when application is enabled/disabled.
-* The topic is being created on application startup.
+### Events upon application being enabled/disabled/upgraded
+
+* `EntitlementEventPublisher` publishes a lightweight event on the env-scoped `entitlement` topic (not
+  tenant-specific) whenever a module is entitled/upgraded/revoked.
+* The topic is created on application startup.
 
 #### Naming convention
 
-topic naming convention:`<prefix>_entitlement`
+topic naming convention: `{ENV}.entitlement`
 
-* Prefix is passed in as environment variable (for FSE it's usually the cluster identifier, e.g. "evrk")
+* `{ENV}` is the value of the `ENV` environment variable (for FSE it's usually the cluster identifier, e.g. "evrk")
 
 #### Event structure
 
 ```json
 {
-  "applicationId": "application1-1.2.3"
+  "type": "ENTITLE",
+  "moduleId": "mod-foo-1.2.3",
+  "tenantName": "diku",
+  "tenantId": "11111111-1111-1111-1111-111111111111"
 }
 ```
+
+### System-user, capability/capabilitySet and scheduled-job events
+
+* `SystemUserModuleEventPublisher`, `CapabilitiesModuleEventPublisher` and `ScheduledJobModuleEventPublisher`
+  each publish to their own tenant-scoped topic (`mgr-tenant-entitlements.system-user`,
+  `mgr-tenant-entitlements.capability`, `mgr-tenant-entitlements.scheduled-job` respectively) via the shared
+  `AbstractModuleEventPublisher`. There is no separate capabilitySet topic/payload: the capability event's
+  `resources` list already covers both capability and capability-set resources.
+* **These are lifecycle events, not creation-only**: the same topic carries `CREATE`, `UPDATE` or `DELETE`
+  (`ResourceEvent.type`) depending on whether a module is newly entitled, changed, or dropped from an
+  application version bump. DELETE is reachable today only via the **Upgrade** flow (a module removed during a
+  version bump); a full tenant **Revoke** (uninstall) does not emit DELETE on these three topics.
+* All three topics follow the tenant-topic naming convention `{ENV}.mgr-tenant-entitlements.<name>.<tenant>`
+  (or the configured tenant collection, when `KAFKA_PRODUCER_TENANT_COLLECTION` is set), created at runtime by
+  `KafkaTenantTopicCreator`.
+
+### Feedback loop: `resource-result`
+
+* Downstream consumers of the system-user/capability/scheduled-job events above acknowledge processing on the
+  env-scoped `mgr-tenant-entitlements.resource-result` topic, consumed here by `KafkaMessageListener`. This is
+  gated per event type by `application.event-publishing.*.await-completion` and is not guaranteed to have a
+  producer in every deployment. Unprocessable records are republished to
+  `mgr-tenant-entitlements.resource-result.dlt` rather than dropped.
+
+### Module descriptor declaration
+
+The module descriptor declares, under `producesEvents`, the event identifiers `mgr-tenant-entitlements.entitlement.v1`,
+`mgr-tenant-entitlements.system-user.v1`, `mgr-tenant-entitlements.capability.v1` and
+`mgr-tenant-entitlements.scheduled-job.v1`; and, under `consumesEvents`, `mgr-tenant-entitlements.resource-result.v1`
+(`optional: true`, since it has no guaranteed producer). These identifiers are deliberately not the Kafka topic
+names above: per the [EUREKA-847 "Event Identifier as Dependency Unit"](https://folio-org.atlassian.net/wiki/spaces/FOLIJET/pages/2380136468)
+naming-convention feedback, an event identifier must stay independent of the topic/channel address, following
+that feedback's `<module>.<resource>.<event-type>.<version>` shape (e.g. its `inventory.instance.created.v1`
+example): module-qualified, dotted, and major-versioned. capabilitySet is not declared as a separate event
+(no backing publisher/topic exists).
 
 ## FAQ
 

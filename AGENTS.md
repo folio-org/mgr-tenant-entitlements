@@ -28,6 +28,14 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
   ```
 - **Dependencies**: builds `ApplicationInstallationGraph` / `ModuleInstallationGraph`; validates interface integrity; handles optional vs required and cross-application deps.
 - **Integrations** (`integration/`): `am/`, `tm/`, `folio/`, `keycloak/`, `kafka/`, `token/`, `interceptor/`, `apigw/`.
+- **Kafka** (`integration/kafka/`): publishes entitlement, system-user, capability and scheduled-job events
+  (`KafkaEventUtils`); consumes `resource-result` acknowledgments of its own events. The latter three are
+  lifecycle-generic (CREATE/UPDATE/DELETE on one topic via `AbstractModuleEventPublisher`, DELETE reachable only
+  through the Upgrade flow), not creation-only, so their declared identifiers carry no CRUD suffix. The module
+  descriptor declares these under `producesEvents`/`consumesEvents` (deliberately decoupled from the Kafka topic
+  names; see `KafkaEventUtils.PRODUCED_EVENT_*`/`CONSUMED_EVENT_RESOURCE_RESULT`), guarded by
+  `ModuleDescriptorTest` (MGRENTITLE-211). capabilitySet is not declared separately — see `README.md`'s Kafka
+  Integration section.
 - **API Gateway route lifecycle**: routes are created on first entitlement (`ApiGatewayModuleRouteCreator`) and deleted only when the last tenant revokes (`ApiGatewayModuleRouteCleaner`). Shared-route checks use `EntitlementModuleService.isEntitlementExist` / `isNoOtherEntitlementExist`.
 
 **Domain concepts**: Entitlement (tenant's right to an application + modules), Application, Module, Flow Execution (DB-tracked), Stage Context (thread-local, see `ThreadLocalModuleStageContext`).
