@@ -1,5 +1,7 @@
 package org.folio.entitlement.integration.apigw;
 
+import static org.folio.entitlement.utils.EntitlementServiceUtils.hasNoProvides;
+
 import java.util.NoSuchElementException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -19,7 +21,7 @@ public class ApiGatewayModuleRouteCleaner extends ModuleDatabaseLoggingStage {
 
   @Override
   public void execute(ModuleStageContext context) {
-    if (context.getModuleType() == ModuleType.UI_MODULE) {
+    if (context.getModuleType() == ModuleType.UI_MODULE || hasNoProvides(context.getModuleDescriptor())) {
       return;
     }
     var moduleId = context.getModuleId();

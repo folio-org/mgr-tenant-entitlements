@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.gateway.ApiGatewayService;
 import org.folio.entitlement.domain.model.EntitlementRequest;
@@ -100,7 +101,17 @@ class ApiGatewayModuleRouteCleanerTest {
 
   @Test
   void execute_positive_uiModule() {
-    var flowParams = moduleFlowParameters(entitlementRequest(), UI_MODULE, new ModuleDescriptor().id(MODULE_ID));
+    var flowParams = moduleFlowParameters(entitlementRequest(), UI_MODULE, moduleWithProvides(MODULE_ID));
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParams, stageParams());
+
+    apiGatewayModuleRouteCleaner.execute(stageContext);
+
+    verifyNoInteractions(apiGatewayService, entitlementModuleService);
+  }
+
+  @Test
+  void execute_positive_moduleWithoutProvides_noGatewayInteractions() {
+    var flowParams = moduleFlowParameters(entitlementRequest(), MODULE, new ModuleDescriptor().id(MODULE_ID));
     var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParams, stageParams());
 
     apiGatewayModuleRouteCleaner.execute(stageContext);
@@ -130,7 +141,12 @@ class ApiGatewayModuleRouteCleanerTest {
   }
 
   private static Map<?, ?> moduleFlowParams() {
-    return moduleFlowParameters(entitlementRequest(), MODULE, new ModuleDescriptor().id(MODULE_ID));
+    return moduleFlowParameters(entitlementRequest(), MODULE, moduleWithProvides(MODULE_ID));
+  }
+
+  private static ModuleDescriptor moduleWithProvides(String id) {
+    return new ModuleDescriptor().id(id)
+      .addProvidesItem(new InterfaceDescriptor().id("foo").version("1.0"));
   }
 
   private static EntitlementRequest entitlementRequest() {

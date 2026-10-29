@@ -1,0 +1,45 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"folio-app-virtual-2.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "folio-app-virtual-2.0.0",
+          "name": "folio-app-virtual",
+          "version": "2.0.0",
+          "modules": [
+            {
+              "id": "folio-virtual-2.0.0",
+              "name": "folio-virtual",
+              "version": "2.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-virtual-2.0.0",
+              "name": "Test folio-virtual without provides"
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}
