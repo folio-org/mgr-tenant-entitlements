@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.gateway.ApiGatewayService;
 import org.folio.common.gateway.model.GatewayServiceDefinition;
@@ -63,6 +64,26 @@ class ApiGatewayModuleRouteCreatorTest {
   @AfterEach
   void tearDown() {
     TestUtils.verifyNoMoreInteractions(this);
+  }
+
+  @Test
+  void execute_positive_moduleWithoutProvides_noGatewayInteractions() {
+    var flowParams = moduleFlowParameters(entitlementRequest(), MODULE, new ModuleDescriptor().id(MODULE_ID));
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParams, stageParams());
+
+    apiGatewayModuleRouteCreator.execute(stageContext);
+
+    verifyNoInteractions(apiGatewayService, entitlementModuleService);
+  }
+
+  @Test
+  void cancel_positive_moduleWithoutProvides_noGatewayInteractions() {
+    var flowParams = moduleFlowParameters(entitlementRequest(), MODULE, new ModuleDescriptor().id(MODULE_ID));
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, flowParams, stageParams());
+
+    apiGatewayModuleRouteCreator.cancel(stageContext);
+
+    verifyNoInteractions(apiGatewayService, entitlementModuleService);
   }
 
   @Test
@@ -287,7 +308,12 @@ class ApiGatewayModuleRouteCreatorTest {
   }
 
   private static ModuleDescriptor moduleDescriptor() {
-    return new ModuleDescriptor().id(MODULE_ID);
+    return moduleWithProvides(MODULE_ID);
+  }
+
+  private static ModuleDescriptor moduleWithProvides(String id) {
+    return new ModuleDescriptor().id(id)
+      .addProvidesItem(new InterfaceDescriptor().id("foo").version("1.0"));
   }
 
   private static EntitlementRequest entitlementRequest() {
