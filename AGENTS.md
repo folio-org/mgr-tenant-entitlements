@@ -1,49 +1,41 @@
 # mgr-tenant-entitlements
 
-FOLIO module managing tenant entitlements: application install/upgrade/revoke and dependency management via a flow-based execution engine (`folio-flow-engine`). Spring Boot, Java 21, PostgreSQL/Liquibase, Kafka, Keycloak.
+Entitles, upgrades, and revokes applications for a tenant. Each request runs as a `folio-flow-engine` flow with a nested flow per application and per module; module stages call Keycloak, the API gateway, the module `_tenant` API, and Kafka.
 
-## Build & Test
+## Commands
 
 ```bash
-mvn clean install              # full build
-mvn clean install -DskipTests  # skip tests
-mvn test                       # unit tests (@UnitTest)
-mvn verify                     # unit + integration (@IntegrationTest, centered on BaseIntegrationTest)
-mvn test -Dtest=ModuleDescriptorTest#moduleDescriptor_positive_publishedEventsDeclared   # single unit test
-mvn verify -Dit.test=ActuatorIT -Dtest=SkipSurefire -Dsurefire.failIfNoSpecifiedTests=false   # single IT, skips unit tests
-mvn clean install -Pcoverage   # coverage → target/site/jacoco-aggregate/index.html
-mvn checkstyle:check           # runs during build; max method length 23 lines (test sources exempt)
+mvn clean install -DskipTests  # build
+mvn test                       # unit tests (@UnitTest, *Test.java)
+mvn verify                     # unit and integration tests (@IntegrationTest, *IT.java); needs Docker
+mvn test -Dtest=ModuleDescriptorTest#moduleDescriptor_positive_publishedEventsDeclared  # one unit test
+mvn verify -Dit.test=ActuatorIT -Dtest=SkipSurefire -Dsurefire.failIfNoSpecifiedTests=false  # one IT, unit tests skipped
+mvn clean install -Pcoverage   # coverage report in target/site/jacoco-aggregate/index.html
+mvn checkstyle:check           # style only
 ```
 
-Docker: `docker build -t mgr-tenant-entitlements .` Full env vars in `README.md`.
+Surefire runs only the `unit` tag and failsafe only the `integration` tag, so a test class without `@UnitTest` or `@IntegrationTest` never runs.
 
-## Style
+Checkstyle also runs at `process-classes`, so every build above fails on a violation, test sources included. The base rules come from `folio-java-checkstyle`; this repository limits methods to 23 lines (`checkstyle/checkstyle-checker.properties`) and suppresses only that limit for tests.
 
-Match the repository's existing style: use maintained implementations and tests as templates for new code, and keep the structure, naming, and conventions of neighboring files.
+`BaseIntegrationTest` starts PostgreSQL, Kafka, and Kong with Testcontainers. `ApisixRegistrationIT` and `ApisixRouteManagementIT` also start APISIX and etcd (`@EnableApisixGateway`). The `folioci/folio-apisix` image is amd64-only: on arm64, rely on emulation or set `TESTCONTAINERS_APISIX_IMAGE`.
 
-## Architecture notes
+## Conventions
 
-- Flows (`service/flow/`): Entitle (install), Upgrade, Revoke, Desired-State (reconcile). Stages live in `service/stage/` and, integration-specific, under `integration/`; they are retriable and parallelizable (`FLOW_ENGINE_MODULE_INSTALLER_THREADS`), with finalizers on success and failure (`FinishedFlowFinalizer`).
-- Kafka (`integration/kafka/`): publishes entitlement, system-user, capability and scheduled-job events (`KafkaEventUtils`) and consumes `resource-result` acknowledgments of its own events. System-user, capability and scheduled-job events are lifecycle-generic (CREATE/UPDATE/DELETE each, DELETE reachable only through the Upgrade flow), so their declared identifiers carry no CRUD suffix. The module descriptor declares them under `producesEvents`/`consumesEvents`, deliberately decoupled from Kafka topic names; `ModuleDescriptorTest` guards this. `capabilitySet` is not declared separately; see `README.md` → Kafka Integration.
-- Domain concepts: Entitlement (tenant's right to an application + modules), Application, Module, Flow Execution (DB-tracked), Stage Context (passed to each stage's `execute`).
+- The OpenAPI spec `src/main/resources/swagger.api/mgr-tenant-entitlements.yaml` generates `org.folio.entitlement.rest.resource` and `org.folio.entitlement.domain.dto`. Change the spec, not the generated sources.
+- New Liquibase changesets go to `src/main/resources/changelog/changes.v<major>.0.0/` and are included from `changelog-<major>.0.0.xml`. Do not copy the older `changes/v1.0.0/` layout.
+- A new flow factory applies `FlowFinalizerCallbacks` or `ApplicationFlowFinalizerCallbacks` to its builder, because without them failed and cancelled flows never get their final status written.
+- Event identifiers in `src/main/resources/descriptors/ModuleDescriptor.json` are the `KafkaEventUtils.PRODUCED_EVENT_*` and `CONSUMED_EVENT_RESOURCE_RESULT` constants, not topic names; change them together. The system-user, capability, and scheduled-job topics each carry CREATE, UPDATE, and DELETE, so their identifiers have no CRUD suffix. `ModuleDescriptorTest` asserts exactly four produced events, one optional consumed `resource-result` event, and the `<module>.<resource>[.<event-type>].vN` shape.
+- A stage with `@FolioModuleCallsRetryable` or `@KeycloakCallsRetryable` calls `threadLocalModuleStageContext.set(context)` at the start of `execute`, because the retry policy reads the stage context from that ThreadLocal to save retry errors on the stage row. Without it, retries are only logged. `DatabaseLoggingStage` clears the ThreadLocal when it records the stage status.
+- Use `APIGW_*` and `application.apigw.*` names. The `KONG_*` and `application.kong.*` aliases still bind through fallbacks in `application.yml`; `DeprecatedKongPropertiesPostProcessor` in `folio-integration-kong` logs a startup warning for them.
 
-## Pitfalls
+## Gotchas
 
-- API Gateway route lifecycle is wider than create/revoke: routes are created on a module's first entitlement (`ApiGatewayModuleRouteCreator`), rotated on upgrade (`ApiGatewayModuleRouteUpdater`), and deleted once no tenant is entitled: on revoke (`ApiGatewayModuleRouteCleaner`), on upgrade of an old or removed module, and on entitle rollback with purge. A change to route logic must cover all of these paths.
-- Keep stages idempotent: `@FolioModuleCallsRetryable` and `@KeycloakCallsRetryable` re-run a stage's `execute` on failure, and a new request repeats a failed flow.
-- `ThreadLocalModuleStageContext` gives the retry policy access to the current stage so it can record retry errors: a stage with a retry annotation sets it at the start of `execute`, and `DatabaseLoggingStage` clears it when it records the stage status. A retried call on another thread loses these details.
-- Cancellation: token refresh is automatic; a stage that changes external state during entitlement implements `cancel`, so `ignoreErrors=false` can roll it back (see `FolioModuleInstaller`; the README FAQ lists which flows support rollback).
-- Do not edit generated DTOs/API interfaces in `target/generated-sources/`.
-- Liquibase `changelog/changelog-master.xml`: note the mixed directory naming (`changes/v1.0.0/`, `changes.v3.0.0/`); follow the naming of the newest directory when adding changesets.
-- Kafka topic names are prefixed with `ENV`.
-- `KONG_*` env vars and `application.kong.*` properties are deprecated aliases that still bind via fallback expressions in `application.yml` and log a startup `WARN`; new code must use `APIGW_*` / `application.apigw.*` names.
-
-## Testing
-
-`@UnitTest` (Mockito); `@IntegrationTest` extends `BaseIntegrationTest` (Testcontainers + WireMock), which already carries `@EnableApiGateway` (Kong container). APISIX ITs additionally use `@EnableApisixGateway` (etcd + `folioci/folio-apisix:latest`; the image is amd64-only; on arm64 set `TESTCONTAINERS_APISIX_IMAGE` to a locally built image or rely on emulation). See `ApisixRegistrationIT`, `ApisixRouteManagementIT`.
-
-## Key env vars
-
-`MT_CLIENT_URL`, `AM_CLIENT_URL`, `APIGW_URL`; toggles `APIGW_ENABLED` / `KC_INTEGRATION_ENABLED` / `APIGW_ROUTEMANAGEMENT_ENABLED` (default `true`) / `APIGW_TENANT_CHECKS_ENABLED` (default `false`); `FLOW_ENGINE_*` (threads, timeout, cache); `VALIDATION_INTERFACE_*`; `ENV` (Kafka topic prefix). Full list in `README.md`.
-
-Resources: `README.md` (env vars), `NEWS.md` (release notes).
+- Only entitle (`POST /entitlements`) and desired state (`POST /entitlements/state`) honor `ignoreErrors`. `EntitlementController` sets `ignoreErrors=true` for upgrade and revoke, so they never roll back, and the `ignoreErrors` parameter of `DELETE /entitlements` has no effect.
+- The spec and the README FAQ say that a rollback (`ignoreErrors=false`) removes gateway routes and Keycloak resources. The code removes them only with `purgeOnRollback=true` (`ApiGatewayModuleRouteCreator.cancel`, `KeycloakModuleResourceCreator.cancel`). Rollback always deletes the `entitlement`, `entitlement_module`, and dependency rows, publishes an entitlement REVOKE event, and deletes the tenant topics the flow created. Without `purgeOnRollback`, it calls a module's `_tenant` API only for legacy tenant API versions (`FolioModuleService.disable`). System-user, capability, and scheduled-job events are never compensated, and gateway errors during rollback are logged and ignored.
+- `ApplicationFlowValidator` rejects a request when the application's last flow has another type and is queued, in progress, failed, or cancelled. After a failed or rolled-back entitle, only a new entitle is accepted. That retry, and the retry annotations, re-run stages against partly applied state, so keep stages idempotent.
+- Module `_tenant` calls are retried on any HTTP status >= 400, including 4xx, but not on connection errors or timeouts, because `FolioTenantApiClient` throws those without a status. Keycloak calls are retried only on 5xx. `RETRIES_MODULE_MAX` and `RETRIES_KEYCLOAK_MAX` count attempts, not retries (`RetryConfiguration`).
+- Gateway route stages decide "first tenant" and "last tenant" from `entitlement_module` rows, which `FolioModuleService` writes in `FolioModuleInstaller` and deletes in `FolioModuleUninstaller`. Keep `ApiGatewayModuleRouteCreator` before the installer and `ApiGatewayModuleRouteCleaner` after the uninstaller. Routes are also deleted by `ApiGatewayModuleRouteUpdater` for modules removed or replaced in an upgrade, and by the creator's rollback with `purgeOnRollback=true`. A route change must cover all of these paths.
+- Revoke publishes only the entitlement event. The system-user, capability, and scheduled-job DELETE events are sent only by upgrade, for modules removed from the application.
+- Revoke with `purge=false` deletes the entitlement rows but does not call a module that uses tenant API 2.0, so the module keeps its data.
+- With `EVENT_PUBLISHER_AWAIT_COMPLETION=true`, the system-user, capability, and scheduled-job publisher stages and their flows stay `IN_PROGRESS` until a `resource-result` event with the stage id arrives. The finalizers still save or delete entitlement records at once. A failure result, or no result within `ASYNC_CONFIRMATION_TIMEOUT`, only marks the flow `FAILED`; nothing is rolled back.
