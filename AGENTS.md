@@ -1,6 +1,6 @@
 # mgr-tenant-entitlements
 
-FOLIO module managing tenant entitlements — application install/upgrade/revoke and dependency management via a flow-based execution engine. Spring Boot 4, Java 21, PostgreSQL/Liquibase, Kafka, Keycloak.
+FOLIO module managing tenant entitlements — application install/upgrade/revoke and dependency management via a flow-based execution engine. Java, Spring Boot, PostgreSQL/Liquibase, Kafka, Keycloak, Kong or APISIX.
 
 ## Build & Test
 
@@ -8,8 +8,9 @@ FOLIO module managing tenant entitlements — application install/upgrade/revoke
 mvn clean install              # full build
 mvn clean install -DskipTests  # skip tests
 mvn test                       # unit tests (@UnitTest)
-mvn verify                     # unit + integration (@IntegrationTest, centered on BaseIntegrationTest)
-mvn test -Dtest=EntitlementServiceTest#shouldReturnEntitlements  # single test
+mvn verify                     # unit + integration (@IntegrationTest, centered on BaseIntegrationTest); needs Docker
+mvn test -Dtest=ModuleDescriptorTest#moduleDescriptor_positive_publishedEventsDeclared  # single test
+mvn verify -Dit.test=ApiGatewayRegistrationIT -Dtest=SkipSurefire -Dsurefire.failIfNoSpecifiedTests=false  # single IT, unit tests skipped
 mvn clean install -Pcoverage   # coverage → target/site/jacoco-aggregate/index.html
 mvn checkstyle:check           # runs during build; max method length 23 lines
 ```
@@ -27,7 +28,6 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
                                       ↓ (on failure) FailedFlowFinalizer
   ```
 - **Dependencies**: builds `ApplicationInstallationGraph` / `ModuleInstallationGraph`; validates interface integrity; handles optional vs required and cross-application deps.
-- **Integrations** (`integration/`): `am/`, `tm/`, `folio/`, `keycloak/`, `kafka/`, `token/`, `interceptor/`, `apigw/`.
 - **Kafka** (`integration/kafka/`): publishes entitlement, system-user, capability and scheduled-job events
   (`KafkaEventUtils`); consumes `resource-result` acknowledgments of its own events. The latter three are
   lifecycle-generic (CREATE/UPDATE/DELETE on one topic via `AbstractModuleEventPublisher`, DELETE reachable only
@@ -36,20 +36,17 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
   names; see `KafkaEventUtils.PRODUCED_EVENT_*`/`CONSUMED_EVENT_RESOURCE_RESULT`), guarded by
   `ModuleDescriptorTest` (MGRENTITLE-211). capabilitySet is not declared separately — see `README.md`'s Kafka
   Integration section.
-- **API Gateway route lifecycle**: routes are created on first entitlement (`ApiGatewayModuleRouteCreator`) and deleted only when the last tenant revokes (`ApiGatewayModuleRouteCleaner`). Shared-route checks use `EntitlementModuleService.isEntitlementExist` / `isNoOtherEntitlementExist`.
+- **API Gateway route lifecycle**: routes are created on first entitlement (`ApiGatewayModuleRouteCreator`) and deleted when the last tenant revokes (`ApiGatewayModuleRouteCleaner`), when an upgrade removes or replaces a module that no other tenant uses (`ApiGatewayModuleRouteUpdater`), and on rollback with `purgeOnRollback=true` (`ApiGatewayModuleRouteCreator.cancel`). Shared-route checks use `EntitlementModuleService.isEntitlementExist` / `isNoOtherEntitlementExist`.
 
 **Domain concepts**: Entitlement (tenant's right to an application + modules), Application, Module, Flow Execution (DB-tracked), Stage Context (thread-local, see `ThreadLocalModuleStageContext`).
 
 ## Conventions
 
-- **Packages**: `controller/` (implement OpenAPI interfaces) · `service/{flow,stage,validator}` · `integration/` · `repository/` · `domain/{entity,dto,model}` · `mapper/`.
 - **Codegen**: spec `src/main/resources/swagger.api/mgr-tenant-entitlements.yaml` → `org.folio.entitlement.rest.resource` + `.domain.dto` in `target/generated-sources/` (do not edit).
-- **MapStruct**: `@Mapper(componentModel="spring", injectionStrategy=CONSTRUCTOR)` in `mapper/`.
-- **DI**: constructor injection (`@RequiredArgsConstructor`); bootstrap uses `@EnableKafkaProducer`, `@EnableMgrSecurity`, `@ConfigurationPropertiesScan`.
 - **DB**: Liquibase `changelog/changelog-master.xml`; note mixed dir naming (`changes/v1.0.0/`, `changes.v3.0.0/`).
-- **Security**: Keycloak via `@EnableMgrSecurity`; Caffeine token cache with auto-refresh for long ops.
-- **Retry**: configurable for Keycloak/FOLIO calls (`retry/` package) + stage-level retry.
 - **Tests**: `@UnitTest` (Mockito), `@IntegrationTest` (extend `BaseIntegrationTest`, Testcontainers + WireMock). Gateway ITs use `@EnableApiGateway` extension (see `ApiGatewayRegistrationIT`, `ApiGatewayRouteManagementIT`). APISIX ITs additionally use `@EnableApisixGateway` (etcd + `folioci/folio-apisix:latest` containers; the image is amd64-only — on arm64 set `TESTCONTAINERS_APISIX_IMAGE` to a locally built image or rely on emulation). See `ApisixRouteManagementIT`, `ApisixRegistrationIT`.
+- **Security**: Keycloak via `@EnableMgrSecurity`; Caffeine access-token cache with per-token expiry (`AccessTokenExpiry`).
+- **Retry**: configurable for Keycloak/FOLIO calls (`retry/` package) + stage-level retry.
 - **Key env vars**: `MT_CLIENT_URL`, `AM_CLIENT_URL`, `APIGW_URL`; toggles `APIGW_ENABLED`/`KC_INTEGRATION_ENABLED`/`APIGW_ROUTEMANAGEMENT_ENABLED` (default `true`)/`APIGW_TENANT_CHECKS_ENABLED` (default `false`); `FLOW_ENGINE_*` (threads, timeout, cache); `VALIDATION_INTERFACE_*`; `ENV` (Kafka topic prefix). Full list in `README.md`.
 
 ## Pitfalls
