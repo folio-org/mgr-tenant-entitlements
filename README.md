@@ -378,6 +378,10 @@ FLOW_ENGINE_MODULE_INSTALLER_THREADS=6
 A gateway service is upserted per module during entitlement, using `moduleId` as the service name and the
 module's discovery URL as the target.
 
+Modules whose descriptor has an empty `provides` expose no HTTP interface, so they need no discovery
+information and get no gateway service or routes. Modules that declare `provides` still require discovery information;
+entitlement fails if it is missing.
+
 ### API Gateway Route Registration
 
 Routes are created from the module descriptor on the **first** entitlement of a module

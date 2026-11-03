@@ -140,6 +140,16 @@ public class EntitlementServiceUtils {
   }
 
   /**
+   * Checks if the module exposes no interfaces, so it has no routes and requires no discovery information.
+   *
+   * @param moduleDesc - {@link ModuleDescriptor} value
+   * @return true if descriptor is present and its provides is null or empty, false otherwise
+   */
+  public static boolean hasNoProvides(ModuleDescriptor moduleDesc) {
+    return moduleDesc != null && CollectionUtils.isEmpty(moduleDesc.getProvides());
+  }
+
+  /**
    * Checks if upgrade logic must be applied.
    *
    * @param moduleDesc - new {@link ModuleDescriptor} value
