@@ -8,9 +8,7 @@ import static org.folio.entitlement.service.flow.PlatformTestValues.platformRequ
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
 
-import java.util.Optional;
 import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.test.types.UnitTest;
@@ -32,9 +30,7 @@ class PlatformEntitlementCommitStageTest {
   @Mock private PlatformEntitlementRepository repository;
 
   @Test
-  void execute_positive_entitlesWhenNothingIsEntitled() {
-    when(repository.findById("app-platform")).thenReturn(Optional.empty());
-
+  void execute_positive_savesEntitledVersion() {
     stage.execute(platformContext(platformRequest(APP_V1, ENTITLE, OKAPI_TOKEN)));
 
     var captor = ArgumentCaptor.forClass(PlatformEntitlementEntity.class);
@@ -44,9 +40,7 @@ class PlatformEntitlementCommitStageTest {
   }
 
   @Test
-  void execute_positive_upgradeReplacesEntitledVersion() {
-    when(repository.findById("app-platform")).thenReturn(Optional.of(PlatformEntitlementEntity.of(APP_V1)));
-
+  void execute_positive_upgradeSavesRequestedVersion() {
     stage.execute(platformContext(platformRequest(APP_V2, UPGRADE, OKAPI_TOKEN)));
 
     var captor = ArgumentCaptor.forClass(PlatformEntitlementEntity.class);
@@ -56,11 +50,12 @@ class PlatformEntitlementCommitStageTest {
   }
 
   @Test
-  void execute_positive_alreadyEntitledVersionWritesNothing() {
-    when(repository.findById("app-platform")).thenReturn(Optional.of(PlatformEntitlementEntity.of(APP_V1)));
-
+  void execute_positive_retryOfEntitledVersionSavesSameState() {
     stage.execute(platformContext(platformRequest(APP_V1, ENTITLE, OKAPI_TOKEN)));
 
+    var captor = ArgumentCaptor.forClass(PlatformEntitlementEntity.class);
+    verify(repository).save(captor.capture());
+    assertThat(captor.getValue().getApplicationId()).isEqualTo(APP_V1);
     verifyNoMoreInteractions(repository);
   }
 }

@@ -1,7 +1,6 @@
 package org.folio.entitlement.service.flow;
 
 import lombok.RequiredArgsConstructor;
-import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.PlatformStageContext;
 import org.folio.entitlement.repository.PlatformEntitlementRepository;
@@ -11,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Writes the entitled version. The application name is the key, so an upgrade replaces the entitled row in place. A
- * retry whose version is already entitled writes nothing, so the commit is idempotent.
+ * retry whose version is already entitled saves identical state, which changes nothing, so the commit is idempotent.
  */
 @Component
 @RequiredArgsConstructor
@@ -23,11 +22,6 @@ public class PlatformEntitlementCommitStage extends DatabaseLoggingStage<Platfor
   @Transactional
   public void execute(PlatformStageContext context) {
     var applicationId = context.getPlatformRequest().getApplicationId();
-    var entitled = repository.findById(SemverUtils.getName(applicationId));
-    if (entitled.isPresent() && entitled.get().getApplicationId().equals(applicationId)) {
-      return;
-    }
-
     repository.save(PlatformEntitlementEntity.of(applicationId));
   }
 }
