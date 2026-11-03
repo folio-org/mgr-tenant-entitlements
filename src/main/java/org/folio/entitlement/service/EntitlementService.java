@@ -15,11 +15,13 @@ import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.exception.FlowExecutionTimeoutException;
+import org.folio.entitlement.exception.PlatformOperationInProgressException;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.service.flow.FlowProvider;
 import org.folio.entitlement.service.flow.FlowService;
+import org.folio.entitlement.service.lock.PlatformLockService;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.FlowEngine;
 import org.folio.flow.exception.FlowExecutionException;
@@ -38,6 +40,7 @@ public class EntitlementService {
   private final TenantManagerService tenantManagerService;
   private final EntitlementCrudService entitlementCrudService;
   private final FlowEngineConfigurationProperties flowEngineProperties;
+  private final PlatformLockService platformLockService;
 
   /**
    * Retrieves all applications installed for the specified tenant.
@@ -71,10 +74,14 @@ public class EntitlementService {
   /**
    * Performs enable, disable, or upgrade operation for applications in entitlement request for tenant.
    *
+   * <p>Fails fast with {@link PlatformOperationInProgressException} while a platform-scoped operation holds the
+   * platform lock. The check runs before the flow is created, so a rejected request leaves no flow row behind.</p>
+   *
    * @param request - an entitlement request with required parameter to entitle tenant with applications.
    * @return a {@link ResultList} object with {@link EntitlementRequest} values
    */
   public ExtendedEntitlements performRequest(EntitlementRequest request) {
+    platformLockService.assertNotHeld();
     log.info("Performing entitlement request: type = {}, tenantId = {}, applications = {}",
       request.getType(), request.getTenantId(), request.getApplications());
 
