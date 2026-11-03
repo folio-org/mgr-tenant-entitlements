@@ -8,7 +8,9 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestUtils.JACKSON3_OBJECT_MAPPER;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -18,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
@@ -25,11 +28,13 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.folio.configuration.FolioClientConfigurationProperties;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
 import org.folio.entitlement.integration.folio.model.TenantAttributes;
+import org.folio.entitlement.integration.folio.model.TenantJob;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.entitlement.utils.JsonConverter;
 import org.folio.test.types.UnitTest;
@@ -77,16 +82,74 @@ class FolioTenantApiClientTest {
   }
 
   @Test
-  void install_positive_statusEqualToCreated() throws IOException, InterruptedException {
+  void install_positive_createdAndJobCompleted() throws IOException, InterruptedException {
+    var jobResponse = mockResponse();
     when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
-    when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse);
+    when(folioClientConfigurationProperties.getTenantApiJobTimeout()).thenReturn(Duration.ofSeconds(10));
+    when(folioClientConfigurationProperties.getTenantApiJobPollInterval()).thenReturn(Duration.ZERO);
+    when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse, jobResponse);
     when(httpResponse.statusCode()).thenReturn(201);
+    when(httpResponse.headers()).thenReturn(HttpHeaders.of(Map.of("Location", List.of("/_/tenant/job-1")),
+      (k, v) -> true));
+    when(jobResponse.statusCode()).thenReturn(200);
+    when(jobResponse.body()).thenReturn("{\"id\":\"job-1\",\"complete\":false}",
+      "{\"id\":\"job-1\",\"complete\":true}");
 
-    var parameters = List.of(new Parameter().key("loadReference").value("true"));
-    folioTenantApiClient.install(moduleRequest(parameters));
+    folioTenantApiClient.install(moduleRequest(List.of(new Parameter().key("loadReference").value("true"))));
 
-    verifyHttpRequest(installRequest(), httpRequestCaptor.getValue(), 82);
+    assertThat(httpRequestCaptor.getAllValues()).hasSize(3);
+    assertThat(httpRequestCaptor.getAllValues().get(1).uri())
+      .isEqualTo(URI.create("http://mod-test:8081/_/tenant/job-1"));
+    assertThat(httpRequestCaptor.getAllValues().get(1).method()).isEqualTo("GET");
     verify(jsonConverter).toJson(tenantAttributesForInstall());
+    verify(jsonConverter, times(2)).fromJson(anyString(), eq(TenantJob.class));
+  }
+
+  @Test
+  void install_negative_jobFailed() throws IOException, InterruptedException {
+    var jobResponse = mockResponse();
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getTenantApiJobTimeout()).thenReturn(Duration.ofSeconds(10));
+    when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse, jobResponse);
+    when(httpResponse.statusCode()).thenReturn(201);
+    when(httpResponse.headers()).thenReturn(HttpHeaders.of(Map.of("Location", List.of("/_/tenant/job-1")),
+      (k, v) -> true));
+    when(jobResponse.statusCode()).thenReturn(200);
+    when(jobResponse.body()).thenReturn("{\"id\":\"job-1\",\"complete\":true,\"error\":\"boom\"}");
+
+    var moduleRequest = moduleRequest(List.of(new Parameter().key("loadReference").value("true")));
+    assertThatThrownBy(() -> folioTenantApiClient.install(moduleRequest))
+      .isInstanceOf(IntegrationException.class)
+      .hasMessage("Tenant job failed");
+
+    verify(jsonConverter).toJson(tenantAttributesForInstall());
+    verify(jsonConverter).fromJson(anyString(), eq(TenantJob.class));
+  }
+
+  @Test
+  void install_negative_tenantApiJobTimeout() throws IOException, InterruptedException {
+    var jobResponse = mockResponse();
+    when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
+    when(folioClientConfigurationProperties.getTenantApiJobTimeout()).thenReturn(Duration.ZERO);
+    when(httpClient.send(httpRequestCaptor.capture(), eq(ofString()))).thenReturn(httpResponse, jobResponse);
+    when(httpResponse.statusCode()).thenReturn(201);
+    when(httpResponse.headers()).thenReturn(HttpHeaders.of(Map.of("Location", List.of("/_/tenant/job-1")),
+      (k, v) -> true));
+    when(jobResponse.statusCode()).thenReturn(200);
+    when(jobResponse.body()).thenReturn("{\"id\":\"job-1\",\"complete\":false}");
+
+    var moduleRequest = moduleRequest(List.of(new Parameter().key("loadReference").value("true")));
+    assertThatThrownBy(() -> folioTenantApiClient.install(moduleRequest))
+      .isInstanceOf(IntegrationException.class)
+      .hasMessageStartingWith("Tenant job has not completed");
+
+    verify(jsonConverter).toJson(tenantAttributesForInstall());
+    verify(jsonConverter).fromJson(anyString(), eq(TenantJob.class));
+  }
+
+  @SuppressWarnings("unchecked")
+  private static HttpResponse<String> mockResponse() {
+    return org.mockito.Mockito.mock(HttpResponse.class);
   }
 
   @Test
