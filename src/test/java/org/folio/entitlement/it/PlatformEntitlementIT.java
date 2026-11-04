@@ -1,7 +1,7 @@
 package org.folio.entitlement.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.common.utils.OkapiHeaders.TOKEN;
+import static org.folio.entitlement.controller.ApiExceptionHandler.FLOW_ID_HEADER;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
 import static org.folio.entitlement.support.TestValues.desiredStateRequest;
@@ -23,6 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
@@ -41,6 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
@@ -82,12 +84,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   void entitle_positive_platformApplicationIsEntitledAndRetryIsIdempotent() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated()).andReturn();
 
-    var flowId = parseResponse(result, ExtendedPlatformEntitlements.class).getFlowId();
-    assertThat(flowId).isNotNull();
-    var flow = getFlow(flowId);
-    assertThat(flow.getStatus()).isEqualTo(ExecutionStatus.FINISHED);
-    assertThat(flow.getType()).isEqualTo(EntitlementRequestType.ENTITLE);
-    assertThat(flow.getTenantId()).isNull();
+    assertPlatformFlow(getFlow(flowIdFromBody(result)), ExecutionStatus.FINISHED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
 
     entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated());
@@ -97,26 +94,31 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @Test
   @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_OTHER_PLATFORM_V1})
   void entitle_positive_severalApplicationsAreEntitledTogether() throws Exception {
-    entitlePlatform(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1).andExpect(status().isCreated())
-      .andExpect(jsonPath("$.totalRecords", is(2)));
+    var result = entitlePlatform(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1).andExpect(status().isCreated())
+      .andExpect(jsonPath("$.totalRecords", is(2)))
+      .andReturn();
 
+    assertPlatformFlow(getFlow(flowIdFromBody(result)), ExecutionStatus.FINISHED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1);
   }
 
   @Test
   @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_REGULAR})
   void entitle_negative_oneRegularApplicationFailsTheWholeRequest() throws Exception {
-    expectStageFailure(entitlePlatform(PLATFORM_APP_V1, REGULAR_APP), "PlatformScopeValidator",
-      "Application is not platform-scoped");
+    var result = entitlePlatform(PLATFORM_APP_V1, REGULAR_APP);
 
+    expectStageFailure(result, "PlatformScopeValidator", "Application is not platform-scoped");
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).isEmpty();
   }
 
   @Test
   @WireMockStub(scripts = STUB_REGULAR)
   void entitle_negative_regularApplicationIsRejected() throws Exception {
-    expectStageFailure(entitlePlatform(REGULAR_APP), "PlatformScopeValidator", "Application is not platform-scoped");
+    var result = entitlePlatform(REGULAR_APP);
 
+    expectStageFailure(result, "PlatformScopeValidator", "Application is not platform-scoped");
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).isEmpty();
   }
 
@@ -124,9 +126,10 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
   @WireMockStub(scripts = STUB_PLATFORM_V2)
   void entitle_negative_secondVersionIsRejectedWhileAnotherIsEntitled() throws Exception {
-    expectStageFailure(entitlePlatform(PLATFORM_APP_V2), "PlatformEntitleValidator",
-      "Another version of the application is already entitled");
+    var result = entitlePlatform(PLATFORM_APP_V2);
 
+    expectStageFailure(result, "PlatformEntitleValidator", "Another version of the application is already entitled");
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
   }
 
@@ -134,8 +137,9 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
   @WireMockStub(scripts = STUB_PLATFORM_V2)
   void upgrade_positive_replacesEntitledVersion() throws Exception {
-    upgradePlatform(PLATFORM_APP_V2).andExpect(status().isOk());
+    var result = upgradePlatform(PLATFORM_APP_V2).andExpect(status().isOk()).andReturn();
 
+    assertPlatformFlow(getFlow(flowIdFromBody(result)), ExecutionStatus.FINISHED, EntitlementRequestType.UPGRADE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V2);
   }
 
@@ -143,18 +147,21 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @Sql("classpath:/sql/platform/platform-entitlement-with-dependent.sql")
   @WireMockStub(scripts = STUB_PLATFORM_V2)
   void upgrade_negative_incompatibleDependentRejectsUpgradeAndAppliesNoChange() throws Exception {
-    expectStageFailure(upgradePlatform(PLATFORM_APP_V2), "PlatformDependentsValidator",
-      "Platform application upgrade is incompatible with dependent applications");
+    var result = upgradePlatform(PLATFORM_APP_V2);
 
+    expectStageFailure(result, "PlatformDependentsValidator",
+      "Platform application upgrade is incompatible with dependent applications");
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.UPGRADE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
   }
 
   @Test
   @WireMockStub(scripts = STUB_PLATFORM_V2)
   void upgrade_negative_nothingIsEntitled() throws Exception {
-    expectStageFailure(upgradePlatform(PLATFORM_APP_V2), "PlatformUpgradeValidator",
-      "No version of the application is entitled to upgrade");
+    var result = upgradePlatform(PLATFORM_APP_V2);
 
+    expectStageFailure(result, "PlatformUpgradeValidator", "No version of the application is entitled to upgrade");
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.UPGRADE);
     assertThat(platformApplicationIds()).isEmpty();
   }
 
@@ -168,6 +175,10 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
     expectStageFailure(result, "PlatformStateRequestValidator",
       "Desired state request contains platform-scoped applications");
+    var flow = getFlow(flowIdFromHeader(result));
+    assertThat(flow.getStatus()).isEqualTo(ExecutionStatus.CANCELLED);
+    assertThat(flow.getType()).isEqualTo(EntitlementRequestType.STATE);
+    assertThat(flow.getTenantId()).isNotNull();
     getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_V1), emptyEntitlements());
   }
 
@@ -244,6 +255,20 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     return platformEntitlementRepository.findAll().stream()
       .map(PlatformEntitlementEntity::getApplicationId)
       .toList();
+  }
+
+  private static UUID flowIdFromBody(MvcResult result) throws Exception {
+    return parseResponse(result, ExtendedPlatformEntitlements.class).getFlowId();
+  }
+
+  private static UUID flowIdFromHeader(ResultActions result) {
+    return UUID.fromString(Objects.requireNonNull(result.andReturn().getResponse().getHeader(FLOW_ID_HEADER)));
+  }
+
+  private static void assertPlatformFlow(Flow flow, ExecutionStatus status, EntitlementRequestType type) {
+    assertThat(flow.getStatus()).isEqualTo(status);
+    assertThat(flow.getType()).isEqualTo(type);
+    assertThat(flow.getTenantId()).isNull();
   }
 
   private Flow getFlow(UUID flowId) throws Exception {
