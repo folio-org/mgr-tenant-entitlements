@@ -13,6 +13,7 @@ import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
 import org.folio.entitlement.domain.model.ResultList;
 import org.folio.entitlement.exception.FlowExecutionTimeoutException;
 import org.folio.entitlement.exception.PlatformOperationInProgressException;
@@ -21,6 +22,7 @@ import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.service.flow.FlowProvider;
 import org.folio.entitlement.service.flow.FlowService;
+import org.folio.entitlement.service.flow.PlatformFlowProvider;
 import org.folio.entitlement.service.lock.PlatformLockService;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.FlowEngine;
@@ -41,6 +43,7 @@ public class EntitlementService {
   private final EntitlementCrudService entitlementCrudService;
   private final FlowEngineConfigurationProperties flowEngineProperties;
   private final PlatformLockService platformLockService;
+  private final PlatformFlowProvider platformFlowProvider;
 
   /**
    * Retrieves all applications installed for the specified tenant.
@@ -70,7 +73,7 @@ public class EntitlementService {
     }
     return findByQuery(finalQuery, includeModules, limit, offset);
   }
-  
+
   /**
    * Performs enable, disable, or upgrade operation for applications in entitlement request for tenant.
    *
@@ -89,6 +92,32 @@ public class EntitlementService {
     executeFlow(request, flow);
     var entitlements = mapItems(request.getApplications(), appId -> buildEntitlement(request.getTenantId(), appId));
     return buildEntitlements(entitlements, UUID.fromString(flow.getId()));
+  }
+
+  /**
+   * Entitles or upgrades platform-scoped applications deployment-wide.
+   *
+   * <p>Synchronous: the exclusive platform lock is taken before the flow starts and held for the whole call, so a
+   * request rejected because another platform operation is running leaves no flow row - the flow row is created by the
+   * flow's first stage. The lock is released on every outcome.</p>
+   *
+   * @param request - platform entitlement request
+   * @return {@link ExtendedEntitlements} with an entitlement without tenant per application and the flow id
+   */
+  public ExtendedEntitlements performRequest(PlatformEntitlementRequest request) {
+    log.info("Performing platform entitlement request: type = {}, applications = {}",
+      request.getType(), request.getApplicationIds());
+
+    var flowId = UUID.randomUUID();
+    platformLockService.acquire(flowId);
+    try {
+      executeSyncFlow(request.toEntitlementRequest(), platformFlowProvider.createFlow(flowId, request));
+    } finally {
+      platformLockService.release(flowId);
+    }
+
+    var entitlements = mapItems(request.getApplicationIds(), appId -> buildEntitlement(null, appId));
+    return buildEntitlements(entitlements, flowId);
   }
 
   private void executeFlow(EntitlementRequest request, Flow flow) {

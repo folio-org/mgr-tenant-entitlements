@@ -274,33 +274,6 @@ class FlowServiceTest {
   }
 
   @Nested
-  @DisplayName("finish")
-  class Finish {
-
-    private static final Set<EntityExecutionStatus> IN_PROGRESS = Set.of(EntityExecutionStatus.IN_PROGRESS);
-
-    @Test
-    void positive() {
-      when(flowRepository.updateStatusIfCurrentIn(
-        eq(FLOW_ID), eq(EntityExecutionStatus.FINISHED), eq(IN_PROGRESS), any())).thenReturn(1);
-
-      var result = flowService.finish(FLOW_ID);
-
-      assertThat(result).isTrue();
-    }
-
-    @Test
-    void positive_flowIsNotInProgress() {
-      when(flowRepository.updateStatusIfCurrentIn(
-        eq(FLOW_ID), eq(EntityExecutionStatus.FINISHED), eq(IN_PROGRESS), any())).thenReturn(0);
-
-      var result = flowService.finish(FLOW_ID);
-
-      assertThat(result).isFalse();
-    }
-  }
-
-  @Nested
   @DisplayName("findStatus")
   class FindStatus {
 

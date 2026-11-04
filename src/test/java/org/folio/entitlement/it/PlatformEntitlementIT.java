@@ -8,9 +8,12 @@ import static org.folio.entitlement.support.TestValues.desiredStateRequest;
 import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
@@ -82,12 +85,18 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @Test
   @WireMockStub(scripts = STUB_PLATFORM_V1)
   void entitle_positive_platformApplicationIsEntitledAndRetryIsIdempotent() throws Exception {
-    var result = entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated()).andReturn();
+    var result = entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated())
+      .andExpect(jsonPath("$.flowId", notNullValue()))
+      .andExpect(jsonPath("$.totalRecords", is(1)))
+      .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(PLATFORM_APP_V1)))
+      .andReturn();
 
     assertPlatformFlow(getFlow(flowIdFromBody(result)), ExecutionStatus.FINISHED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
 
-    entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated());
+    entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated())
+      .andExpect(jsonPath("$.totalRecords", is(1)))
+      .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(PLATFORM_APP_V1)));
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
   }
 
@@ -95,7 +104,10 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_OTHER_PLATFORM_V1})
   void entitle_positive_severalApplicationsAreEntitledTogether() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1).andExpect(status().isCreated())
+      .andExpect(jsonPath("$.flowId", notNullValue()))
       .andExpect(jsonPath("$.totalRecords", is(2)))
+      .andExpect(jsonPath("$.platformEntitlements[*].applicationId",
+        containsInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1)))
       .andReturn();
 
     assertPlatformFlow(getFlow(flowIdFromBody(result)), ExecutionStatus.FINISHED, EntitlementRequestType.ENTITLE);
@@ -137,7 +149,11 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
   @WireMockStub(scripts = STUB_PLATFORM_V2)
   void upgrade_positive_replacesEntitledVersion() throws Exception {
-    var result = upgradePlatform(PLATFORM_APP_V2).andExpect(status().isOk()).andReturn();
+    var result = upgradePlatform(PLATFORM_APP_V2).andExpect(status().isOk())
+      .andExpect(jsonPath("$.flowId", notNullValue()))
+      .andExpect(jsonPath("$.totalRecords", is(1)))
+      .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(PLATFORM_APP_V2)))
+      .andReturn();
 
     assertPlatformFlow(getFlow(flowIdFromBody(result)), ExecutionStatus.FINISHED, EntitlementRequestType.UPGRADE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V2);

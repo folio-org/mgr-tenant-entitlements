@@ -165,18 +165,6 @@ public class FlowService {
   }
 
   /**
-   * Marks an in-progress flow as finished. For flows that run to completion synchronously and never wait for
-   * asynchronous stage confirmations, unlike {@link #finishFlowIfNoActiveStages} which requires an async anchor.
-   *
-   * @param flowId - flow identifier as {@link UUID}
-   * @return {@code true} when the flow was marked as finished, {@code false} when it was not in progress
-   */
-  public boolean finish(UUID flowId) {
-    var finishedAt = ZonedDateTime.now(ZoneId.systemDefault());
-    return flowRepository.updateStatusIfCurrentIn(flowId, FINISHED, Set.of(IN_PROGRESS), finishedAt) > 0;
-  }
-
-  /**
    * Retrieves the current status of the flow, empty when the flow row does not exist yet.
    *
    * @param flowId - flow identifier as {@link UUID}
