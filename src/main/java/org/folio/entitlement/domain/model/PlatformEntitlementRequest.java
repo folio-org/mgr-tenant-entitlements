@@ -26,4 +26,18 @@ public class PlatformEntitlementRequest {
    * Okapi token used to load the application descriptor.
    */
   String okapiToken;
+
+  /**
+   * Converts the request to a tenant-less {@link EntitlementRequest}, so stages shared with the tenant flows, such as
+   * {@code FlowInitializer}, can read the request type from the flow parameters.
+   *
+   * @return {@link EntitlementRequest} without tenant
+   */
+  public EntitlementRequest toEntitlementRequest() {
+    return EntitlementRequest.builder()
+      .type(type)
+      .applications(applicationIds)
+      .okapiToken(okapiToken)
+      .build();
+  }
 }

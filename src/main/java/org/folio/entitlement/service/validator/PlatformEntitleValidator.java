@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
-import org.folio.entitlement.domain.model.PlatformStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -21,13 +21,13 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class PlatformEntitleValidator extends DatabaseLoggingStage<PlatformStageContext> {
+public class PlatformEntitleValidator extends DatabaseLoggingStage<CommonStageContext> {
 
   private final PlatformEntitlementRepository repository;
 
   @Override
-  public void execute(PlatformStageContext context) {
-    var applicationIds = context.getPlatformRequest().getApplicationIds();
+  public void execute(CommonStageContext context) {
+    var applicationIds = context.getEntitlementRequest().getApplications();
     var entitledNames = toStream(applicationIds).map(SemverUtils::getName).toList();
     var entitled = toStream(repository.findAllById(entitledNames))
       .collect(toMap(PlatformEntitlementEntity::getApplicationName, identity()));

@@ -9,7 +9,7 @@ import org.folio.common.domain.model.ApplicationScope;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.common.utils.CollectionUtils;
 import org.folio.common.utils.SemverUtils;
-import org.folio.entitlement.domain.model.PlatformStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -21,16 +21,16 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class PlatformScopeValidator extends DatabaseLoggingStage<PlatformStageContext> {
+public class PlatformScopeValidator extends DatabaseLoggingStage<CommonStageContext> {
 
   private final ApplicationManagerService applicationManagerService;
 
   @Override
-  public void execute(PlatformStageContext context) {
-    var request = context.getPlatformRequest();
-    validateDistinctNames(request.getApplicationIds());
+  public void execute(CommonStageContext context) {
+    var request = context.getEntitlementRequest();
+    validateDistinctNames(request.getApplications());
 
-    var violations = toStream(request.getApplicationIds())
+    var violations = toStream(request.getApplications())
       .filter(applicationId -> !isPlatformScoped(applicationId, request.getOkapiToken()))
       .map(applicationId -> new Parameter().key(applicationId).value("Application is not platform-scoped"))
       .toList();

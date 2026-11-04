@@ -4,7 +4,7 @@ import static org.folio.common.utils.CollectionUtils.toStream;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
-import org.folio.entitlement.domain.model.PlatformStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.springframework.stereotype.Component;
@@ -17,14 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Component
 @RequiredArgsConstructor
-public class PlatformEntitlementCommitStage extends DatabaseLoggingStage<PlatformStageContext> {
+public class PlatformEntitlementCommitStage extends DatabaseLoggingStage<CommonStageContext> {
 
   private final PlatformEntitlementRepository repository;
 
   @Override
   @Transactional
-  public void execute(PlatformStageContext context) {
-    var entities = toStream(context.getPlatformRequest().getApplicationIds())
+  public void execute(CommonStageContext context) {
+    var entities = toStream(context.getEntitlementRequest().getApplications())
       .map(PlatformEntitlementEntity::of)
       .toList();
     repository.saveAll(entities);

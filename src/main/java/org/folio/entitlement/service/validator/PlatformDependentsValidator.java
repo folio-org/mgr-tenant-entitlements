@@ -8,7 +8,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.common.utils.SemverUtils;
-import org.folio.entitlement.domain.model.PlatformStageContext;
+import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.repository.ApplicationDependencyRepository;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
@@ -20,13 +20,13 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class PlatformDependentsValidator extends DatabaseLoggingStage<PlatformStageContext> {
+public class PlatformDependentsValidator extends DatabaseLoggingStage<CommonStageContext> {
 
   private final ApplicationDependencyRepository dependencyRepository;
 
   @Override
-  public void execute(PlatformStageContext context) {
-    var versionsByName = toStream(context.getPlatformRequest().getApplicationIds())
+  public void execute(CommonStageContext context) {
+    var versionsByName = toStream(context.getEntitlementRequest().getApplications())
       .collect(toMap(SemverUtils::getName, SemverUtils::getVersion));
     var violations = toStream(dependencyRepository.findByParentNameIn(List.copyOf(versionsByName.keySet())))
       .filter(dependency -> !SemverUtils.satisfies(versionsByName.get(dependency.getParentName()),

@@ -1,10 +1,12 @@
 package org.folio.entitlement.service.flow;
 
-import static org.folio.entitlement.domain.model.PlatformStageContext.PARAM_PLATFORM_REQUEST;
+import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
+import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
+import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.validator.PlatformDependentsValidator;
 import org.folio.entitlement.service.validator.PlatformScopeValidator;
 import org.folio.entitlement.service.validator.PlatformUpgradeValidator;
@@ -19,21 +21,29 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
 
+  private final FlowInitializer flowInitializer;
   private final PlatformScopeValidator scopeValidator;
   private final PlatformUpgradeValidator upgradeValidator;
   private final PlatformDependentsValidator dependentsValidator;
   private final PlatformEntitlementCommitStage commitStage;
 
+  private final FinishedFlowFinalizer finishedFlowFinalizer;
+  private final FlowFinalizerCallbacks finalizerCallbacks;
+
   @Override
   public Flow createFlow(UUID flowId, PlatformEntitlementRequest request) {
-    return Flow.builder()
+    var builder = Flow.builder()
       .id(flowId)
-      .flowParameter(PARAM_PLATFORM_REQUEST, request)
-      .executionStrategy(FlowExecutionStrategy.CANCEL_ON_ERROR)
+      .stage(flowInitializer)
       .stage(scopeValidator)
       .stage(upgradeValidator)
       .stage(dependentsValidator)
       .stage(commitStage)
+      .stage(finishedFlowFinalizer);
+
+    return finalizerCallbacks.apply(builder)
+      .flowParameter(PARAM_REQUEST, request.toEntitlementRequest())
+      .executionStrategy(FlowExecutionStrategy.IGNORE_ON_ERROR)
       .build();
   }
 }
