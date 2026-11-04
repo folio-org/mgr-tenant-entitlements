@@ -3,13 +3,13 @@
   "type": "object",
   "id": "platformEntitlementRequest.json",
   "title": "Platform Entitlement Request Schema",
-  "description": "A platform-scoped application to entitle or upgrade for the whole deployment. Carries no tenant.",
+  "description": "Platform-scoped applications to entitle or upgrade for the whole deployment. Carries no tenant.",
   "properties": {
     "applications": {
-      "description": "A single platform application id as name-version",
+      "description": "Platform application ids as name-version, applied together: if any fails, all fail",
       "type": "array",
       "minItems": 1,
-      "maxItems": 1,
+      "maxItems": 50,
       "items": {
         "type": "string"
       }

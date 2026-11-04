@@ -1,5 +1,7 @@
 package org.folio.entitlement.service.flow;
 
+import static org.folio.common.utils.CollectionUtils.toStream;
+
 import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.PlatformStageContext;
@@ -9,8 +11,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Writes the entitled version. The application name is the key, so an upgrade replaces the entitled row in place. A
- * retry whose version is already entitled saves identical state, which changes nothing, so the commit is idempotent.
+ * Writes the entitled versions of all requested applications in one transaction, so either all are committed or none.
+ * The application name is the key, so an upgrade replaces the entitled row in place. A retry whose version is already
+ * entitled saves identical state, which changes nothing, so the commit is idempotent.
  */
 @Component
 @RequiredArgsConstructor
@@ -21,7 +24,9 @@ public class PlatformEntitlementCommitStage extends DatabaseLoggingStage<Platfor
   @Override
   @Transactional
   public void execute(PlatformStageContext context) {
-    var applicationId = context.getPlatformRequest().getApplicationId();
-    repository.save(PlatformEntitlementEntity.of(applicationId));
+    var entities = toStream(context.getPlatformRequest().getApplicationIds())
+      .map(PlatformEntitlementEntity::of)
+      .toList();
+    repository.saveAll(entities);
   }
 }

@@ -8,6 +8,7 @@ import static org.folio.entitlement.service.flow.PlatformTestValues.platformCont
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformRequest;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -36,7 +37,7 @@ class PlatformDependentsValidatorTest {
     when(dependencyRepository.findByParentNameIn(List.of("platform-app"))).thenReturn(List.of(
       dependent(TENANT_ID, "folio-app3-3.0.0", "^1.0.0"),
       dependent(OTHER_TENANT_ID, "folio-app4-4.0.0", ">=1.0.0")));
-    var context = platformContext(platformRequest("platform-app-1.5.0", UPGRADE, OKAPI_TOKEN));
+    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, "platform-app-1.5.0"));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
@@ -44,7 +45,7 @@ class PlatformDependentsValidatorTest {
   @Test
   void execute_positive_upgradeWithoutDependents() {
     when(dependencyRepository.findByParentNameIn(List.of("platform-app"))).thenReturn(List.of());
-    var context = platformContext(platformRequest("platform-app-2.0.0", UPGRADE, OKAPI_TOKEN));
+    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, "platform-app-2.0.0"));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
@@ -54,7 +55,7 @@ class PlatformDependentsValidatorTest {
     when(dependencyRepository.findByParentNameIn(List.of("platform-app"))).thenReturn(List.of(
       dependent(TENANT_ID, "folio-app3-3.0.0", "^1.0.0"),
       dependent(OTHER_TENANT_ID, "folio-app4-4.0.0", "^2.0.0")));
-    var context = platformContext(platformRequest("platform-app-2.0.0", UPGRADE, OKAPI_TOKEN));
+    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, "platform-app-2.0.0"));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -67,11 +68,30 @@ class PlatformDependentsValidatorTest {
         }));
   }
 
+  @Test
+  void execute_negative_dependentOfOneOfSeveralUpgradedApplicationsRejectsWholeUpgrade() {
+    when(dependencyRepository.findByParentNameIn(anyList())).thenReturn(List.of(
+      dependent(TENANT_ID, "folio-app3-3.0.0", "^1.0.0"),
+      dependent(OTHER_TENANT_ID, "folio-app4-4.0.0", "^1.0.0", "other-platform")));
+    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, "platform-app-1.5.0", "other-platform-2.0.0"));
+
+    assertThatThrownBy(() -> validator.execute(context))
+      .isInstanceOf(RequestValidationException.class)
+      .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
+        .singleElement()
+        .satisfies(parameter -> assertThat(parameter.getKey()).isEqualTo(OTHER_TENANT_ID + ":folio-app4-4.0.0")));
+  }
+
   private static ApplicationDependencyEntity dependent(UUID tenantId, String applicationId, String parentRange) {
+    return dependent(tenantId, applicationId, parentRange, "platform-app");
+  }
+
+  private static ApplicationDependencyEntity dependent(UUID tenantId, String applicationId, String parentRange,
+    String parentName) {
     var entity = new ApplicationDependencyEntity();
     entity.setTenantId(tenantId);
     entity.setApplicationId(applicationId);
-    entity.setParentName("platform-app");
+    entity.setParentName(parentName);
     entity.setParentVersion(parentRange);
     entity.setOptional(false);
     return entity;

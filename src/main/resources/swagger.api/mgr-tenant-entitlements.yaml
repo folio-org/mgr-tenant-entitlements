@@ -166,9 +166,9 @@ paths:
 
   /entitlements/platform:
     post:
-      summary: "Entitle a platform-scoped application for the whole deployment"
+      summary: "Entitle platform-scoped applications for the whole deployment"
       description: |
-        Entitles a platform-scoped application deployment-wide. The application must be platform-scoped; a regular application is rejected.
+        Entitles platform-scoped applications deployment-wide. All applications must be platform-scoped; if any application is invalid, the whole request is rejected and nothing is entitled.
 
         At most one version of an application is entitled at a time, so an entitle request is rejected while a different version is entitled. Use PUT to replace the entitled version.
 
@@ -198,9 +198,9 @@ paths:
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
     put:
-      summary: "Upgrade the entitled version of a platform-scoped application"
+      summary: "Upgrade the entitled versions of platform-scoped applications"
       description: |
-        Replaces the entitled version of a platform-scoped application with a higher version, atomically. The new version is validated against every dependent application across all tenants before any change is applied.
+        Replaces the entitled versions of platform-scoped applications with higher versions, atomically: if any application is invalid, nothing is changed. The new versions are validated against every dependent application across all tenants before any change is applied.
 
         Fails with 409 Conflict and a Retry-After header under the same conditions as POST.
       operationId: upgradePlatformEntitlement

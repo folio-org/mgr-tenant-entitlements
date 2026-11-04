@@ -63,12 +63,15 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   private static final String PLATFORM_PATH = "/entitlements/platform";
   private static final String PLATFORM_APP_V1 = "platform-app-1.0.0";
   private static final String PLATFORM_APP_V2 = "platform-app-2.0.0";
+  private static final String OTHER_PLATFORM_APP_V1 = "other-platform-1.0.0";
   private static final String REGULAR_APP = "folio-app1-1.0.0";
   private static final String RETRY_AFTER = "Retry-After";
   private static final String DEFAULT_RETRY_AFTER_SECONDS = "5";
 
   private static final String STUB_PLATFORM_V1 = "/wiremock/mgr-applications/platform/get-platform-app-v1.json";
   private static final String STUB_PLATFORM_V2 = "/wiremock/mgr-applications/platform/get-platform-app-v2.json";
+  private static final String STUB_OTHER_PLATFORM_V1 =
+    "/wiremock/mgr-applications/platform/get-other-platform-app-v1.json";
   private static final String STUB_REGULAR = "/wiremock/mgr-applications/platform/get-regular-app.json";
 
   @Autowired private PlatformLockService platformLockService;
@@ -89,6 +92,24 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
     entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated());
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
+  }
+
+  @Test
+  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_OTHER_PLATFORM_V1})
+  void entitle_positive_severalApplicationsAreEntitledTogether() throws Exception {
+    entitlePlatform(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1).andExpect(status().isCreated())
+      .andExpect(jsonPath("$.totalRecords", is(2)));
+
+    assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1);
+  }
+
+  @Test
+  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_REGULAR})
+  void entitle_negative_oneRegularApplicationFailsTheWholeRequest() throws Exception {
+    expectStageFailure(entitlePlatform(PLATFORM_APP_V1, REGULAR_APP), "PlatformScopeValidator",
+      "Application is not platform-scoped");
+
+    assertThat(platformApplicationIds()).isEmpty();
   }
 
   @Test
@@ -211,12 +232,12 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
       .andExpect(status().isBadRequest());
   }
 
-  private ResultActions entitlePlatform(String applicationId) throws Exception {
-    return mockMvc.perform(withBody(post(path(PLATFORM_PATH)), platformBody(applicationId)));
+  private ResultActions entitlePlatform(String... applicationIds) throws Exception {
+    return mockMvc.perform(withBody(post(path(PLATFORM_PATH)), platformBody(applicationIds)));
   }
 
-  private ResultActions upgradePlatform(String applicationId) throws Exception {
-    return mockMvc.perform(withBody(put(path(PLATFORM_PATH)), platformBody(applicationId)));
+  private ResultActions upgradePlatform(String... applicationIds) throws Exception {
+    return mockMvc.perform(withBody(put(path(PLATFORM_PATH)), platformBody(applicationIds)));
   }
 
   private List<String> platformApplicationIds() {
@@ -255,8 +276,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     return builder.contentType(APPLICATION_JSON).header(TOKEN, getSystemAccessToken()).content(asJsonString(body));
   }
 
-  private static PlatformEntitlementRequestBody platformBody(String applicationId) {
-    return new PlatformEntitlementRequestBody().applications(List.of(applicationId));
+  private static PlatformEntitlementRequestBody platformBody(String... applicationIds) {
+    return new PlatformEntitlementRequestBody().applications(List.of(applicationIds));
   }
 
   private static String path(String path) {

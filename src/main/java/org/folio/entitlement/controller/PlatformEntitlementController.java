@@ -1,5 +1,6 @@
 package org.folio.entitlement.controller;
 
+import static org.folio.common.utils.CollectionUtils.toStream;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.springframework.http.HttpStatus.CREATED;
@@ -40,14 +41,14 @@ public class PlatformEntitlementController extends BaseController implements Pla
   private static PlatformEntitlementRequest createRequest(PlatformEntitlementRequestBody request,
     EntitlementRequestType type, String token) {
     return PlatformEntitlementRequest.builder()
-      .applicationId(request.getApplications().get(0))
+      .applicationIds(request.getApplications())
       .type(type)
       .okapiToken(token)
       .build();
   }
 
   private static ExtendedPlatformEntitlements buildResponse(PlatformEntitlementRequestBody request, UUID flowId) {
-    List<PlatformEntitlement> entitlements = request.getApplications().stream()
+    List<PlatformEntitlement> entitlements = toStream(request.getApplications())
       .map(applicationId -> new PlatformEntitlement().applicationId(applicationId))
       .toList();
     return new ExtendedPlatformEntitlements()

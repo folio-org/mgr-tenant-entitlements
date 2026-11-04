@@ -25,7 +25,7 @@ class PlatformFlowProviderTest {
 
   @Test
   void createFlow_positive_entitleRequestUsesEntitleFactory() {
-    var request = platformRequest(APP_ID, ENTITLE, OKAPI_TOKEN);
+    var request = platformRequest(ENTITLE, OKAPI_TOKEN, APP_ID);
     var flow = mock(Flow.class);
     when(entitleFactory.createFlow(FLOW_ID, request)).thenReturn(flow);
 
@@ -35,7 +35,7 @@ class PlatformFlowProviderTest {
 
   @Test
   void createFlow_positive_upgradeRequestUsesUpgradeFactory() {
-    var request = platformRequest(APP_ID, UPGRADE, OKAPI_TOKEN);
+    var request = platformRequest(UPGRADE, OKAPI_TOKEN, APP_ID);
     var flow = mock(Flow.class);
     when(upgradeFactory.createFlow(FLOW_ID, request)).thenReturn(flow);
 

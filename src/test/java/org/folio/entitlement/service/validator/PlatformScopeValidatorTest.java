@@ -25,24 +25,33 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class PlatformScopeValidatorTest {
 
   private static final String APPLICATION_ID = "platform-app-1.0.0";
+  private static final String OTHER_APPLICATION_ID = "other-platform-1.0.0";
+  private static final String REGULAR_APPLICATION_ID = "regular-app-1.0.0";
 
   @InjectMocks private PlatformScopeValidator validator;
   @Mock private ApplicationManagerService applicationManagerService;
 
   @Test
   void execute_positive_platformScopedApplicationIsAccepted() {
-    var descriptor = appDescriptor(APPLICATION_ID).scope(ApplicationScope.PLATFORM);
-    when(applicationManagerService.getApplicationDescriptor(APPLICATION_ID, OKAPI_TOKEN)).thenReturn(descriptor);
-    var context = platformContext(platformRequest(APPLICATION_ID, ENTITLE, OKAPI_TOKEN));
+    stubScope(APPLICATION_ID, ApplicationScope.PLATFORM);
+    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, APPLICATION_ID));
+
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
+  }
+
+  @Test
+  void execute_positive_everyApplicationIsPlatformScoped() {
+    stubScope(APPLICATION_ID, ApplicationScope.PLATFORM);
+    stubScope(OTHER_APPLICATION_ID, ApplicationScope.PLATFORM);
+    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, APPLICATION_ID, OTHER_APPLICATION_ID));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
 
   @Test
   void execute_negative_regularApplicationIsRejected() {
-    var descriptor = appDescriptor(APPLICATION_ID).scope(ApplicationScope.REGULAR);
-    when(applicationManagerService.getApplicationDescriptor(APPLICATION_ID, OKAPI_TOKEN)).thenReturn(descriptor);
-    var context = platformContext(platformRequest(APPLICATION_ID, ENTITLE, OKAPI_TOKEN));
+    stubScope(REGULAR_APPLICATION_ID, ApplicationScope.REGULAR);
+    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, REGULAR_APPLICATION_ID));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -50,8 +59,39 @@ class PlatformScopeValidatorTest {
       .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
         .singleElement()
         .satisfies(parameter -> {
-          assertThat(parameter.getKey()).isEqualTo("applicationId");
-          assertThat(parameter.getValue()).isEqualTo(APPLICATION_ID);
+          assertThat(parameter.getKey()).isEqualTo(REGULAR_APPLICATION_ID);
+          assertThat(parameter.getValue()).isEqualTo("Application is not platform-scoped");
         }));
+  }
+
+  @Test
+  void execute_negative_oneRegularApplicationRejectsWholeRequest() {
+    stubScope(APPLICATION_ID, ApplicationScope.PLATFORM);
+    stubScope(REGULAR_APPLICATION_ID, ApplicationScope.REGULAR);
+    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, APPLICATION_ID, REGULAR_APPLICATION_ID));
+
+    assertThatThrownBy(() -> validator.execute(context))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Application is not platform-scoped")
+      .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
+        .singleElement()
+        .satisfies(parameter -> assertThat(parameter.getKey()).isEqualTo(REGULAR_APPLICATION_ID)));
+  }
+
+  @Test
+  void execute_negative_sameApplicationTwiceIsRejected() {
+    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, "platform-app-1.0.0", "platform-app-2.0.0"));
+
+    assertThatThrownBy(() -> validator.execute(context))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Request contains the same application more than once")
+      .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
+        .extracting(parameter -> parameter.getKey())
+        .containsExactlyInAnyOrder("platform-app-1.0.0", "platform-app-2.0.0"));
+  }
+
+  private void stubScope(String applicationId, ApplicationScope scope) {
+    var descriptor = appDescriptor(applicationId).scope(scope);
+    when(applicationManagerService.getApplicationDescriptor(applicationId, OKAPI_TOKEN)).thenReturn(descriptor);
   }
 }

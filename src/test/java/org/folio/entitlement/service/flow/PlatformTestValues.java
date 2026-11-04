@@ -4,6 +4,7 @@ import static org.folio.entitlement.domain.model.PlatformStageContext.PARAM_PLAT
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -15,9 +16,10 @@ import org.folio.flow.api.StageContext;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class PlatformTestValues {
 
-  public static PlatformEntitlementRequest platformRequest(String applicationId, EntitlementRequestType type, String token) {
+  public static PlatformEntitlementRequest platformRequest(EntitlementRequestType type, String token,
+    String... applicationIds) {
     return PlatformEntitlementRequest.builder()
-      .applicationId(applicationId)
+      .applicationIds(List.of(applicationIds))
       .type(type)
       .okapiToken(token)
       .build();

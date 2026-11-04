@@ -1,6 +1,7 @@
 package org.folio.entitlement.service.validator;
 
 import static java.util.stream.Collectors.toList;
+import static org.folio.common.utils.CollectionUtils.toStream;
 
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.ApplicationScope;
@@ -23,7 +24,7 @@ public class PlatformStateRequestValidator extends DatabaseLoggingStage<CommonSt
 
   @Override
   public void execute(CommonStageContext context) {
-    var platformApplications = context.getApplicationDescriptors().stream()
+    var platformApplications = toStream(context.getApplicationDescriptors())
       .filter(descriptor -> descriptor.getScope() == ApplicationScope.PLATFORM)
       .map(descriptor -> new Parameter()
         .key(descriptor.getId())

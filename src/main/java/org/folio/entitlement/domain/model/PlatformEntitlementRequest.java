@@ -1,5 +1,6 @@
 package org.folio.entitlement.domain.model;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Value;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
@@ -12,9 +13,9 @@ import org.folio.entitlement.domain.dto.EntitlementRequestType;
 public class PlatformEntitlementRequest {
 
   /**
-   * Full application identifier as name-version.
+   * Full application identifiers as name-version. The request is applied to all of them or to none.
    */
-  String applicationId;
+  List<String> applicationIds;
 
   /**
    * {@code ENTITLE} to entitle the application for the first time, {@code UPGRADE} to replace the entitled version.

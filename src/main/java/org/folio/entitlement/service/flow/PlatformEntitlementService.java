@@ -35,8 +35,8 @@ public class PlatformEntitlementService {
    * @return identifier of the flow that performed the request
    */
   public UUID performRequest(PlatformEntitlementRequest request) {
-    log.info("Performing platform entitlement request: applicationId = {}, type = {}",
-      request.getApplicationId(), request.getType());
+    log.debug("Performing platform entitlement request: applicationIds = {}, type = {}",
+      request.getApplicationIds(), request.getType());
 
     var flowId = UUID.randomUUID();
     platformLockService.acquire(flowId);

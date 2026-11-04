@@ -1,0 +1,23 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications/other-platform-1.0.0",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "other-platform-1.0.0",
+      "name": "other-platform",
+      "version": "1.0.0",
+      "scope": "platform"
+    }
+  }
+}
