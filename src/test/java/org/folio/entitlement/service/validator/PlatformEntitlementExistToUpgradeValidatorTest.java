@@ -24,14 +24,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class PlatformUpgradeValidatorTest {
+class PlatformEntitlementExistToUpgradeValidatorTest {
 
   private static final String APP_V1 = "app-platform-1.0.0";
   private static final String APP_V2 = "app-platform-2.0.0";
   private static final String OTHER_V1 = "other-platform-1.0.0";
   private static final String OTHER_V2 = "other-platform-2.0.0";
 
-  @InjectMocks private PlatformUpgradeValidator validator;
+  @InjectMocks private PlatformEntitlementExistToUpgradeValidator validator;
   @Mock private PlatformEntitlementRepository repository;
 
   @Test

@@ -8,7 +8,7 @@ import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.validator.PlatformApplicationScopeValidator;
-import org.folio.entitlement.service.validator.PlatformExistEntitlementValidator;
+import org.folio.entitlement.service.validator.PlatformEntitlementExistValidator;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
 import org.springframework.stereotype.Component;
@@ -22,7 +22,7 @@ public class PlatformEntitleFlowFactory implements PlatformFlowFactory {
 
   private final FlowInitializer flowInitializer;
   private final PlatformApplicationScopeValidator applicationScopeValidator;
-  private final PlatformExistEntitlementValidator existEntitlementValidator;
+  private final PlatformEntitlementExistValidator entitlementExistValidator;
   private final PlatformEntitlementCommitStage commitStage;
 
   private final FinishedFlowFinalizer finishedFlowFinalizer;
@@ -34,7 +34,7 @@ public class PlatformEntitleFlowFactory implements PlatformFlowFactory {
       .id(flowId)
       .stage(flowInitializer)
       .stage(applicationScopeValidator)
-      .stage(existEntitlementValidator)
+      .stage(entitlementExistValidator)
       .stage(commitStage)
       .stage(finishedFlowFinalizer);
     return finalizerCallbacks.apply(builder)

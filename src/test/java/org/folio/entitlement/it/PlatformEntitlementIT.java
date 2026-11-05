@@ -140,7 +140,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   void entitle_negative_secondVersionIsRejectedWhileAnotherIsEntitled() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V2);
 
-    expectStageFailure(result, "PlatformExistEntitlementValidator",
+    expectStageFailure(result, "PlatformEntitlementExistValidator",
       "Another version of the application is already entitled");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
@@ -177,7 +177,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   void upgrade_negative_nothingIsEntitled() throws Exception {
     var result = upgradePlatform(PLATFORM_APP_V2);
 
-    expectStageFailure(result, "PlatformUpgradeValidator", "No version of the application is entitled to upgrade");
+    expectStageFailure(result, "PlatformEntitlementExistToUpgradeValidator",
+      "No version of the application is entitled to upgrade");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.UPGRADE);
     assertThat(platformApplicationIds()).isEmpty();
   }
