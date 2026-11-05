@@ -119,7 +119,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   void entitle_negative_oneRegularApplicationFailsTheWholeRequest() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V1, REGULAR_APP);
 
-    expectStageFailure(result, "PlatformApplicationScopeValidator", "Application is not platform-scoped");
+    expectStageFailure(result, "PlatformEntitleApplicationsValidator", "Application is not platform-scoped");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).isEmpty();
   }
@@ -129,7 +129,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   void entitle_negative_regularApplicationIsRejected() throws Exception {
     var result = entitlePlatform(REGULAR_APP);
 
-    expectStageFailure(result, "PlatformApplicationScopeValidator", "Application is not platform-scoped");
+    expectStageFailure(result, "PlatformEntitleApplicationsValidator", "Application is not platform-scoped");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).isEmpty();
   }
@@ -140,7 +140,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   void entitle_negative_secondVersionIsRejectedWhileAnotherIsEntitled() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V2);
 
-    expectStageFailure(result, "PlatformEntitlementExistValidator",
+    expectStageFailure(result, "PlatformEntitlementNotExistValidator",
       "Another version of the application is already entitled");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);

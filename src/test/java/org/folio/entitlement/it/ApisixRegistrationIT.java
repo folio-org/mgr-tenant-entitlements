@@ -43,6 +43,6 @@ class ApisixRegistrationIT extends BaseIntegrationTest {
       .filter(route -> route != null && route.getLabels() != null
         && moduleName.equals(route.getLabels().get("module")))
       .toList();
-    assertThat(moduleRoutes).hasSize(19);
+    assertThat(moduleRoutes).hasSize(21);
   }
 }

@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
-import org.folio.entitlement.service.validator.PlatformApplicationScopeValidator;
-import org.folio.entitlement.service.validator.PlatformEntitlementExistValidator;
+import org.folio.entitlement.service.validator.PlatformEntitleApplicationsValidator;
+import org.folio.entitlement.service.validator.PlatformEntitlementNotExistValidator;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
 import org.springframework.stereotype.Component;
@@ -21,8 +21,8 @@ import org.springframework.stereotype.Component;
 public class PlatformEntitleFlowFactory implements PlatformFlowFactory {
 
   private final FlowInitializer flowInitializer;
-  private final PlatformApplicationScopeValidator applicationScopeValidator;
-  private final PlatformEntitlementExistValidator entitlementExistValidator;
+  private final PlatformEntitleApplicationsValidator entitleApplicationsValidator;
+  private final PlatformEntitlementNotExistValidator entitlementNotExistValidator;
   private final PlatformEntitlementCommitStage commitStage;
 
   private final FinishedFlowFinalizer finishedFlowFinalizer;
@@ -33,8 +33,8 @@ public class PlatformEntitleFlowFactory implements PlatformFlowFactory {
     var builder = Flow.builder()
       .id(flowId)
       .stage(flowInitializer)
-      .stage(applicationScopeValidator)
-      .stage(entitlementExistValidator)
+      .stage(entitlementNotExistValidator)
+      .stage(entitleApplicationsValidator)
       .stage(commitStage)
       .stage(finishedFlowFinalizer);
     return finalizerCallbacks.apply(builder)

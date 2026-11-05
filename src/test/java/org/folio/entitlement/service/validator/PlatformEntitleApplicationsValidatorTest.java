@@ -22,13 +22,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class PlatformApplicationScopeValidatorTest {
+class PlatformEntitleApplicationsValidatorTest {
 
   private static final String APPLICATION_ID = "platform-app-1.0.0";
   private static final String OTHER_APPLICATION_ID = "other-platform-1.0.0";
   private static final String REGULAR_APPLICATION_ID = "regular-app-1.0.0";
 
-  @InjectMocks private PlatformApplicationScopeValidator validator;
+  @InjectMocks private PlatformEntitleApplicationsValidator validator;
   @Mock private ApplicationManagerService applicationManagerService;
 
   @Test

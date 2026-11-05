@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class PlatformApplicationScopeValidator extends DatabaseLoggingStage<CommonStageContext> {
+public class PlatformEntitleApplicationsValidator extends DatabaseLoggingStage<CommonStageContext> {
 
   private final ApplicationManagerService applicationManagerService;
 
