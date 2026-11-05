@@ -7,8 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
+import org.folio.entitlement.service.validator.PlatformApplicationScopeValidator;
 import org.folio.entitlement.service.validator.PlatformDependentsValidator;
-import org.folio.entitlement.service.validator.PlatformScopeValidator;
 import org.folio.entitlement.service.validator.PlatformUpgradeValidator;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
 
   private final FlowInitializer flowInitializer;
-  private final PlatformScopeValidator scopeValidator;
+  private final PlatformApplicationScopeValidator applicationScopeValidator;
   private final PlatformUpgradeValidator upgradeValidator;
   private final PlatformDependentsValidator dependentsValidator;
   private final PlatformEntitlementCommitStage commitStage;
@@ -35,7 +35,7 @@ public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
     var builder = Flow.builder()
       .id(flowId)
       .stage(flowInitializer)
-      .stage(scopeValidator)
+      .stage(applicationScopeValidator)
       .stage(upgradeValidator)
       .stage(dependentsValidator)
       .stage(commitStage)

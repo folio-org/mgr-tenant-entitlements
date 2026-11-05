@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class PlatformEntitleValidator extends DatabaseLoggingStage<CommonStageContext> {
+public class PlatformExistEntitlementValidator extends DatabaseLoggingStage<CommonStageContext> {
 
   private final PlatformEntitlementRepository repository;
 

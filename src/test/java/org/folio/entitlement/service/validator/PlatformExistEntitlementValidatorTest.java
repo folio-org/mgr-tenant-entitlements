@@ -22,13 +22,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class PlatformEntitleValidatorTest {
+class PlatformExistEntitlementValidatorTest {
 
   private static final String APP_V1 = "app-platform-1.0.0";
   private static final String APP_V2 = "app-platform-2.0.0";
   private static final String OTHER_V1 = "other-platform-1.0.0";
 
-  @InjectMocks private PlatformEntitleValidator validator;
+  @InjectMocks private PlatformExistEntitlementValidator validator;
   @Mock private PlatformEntitlementRepository repository;
 
   @Test
