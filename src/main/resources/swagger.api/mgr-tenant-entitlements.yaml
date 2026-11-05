@@ -523,8 +523,6 @@ components:
       $ref: schemas/reinstallResult.json
     platformEntitlementRequestBody:
       $ref: schemas/platformEntitlementRequestBody.json
-    platformEntitlement:
-      $ref: schemas/platformEntitlement.json
     extendedPlatformEntitlements:
       $ref: schemas/extendedPlatformEntitlements.json
 

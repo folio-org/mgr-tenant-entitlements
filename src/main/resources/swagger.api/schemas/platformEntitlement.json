@@ -8,16 +8,6 @@
     "applicationId": {
       "description": "A Name-Version id of the entitled application version",
       "type": "string"
-    },
-    "applicationName": {
-      "description": "Application name, the key of the entitlement",
-      "type": "string",
-      "readOnly": true
-    },
-    "applicationVersion": {
-      "description": "Application version of the entitlement",
-      "type": "string",
-      "readOnly": true
     }
   },
   "required": [ "applicationId" ]
