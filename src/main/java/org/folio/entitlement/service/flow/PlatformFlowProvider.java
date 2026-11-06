@@ -1,7 +1,7 @@
 package org.folio.entitlement.service.flow;
 
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_UPGRADE;
 
 import java.util.Map;
 import java.util.UUID;
@@ -21,8 +21,8 @@ public class PlatformFlowProvider {
   public PlatformFlowProvider(PlatformEntitleFlowFactory entitleFlowFactory,
     PlatformUpgradeFlowFactory upgradeFlowFactory) {
     this.flowFactories = Map.of(
-      ENTITLE, entitleFlowFactory,
-      UPGRADE, upgradeFlowFactory);
+      PLATFORM_ENTITLE, entitleFlowFactory,
+      PLATFORM_UPGRADE, upgradeFlowFactory);
   }
 
   /**

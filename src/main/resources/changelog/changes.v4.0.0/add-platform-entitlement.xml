@@ -23,4 +23,37 @@
       constraintName="unq_platform_entitlement_application_id"/>
   </changeSet>
 
+  <!-- Dependencies of deployment-wide platform applications. Same as application_dependency, without the tenant. -->
+  <changeSet id="create-platform-application-dependency-table" author="aharbuz">
+    <createTable tableName="platform_application_dependency">
+      <column name="application_id" type="varchar(256)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="application_name" type="varchar(256)"/>
+      <column name="application_version" type="varchar(256)"/>
+      <column name="parent_name" type="varchar(256)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="parent_version" type="varchar(256)">
+        <constraints nullable="false"/>
+      </column>
+      <column name="optional" type="boolean" defaultValueBoolean="false"/>
+    </createTable>
+    <addPrimaryKey tableName="platform_application_dependency"
+      columnNames="application_id,parent_name,parent_version"
+      constraintName="pk_platform_application_dependency"/>
+    <createIndex indexName="idx_platform_app_dependency_parent_name" tableName="platform_application_dependency">
+      <column name="parent_name"/>
+    </createIndex>
+  </changeSet>
+
+  <!-- Application flows of platform applications use their own type. -->
+  <changeSet id="add-platform-entitle-to-entitlement-flow-type" author="aharbuz">
+    <sql>ALTER TYPE entitlement_flow_type ADD VALUE 'PLATFORM_ENTITLE' AFTER 'STATE';</sql>
+  </changeSet>
+
+  <changeSet id="add-platform-upgrade-to-entitlement-flow-type" author="aharbuz">
+    <sql>ALTER TYPE entitlement_flow_type ADD VALUE 'PLATFORM_UPGRADE' AFTER 'PLATFORM_ENTITLE';</sql>
+  </changeSet>
+
 </databaseChangeLog>

@@ -3,7 +3,7 @@ package org.folio.entitlement.service.validator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_UPGRADE;
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformContext;
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformRequest;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
@@ -37,7 +37,7 @@ class PlatformEntitlementExistToUpgradeValidatorTest {
   @Test
   void execute_positive_higherVersion() {
     when(repository.findAllById(List.of("app-platform"))).thenReturn(List.of(PlatformEntitlementEntity.of(APP_V1)));
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, APP_V2));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_V2));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
@@ -45,7 +45,7 @@ class PlatformEntitlementExistToUpgradeValidatorTest {
   @Test
   void execute_positive_sameVersionIsEntitledRetry() {
     when(repository.findAllById(List.of("app-platform"))).thenReturn(List.of(PlatformEntitlementEntity.of(APP_V2)));
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, APP_V2));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_V2));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
@@ -54,7 +54,7 @@ class PlatformEntitlementExistToUpgradeValidatorTest {
   void execute_positive_everyApplicationHasHigherVersion() {
     when(repository.findAllById(List.of("app-platform", "other-platform")))
       .thenReturn(List.of(PlatformEntitlementEntity.of(APP_V1), PlatformEntitlementEntity.of(OTHER_V1)));
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, APP_V2, OTHER_V2));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_V2, OTHER_V2));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
@@ -62,7 +62,7 @@ class PlatformEntitlementExistToUpgradeValidatorTest {
   @Test
   void execute_negative_nothingIsEntitled() {
     when(repository.findAllById(List.of("app-platform"))).thenReturn(List.of());
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, APP_V2));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_V2));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -80,7 +80,7 @@ class PlatformEntitlementExistToUpgradeValidatorTest {
   void execute_negative_lowerVersion(String lowerVersion) {
     var entitled = PlatformEntitlementEntity.of("app-platform-2.0.0");
     when(repository.findAllById(List.of("app-platform"))).thenReturn(List.of(entitled));
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, lowerVersion));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, lowerVersion));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -94,7 +94,7 @@ class PlatformEntitlementExistToUpgradeValidatorTest {
   void execute_negative_oneInvalidApplicationRejectsWholeRequest() {
     when(repository.findAllById(List.of("app-platform", "other-platform")))
       .thenReturn(List.of(PlatformEntitlementEntity.of(APP_V1)));
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, APP_V2, OTHER_V2));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_V2, OTHER_V2));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)

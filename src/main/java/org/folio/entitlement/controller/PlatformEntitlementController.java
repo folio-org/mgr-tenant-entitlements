@@ -1,8 +1,8 @@
 package org.folio.entitlement.controller;
 
 import static org.folio.common.utils.CollectionUtils.toStream;
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_UPGRADE;
 import static org.springframework.http.HttpStatus.CREATED;
 
 import java.util.List;
@@ -27,14 +27,14 @@ public class PlatformEntitlementController extends BaseController implements Pla
   @Override
   public ResponseEntity<ExtendedPlatformEntitlements> createPlatformEntitlement(
     PlatformEntitlementRequestBody request, String token) {
-    var result = entitlementService.performRequest(createRequest(request, ENTITLE, token));
+    var result = entitlementService.performRequest(createRequest(request, PLATFORM_ENTITLE, token));
     return ResponseEntity.status(CREATED).body(buildResponse(result));
   }
 
   @Override
   public ResponseEntity<ExtendedPlatformEntitlements> upgradePlatformEntitlement(
     PlatformEntitlementRequestBody request, String token) {
-    var result = entitlementService.performRequest(createRequest(request, UPGRADE, token));
+    var result = entitlementService.performRequest(createRequest(request, PLATFORM_UPGRADE, token));
     return ResponseEntity.ok(buildResponse(result));
   }
 

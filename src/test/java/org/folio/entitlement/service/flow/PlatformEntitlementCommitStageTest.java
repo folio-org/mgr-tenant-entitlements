@@ -2,7 +2,7 @@ package org.folio.entitlement.service.flow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_UPGRADE;
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformContext;
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformRequest;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
@@ -40,7 +40,7 @@ class PlatformEntitlementCommitStageTest {
 
   @Test
   void execute_positive_upgradeSavesRequestedVersion() {
-    stage.execute(platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, APP_V2)));
+    stage.execute(platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_V2)));
 
     assertThat(savedApplicationIds()).containsExactly(APP_V2);
   }

@@ -5,3 +5,4 @@ truncate table application_flow cascade;
 truncate table flow cascade;
 truncate table entitlement_module cascade;
 truncate table platform_entitlement cascade;
+truncate table platform_application_dependency cascade;

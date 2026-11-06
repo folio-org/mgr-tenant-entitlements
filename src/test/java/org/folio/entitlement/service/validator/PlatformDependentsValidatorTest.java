@@ -3,7 +3,7 @@ package org.folio.entitlement.service.validator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_UPGRADE;
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformContext;
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformRequest;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
@@ -37,7 +37,7 @@ class PlatformDependentsValidatorTest {
     when(dependencyRepository.findByParentNameIn(List.of("platform-app"))).thenReturn(List.of(
       dependent(TENANT_ID, "folio-app3-3.0.0", "^1.0.0"),
       dependent(OTHER_TENANT_ID, "folio-app4-4.0.0", ">=1.0.0")));
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, "platform-app-1.5.0"));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, "platform-app-1.5.0"));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
@@ -45,7 +45,7 @@ class PlatformDependentsValidatorTest {
   @Test
   void execute_positive_upgradeWithoutDependents() {
     when(dependencyRepository.findByParentNameIn(List.of("platform-app"))).thenReturn(List.of());
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, "platform-app-2.0.0"));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, "platform-app-2.0.0"));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
@@ -55,7 +55,7 @@ class PlatformDependentsValidatorTest {
     when(dependencyRepository.findByParentNameIn(List.of("platform-app"))).thenReturn(List.of(
       dependent(TENANT_ID, "folio-app3-3.0.0", "^1.0.0"),
       dependent(OTHER_TENANT_ID, "folio-app4-4.0.0", "^2.0.0")));
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, "platform-app-2.0.0"));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, "platform-app-2.0.0"));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -73,7 +73,8 @@ class PlatformDependentsValidatorTest {
     when(dependencyRepository.findByParentNameIn(anyList())).thenReturn(List.of(
       dependent(TENANT_ID, "folio-app3-3.0.0", "^1.0.0"),
       dependent(OTHER_TENANT_ID, "folio-app4-4.0.0", "^1.0.0", "other-platform")));
-    var context = platformContext(platformRequest(UPGRADE, OKAPI_TOKEN, "platform-app-1.5.0", "other-platform-2.0.0"));
+    var context = platformContext(
+      platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, "platform-app-1.5.0", "other-platform-2.0.0"));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)

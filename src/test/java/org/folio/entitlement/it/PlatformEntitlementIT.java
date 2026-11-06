@@ -25,10 +25,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
+import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.ExtendedPlatformEntitlements;
 import org.folio.entitlement.domain.dto.Flow;
@@ -49,13 +52,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-/**
- * Integration tests for deployment-wide platform application entitlements and the platform lock.
- *
- * <p>Platform applications are changed only through {@code /entitlements/platform}; tenant-scoped writes are rejected
- * with 409 while a platform operation holds the lock. The lock is held directly through {@link PlatformLockService}
- * in the tests that need an operation "in progress", which keeps them deterministic.</p>
- */
 @IntegrationTest
 @SqlMergeMode(MERGE)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
@@ -73,6 +69,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   private static final String RETRY_AFTER = "Retry-After";
   private static final String DEFAULT_RETRY_AFTER_SECONDS = "5";
 
+  private static final String STUB_VALIDATE_DESCRIPTOR = "/wiremock/mgr-applications/validate-any-descriptor.json";
   private static final String STUB_PLATFORM_V1 = "/wiremock/mgr-applications/platform/get-platform-app-v1.json";
   private static final String STUB_PLATFORM_V2 = "/wiremock/mgr-applications/platform/get-platform-app-v2.json";
   private static final String STUB_OTHER_PLATFORM_V1 =
@@ -83,7 +80,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @Autowired private PlatformEntitlementRepository platformEntitlementRepository;
 
   @Test
-  @WireMockStub(scripts = STUB_PLATFORM_V1)
+  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_VALIDATE_DESCRIPTOR})
   void entitle_positive_platformApplicationIsEntitledAndRetryIsIdempotent() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated())
       .andExpect(jsonPath("$.flowId", notNullValue()))
@@ -91,7 +88,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(PLATFORM_APP_V1)))
       .andReturn();
 
-    assertPlatformFlow(getFlow(flowIdFromBody(result)), ExecutionStatus.FINISHED, EntitlementRequestType.ENTITLE);
+    assertPlatformFlow(getFlow(flowIdFromBody(result)),
+      ExecutionStatus.FINISHED, EntitlementRequestType.PLATFORM_ENTITLE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
 
     entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated())
@@ -101,17 +99,25 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_OTHER_PLATFORM_V1})
-  void entitle_positive_severalApplicationsAreEntitledTogether() throws Exception {
-    var result = entitlePlatform(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1).andExpect(status().isCreated())
+  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_OTHER_PLATFORM_V1, STUB_VALIDATE_DESCRIPTOR})
+  void entitle_positive_severalApplicationsAreEntitledInDependencyOrder() throws Exception {
+    var result = entitlePlatform(OTHER_PLATFORM_APP_V1, PLATFORM_APP_V1).andExpect(status().isCreated())
       .andExpect(jsonPath("$.flowId", notNullValue()))
       .andExpect(jsonPath("$.totalRecords", is(2)))
       .andExpect(jsonPath("$.platformEntitlements[*].applicationId",
         containsInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1)))
       .andReturn();
 
-    assertPlatformFlow(getFlow(flowIdFromBody(result)), ExecutionStatus.FINISHED, EntitlementRequestType.ENTITLE);
+    var flowId = flowIdFromBody(result);
+    assertPlatformFlow(getFlow(flowId), ExecutionStatus.FINISHED, EntitlementRequestType.PLATFORM_ENTITLE);
     assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1);
+    var applicationFlows = getFlow(flowId).getApplicationFlows();
+    assertThat(applicationFlows).extracting(ApplicationFlow::getApplicationId)
+      .containsExactlyInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1);
+    assertThat(applicationFlows).extracting(ApplicationFlow::getStatus).containsOnly(ExecutionStatus.FINISHED);
+    assertThat(applicationFlows).extracting(ApplicationFlow::getType).containsOnly(EntitlementType.PLATFORM_ENTITLE);
+    assertThat(finishedAt(applicationFlows, PLATFORM_APP_V1))
+      .isBeforeOrEqualTo(finishedAt(applicationFlows, OTHER_PLATFORM_APP_V1));
   }
 
   @Test
@@ -120,7 +126,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     var result = entitlePlatform(PLATFORM_APP_V1, REGULAR_APP);
 
     expectStageFailure(result, "PlatformEntitleApplicationsValidator", "Application is not platform-scoped");
-    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)),
+      ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_ENTITLE);
     assertThat(platformApplicationIds()).isEmpty();
   }
 
@@ -130,7 +137,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     var result = entitlePlatform(REGULAR_APP);
 
     expectStageFailure(result, "PlatformEntitleApplicationsValidator", "Application is not platform-scoped");
-    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)),
+      ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_ENTITLE);
     assertThat(platformApplicationIds()).isEmpty();
   }
 
@@ -142,7 +150,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
     expectStageFailure(result, "PlatformEntitlementNotExistValidator",
       "Another version of the application is already entitled");
-    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.ENTITLE);
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)),
+      ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_ENTITLE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
   }
 
@@ -156,7 +165,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(PLATFORM_APP_V2)))
       .andReturn();
 
-    assertPlatformFlow(getFlow(flowIdFromBody(result)), ExecutionStatus.FINISHED, EntitlementRequestType.UPGRADE);
+    assertPlatformFlow(getFlow(flowIdFromBody(result)),
+      ExecutionStatus.FINISHED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V2);
   }
 
@@ -168,7 +178,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
     expectStageFailure(result, "PlatformDependentsValidator",
       "Platform application upgrade is incompatible with dependent applications");
-    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.UPGRADE);
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)),
+      ExecutionStatus.FAILED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
   }
 
@@ -179,7 +190,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
     expectStageFailure(result, "PlatformEntitlementExistToUpgradeValidator",
       "No version of the application is entitled to upgrade");
-    assertPlatformFlow(getFlow(flowIdFromHeader(result)), ExecutionStatus.FAILED, EntitlementRequestType.UPGRADE);
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)),
+      ExecutionStatus.FAILED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).isEmpty();
   }
 
@@ -241,6 +253,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {
     STUB_PLATFORM_V1,
     STUB_REGULAR,
+    STUB_VALIDATE_DESCRIPTOR,
     "/wiremock/mgr-tenants/test/get-404.json",
     "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json"
   })
@@ -287,6 +300,12 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     assertThat(flow.getStatus()).isEqualTo(status);
     assertThat(flow.getType()).isEqualTo(type);
     assertThat(flow.getTenantId()).isNull();
+  }
+
+  private static Date finishedAt(List<ApplicationFlow> applicationFlows, String applicationId) {
+    return applicationFlows.stream()
+      .filter(flow -> applicationId.equals(flow.getApplicationId()))
+      .findFirst().orElseThrow().getFinishedAt();
   }
 
   private Flow getFlow(UUID flowId) throws Exception {

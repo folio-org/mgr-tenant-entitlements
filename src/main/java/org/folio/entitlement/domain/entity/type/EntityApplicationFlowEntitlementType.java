@@ -4,5 +4,6 @@ public enum EntityApplicationFlowEntitlementType {
 
   ENTITLE,
   REVOKE,
-  UPGRADE
+  UPGRADE,
+  PLATFORM_ENTITLE
 }

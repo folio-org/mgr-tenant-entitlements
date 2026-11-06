@@ -1,8 +1,8 @@
 package org.folio.entitlement.service.flow;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_UPGRADE;
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformRequest;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
@@ -25,7 +25,7 @@ class PlatformFlowProviderTest {
 
   @Test
   void createFlow_positive_entitleRequestUsesEntitleFactory() {
-    var request = platformRequest(ENTITLE, OKAPI_TOKEN, APP_ID);
+    var request = platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APP_ID);
     var flow = mock(Flow.class);
     when(entitleFactory.createFlow(FLOW_ID, request)).thenReturn(flow);
 
@@ -35,7 +35,7 @@ class PlatformFlowProviderTest {
 
   @Test
   void createFlow_positive_upgradeRequestUsesUpgradeFactory() {
-    var request = platformRequest(UPGRADE, OKAPI_TOKEN, APP_ID);
+    var request = platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_ID);
     var flow = mock(Flow.class);
     when(upgradeFactory.createFlow(FLOW_ID, request)).thenReturn(flow);
 

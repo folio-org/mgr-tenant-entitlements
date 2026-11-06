@@ -3,7 +3,7 @@ package org.folio.entitlement.service.validator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_ENTITLE;
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformContext;
 import static org.folio.entitlement.service.flow.PlatformTestValues.platformRequest;
 import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
@@ -34,7 +34,7 @@ class PlatformEntitleApplicationsValidatorTest {
   @Test
   void execute_positive_platformScopedApplicationIsAccepted() {
     stubScope(APPLICATION_ID, ApplicationScope.PLATFORM);
-    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, APPLICATION_ID));
+    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
@@ -43,7 +43,7 @@ class PlatformEntitleApplicationsValidatorTest {
   void execute_positive_everyApplicationIsPlatformScoped() {
     stubScope(APPLICATION_ID, ApplicationScope.PLATFORM);
     stubScope(OTHER_APPLICATION_ID, ApplicationScope.PLATFORM);
-    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, APPLICATION_ID, OTHER_APPLICATION_ID));
+    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID, OTHER_APPLICATION_ID));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
@@ -51,7 +51,7 @@ class PlatformEntitleApplicationsValidatorTest {
   @Test
   void execute_negative_regularApplicationIsRejected() {
     stubScope(REGULAR_APPLICATION_ID, ApplicationScope.REGULAR);
-    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, REGULAR_APPLICATION_ID));
+    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, REGULAR_APPLICATION_ID));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -68,7 +68,7 @@ class PlatformEntitleApplicationsValidatorTest {
   void execute_negative_oneRegularApplicationRejectsWholeRequest() {
     stubScope(APPLICATION_ID, ApplicationScope.PLATFORM);
     stubScope(REGULAR_APPLICATION_ID, ApplicationScope.REGULAR);
-    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, APPLICATION_ID, REGULAR_APPLICATION_ID));
+    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID, REGULAR_APPLICATION_ID));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -80,7 +80,7 @@ class PlatformEntitleApplicationsValidatorTest {
 
   @Test
   void execute_negative_sameApplicationTwiceIsRejected() {
-    var context = platformContext(platformRequest(ENTITLE, OKAPI_TOKEN, "platform-app-1.0.0", "platform-app-2.0.0"));
+    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, "platform-app-1.0.0", "platform-app-2.0.0"));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)

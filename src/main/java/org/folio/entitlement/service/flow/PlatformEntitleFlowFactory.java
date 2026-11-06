@@ -9,6 +9,7 @@ import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.validator.PlatformEntitleApplicationsValidator;
 import org.folio.entitlement.service.validator.PlatformEntitlementNotExistValidator;
+import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
 import org.springframework.stereotype.Component;
@@ -23,7 +24,8 @@ public class PlatformEntitleFlowFactory implements PlatformFlowFactory {
   private final FlowInitializer flowInitializer;
   private final PlatformEntitleApplicationsValidator entitleApplicationsValidator;
   private final PlatformEntitlementNotExistValidator entitlementNotExistValidator;
-  private final PlatformEntitlementCommitStage commitStage;
+  private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
+  private final BaseApplicationsFlowProvider applicationsFlowProvider;
 
   private final FinishedFlowFinalizer finishedFlowFinalizer;
   private final FlowFinalizerCallbacks finalizerCallbacks;
@@ -35,11 +37,13 @@ public class PlatformEntitleFlowFactory implements PlatformFlowFactory {
       .stage(flowInitializer)
       .stage(entitlementNotExistValidator)
       .stage(entitleApplicationsValidator)
-      .stage(commitStage)
+      .stage(applicationFlowQueuingStage)
+      .stage(DynamicStage.of(applicationsFlowProvider.getName(), applicationsFlowProvider::createFlow))
       .stage(finishedFlowFinalizer);
+
     return finalizerCallbacks.apply(builder)
       .flowParameter(PARAM_REQUEST, request.toEntitlementRequest())
-      .executionStrategy(FlowExecutionStrategy.IGNORE_ON_ERROR)
+      .executionStrategy(FlowExecutionStrategy.CANCEL_ON_ERROR)
       .build();
   }
 }

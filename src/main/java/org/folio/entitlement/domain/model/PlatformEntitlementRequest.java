@@ -18,7 +18,8 @@ public class PlatformEntitlementRequest {
   List<String> applicationIds;
 
   /**
-   * {@code ENTITLE} to entitle the application for the first time, {@code UPGRADE} to replace the entitled version.
+   * {@code PLATFORM_ENTITLE} to entitle the application for the first time, {@code PLATFORM_UPGRADE} to replace the
+   * entitled version.
    */
   EntitlementRequestType type;
 

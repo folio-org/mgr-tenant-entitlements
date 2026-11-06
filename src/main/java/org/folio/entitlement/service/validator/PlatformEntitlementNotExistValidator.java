@@ -16,8 +16,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Rejects an entitle request while a different version of any requested application is already entitled. The same
- * version is accepted: it is a retry, and the commit stage writes nothing new for it. Every violation is reported,
- * and one violation rejects the whole request.
+ * version is accepted: it is a retry, and the application flow finalizer does not save it again. Every violation is
+ * reported, and one violation rejects the whole request.
  */
 @Component
 @RequiredArgsConstructor

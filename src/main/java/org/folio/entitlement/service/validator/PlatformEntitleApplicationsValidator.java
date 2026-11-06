@@ -30,19 +30,19 @@ public class PlatformEntitleApplicationsValidator extends DatabaseLoggingStage<C
     var request = context.getEntitlementRequest();
     validateDistinctNames(request.getApplications());
 
-    var violations = toStream(request.getApplications())
-      .filter(applicationId -> !isPlatformScoped(applicationId, request.getOkapiToken()))
-      .map(applicationId -> new Parameter().key(applicationId).value("Application is not platform-scoped"))
+    var descriptors = toStream(request.getApplications())
+      .map(applicationId -> applicationManagerService.getApplicationDescriptor(applicationId, request.getOkapiToken()))
+      .toList();
+    var violations = descriptors.stream()
+      .filter(descriptor -> descriptor.getScope() != ApplicationScope.PLATFORM)
+      .map(descriptor -> new Parameter().key(descriptor.getId()).value("Application is not platform-scoped"))
       .toList();
 
     if (!violations.isEmpty()) {
       throw new RequestValidationException("Application is not platform-scoped", violations);
     }
-  }
 
-  private boolean isPlatformScoped(String applicationId, String token) {
-    var descriptor = applicationManagerService.getApplicationDescriptor(applicationId, token);
-    return descriptor.getScope() == ApplicationScope.PLATFORM;
+    context.withApplicationDescriptors(descriptors);
   }
 
   private static void validateDistinctNames(List<String> applicationIds) {
