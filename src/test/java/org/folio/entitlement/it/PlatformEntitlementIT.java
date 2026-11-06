@@ -1,6 +1,7 @@
 package org.folio.entitlement.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.folio.entitlement.controller.ApiExceptionHandler.FLOW_ID_HEADER;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
@@ -29,6 +30,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.assertj.core.groups.Tuple;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.dto.EntitlementType;
@@ -38,6 +40,7 @@ import org.folio.entitlement.domain.dto.Flow;
 import org.folio.entitlement.domain.dto.Flows;
 import org.folio.entitlement.domain.dto.PlatformEntitlementRequestBody;
 import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
+import org.folio.entitlement.repository.PlatformApplicationDependencyRepository;
 import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.lock.PlatformLockService;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
@@ -78,6 +81,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   @Autowired private PlatformLockService platformLockService;
   @Autowired private PlatformEntitlementRepository platformEntitlementRepository;
+  @Autowired private PlatformApplicationDependencyRepository platformApplicationDependencyRepository;
 
   @Test
   @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_VALIDATE_DESCRIPTOR})
@@ -118,6 +122,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     assertThat(applicationFlows).extracting(ApplicationFlow::getType).containsOnly(EntitlementType.PLATFORM_ENTITLE);
     assertThat(finishedAt(applicationFlows, PLATFORM_APP_V1))
       .isBeforeOrEqualTo(finishedAt(applicationFlows, OTHER_PLATFORM_APP_V1));
+    assertThat(platformDependencies()).containsExactly(tuple(OTHER_PLATFORM_APP_V1, "platform-app", "^1.0.0"));
   }
 
   @Test
@@ -135,6 +140,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     assertThat(getFlow(flowId).getApplicationFlows()).extracting(ApplicationFlow::getApplicationId)
       .containsExactly(OTHER_PLATFORM_APP_V1);
     assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1);
+    assertThat(platformDependencies()).containsExactly(tuple(OTHER_PLATFORM_APP_V1, "platform-app", "^1.0.0"));
   }
 
   @Test
@@ -297,6 +303,12 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   private ResultActions upgradePlatform(String... applicationIds) throws Exception {
     return mockMvc.perform(withBody(put(path(PLATFORM_PATH)), platformBody(applicationIds)));
+  }
+
+  private List<Tuple> platformDependencies() {
+    return platformApplicationDependencyRepository.findAll().stream()
+      .map(d -> tuple(d.getApplicationId(), d.getParentName(), d.getParentVersion()))
+      .toList();
   }
 
   private List<String> platformApplicationIds() {
