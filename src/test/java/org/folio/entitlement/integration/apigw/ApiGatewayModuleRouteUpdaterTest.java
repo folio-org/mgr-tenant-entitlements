@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_TENANT_NAME;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_INSTALLED_MODULE_DESCRIPTOR;
+import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DISCOVERY;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.MODULE;
 import static org.folio.entitlement.integration.kafka.model.ModuleType.UI_MODULE;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.ModuleDescriptor;
 import org.folio.common.gateway.ApiGatewayService;
 import org.folio.common.gateway.model.GatewayServiceDefinition;
@@ -61,6 +63,74 @@ class ApiGatewayModuleRouteUpdaterTest {
   @AfterEach
   void tearDown() {
     TestUtils.verifyNoMoreInteractions(this);
+  }
+
+  @Test
+  void execute_positive_deprecatedModuleWithoutProvides_noGatewayInteractions() {
+    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+    var params = new HashMap<Object, Object>(
+      moduleFlowParameters(entitlementRequest(), MODULE, new ModuleDescriptor().id(MODULE_ID)));
+    params.remove(PARAM_MODULE_DESCRIPTOR);
+    params.put(PARAM_INSTALLED_MODULE_DESCRIPTOR, installed);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, params, stageParams());
+
+    apiGatewayModuleRouteUpdater.execute(stageContext);
+
+    verifyNoInteractions(apiGatewayService, entitlementModuleService);
+  }
+
+  @Test
+  void execute_positive_moduleWithoutProvides_installedWithProvides_lastTenant_deletesOldService() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(true);
+
+    var installed = moduleWithProvides(INSTALLED_MODULE_ID);
+    var params = new HashMap<Object, Object>(
+      moduleFlowParameters(entitlementRequest(), MODULE, new ModuleDescriptor().id(MODULE_ID)));
+    params.put(PARAM_INSTALLED_MODULE_DESCRIPTOR, installed);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, params, stageParams());
+
+    apiGatewayModuleRouteUpdater.execute(stageContext);
+
+    verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
+    verify(apiGatewayService).deleteServiceRoutes(INSTALLED_MODULE_ID);
+    verify(apiGatewayService).deleteService(INSTALLED_MODULE_ID);
+  }
+
+  @Test
+  void execute_positive_moduleWithoutProvides_installedWithProvides_tenantChecksEnabled_removesTenantFromOldRoutes() {
+    when(properties.getTenantChecks().isEnabled()).thenReturn(true);
+    when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(false);
+
+    var installed = moduleWithProvides(INSTALLED_MODULE_ID);
+    var params = new HashMap<Object, Object>(
+      moduleFlowParameters(entitlementRequest(), MODULE, new ModuleDescriptor().id(MODULE_ID)));
+    params.put(PARAM_INSTALLED_MODULE_DESCRIPTOR, installed);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID, params, stageParams());
+
+    apiGatewayModuleRouteUpdater.execute(stageContext);
+
+    verify(apiGatewayService).removeTenantFromModuleRoutes(INSTALLED_MODULE_ID, TENANT_NAME);
+    verify(entitlementModuleService).isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID);
+  }
+
+  @Test
+  void execute_positive_moduleWithProvides_installedWithoutProvides_doesNotTouchOldService() {
+    when(properties.getRouteManagement().isEnabled()).thenReturn(true);
+    when(properties.getTenantChecks().isEnabled()).thenReturn(true);
+    when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
+
+    var descriptor = moduleDescriptor();
+    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+    var stageContext = moduleStageContext(FLOW_STAGE_ID,
+      moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
+
+    apiGatewayModuleRouteUpdater.execute(stageContext);
+
+    verify(entitlementModuleService).isEntitlementExist(MODULE_ID);
+    verify(apiGatewayService).upsertService(new GatewayServiceDefinition().name(MODULE_ID).url(MODULE_LOCATION));
+    verify(apiGatewayService).addRoutes(List.of(descriptor));
+    verify(apiGatewayService).addTenantToModuleRoutes(MODULE_ID, TENANT_NAME);
   }
 
   @Test
@@ -179,7 +249,7 @@ class ApiGatewayModuleRouteUpdaterTest {
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
     var descriptor = moduleDescriptor();
-    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+    var installed = moduleWithProvides(INSTALLED_MODULE_ID);
 
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
@@ -200,7 +270,7 @@ class ApiGatewayModuleRouteUpdaterTest {
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
     var descriptor = moduleDescriptor();
-    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+    var installed = moduleWithProvides(INSTALLED_MODULE_ID);
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
 
@@ -220,7 +290,7 @@ class ApiGatewayModuleRouteUpdaterTest {
     when(entitlementModuleService.isEntitlementExist(MODULE_ID)).thenReturn(false);
 
     var descriptor = moduleDescriptor();
-    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+    var installed = moduleWithProvides(INSTALLED_MODULE_ID);
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
 
@@ -237,7 +307,7 @@ class ApiGatewayModuleRouteUpdaterTest {
     when(entitlementModuleService.isNoOtherEntitlementExist(INSTALLED_MODULE_ID, TENANT_ID)).thenReturn(true);
 
     var descriptor = moduleDescriptor();
-    var installed = new ModuleDescriptor().id(INSTALLED_MODULE_ID);
+    var installed = moduleWithProvides(INSTALLED_MODULE_ID);
     var stageContext = moduleStageContext(FLOW_STAGE_ID,
       moduleFlowWithDiscoveryAndInstalled(descriptor, installed), stageParams());
 
@@ -271,7 +341,12 @@ class ApiGatewayModuleRouteUpdaterTest {
   }
 
   private static ModuleDescriptor moduleDescriptor() {
-    return new ModuleDescriptor().id(MODULE_ID);
+    return moduleWithProvides(MODULE_ID);
+  }
+
+  private static ModuleDescriptor moduleWithProvides(String id) {
+    return new ModuleDescriptor().id(id)
+      .addProvidesItem(new InterfaceDescriptor().id("foo").version("1.0"));
   }
 
   private static EntitlementRequest entitlementRequest() {
