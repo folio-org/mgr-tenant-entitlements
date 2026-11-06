@@ -121,6 +121,23 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
+  @WireMockStub(scripts = {STUB_OTHER_PLATFORM_V1, STUB_VALIDATE_DESCRIPTOR})
+  void entitle_positive_dependencyIsAlreadyEntitled() throws Exception {
+    var result = entitlePlatform(OTHER_PLATFORM_APP_V1).andExpect(status().isCreated())
+      .andExpect(jsonPath("$.flowId", notNullValue()))
+      .andExpect(jsonPath("$.totalRecords", is(1)))
+      .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(OTHER_PLATFORM_APP_V1)))
+      .andReturn();
+
+    var flowId = flowIdFromBody(result);
+    assertPlatformFlow(getFlow(flowId), ExecutionStatus.FINISHED, EntitlementRequestType.PLATFORM_ENTITLE);
+    assertThat(getFlow(flowId).getApplicationFlows()).extracting(ApplicationFlow::getApplicationId)
+      .containsExactly(OTHER_PLATFORM_APP_V1);
+    assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1);
+  }
+
+  @Test
   @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_REGULAR})
   void entitle_negative_oneRegularApplicationFailsTheWholeRequest() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V1, REGULAR_APP);
