@@ -24,4 +24,9 @@ public class RequestAdminTokenProvider implements AdminTokenProvider {
     log.debug("Obtaining access token from request context");
     return userToken;
   }
+
+  @Override
+  public boolean isSharedIdentity() {
+    return false;
+  }
 }

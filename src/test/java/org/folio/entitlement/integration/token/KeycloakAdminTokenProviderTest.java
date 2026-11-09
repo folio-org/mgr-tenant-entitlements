@@ -42,4 +42,9 @@ class KeycloakAdminTokenProviderTest {
     assertThat(result).isEqualTo(KEYCLOAK_TOKEN);
     verify(keycloakCacheableService).getAccessToken(OKAPI_TOKEN);
   }
+
+  @Test
+  void isSharedIdentity_positive_serviceTokenIsShared() {
+    assertThat(keycloakAdminTokenProvider.isSharedIdentity()).isTrue();
+  }
 }
