@@ -30,11 +30,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class PlatformEntitleDependencyValidatorTest {
+class PlatformDependencyValidatorTest {
 
   private static final String ERROR_MESSAGE = "The following platform application dependencies must be entitled first";
 
-  @InjectMocks private PlatformEntitleDependencyValidator validator;
+  @InjectMocks private PlatformDependencyValidator validator;
   @Mock private PlatformEntitlementRepository repository;
 
   @Test

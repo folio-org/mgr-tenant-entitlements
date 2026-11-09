@@ -148,7 +148,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   void entitle_negative_oneRegularApplicationFailsTheWholeRequest() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V1, REGULAR_APP);
 
-    expectStageFailure(result, "PlatformEntitleApplicationsValidator", "Application is not platform-scoped");
+    expectStageFailure(result, "PlatformApplicationsValidator", "Application is not platform-scoped");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
       ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_ENTITLE);
     assertThat(platformApplicationIds()).isEmpty();
@@ -159,7 +159,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   void entitle_negative_regularApplicationIsRejected() throws Exception {
     var result = entitlePlatform(REGULAR_APP);
 
-    expectStageFailure(result, "PlatformEntitleApplicationsValidator", "Application is not platform-scoped");
+    expectStageFailure(result, "PlatformApplicationsValidator", "Application is not platform-scoped");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
       ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_ENTITLE);
     assertThat(platformApplicationIds()).isEmpty();
@@ -180,7 +180,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   @Test
   @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
-  @WireMockStub(scripts = STUB_PLATFORM_V2)
+  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_PLATFORM_V2, STUB_VALIDATE_DESCRIPTOR})
   void upgrade_positive_replacesEntitledVersion() throws Exception {
     var result = upgradePlatform(PLATFORM_APP_V2).andExpect(status().isOk())
       .andExpect(jsonPath("$.flowId", notNullValue()))
@@ -188,21 +188,27 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(PLATFORM_APP_V2)))
       .andReturn();
 
-    assertPlatformFlow(getFlow(flowIdFromBody(result)),
-      ExecutionStatus.FINISHED, EntitlementRequestType.PLATFORM_UPGRADE);
+    var flow = getFlow(flowIdFromBody(result));
+    assertPlatformFlow(flow, ExecutionStatus.FINISHED, EntitlementRequestType.PLATFORM_UPGRADE);
+    assertThat(flow.getApplicationFlows()).extracting(ApplicationFlow::getApplicationId)
+      .containsExactly(PLATFORM_APP_V2);
+    assertThat(flow.getApplicationFlows()).extracting(ApplicationFlow::getStatus)
+      .containsOnly(ExecutionStatus.FINISHED);
+    assertThat(flow.getApplicationFlows()).extracting(ApplicationFlow::getType)
+      .containsOnly(EntitlementType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V2);
   }
 
   @Test
   @Sql("classpath:/sql/platform/platform-entitlement-with-dependent.sql")
-  @WireMockStub(scripts = STUB_PLATFORM_V2)
+  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_PLATFORM_V2})
   void upgrade_negative_incompatibleDependentRejectsUpgradeAndAppliesNoChange() throws Exception {
     var result = upgradePlatform(PLATFORM_APP_V2);
 
     expectStageFailure(result, "PlatformDependentsValidator",
       "Platform application upgrade is incompatible with dependent applications");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
-      ExecutionStatus.FAILED, EntitlementRequestType.PLATFORM_UPGRADE);
+      ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
   }
 
@@ -214,7 +220,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     expectStageFailure(result, "PlatformEntitlementExistToUpgradeValidator",
       "No version of the application is entitled to upgrade");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
-      ExecutionStatus.FAILED, EntitlementRequestType.PLATFORM_UPGRADE);
+      ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).isEmpty();
   }
 

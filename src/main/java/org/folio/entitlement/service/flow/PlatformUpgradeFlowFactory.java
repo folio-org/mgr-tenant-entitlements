@@ -7,23 +7,27 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
+import org.folio.entitlement.service.validator.PlatformApplicationsValidator;
 import org.folio.entitlement.service.validator.PlatformDependentsValidator;
 import org.folio.entitlement.service.validator.PlatformEntitlementExistToUpgradeValidator;
+import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
 import org.springframework.stereotype.Component;
 
 /**
- * Builds the flow that replaces the entitled version of a platform application with a higher one.
+ * Builds the flow that replaces the entitled version of platform applications with a higher one.
  */
 @Component
 @RequiredArgsConstructor
 public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
 
   private final FlowInitializer flowInitializer;
+  private final PlatformApplicationsValidator applicationsValidator;
   private final PlatformEntitlementExistToUpgradeValidator entitlementExistToUpgradeValidator;
   private final PlatformDependentsValidator dependentsValidator;
-  private final PlatformEntitlementCommitStage commitStage;
+  private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
+  private final BaseApplicationsFlowProvider applicationsFlowProvider;
 
   private final FinishedFlowFinalizer finishedFlowFinalizer;
   private final FlowFinalizerCallbacks finalizerCallbacks;
@@ -35,12 +39,14 @@ public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
       .stage(flowInitializer)
       .stage(entitlementExistToUpgradeValidator)
       .stage(dependentsValidator)
-      .stage(commitStage)
+      .stage(applicationsValidator)
+      .stage(applicationFlowQueuingStage)
+      .stage(DynamicStage.of(applicationsFlowProvider.getName(), applicationsFlowProvider::createFlow))
       .stage(finishedFlowFinalizer);
 
     return finalizerCallbacks.apply(builder)
       .flowParameter(PARAM_REQUEST, request.toEntitlementRequest())
-      .executionStrategy(FlowExecutionStrategy.IGNORE_ON_ERROR)
+      .executionStrategy(FlowExecutionStrategy.CANCEL_ON_ERROR)
       .build();
   }
 }

@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
-import org.folio.entitlement.service.validator.PlatformEntitleApplicationsValidator;
+import org.folio.entitlement.service.validator.PlatformApplicationsValidator;
 import org.folio.entitlement.service.validator.PlatformEntitlementNotExistValidator;
 import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 public class PlatformEntitleFlowFactory implements PlatformFlowFactory {
 
   private final FlowInitializer flowInitializer;
-  private final PlatformEntitleApplicationsValidator entitleApplicationsValidator;
+  private final PlatformApplicationsValidator entitleApplicationsValidator;
   private final PlatformEntitlementNotExistValidator entitlementNotExistValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final BaseApplicationsFlowProvider applicationsFlowProvider;
