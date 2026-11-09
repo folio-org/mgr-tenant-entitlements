@@ -4,5 +4,5 @@
   "title": "Entitlement Type Schema",
   "description": "A entitlement type",
   "type": "string",
-  "enum": [ "entitle", "revoke", "upgrade", "platform_entitle"]
+  "enum": [ "entitle", "revoke", "upgrade", "platform_entitle", "platform_upgrade"]
 }
