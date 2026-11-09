@@ -11,6 +11,7 @@ import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.stage.TenantLoader;
 import org.folio.entitlement.service.validator.ApplicationFlowValidator;
+import org.folio.entitlement.service.validator.EventDependencyValidator;
 import org.folio.entitlement.service.validator.StageRequestValidator;
 import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
@@ -26,6 +27,7 @@ public class EntitleFlowFactory implements FlowFactory {
   private final ApplicationFlowValidator applicationFlowValidator;
   @Qualifier("entitlementInterfaceIntegrityValidator")
   private final StageRequestValidator interfaceIntegrityValidator;
+  private final EventDependencyValidator eventDependencyValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorTreeLoader applicationDescriptorTreeLoader;
   private final KafkaTenantTopicCreator kafkaTenantTopicCreator;
@@ -43,6 +45,7 @@ public class EntitleFlowFactory implements FlowFactory {
       .stage(tenantLoader)
       .stage(applicationDescriptorTreeLoader)
       .stage(interfaceIntegrityValidator)
+      .stage(eventDependencyValidator)
       .stage(applicationFlowQueuingStage)
       .stage(kafkaTenantTopicCreator)
       .stage(DynamicStage.of(applicationsFlowFactory.getName(), applicationsFlowFactory::createFlow))

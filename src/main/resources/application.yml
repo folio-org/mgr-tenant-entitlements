@@ -183,6 +183,8 @@ application:
     pool-threads: ${FLOW_ENGINE_THREADS_NUM:4}
     module-installer-threads: ${FLOW_ENGINE_MODULE_INSTALLER_THREADS:4}
   validation:
+    event-dependency:
+      strict-event-validation: ${STRICT_EVENT_VALIDATION:false}
     interface-integrity:
       entitlement:
         enabled: ${VALIDATION_INTERFACE_INTEGRITY_ENTITLEMENT_ENABLED:true}

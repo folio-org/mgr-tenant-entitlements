@@ -180,6 +180,7 @@ startup. They are planned for removal in the Vetch flower release.
 | VALIDATION_INTERFACE_INTEGRITY_UPGRADE_ENABLED           | true          |  false   | Enables Interface-Integrity validation for upgrade operations. If false, the validator will not be executed for upgrade.                                                                                                  |
 | VALIDATION_INTERFACE_COLLECTOR_MODE                      | combined      |  false   | Defines how required/provided interfaces are collected from application descriptors for validation. `scoped` means interfaces are collected per application and dependencies, `combined` means all applications together. |
 | VALIDATION_INTERFACE_COLLECTOR_EXCLUDE_ENTITLED_REQUIRED | true          |  false   | If set to `true`, required interfaces of entitled applications will not be collected.                                                                                                                                     |
+| STRICT_EVENT_VALIDATION                                  | false         |  false   | If `true`, entitlement fails when a non-optional consumed event has no producer in the application dependency tree. If `false`, a warning is logged. Optional consumed events only ever warn. |
 
 
 ### Kafka environment variables

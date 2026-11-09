@@ -282,6 +282,13 @@
         "essential": false
       },
       {
+        "name": "STRICT_EVENT_VALIDATION",
+        "value": "false",
+        "description": "When true, entitlement fails if a non-optional consumed event has no producer in the application dependency tree; when false, a warning is logged. Optional consumed events only warn",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
         "name": "FOLIO_CLIENT_CONNECT_TIMEOUT",
         "value": "10s",
         "description": "Connect timeout of the HTTP client used to call FOLIO modules during entitlement",
