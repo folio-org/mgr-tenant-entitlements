@@ -47,12 +47,9 @@
     </createIndex>
   </changeSet>
 
-  <!-- Application flows of platform applications use their own type. -->
-  <changeSet id="add-platform-entitle-to-entitlement-flow-type" author="aharbuz">
+  <!-- Flows and application flows of platform applications use their own types. -->
+  <changeSet id="add-platform-types-to-entitlement-flow-type" author="aharbuz">
     <sql>ALTER TYPE entitlement_flow_type ADD VALUE 'PLATFORM_ENTITLE' AFTER 'STATE';</sql>
-  </changeSet>
-
-  <changeSet id="add-platform-upgrade-to-entitlement-flow-type" author="aharbuz">
     <sql>ALTER TYPE entitlement_flow_type ADD VALUE 'PLATFORM_UPGRADE' AFTER 'PLATFORM_ENTITLE';</sql>
   </changeSet>
 

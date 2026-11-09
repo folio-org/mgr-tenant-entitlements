@@ -1,0 +1,26 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"folio-app1-1.0.0\" or \"platform-app-1.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [{"id": "folio-app1-1.0.0", "name": "folio-app1", "version": "1.0.0", "scope": "regular"}, {"id": "platform-app-1.0.0", "name": "platform-app", "version": "1.0.0", "scope": "platform"}],
+      "totalRecords": 2
+    }
+  }
+}

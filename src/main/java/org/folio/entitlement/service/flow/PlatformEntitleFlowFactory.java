@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 public class PlatformEntitleFlowFactory implements PlatformFlowFactory {
 
   private final FlowInitializer flowInitializer;
-  private final PlatformApplicationsValidator entitleApplicationsValidator;
+  private final PlatformApplicationsValidator applicationsValidator;
   private final PlatformEntitlementNotExistValidator entitlementNotExistValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final BaseApplicationsFlowProvider applicationsFlowProvider;
@@ -36,7 +36,7 @@ public class PlatformEntitleFlowFactory implements PlatformFlowFactory {
       .id(flowId)
       .stage(flowInitializer)
       .stage(entitlementNotExistValidator)
-      .stage(entitleApplicationsValidator)
+      .stage(applicationsValidator)
       .stage(applicationFlowQueuingStage)
       .stage(DynamicStage.of(applicationsFlowProvider.getName(), applicationsFlowProvider::createFlow))
       .stage(finishedFlowFinalizer);

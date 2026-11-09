@@ -67,24 +67,33 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   private static final String PLATFORM_PATH = "/entitlements/platform";
   private static final String PLATFORM_APP_V1 = "platform-app-1.0.0";
   private static final String PLATFORM_APP_V2 = "platform-app-2.0.0";
-  private static final String OTHER_PLATFORM_APP_V1 = "other-platform-1.0.0";
+  private static final String PLATFORM_BASE_V1 = "platform-base-1.0.0";
+  private static final String PLATFORM_APP2_V1 = "platform-app2-1.0.0";
   private static final String REGULAR_APP = "folio-app1-1.0.0";
   private static final String RETRY_AFTER = "Retry-After";
   private static final String DEFAULT_RETRY_AFTER_SECONDS = "5";
 
   private static final String STUB_VALIDATE_DESCRIPTOR = "/wiremock/mgr-applications/validate-any-descriptor.json";
-  private static final String STUB_PLATFORM_V1 = "/wiremock/mgr-applications/platform/get-platform-app-v1.json";
-  private static final String STUB_PLATFORM_V2 = "/wiremock/mgr-applications/platform/get-platform-app-v2.json";
-  private static final String STUB_OTHER_PLATFORM_V1 =
-    "/wiremock/mgr-applications/platform/get-other-platform-app-v1.json";
-  private static final String STUB_REGULAR = "/wiremock/mgr-applications/platform/get-regular-app.json";
+  private static final String STUB_ENTITLED_PLATFORM_APP_V1 =
+    "/wiremock/mgr-applications/platform/get-platform-app-v1.json";
+  private static final String STUB_PLATFORM_APP =
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json";
+  private static final String STUB_PLATFORM_APP_V2 =
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v2.json";
+  private static final String STUB_PLATFORM_APP2_DEPENDENCY_ENTITLED =
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app2-dependency-entitled.json";
+  private static final String STUB_PLATFORM_APPS_DEPENDENCY_ORDER =
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-dependency-order.json";
+  private static final String STUB_REGULAR = "/wiremock/mgr-applications/platform/get-by-ids-query-regular-app.json";
+  private static final String STUB_REGULAR_AND_PLATFORM_APP =
+    "/wiremock/mgr-applications/platform/get-by-ids-query-regular-and-platform-app.json";
 
   @Autowired private PlatformLockService platformLockService;
   @Autowired private PlatformEntitlementRepository platformEntitlementRepository;
   @Autowired private PlatformApplicationDependencyRepository platformApplicationDependencyRepository;
 
   @Test
-  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_VALIDATE_DESCRIPTOR})
+  @WireMockStub(scripts = {STUB_PLATFORM_APP, STUB_VALIDATE_DESCRIPTOR})
   void entitle_positive_platformApplicationIsEntitledAndRetryIsIdempotent() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated())
       .andExpect(jsonPath("$.flowId", notNullValue()))
@@ -103,48 +112,48 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_OTHER_PLATFORM_V1, STUB_VALIDATE_DESCRIPTOR})
+  @WireMockStub(scripts = {STUB_PLATFORM_APPS_DEPENDENCY_ORDER, STUB_VALIDATE_DESCRIPTOR})
   void entitle_positive_severalApplicationsAreEntitledInDependencyOrder() throws Exception {
-    var result = entitlePlatform(OTHER_PLATFORM_APP_V1, PLATFORM_APP_V1).andExpect(status().isCreated())
+    var result = entitlePlatform(PLATFORM_APP2_V1, PLATFORM_APP_V1).andExpect(status().isCreated())
       .andExpect(jsonPath("$.flowId", notNullValue()))
       .andExpect(jsonPath("$.totalRecords", is(2)))
       .andExpect(jsonPath("$.platformEntitlements[*].applicationId",
-        containsInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1)))
+        containsInAnyOrder(PLATFORM_APP_V1, PLATFORM_APP2_V1)))
       .andReturn();
 
     var flowId = flowIdFromBody(result);
     assertPlatformFlow(getFlow(flowId), ExecutionStatus.FINISHED, EntitlementRequestType.PLATFORM_ENTITLE);
-    assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1);
+    assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_APP_V1, PLATFORM_APP2_V1);
     var applicationFlows = getFlow(flowId).getApplicationFlows();
     assertThat(applicationFlows).extracting(ApplicationFlow::getApplicationId)
-      .containsExactlyInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1);
+      .containsExactlyInAnyOrder(PLATFORM_APP_V1, PLATFORM_APP2_V1);
     assertThat(applicationFlows).extracting(ApplicationFlow::getStatus).containsOnly(ExecutionStatus.FINISHED);
     assertThat(applicationFlows).extracting(ApplicationFlow::getType).containsOnly(EntitlementType.PLATFORM_ENTITLE);
     assertThat(finishedAt(applicationFlows, PLATFORM_APP_V1))
-      .isBeforeOrEqualTo(finishedAt(applicationFlows, OTHER_PLATFORM_APP_V1));
-    assertThat(platformDependencies()).containsExactly(tuple(OTHER_PLATFORM_APP_V1, "platform-app", "^1.0.0"));
+      .isBeforeOrEqualTo(finishedAt(applicationFlows, PLATFORM_APP2_V1));
+    assertThat(platformDependencies()).containsExactly(tuple(PLATFORM_APP2_V1, "platform-app", "^1.0.0"));
   }
 
   @Test
   @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
-  @WireMockStub(scripts = {STUB_OTHER_PLATFORM_V1, STUB_VALIDATE_DESCRIPTOR})
+  @WireMockStub(scripts = {STUB_PLATFORM_APP2_DEPENDENCY_ENTITLED, STUB_VALIDATE_DESCRIPTOR})
   void entitle_positive_dependencyIsAlreadyEntitled() throws Exception {
-    var result = entitlePlatform(OTHER_PLATFORM_APP_V1).andExpect(status().isCreated())
+    var result = entitlePlatform(PLATFORM_APP2_V1).andExpect(status().isCreated())
       .andExpect(jsonPath("$.flowId", notNullValue()))
       .andExpect(jsonPath("$.totalRecords", is(1)))
-      .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(OTHER_PLATFORM_APP_V1)))
+      .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(PLATFORM_APP2_V1)))
       .andReturn();
 
     var flowId = flowIdFromBody(result);
     assertPlatformFlow(getFlow(flowId), ExecutionStatus.FINISHED, EntitlementRequestType.PLATFORM_ENTITLE);
     assertThat(getFlow(flowId).getApplicationFlows()).extracting(ApplicationFlow::getApplicationId)
-      .containsExactly(OTHER_PLATFORM_APP_V1);
-    assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_APP_V1, OTHER_PLATFORM_APP_V1);
-    assertThat(platformDependencies()).containsExactly(tuple(OTHER_PLATFORM_APP_V1, "platform-app", "^1.0.0"));
+      .containsExactly(PLATFORM_APP2_V1);
+    assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_APP_V1, PLATFORM_APP2_V1);
+    assertThat(platformDependencies()).containsExactly(tuple(PLATFORM_APP2_V1, "platform-app", "^1.0.0"));
   }
 
   @Test
-  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_REGULAR})
+  @WireMockStub(scripts = STUB_REGULAR_AND_PLATFORM_APP)
   void entitle_negative_oneRegularApplicationFailsTheWholeRequest() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V1, REGULAR_APP);
 
@@ -167,7 +176,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   @Test
   @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
-  @WireMockStub(scripts = STUB_PLATFORM_V2)
+  @WireMockStub(scripts = STUB_PLATFORM_APP_V2)
   void entitle_negative_secondVersionIsRejectedWhileAnotherIsEntitled() throws Exception {
     var result = entitlePlatform(PLATFORM_APP_V2);
 
@@ -179,8 +188,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
-  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_PLATFORM_V2, STUB_VALIDATE_DESCRIPTOR})
+  @Sql("classpath:/sql/platform/platform-app-v1-entitled-with-platform-base-dependency.sql")
+  @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_PLATFORM_APP_V2, STUB_VALIDATE_DESCRIPTOR})
   void upgrade_positive_replacesEntitledVersion() throws Exception {
     var result = upgradePlatform(PLATFORM_APP_V2).andExpect(status().isOk())
       .andExpect(jsonPath("$.flowId", notNullValue()))
@@ -196,12 +205,13 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
       .containsOnly(ExecutionStatus.FINISHED);
     assertThat(flow.getApplicationFlows()).extracting(ApplicationFlow::getType)
       .containsOnly(EntitlementType.PLATFORM_UPGRADE);
-    assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V2);
+    assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_BASE_V1, PLATFORM_APP_V2);
+    assertThat(platformDependencies()).containsExactly(tuple(PLATFORM_APP_V2, "platform-base", "~1.0.0"));
   }
 
   @Test
   @Sql("classpath:/sql/platform/platform-entitlement-with-dependent.sql")
-  @WireMockStub(scripts = {STUB_PLATFORM_V1, STUB_PLATFORM_V2})
+  @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_PLATFORM_APP_V2})
   void upgrade_negative_incompatibleDependentRejectsUpgradeAndAppliesNoChange() throws Exception {
     var result = upgradePlatform(PLATFORM_APP_V2);
 
@@ -213,7 +223,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @WireMockStub(scripts = STUB_PLATFORM_V2)
+  @WireMockStub(scripts = STUB_PLATFORM_APP_V2)
   void upgrade_negative_nothingIsEntitled() throws Exception {
     var result = upgradePlatform(PLATFORM_APP_V2);
 
@@ -280,7 +290,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   @Test
   @WireMockStub(scripts = {
-    STUB_PLATFORM_V1,
+    STUB_PLATFORM_APP,
     STUB_REGULAR,
     STUB_VALIDATE_DESCRIPTOR,
     "/wiremock/mgr-tenants/test/get-404.json",

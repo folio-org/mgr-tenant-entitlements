@@ -10,6 +10,9 @@ import static org.folio.entitlement.support.TestConstants.OKAPI_TOKEN;
 import static org.folio.entitlement.support.TestValues.appDescriptor;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+import java.util.List;
+import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.ApplicationScope;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.ApplicationManagerService;
@@ -33,7 +36,7 @@ class PlatformApplicationsValidatorTest {
 
   @Test
   void execute_positive_platformScopedApplicationIsAccepted() {
-    stubScope(APPLICATION_ID, ApplicationScope.PLATFORM);
+    stubDescriptors(platformApp(APPLICATION_ID));
     var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
@@ -41,8 +44,7 @@ class PlatformApplicationsValidatorTest {
 
   @Test
   void execute_positive_everyApplicationIsPlatformScoped() {
-    stubScope(APPLICATION_ID, ApplicationScope.PLATFORM);
-    stubScope(OTHER_APPLICATION_ID, ApplicationScope.PLATFORM);
+    stubDescriptors(platformApp(APPLICATION_ID), platformApp(OTHER_APPLICATION_ID));
     var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID, OTHER_APPLICATION_ID));
 
     assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
@@ -50,7 +52,7 @@ class PlatformApplicationsValidatorTest {
 
   @Test
   void execute_negative_regularApplicationIsRejected() {
-    stubScope(REGULAR_APPLICATION_ID, ApplicationScope.REGULAR);
+    stubDescriptors(regularApp(REGULAR_APPLICATION_ID));
     var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, REGULAR_APPLICATION_ID));
 
     assertThatThrownBy(() -> validator.execute(context))
@@ -66,8 +68,7 @@ class PlatformApplicationsValidatorTest {
 
   @Test
   void execute_negative_oneRegularApplicationRejectsWholeRequest() {
-    stubScope(APPLICATION_ID, ApplicationScope.PLATFORM);
-    stubScope(REGULAR_APPLICATION_ID, ApplicationScope.REGULAR);
+    stubDescriptors(platformApp(APPLICATION_ID), regularApp(REGULAR_APPLICATION_ID));
     var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID, REGULAR_APPLICATION_ID));
 
     assertThatThrownBy(() -> validator.execute(context))
@@ -90,8 +91,17 @@ class PlatformApplicationsValidatorTest {
         .containsExactlyInAnyOrder("platform-app-1.0.0", "platform-app-2.0.0"));
   }
 
-  private void stubScope(String applicationId, ApplicationScope scope) {
-    var descriptor = appDescriptor(applicationId).scope(scope);
-    when(applicationManagerService.getApplicationDescriptor(applicationId, OKAPI_TOKEN)).thenReturn(descriptor);
+  private void stubDescriptors(ApplicationDescriptor... descriptors) {
+    var applicationIds = Arrays.stream(descriptors).map(ApplicationDescriptor::getId).toList();
+    when(applicationManagerService.getApplicationDescriptors(applicationIds, OKAPI_TOKEN))
+      .thenReturn(List.of(descriptors));
+  }
+
+  private static ApplicationDescriptor platformApp(String applicationId) {
+    return appDescriptor(applicationId).scope(ApplicationScope.PLATFORM);
+  }
+
+  private static ApplicationDescriptor regularApp(String applicationId) {
+    return appDescriptor(applicationId).scope(ApplicationScope.REGULAR);
   }
 }

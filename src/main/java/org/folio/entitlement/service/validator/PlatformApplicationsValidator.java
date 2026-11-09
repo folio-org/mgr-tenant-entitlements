@@ -29,10 +29,8 @@ public class PlatformApplicationsValidator extends DatabaseLoggingStage<CommonSt
   public void execute(CommonStageContext context) {
     var request = context.getEntitlementRequest();
     validateDistinctNames(request.getApplications());
-
-    var descriptors = toStream(request.getApplications())
-      .map(applicationId -> applicationManagerService.getApplicationDescriptor(applicationId, request.getOkapiToken()))
-      .toList();
+    var descriptors = applicationManagerService.getApplicationDescriptors(
+      request.getApplications(), request.getOkapiToken());
     var violations = descriptors.stream()
       .filter(descriptor -> descriptor.getScope() != ApplicationScope.PLATFORM)
       .map(descriptor -> new Parameter().key(descriptor.getId()).value("Application is not platform-scoped"))

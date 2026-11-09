@@ -17,7 +17,8 @@
       "id": "platform-app-1.0.0",
       "name": "platform-app",
       "version": "1.0.0",
-      "scope": "platform"
+      "scope": "platform",
+      "dependencies": [{"name": "platform-base", "version": "^1.0.0"}]
     }
   }
 }
