@@ -1,0 +1,46 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"evt-optional-1.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "evt-optional-1.0.0",
+          "name": "evt-optional",
+          "version": "1.0.0",
+          "modules": [
+            {
+              "id": "evt-optional-consumer-1.0.0",
+              "name": "evt-optional-consumer",
+              "version": "1.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "evt-optional-consumer-1.0.0",
+              "name": "evt-optional consumer",
+              "consumesEvents": [
+                {
+                  "event": "evt.missing",
+                  "optional": true
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

@@ -27,9 +27,14 @@ import org.springframework.stereotype.Component;
  * Checks that every consumed event has a producer in the application dependency tree
  * (including platform applications). Events are matched by exact string comparison.
  *
- * <p>A consumed event without a producer: optional - warns; non-optional - warns, or fails when
- * {@code application.validation.event-dependency.strict-event-validation} is {@code true}.
- * Produced events without consumers are ignored.
+ * <p>When a consumed event has no producer:
+ * <ul>
+ *   <li>optional consumer: a warning is logged and entitlement proceeds;</li>
+ *   <li>non-optional consumer, strict mode off (default): a warning is logged and entitlement proceeds;</li>
+ *   <li>non-optional consumer, strict mode on: entitlement fails with an error naming the missing events.</li>
+ * </ul>
+ * Strict mode is set by {@code application.validation.event-dependency.strict-event-validation}.
+ * A produced event that nobody consumes is ignored.
  */
 @Order(EVENT_DEPENDENCY)
 @Log4j2
@@ -78,7 +83,8 @@ public class EventDependencyValidator extends StageRequestValidator {
     if (strict && !appIdsByRequiredEvent.isEmpty()) {
       var params = new Params();
       appIdsByRequiredEvent.forEach((event, appIds) -> params.add(event, String.join(", ", appIds)));
-      throw new RequestValidationException("Consumed events without producers found", params);
+      var message = "Consumed events without producers found: " + String.join(", ", appIdsByRequiredEvent.keySet());
+      throw new RequestValidationException(message, params);
     }
   }
 

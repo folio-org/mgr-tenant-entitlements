@@ -66,6 +66,7 @@ class EventDependencyValidatorTest {
     when(provider.getDescriptors(request)).thenReturn(List.of(app("c-1.0.0", consumes("e.a", false))));
 
     assertThatThrownBy(() -> validator(true).validate(request))
+      .hasMessageContaining("Consumed events without producers found: e.a")
       .isInstanceOfSatisfying(RequestValidationException.class, e ->
         assertThat(e.getErrorParameters()).anySatisfy(p -> {
           assertThat(p.getKey()).isEqualTo("e.a");
@@ -78,6 +79,22 @@ class EventDependencyValidatorTest {
     var request = EntitlementRequest.builder().build();
     when(provider.getDescriptors(request)).thenReturn(List.of(
       app("p-1.0.0", produces("e.a")), app("plain-1.0.0", new ModuleDescriptor())));
+
+    assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
+  }
+
+  @Test
+  void validate_positive_emptyDescriptors() {
+    var request = EntitlementRequest.builder().build();
+    when(provider.getDescriptors(request)).thenReturn(List.of());
+
+    assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
+  }
+
+  @Test
+  void validate_positive_nullDescriptors() {
+    var request = EntitlementRequest.builder().build();
+    when(provider.getDescriptors(request)).thenReturn(null);
 
     assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
   }
