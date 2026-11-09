@@ -1,6 +1,7 @@
 package org.folio.entitlement.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.entitlement.support.TestUtils.moduleDescriptorId;
 
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.types.IntegrationTest;
@@ -26,7 +27,7 @@ class ApiGatewayRegistrationIT extends BaseIntegrationTest {
 
   @Test
   void verifyModuleRegistration() {
-    var moduleName = "mgr-tenant-entitlements-4.0.0";
+    var moduleName = moduleDescriptorId();
     var service = kongAdminClient.getService(moduleName);
     assertThat(service).satisfies(s -> {
       assertThat(s.getProtocol()).isEqualTo("https");
