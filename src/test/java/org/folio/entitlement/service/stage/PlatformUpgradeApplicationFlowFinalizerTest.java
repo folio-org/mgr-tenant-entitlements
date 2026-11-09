@@ -51,6 +51,15 @@ class PlatformUpgradeApplicationFlowFinalizerTest {
   }
 
   @Test
+  void execute_positive_sameVersionRetryChangesNothing() {
+    stubFinishedStatus(1);
+
+    flowFinalizer.execute(stageContext(ENTITLED_ID));
+
+    verify(entitlementRepository, never()).save(any());
+  }
+
+  @Test
   void execute_positive_flowAlreadyTerminal_entitlementNotSaved() {
     stubFinishedStatus(0);
 

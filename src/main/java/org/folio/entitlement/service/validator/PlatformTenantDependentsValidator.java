@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class PlatformDependentsValidator extends DatabaseLoggingStage<CommonStageContext> {
+public class PlatformTenantDependentsValidator extends DatabaseLoggingStage<CommonStageContext> {
 
   private final ApplicationDependencyRepository dependencyRepository;
 

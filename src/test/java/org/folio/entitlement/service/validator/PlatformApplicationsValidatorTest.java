@@ -67,6 +67,19 @@ class PlatformApplicationsValidatorTest {
   }
 
   @Test
+  void execute_negative_applicationWithoutScopeIsTreatedAsRegularAndRejected() {
+    stubDescriptors(appDescriptor(REGULAR_APPLICATION_ID).scope(null));
+    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, REGULAR_APPLICATION_ID));
+
+    assertThatThrownBy(() -> validator.execute(context))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Application is not platform-scoped")
+      .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
+        .singleElement()
+        .satisfies(parameter -> assertThat(parameter.getKey()).isEqualTo(REGULAR_APPLICATION_ID)));
+  }
+
+  @Test
   void execute_negative_oneRegularApplicationRejectsWholeRequest() {
     stubDescriptors(platformApp(APPLICATION_ID), regularApp(REGULAR_APPLICATION_ID));
     var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID, REGULAR_APPLICATION_ID));

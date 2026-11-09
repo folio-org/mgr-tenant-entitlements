@@ -37,7 +37,10 @@ public class PlatformUpgradeApplicationFlowFinalizer
 
   @Override
   protected void afterFlowStatusUpdate(ApplicationStageContext context) {
-    entitlementRepository.save(PlatformEntitlementEntity.of(context.getApplicationId()));
+    var applicationId = context.getApplicationId();
+    if (!applicationId.equals(context.getEntitledApplicationId())) {
+      entitlementRepository.save(PlatformEntitlementEntity.of(applicationId));
+    }
   }
 
   @Override

@@ -25,11 +25,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @UnitTest
 @ExtendWith(MockitoExtension.class)
-class PlatformDependentsValidatorTest {
+class PlatformTenantDependentsValidatorTest {
 
   private static final UUID OTHER_TENANT_ID = UUID.fromString("0fa1b2c3-1111-4222-8333-444455556666");
 
-  @InjectMocks private PlatformDependentsValidator validator;
+  @InjectMocks private PlatformTenantDependentsValidator validator;
   @Mock private ApplicationDependencyRepository dependencyRepository;
 
   @Test

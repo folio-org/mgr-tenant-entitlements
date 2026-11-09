@@ -8,7 +8,7 @@ import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.validator.PlatformApplicationsValidator;
-import org.folio.entitlement.service.validator.PlatformDependentsValidator;
+import org.folio.entitlement.service.validator.PlatformTenantDependentsValidator;
 import org.folio.entitlement.service.validator.PlatformEntitlementExistToUpgradeValidator;
 import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
@@ -25,7 +25,7 @@ public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
   private final FlowInitializer flowInitializer;
   private final PlatformApplicationsValidator applicationsValidator;
   private final PlatformEntitlementExistToUpgradeValidator entitlementExistToUpgradeValidator;
-  private final PlatformDependentsValidator dependentsValidator;
+  private final PlatformTenantDependentsValidator dependentsValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final BaseApplicationsFlowProvider applicationsFlowProvider;
 

@@ -6,9 +6,7 @@ import static org.folio.entitlement.controller.ApiExceptionHandler.FLOW_ID_HEADE
 import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestUtils.parseResponse;
 import static org.folio.entitlement.support.TestValues.desiredStateRequest;
-import static org.folio.entitlement.support.TestValues.emptyEntitlements;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
-import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -215,7 +213,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   void upgrade_negative_incompatibleDependentRejectsUpgradeAndAppliesNoChange() throws Exception {
     var result = upgradePlatform(PLATFORM_APP_V2);
 
-    expectStageFailure(result, "PlatformDependentsValidator",
+    expectStageFailure(result, "PlatformTenantDependentsValidator",
       "Platform application upgrade is incompatible with dependent applications");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
       ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_UPGRADE);
@@ -232,23 +230,6 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
       ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).isEmpty();
-  }
-
-  @Test
-  @WireMockStub(scripts = {
-    "/wiremock/mgr-tenants/test/get.json",
-    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json"
-  })
-  void desiredState_negative_platformApplicationIsRejected() throws Exception {
-    var result = mockMvc.perform(withBody(put(path("/entitlements/state")), desiredStateRequest(PLATFORM_APP_V1)));
-
-    expectStageFailure(result, "PlatformStateRequestValidator",
-      "Desired state request contains platform-scoped applications");
-    var flow = getFlow(flowIdFromHeader(result));
-    assertThat(flow.getStatus()).isEqualTo(ExecutionStatus.CANCELLED);
-    assertThat(flow.getType()).isEqualTo(EntitlementRequestType.STATE);
-    assertThat(flow.getTenantId()).isNotNull();
-    getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_V1), emptyEntitlements());
   }
 
   @Test

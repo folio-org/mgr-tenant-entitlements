@@ -33,6 +33,13 @@ class PlatformStateRequestValidatorTest {
   }
 
   @Test
+  void execute_positive_applicationWithoutScopeIsTreatedAsRegular() {
+    var withoutScope = appDescriptor("folio-app1-1.0.0").scope(null);
+
+    assertThatCode(() -> validator.execute(context(withoutScope))).doesNotThrowAnyException();
+  }
+
+  @Test
   void execute_positive_platformApplicationReachedOnlyAsDependencyIsNotInRequestedDescriptors() {
     // a platform application that is only a dependency is not among the directly requested descriptors
     var requested = appDescriptor("folio-app3-3.0.0", dependency("platform-app-1.0.0"))
