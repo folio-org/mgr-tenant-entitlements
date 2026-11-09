@@ -11,6 +11,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+/**
+ * Verifies that caching follows the identity used for downstream calls.
+ */
 @UnitTest
 @ExtendWith(MockitoExtension.class)
 class EntitlementCachePolicyTest {

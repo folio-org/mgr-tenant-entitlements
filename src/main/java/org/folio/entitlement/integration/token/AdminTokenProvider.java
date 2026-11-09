@@ -1,7 +1,16 @@
 package org.folio.entitlement.integration.token;
 
+/**
+ * Provides the token used for calls to other mgr-* services.
+ */
 public interface AdminTokenProvider {
 
+  /**
+   * Provides the token for a call made on behalf of the given user token.
+   *
+   * @param userToken - token of the caller
+   * @return token to use for the downstream call
+   */
   String getToken(String userToken);
 
   /**

@@ -12,6 +12,9 @@ import org.folio.entitlement.integration.token.AdminTokenProvider;
 import org.folio.entitlement.repository.EntitlementRepository;
 import org.springframework.stereotype.Service;
 
+/**
+ * Provides application descriptors of the applications entitled to a tenant.
+ */
 @Service
 @RequiredArgsConstructor
 public class EntitlementApplicationService {
@@ -22,6 +25,18 @@ public class EntitlementApplicationService {
   private final EntitlementRepository entitlementRepository;
   private final AdminTokenProvider adminTokenProvider;
 
+  /**
+   * Returns a page of application descriptors of the applications entitled to the tenant.
+   *
+   * <p>Entitlements are always read from the database, while the tenant and the application descriptors may come from
+   * caches.</p>
+   *
+   * @param tenant - tenant name
+   * @param userToken - token of the caller
+   * @param offset - number of descriptors to skip
+   * @param limit - maximum number of descriptors in the page
+   * @return {@link ApplicationDescriptors} with the page and the total number of entitled applications
+   */
   public ApplicationDescriptors getApplicationDescriptorsByTenantName(String tenant, String userToken,
                                                                       Integer offset, Integer limit) {
     var token = adminTokenProvider.getToken(userToken);

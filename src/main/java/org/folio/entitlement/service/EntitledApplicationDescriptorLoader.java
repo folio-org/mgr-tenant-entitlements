@@ -31,6 +31,17 @@ public class EntitledApplicationDescriptorLoader {
   private final EntitlementCachePolicy cachePolicy;
   private final CacheManager cacheManager;
 
+  /**
+   * Loads application descriptors by application ids.
+   *
+   * <p>When the cache is enabled by {@code EntitlementCachePolicy}, cached descriptors are reused and only the missing
+   * ones are requested from mgr-applications. Otherwise all descriptors are requested from mgr-applications.</p>
+   *
+   * @param applicationIds - application ids
+   * @param authToken - authorization token used for the call to mgr-applications
+   * @return application descriptors, ordered by application id when the cache is enabled
+   * @throws org.folio.entitlement.exception.RequestValidationException if some applications are not found
+   */
   public List<ApplicationDescriptor> load(Collection<String> applicationIds, String authToken) {
     if (!cachePolicy.isEnabled()) {
       return applicationManagerService.getApplicationDescriptors(applicationIds, authToken);

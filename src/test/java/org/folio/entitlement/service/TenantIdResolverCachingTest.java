@@ -26,6 +26,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
+/**
+ * Verifies the cache annotations of {@link TenantIdResolver} with a minimal Spring context, because annotation
+ * behavior cannot be checked with plain mocks.
+ */
 @UnitTest
 @SpringJUnitConfig(TenantIdResolverCachingTest.TestConfig.class)
 class TenantIdResolverCachingTest {

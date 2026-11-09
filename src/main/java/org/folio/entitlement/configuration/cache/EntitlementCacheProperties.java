@@ -5,6 +5,9 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+/**
+ * Settings of the caches used by the entitled applications endpoint.
+ */
 @Data
 @Component
 @ConfigurationProperties(prefix = "application.cache")
@@ -20,6 +23,9 @@ public class EntitlementCacheProperties {
    */
   private CacheSettings applicationDescriptor = new CacheSettings();
 
+  /**
+   * Expiry and size settings of a single cache.
+   */
   @Data
   public static class CacheSettings {
 

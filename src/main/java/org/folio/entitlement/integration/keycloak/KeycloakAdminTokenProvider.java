@@ -7,9 +7,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * Provides access tokens for internal operations between mgr-* services.
- * Uses KeycloakCacheableService to obtain and cache tokens, ensuring fresh tokens
- * are available even during long-running operations.
+ * Provides the Keycloak system token for internal operations between mgr-* services.
+ * Uses KeycloakCacheableService to obtain and cache the token, ensuring a fresh token
+ * is available even during long-running operations. The token is the same for all callers.
  */
 @Log4j2
 @Component
@@ -20,10 +20,10 @@ public class KeycloakAdminTokenProvider implements AdminTokenProvider {
   private final KeycloakCacheableService keycloakCacheableService;
 
   /**
-   * Retrieves a fresh access token from Keycloak using the provided user token.
+   * Retrieves the Keycloak system token, from the cache when a valid one is available.
    *
-   * @param userToken the user token to authenticate the request
-   * @return a fresh access token from Keycloak
+   * @param userToken the user token of the caller; it does not affect the returned token
+   * @return the Keycloak system token
    */
   public String getToken(String userToken) {
     log.debug("Obtaining access token from Keycloak");

@@ -20,6 +20,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCache;
 
+/**
+ * Verifies per-application descriptor caching, including the case when the cache is bypassed.
+ */
 @UnitTest
 @ExtendWith(MockitoExtension.class)
 class EntitledApplicationDescriptorLoaderTest {

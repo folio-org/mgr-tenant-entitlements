@@ -299,7 +299,7 @@ with `mgr-tenants` and `mgr-applications` services.
 **Configuration:**
 - Requires `KC_INTEGRATION_ENABLED=true`
 - Uses the admin client configured via `KC_ADMIN_CLIENT_ID` and `KC_ADMIN_CLIENT_SECRET`
-- Token cache behavior controlled by `KC_AUTHORIZATION_CACHE_MAX_SIZE` and `KC_AUTHORIZATION_CACHE_TTL_OFFSET`
+- Token cache behavior controlled by `KC_AUTHORIZATION_CACHE_TTL_OFFSET`
 
 ### Keycloak specific environment variables
 
@@ -326,7 +326,6 @@ with `mgr-tenants` and `mgr-applications` services.
 | KC_JWKS_BASE_URL                  |                            |    false    | Custom base URL for JWKS endpoint. If specified, will be used instead of issuer URL from token's iss claim (e.g., http://keycloak:8080).                         |
 | KC_JWKS_REFRESH_INTERVAL          | 60                         |    false    | Jwks refresh interval for realm JWT parser (in minutes).                                                                                                         |
 | KC_FORCED_JWKS_REFRESH_INTERVAL   | 60                         |    false    | Forced jwks refresh interval for realm JWT parser (used in signing key rotation, in minutes).                                                                    |
-| KC_AUTHORIZATION_CACHE_MAX_SIZE   | 50                         |    false    | Maximum amount of entries for keycloak authorization cache.                                                                                                      |
 | KC_AUTHORIZATION_CACHE_TTL_OFFSET | 5000                       |    false    | TTL Offset for cached authorization information, positive, in millis.                                                                                            |
 
 When an admin client call exceeds `KC_ADMIN_CONNECT_TIMEOUT` or `KC_ADMIN_READ_TIMEOUT`, it fails with a

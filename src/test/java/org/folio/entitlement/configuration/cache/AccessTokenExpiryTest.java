@@ -13,6 +13,9 @@ import org.keycloak.representations.AccessTokenResponse;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+/**
+ * Verifies how long a Keycloak system token stays in the cache.
+ */
 @UnitTest
 @ExtendWith(MockitoExtension.class)
 class AccessTokenExpiryTest {

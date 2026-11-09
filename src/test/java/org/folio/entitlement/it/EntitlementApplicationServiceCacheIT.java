@@ -31,6 +31,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.ResultActions;
 
+/**
+ * Runs with Keycloak integration enabled, where the tenant and application descriptor caches are active.
+ */
 @IntegrationTest
 @EnableKeycloakTlsMode
 @EnableKeycloakSecurity
