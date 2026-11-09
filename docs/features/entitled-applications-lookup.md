@@ -64,7 +64,7 @@ Two in-memory caches are kept per module instance; there is no invalidation betw
 |-------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
 | `TENANT_ID_CACHE_TTL` (`application.cache.tenant-id.ttl`, default `15m`)                                    | Time to live of cached tenants                                                      |
 | `TENANT_ID_CACHE_MAX_SIZE` (`application.cache.tenant-id.max-size`, default `100`)                          | Maximum number of cached tenants                                                    |
-| `APP_DESCRIPTOR_CACHE_TTL` (`application.cache.application-descriptor.ttl`, default `10m`)                  | Time to live of cached application descriptors                                      |
+| `APP_DESCRIPTOR_CACHE_TTL` (`application.cache.application-descriptor.ttl`, default `20m`)                  | Time to live of cached application descriptors                                      |
 | `APP_DESCRIPTOR_CACHE_MAX_SIZE` (`application.cache.application-descriptor.max-size`, default `300`)        | Maximum number of cached application descriptors                                    |
 | `KC_AUTHORIZATION_CACHE_TTL_OFFSET` (`application.keycloak.authorization-cache-ttl-offset`, default `5000`) | How many milliseconds before its expiration a cached system token is dropped        |
 | `KC_INTEGRATION_ENABLED` (`application.keycloak.enabled`)                                                   | Enables the system token and, with it, the tenant and application descriptor caches |

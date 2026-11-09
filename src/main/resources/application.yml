@@ -174,7 +174,7 @@ application:
       ttl: ${TENANT_ID_CACHE_TTL:15m}
       max-size: ${TENANT_ID_CACHE_MAX_SIZE:100}
     application-descriptor:
-      ttl: ${APP_DESCRIPTOR_CACHE_TTL:10m}
+      ttl: ${APP_DESCRIPTOR_CACHE_TTL:20m}
       max-size: ${APP_DESCRIPTOR_CACHE_MAX_SIZE:300}
   flow-engine:
     execution-timeout: ${FLOW_ENGINE_EXECUTION_TIMEOUT:30m}

@@ -605,8 +605,8 @@
       },
       {
         "name": "APP_DESCRIPTOR_CACHE_TTL",
-        "value": "10m",
-        "description": "Time to live of the cached application descriptors (by application id) loaded from mgr-applications for GET /entitlements/{tenantName}/applications (Spring Duration syntax, e.g. 10m, 30s). 0 disables the cache. The cache is bypassed when the caller's token is forwarded to mgr-applications (KC_INTEGRATION_ENABLED=false)",
+        "value": "20m",
+        "description": "Time to live of the cached application descriptors (by application id) loaded from mgr-applications for GET /entitlements/{tenantName}/applications (Spring Duration syntax, e.g. 20m, 30s). 0 disables the cache. The cache is bypassed when the caller's token is forwarded to mgr-applications (KC_INTEGRATION_ENABLED=false)",
         "type": "CACHE",
         "essential": false
       },
