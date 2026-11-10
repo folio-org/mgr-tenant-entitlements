@@ -25,7 +25,7 @@ public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
   private final FlowInitializer flowInitializer;
   private final PlatformApplicationsValidator applicationsValidator;
   private final PlatformEntitlementExistToUpgradeValidator entitlementExistToUpgradeValidator;
-  private final PlatformTenantDependentsValidator dependentsValidator;
+  private final PlatformTenantDependentsValidator tenantDependentsValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final BaseApplicationsFlowProvider applicationsFlowProvider;
 
@@ -38,7 +38,7 @@ public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
       .id(flowId)
       .stage(flowInitializer)
       .stage(entitlementExistToUpgradeValidator)
-      .stage(dependentsValidator)
+      .stage(tenantDependentsValidator)
       .stage(applicationsValidator)
       .stage(applicationFlowQueuingStage)
       .stage(DynamicStage.of(applicationsFlowProvider.getName(), applicationsFlowProvider::createFlow))

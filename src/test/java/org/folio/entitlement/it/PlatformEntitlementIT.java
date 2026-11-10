@@ -67,6 +67,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   private static final String PLATFORM_APP_V2 = "platform-app-2.0.0";
   private static final String PLATFORM_BASE_V1 = "platform-base-1.0.0";
   private static final String PLATFORM_APP2_V1 = "platform-app2-1.0.0";
+  private static final String PLATFORM_APP2_V2 = "platform-app2-2.0.0";
   private static final String REGULAR_APP = "folio-app1-1.0.0";
   private static final String RETRY_AFTER = "Retry-After";
   private static final String DEFAULT_RETRY_AFTER_SECONDS = "5";
@@ -82,7 +83,13 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app2-dependency-entitled.json";
   private static final String STUB_PLATFORM_APPS_DEPENDENCY_ORDER =
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-dependency-order.json";
-  private static final String STUB_REGULAR = "/wiremock/mgr-applications/platform/get-by-ids-query-regular-app.json";
+  private static final String STUB_ENTITLED_PLATFORM_APP2_V1 =
+    "/wiremock/mgr-applications/platform/get-platform-app2-v1.json";
+  private static final String STUB_PLATFORM_APPS_ENTITLE_UNSATISFIED_DEPENDENCY =
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-entitle-unsatisfied-dependency.json";
+  private static final String STUB_PLATFORM_APPS_V2_UNSATISFIED_DEPENDENCY =
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-v2-unsatisfied-dependency.json";
+  private static final String STUB_REGULAR ="/wiremock/mgr-applications/platform/get-by-ids-query-regular-app.json";
   private static final String STUB_REGULAR_AND_PLATFORM_APP =
     "/wiremock/mgr-applications/platform/get-by-ids-query-regular-and-platform-app.json";
 
@@ -186,6 +193,20 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
+  @Sql("classpath:/sql/platform/platform-base-v1-entitled.sql")
+  @WireMockStub(scripts = {STUB_PLATFORM_APPS_ENTITLE_UNSATISFIED_DEPENDENCY, STUB_VALIDATE_DESCRIPTOR})
+  void entitle_negative_secondLayerFails_firstLayerRowsAreRolledBack() throws Exception {
+    var result = entitlePlatform(PLATFORM_APP_V1, PLATFORM_APP2_V1);
+
+    expectStageFailure(result, "PlatformDependencyValidator",
+      "The following platform application dependencies must be entitled first");
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)),
+      ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_ENTITLE);
+    assertThat(platformApplicationIds()).containsExactly(PLATFORM_BASE_V1);
+    assertThat(platformDependencies()).isEmpty();
+  }
+  
+  @Test
   @Sql("classpath:/sql/platform/platform-app-v1-entitled-with-platform-base-dependency.sql")
   @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_PLATFORM_APP_V2, STUB_VALIDATE_DESCRIPTOR})
   void upgrade_positive_replacesEntitledVersion() throws Exception {
@@ -215,6 +236,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
     expectStageFailure(result, "PlatformTenantDependentsValidator",
       "Platform application upgrade is incompatible with dependent applications");
+    expectStageFailure(result, "PlatformTenantDependentsValidator",
+      "folio-app3-3.0.0, value: Requires platform-app ^1.0.0, which the upgrade to 2.0.0 does not satisfy");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
       ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
@@ -230,6 +253,24 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
       ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).isEmpty();
+  }
+
+  @Test
+  @Sql("classpath:/sql/platform/platform-apps-v1-entitled-with-dependencies.sql")
+  @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_ENTITLED_PLATFORM_APP2_V1,
+    STUB_PLATFORM_APPS_V2_UNSATISFIED_DEPENDENCY, STUB_VALIDATE_DESCRIPTOR})
+  void upgrade_negative_secondLayerFails_firstLayerRowsAreRolledBack() throws Exception {
+    var result = upgradePlatform(PLATFORM_APP_V2, PLATFORM_APP2_V2);
+
+    expectStageFailure(result, "PlatformDependencyValidator",
+      "The following platform application dependencies must be entitled first");
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)),
+      ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_UPGRADE);
+    assertThat(platformApplicationIds())
+      .containsExactlyInAnyOrder(PLATFORM_BASE_V1, PLATFORM_APP_V1, PLATFORM_APP2_V1);
+    assertThat(platformDependencies()).containsExactlyInAnyOrder(
+      tuple(PLATFORM_APP_V1, "platform-base", "^1.0.0"),
+      tuple(PLATFORM_APP2_V1, "platform-app", "^1.0.0"));
   }
 
   @Test
