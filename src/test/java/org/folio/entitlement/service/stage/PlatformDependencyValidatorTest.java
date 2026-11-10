@@ -46,7 +46,8 @@ class PlatformDependencyValidatorTest {
 
   @Test
   void execute_positive_dependencyIsEntitledWithSatisfyingVersion() {
-    when(repository.findByApplicationNameIn(List.of("dep"))).thenReturn(List.of(PlatformEntitlementEntity.of("dep-1.2.0")));
+    var entitled = List.of(PlatformEntitlementEntity.of("dep-1.2.0"));
+    when(repository.findByApplicationNameIn(List.of("dep"))).thenReturn(entitled);
 
     var context = stageContext(Dependency.of("dep", "^1.0.0", false));
 
@@ -90,7 +91,8 @@ class PlatformDependencyValidatorTest {
 
   @Test
   void execute_negative_entitledVersionDoesNotSatisfyDependency() {
-    when(repository.findByApplicationNameIn(List.of("dep"))).thenReturn(List.of(PlatformEntitlementEntity.of("dep-2.0.0")));
+    var entitled = List.of(PlatformEntitlementEntity.of("dep-2.0.0"));
+    when(repository.findByApplicationNameIn(List.of("dep"))).thenReturn(entitled);
     var required = Dependency.of("dep", "^1.0.0", false);
     var context = stageContext(required);
 

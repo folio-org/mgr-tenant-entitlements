@@ -82,7 +82,8 @@ class PlatformApplicationsValidatorTest {
   @Test
   void execute_negative_oneRegularApplicationRejectsWholeRequest() {
     stubDescriptors(platformApp(APPLICATION_ID), regularApp(REGULAR_APPLICATION_ID));
-    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID, REGULAR_APPLICATION_ID));
+    var request = platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID, REGULAR_APPLICATION_ID);
+    var context = platformContext(request);
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -94,7 +95,8 @@ class PlatformApplicationsValidatorTest {
 
   @Test
   void execute_negative_sameApplicationTwiceIsRejected() {
-    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, "platform-app-1.0.0", "platform-app-2.0.0"));
+    var request = platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, "platform-app-1.0.0", "platform-app-2.0.0");
+    var context = platformContext(request);
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)

@@ -91,7 +91,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-entitle-unsatisfied-dependency.json";
   private static final String STUB_PLATFORM_APPS_V2_UNSATISFIED_DEPENDENCY =
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-v2-unsatisfied-dependency.json";
-  private static final String STUB_REGULAR ="/wiremock/mgr-applications/platform/get-by-ids-query-regular-app.json";
+  private static final String STUB_REGULAR = "/wiremock/mgr-applications/platform/get-by-ids-query-regular-app.json";
   private static final String STUB_REGULAR_AND_PLATFORM_APP =
     "/wiremock/mgr-applications/platform/get-by-ids-query-regular-and-platform-app.json";
 
