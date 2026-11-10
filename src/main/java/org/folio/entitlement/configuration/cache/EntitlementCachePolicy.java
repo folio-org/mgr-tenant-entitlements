@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  * <p>Caching is allowed only when downstream calls are made under one shared identity. If the caller's own token is
  * forwarded, downstream authorization is per caller and a cache hit would skip it.</p>
  */
-@Component("entitlementCachePolicy")
+@Component
 @RequiredArgsConstructor
 public class EntitlementCachePolicy {
 

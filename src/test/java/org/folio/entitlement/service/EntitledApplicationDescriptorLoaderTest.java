@@ -129,6 +129,18 @@ class EntitledApplicationDescriptorLoaderTest {
     assertThat(cache.get(APP_A.getId())).isNull();
   }
 
+  @Test
+  void load_negative_cacheIsNotConfigured_throwsIllegalStateException() {
+    when(cachePolicy.isEnabled()).thenReturn(true);
+    when(cacheManager.getCache(APPLICATION_DESCRIPTOR)).thenReturn(null);
+
+    assertThatThrownBy(() -> loader.load(List.of(APP_A.getId()), OKAPI_TOKEN))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Cache not found: " + APPLICATION_DESCRIPTOR);
+
+    verifyNoInteractions(applicationManagerService);
+  }
+
   private void enableCache() {
     when(cachePolicy.isEnabled()).thenReturn(true);
     when(cacheManager.getCache(APPLICATION_DESCRIPTOR)).thenReturn(cache);

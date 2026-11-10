@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.configuration.cache.EntitlementCachePolicy;
 import org.springframework.cache.Cache;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
  * application id, so no invalidation is needed when entitlements change. Only missing descriptors are requested.
  * Descriptors are returned ordered by application id.</p>
  */
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class EntitledApplicationDescriptorLoader {
@@ -43,11 +45,12 @@ public class EntitledApplicationDescriptorLoader {
    * @throws org.folio.entitlement.exception.RequestValidationException if some applications are not found
    */
   public List<ApplicationDescriptor> load(Collection<String> applicationIds, String authToken) {
+    log.debug("Loading application descriptors: applicationIds: {}", applicationIds);
     if (!cachePolicy.isEnabled()) {
       return applicationManagerService.getApplicationDescriptors(applicationIds, authToken);
     }
 
-    var cache = cacheManager.getCache(APPLICATION_DESCRIPTOR);
+    var cache = getAppDescriptorCache();
     var sortedIds = toStream(applicationIds).distinct().sorted().toList();
     var descriptorsById = new HashMap<String, ApplicationDescriptor>();
     var missingIds = new ArrayList<String>();
@@ -55,14 +58,25 @@ public class EntitledApplicationDescriptorLoader {
     for (var applicationId : sortedIds) {
       var cached = cache.get(applicationId, ApplicationDescriptor.class);
       if (cached != null) {
+        log.debug("Application descriptor found in cache: applicationId: {}", applicationId);
         descriptorsById.put(applicationId, cached);
       } else {
+        log.debug("Application descriptor not found in cache and will be requested: applicationId: {}", applicationId);
         missingIds.add(applicationId);
       }
     }
 
     loadMissing(missingIds, authToken, cache, descriptorsById);
     return mapItems(sortedIds, descriptorsById::get);
+  }
+
+  private Cache getAppDescriptorCache() {
+    var cache = cacheManager.getCache(APPLICATION_DESCRIPTOR);
+    if (cache == null) {
+      throw new IllegalStateException("Cache not found: " + APPLICATION_DESCRIPTOR);
+    }
+
+    return cache;
   }
 
   private void loadMissing(List<String> missingIds, String authToken, Cache cache,
@@ -72,6 +86,7 @@ public class EntitledApplicationDescriptorLoader {
     }
 
     for (var descriptor : applicationManagerService.getApplicationDescriptors(missingIds, authToken)) {
+      log.debug("Application descriptor loaded and will be cached: applicationId: {}", descriptor.getId());
       cache.put(descriptor.getId(), descriptor);
       descriptorsById.put(descriptor.getId(), descriptor);
     }

@@ -29,4 +29,14 @@ public class KeycloakAdminTokenProvider implements AdminTokenProvider {
     log.debug("Obtaining access token from Keycloak");
     return keycloakCacheableService.getAccessToken(userToken).getToken();
   }
+
+  /**
+   * Tells that the system token is the same for all callers, so downstream responses can be shared between them.
+   *
+   * @return always {@code true}
+   */
+  @Override
+  public boolean isSharedIdentity() {
+    return true;
+  }
 }

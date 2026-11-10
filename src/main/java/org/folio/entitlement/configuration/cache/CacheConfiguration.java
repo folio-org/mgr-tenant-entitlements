@@ -93,10 +93,14 @@ public class CacheConfiguration {
   }
 
   private static Cache buildCache(String name, CacheSettings settings) {
-    return new CaffeineCache(name, Caffeine.newBuilder()
+    var cache = new CaffeineCache(name, Caffeine.newBuilder()
       .maximumSize(settings.getMaxSize())
       .expireAfterWrite(settings.getTtl())
       .recordStats()
       .build());
+    
+    log.debug("Cache created: name = {}, maxSize = {}, ttl = {}", name, settings.getMaxSize(), settings.getTtl());
+
+    return cache;
   }
 }
