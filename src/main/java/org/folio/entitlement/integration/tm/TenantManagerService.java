@@ -52,7 +52,7 @@ public class TenantManagerService {
       if (result.getRecords().size() > 1) {
         throw new EntityNotFoundException("Multiple tenants found by name: " + tenantName);
       }
-      return result.getRecords().get(0);
+      return result.getRecords().getFirst();
     } catch (RestClientResponseException cause) {
       throw new IntegrationException("Failed to query tenant by name: " + tenantName, cause);
     }

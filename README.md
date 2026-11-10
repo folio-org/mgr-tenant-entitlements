@@ -139,6 +139,10 @@ docker run \
 | MAX_HTTP_REQUEST_HEADER_SIZE           | 200KB                               |  false   | Maximum size of the HTTP request header.                                                                                                                                                                   |
 | FLOW_ENGINE_EXECUTION_TIMEOUT          | 30m                                 |  false   | Maximum execution timeout for entitlement execution in sync mode. On expiry the flow, its application flows and their in-progress stages are marked as `FAILED` and a `400` response with the flow id header is returned. The running execution is not aborted immediately, but stops at the next application boundary; if the flow finished before the timeout was handled, the request is reported as successful. |
 | FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE | 25                                  |  false   | Max cache size for the latest flow executions                                                                                                                                                              |
+| TENANT_ID_CACHE_TTL                    | 15m                                 |  false   | Time to live of cached tenant name to tenant lookups (`GET /entitlements/{tenantName}/applications`). `0` disables the cache. See [Entitled applications cache](#entitled-applications-cache).                |
+| TENANT_ID_CACHE_MAX_SIZE               | 100                                 |  false   | Maximum number of cached tenants.                                                                                                                                                                          |
+| APP_DESCRIPTOR_CACHE_TTL               | 20m                                 |  false   | Time to live of cached application descriptors (keyed by application id) loaded for `GET /entitlements/{tenantName}/applications`. `0` disables the cache.                                                |
+| APP_DESCRIPTOR_CACHE_MAX_SIZE          | 300                                 |  false   | Maximum number of cached application descriptors.                                                                                                                                                         |
 | FLOW_ENGINE_PRINT_FLOW_RESULTS         | false                               |  false   | Defines if flow engine should print execution results in logs or not                                                                                                                                       |
 | FLOW_ENGINE_THREADS_NUM                | 4                                   |  false   | Defines the number of threads for Fork-Join Pool used by flow engine.                                                                                                                                      |
 | APIGW_REGISTER_MODULE                  | true                                |  false   | Defines whether the module registers itself in the API Gateway (creates its own service and routes from the module descriptor). Deprecated alias: `REGISTER_MODULE_IN_KONG`.                              |
@@ -288,13 +292,14 @@ with `mgr-tenants` and `mgr-applications` services.
 **How it works:**
 - When Keycloak integration is enabled, a `TokenRefreshRequestInterceptor` transparently replaces user-provided tokens
   with fresh system tokens obtained using Keycloak's client credentials flow
-- Tokens are cached and reused until near expiration (controlled by `KC_AUTHORIZATION_CACHE_TTL_OFFSET`)
+- The system token does not depend on the calling user, so a single token is cached and shared by all callers until
+  near expiration (controlled by `KC_AUTHORIZATION_CACHE_TTL_OFFSET`)
 - When Keycloak is disabled, user tokens pass through unchanged
 
 **Configuration:**
 - Requires `KC_INTEGRATION_ENABLED=true`
 - Uses the admin client configured via `KC_ADMIN_CLIENT_ID` and `KC_ADMIN_CLIENT_SECRET`
-- Token cache behavior controlled by `KC_AUTHORIZATION_CACHE_MAX_SIZE` and `KC_AUTHORIZATION_CACHE_TTL_OFFSET`
+- Token cache behavior controlled by `KC_AUTHORIZATION_CACHE_TTL_OFFSET`
 
 ### Keycloak specific environment variables
 
@@ -321,12 +326,29 @@ with `mgr-tenants` and `mgr-applications` services.
 | KC_JWKS_BASE_URL                  |                            |    false    | Custom base URL for JWKS endpoint. If specified, will be used instead of issuer URL from token's iss claim (e.g., http://keycloak:8080).                         |
 | KC_JWKS_REFRESH_INTERVAL          | 60                         |    false    | Jwks refresh interval for realm JWT parser (in minutes).                                                                                                         |
 | KC_FORCED_JWKS_REFRESH_INTERVAL   | 60                         |    false    | Forced jwks refresh interval for realm JWT parser (used in signing key rotation, in minutes).                                                                    |
-| KC_AUTHORIZATION_CACHE_MAX_SIZE   | 50                         |    false    | Maximum amount of entries for keycloak authorization cache.                                                                                                      |
 | KC_AUTHORIZATION_CACHE_TTL_OFFSET | 5000                       |    false    | TTL Offset for cached authorization information, positive, in millis.                                                                                            |
 
 When an admin client call exceeds `KC_ADMIN_CONNECT_TIMEOUT` or `KC_ADMIN_READ_TIMEOUT`, it fails with a
 `jakarta.ws.rs.ProcessingException` (wrapping a `ConnectTimeoutException` / `SocketTimeoutException`),
 releasing the caller thread so existing retry logic can observe it.
+
+### Entitled applications cache
+
+`GET /entitlements/{tenantName}/applications` caches two things in memory (per module instance):
+
+* tenant name to tenant (`tenant-id` cache), configured with `TENANT_ID_CACHE_TTL` / `TENANT_ID_CACHE_MAX_SIZE`;
+* application descriptors by application id (`application-descriptor` cache), configured with
+  `APP_DESCRIPTOR_CACHE_TTL` / `APP_DESCRIPTOR_CACHE_MAX_SIZE`.
+
+The list of applications entitled to the tenant is never cached: it is read from the database on every request, so
+entitlement changes are visible immediately. Cached data is refreshed only when an entry expires, so a tenant
+re-created under the same name or an application descriptor replaced in mgr-applications can be served stale for up
+to the configured TTL (the tenant case is also corrected on the next request that finds no entitlements). Set a TTL to
+`0` to disable a cache. The entitlement flows (entitle, upgrade, revoke, desired state) do not use these caches.
+
+The caches are used only when downstream calls are made under a shared identity, i.e. with Keycloak integration
+enabled (`KC_INTEGRATION_ENABLED=true`). Without it the caller's own token is forwarded to mgr-tenants and
+mgr-applications, which authorize every request individually, so the caches are bypassed.
 
 ### Retry configuration
 

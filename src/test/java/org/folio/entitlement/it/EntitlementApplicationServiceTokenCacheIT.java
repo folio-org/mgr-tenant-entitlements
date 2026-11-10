@@ -4,6 +4,7 @@ import static java.time.Duration.ofMillis;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.folio.entitlement.configuration.cache.CacheConfiguration.ACCESS_TOKEN;
+import static org.folio.entitlement.integration.keycloak.KeycloakCacheableService.ADMIN_TOKEN_KEY;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -62,7 +63,7 @@ class EntitlementApplicationServiceTokenCacheIT extends BaseIntegrationTest {
     entitlementApplicationService.getApplicationDescriptorsByTenantName(tenant.getId().toString(), userToken, 0, 10);
 
     verify(keycloak, times(1)).tokenManager();
-    var cached = cacheManager.getCache(ACCESS_TOKEN).get(userToken, AccessTokenResponse.class);
+    var cached = cacheManager.getCache(ACCESS_TOKEN).get(ADMIN_TOKEN_KEY, AccessTokenResponse.class);
     assertThat(cached).isEqualTo(accessTokenResponse);
   }
 
@@ -75,10 +76,25 @@ class EntitlementApplicationServiceTokenCacheIT extends BaseIntegrationTest {
       .when(tenantManagerService).findTenantByName(tenant.getId().toString(), accessTokenResponse.getToken());
 
     entitlementApplicationService.getApplicationDescriptorsByTenantName(tenant.getId().toString(), userToken, 0, 10);
-    var cached = cacheManager.getCache(ACCESS_TOKEN).get(userToken, AccessTokenResponse.class);
+    var cached = cacheManager.getCache(ACCESS_TOKEN).get(ADMIN_TOKEN_KEY, AccessTokenResponse.class);
     assertThat(cached).isEqualTo(accessTokenResponse);
 
     entitlementApplicationService.getApplicationDescriptorsByTenantName(tenant.getId().toString(), userToken, 0, 10);
+    verify(keycloak, times(1)).tokenManager();
+  }
+
+  @Test
+  void getApplicationDescriptorsByTenantName_sharesTokenBetweenDifferentUserTokens() {
+    var tenant = Tenant.of(UUID.randomUUID(), null, null);
+    var accessTokenResponse = createAndMockAccessTokenResponse(60);
+    doReturn(tenant)
+      .when(tenantManagerService).findTenantByName(tenant.getId().toString(), accessTokenResponse.getToken());
+
+    entitlementApplicationService.getApplicationDescriptorsByTenantName(
+      tenant.getId().toString(), UUID.randomUUID().toString(), 0, 10);
+    entitlementApplicationService.getApplicationDescriptorsByTenantName(
+      tenant.getId().toString(), UUID.randomUUID().toString(), 0, 10);
+
     verify(keycloak, times(1)).tokenManager();
   }
 
@@ -92,18 +108,18 @@ class EntitlementApplicationServiceTokenCacheIT extends BaseIntegrationTest {
 
     entitlementApplicationService.getApplicationDescriptorsByTenantName(tenant.getId().toString(), userToken, 0, 10);
     verify(keycloak, times(1)).tokenManager();
-    var cached = cacheManager.getCache(ACCESS_TOKEN).get(userToken, AccessTokenResponse.class);
+    var cached = cacheManager.getCache(ACCESS_TOKEN).get(ADMIN_TOKEN_KEY, AccessTokenResponse.class);
     assertThat(cached).isEqualTo(accessTokenResponse);
 
     await()
       .atMost(ofMillis(5000))
       .pollDelay(ofMillis(100))
       .pollInterval(ofMillis(200))
-      .untilAsserted(() -> Assertions.assertThat(cacheManager.getCache(ACCESS_TOKEN).get(userToken)).isNull());
+      .untilAsserted(() -> Assertions.assertThat(cacheManager.getCache(ACCESS_TOKEN).get(ADMIN_TOKEN_KEY)).isNull());
 
     entitlementApplicationService.getApplicationDescriptorsByTenantName(tenant.getId().toString(), userToken, 0, 10);
     verify(keycloak, times(2)).tokenManager();
-    cached = cacheManager.getCache(ACCESS_TOKEN).get(userToken, AccessTokenResponse.class);
+    cached = cacheManager.getCache(ACCESS_TOKEN).get(ADMIN_TOKEN_KEY, AccessTokenResponse.class);
     assertThat(cached).isEqualTo(accessTokenResponse);
   }
 

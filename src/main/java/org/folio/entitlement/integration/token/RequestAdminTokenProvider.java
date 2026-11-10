@@ -5,9 +5,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
- * Provides access tokens for internal operations between mgr-* services.
- * Uses KeycloakCacheableService to obtain and cache tokens, ensuring fresh tokens
- * are available even during long-running operations.
+ * Pass-through token provider used when Keycloak integration is disabled: calls to other mgr-* services are made
+ * with the caller's own token, so every downstream request is authorized for that caller.
  */
 @Log4j2
 @Component
@@ -23,5 +22,15 @@ public class RequestAdminTokenProvider implements AdminTokenProvider {
   public String getToken(String userToken) {
     log.debug("Obtaining access token from request context");
     return userToken;
+  }
+
+  /**
+   * Tells that the caller's token is forwarded, so downstream responses must not be shared between callers.
+   *
+   * @return always {@code false}
+   */
+  @Override
+  public boolean isSharedIdentity() {
+    return false;
   }
 }

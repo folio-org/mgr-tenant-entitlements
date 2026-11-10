@@ -103,7 +103,6 @@ application:
       validate-uri: ${KC_AUTH_TOKEN_VALIDATE_URI:false}
       jwks-refresh-interval: ${KC_JWKS_REFRESH_INTERVAL:60}
       forced-jwks-refresh-interval: ${KC_FORCED_JWKS_REFRESH_INTERVAL:60}
-    authorization-cache-max-size: ${KC_AUTHORIZATION_CACHE_MAX_SIZE:50}
     authorization-cache-ttl-offset: ${KC_AUTHORIZATION_CACHE_TTL_OFFSET:5000}
   environment: ${ENV:folio}
   kafka:
@@ -170,6 +169,13 @@ application:
       trust-store-path: ${SECRET_STORE_FSSP_TRUSTSTORE_PATH:}
       trust-store-file-type: ${SECRET_STORE_FSSP_TRUSTSTORE_FILE_TYPE:}
       trust-store-password: ${SECRET_STORE_FSSP_TRUSTSTORE_PASSWORD:}
+  cache:
+    tenant-id:
+      ttl: ${TENANT_ID_CACHE_TTL:15m}
+      max-size: ${TENANT_ID_CACHE_MAX_SIZE:100}
+    application-descriptor:
+      ttl: ${APP_DESCRIPTOR_CACHE_TTL:20m}
+      max-size: ${APP_DESCRIPTOR_CACHE_MAX_SIZE:300}
   flow-engine:
     execution-timeout: ${FLOW_ENGINE_EXECUTION_TIMEOUT:30m}
     last-executions-status-cache-size: ${FLOW_ENGINE_LAST_EXECUTIONS_CACHE_SIZE:25}

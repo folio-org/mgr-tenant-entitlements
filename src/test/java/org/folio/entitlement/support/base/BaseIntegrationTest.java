@@ -36,11 +36,13 @@ import org.folio.test.extensions.impl.KafkaTestExecutionListener;
 import org.folio.test.extensions.impl.WireMockAdminClient;
 import org.folio.test.extensions.impl.WireMockExecutionListener;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.opentest4j.AssertionFailedError;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -89,6 +91,11 @@ public abstract class BaseIntegrationTest extends BaseBackendIntegrationTest {
   @BeforeAll
   static void setUp(@Autowired FakeKafkaConsumer consumer) {
     fakeKafkaConsumer = consumer;
+  }
+
+  @BeforeEach
+  void clearCaches(@Autowired CacheManager cacheManager) {
+    cacheManager.getCacheNames().forEach(name -> cacheManager.getCache(name).clear());
   }
 
   protected static MvcResult entitleApplications(EntitlementRequestBody entitlementRequest,

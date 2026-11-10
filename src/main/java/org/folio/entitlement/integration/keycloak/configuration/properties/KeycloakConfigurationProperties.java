@@ -29,11 +29,6 @@ public class KeycloakConfigurationProperties {
   private Login login;
 
   /**
-   * Authorization token cache max size.
-   */
-  private long authorizationCacheMaxSize;
-
-  /**
    * Authorization token cache ttl offset.
    */
   private long authorizationCacheTtlOffset;
