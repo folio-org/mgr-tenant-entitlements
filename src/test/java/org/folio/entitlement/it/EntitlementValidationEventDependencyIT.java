@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.validator.EventDependencyValidator;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
@@ -20,6 +21,8 @@ import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
@@ -65,7 +68,11 @@ class EntitlementValidationEventDependencyIT {
     }
 
     private ResultActions validate(String appId) throws Exception {
-      return attemptPost(VALIDATE_URL, entitlementRequest(TENANT_ID, appId), ENTITLE.getValue(), VALIDATOR);
+      return validate(appId, ENTITLE);
+    }
+
+    private ResultActions validate(String appId, EntitlementRequestType type) throws Exception {
+      return attemptPost(VALIDATE_URL, entitlementRequest(TENANT_ID, appId), type.getValue(), VALIDATOR);
     }
   }
 
@@ -105,6 +112,25 @@ class EntitlementValidationEventDependencyIT {
       validate(OPTIONAL_MISSING_APP_ID).andExpect(status().isNoContent());
     }
 
+    @ParameterizedTest
+    @EnumSource(value = EntitlementRequestType.class, names = {"UPGRADE", "STATE"})
+    @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-required-missing.json")
+    void validate_negative_requiredEventWithoutProducerFailsUpgradeAndState(EntitlementRequestType type)
+      throws Exception {
+      validate(REQUIRED_MISSING_APP_ID, type)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors[0].message",
+          containsString("Consumed events without producers found: evt.missing")))
+        .andExpect(jsonPath("$.errors[0].parameters[0].key", is("evt.missing")));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EntitlementRequestType.class, names = {"UPGRADE", "STATE"})
+    @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-matched.json")
+    void validate_positive_matchedEventForUpgradeAndState(EntitlementRequestType type) throws Exception {
+      validate(MATCHED_APP_ID, type).andExpect(status().isNoContent());
+    }
+
     @Test
     @WireMockStub(scripts = {
       "/wiremock/mgr-tenants/test/get.json",
@@ -123,7 +149,11 @@ class EntitlementValidationEventDependencyIT {
     }
 
     private ResultActions validate(String appId) throws Exception {
-      return attemptPost(VALIDATE_URL, entitlementRequest(TENANT_ID, appId), ENTITLE.getValue(), VALIDATOR);
+      return validate(appId, ENTITLE);
+    }
+
+    private ResultActions validate(String appId, EntitlementRequestType type) throws Exception {
+      return attemptPost(VALIDATE_URL, entitlementRequest(TENANT_ID, appId), type.getValue(), VALIDATOR);
     }
   }
 }

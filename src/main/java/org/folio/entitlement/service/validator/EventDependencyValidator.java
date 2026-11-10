@@ -18,10 +18,8 @@ import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
-import org.folio.entitlement.service.validator.adp.ApplicationAndDependencyDescriptorProvider;
-import org.springframework.beans.factory.annotation.Value;
+import org.folio.entitlement.service.validator.adp.ApplicationDescriptorProvider;
 import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 
 /**
  * Checks that every consumed event has a producer in the application dependency tree
@@ -38,14 +36,18 @@ import org.springframework.stereotype.Component;
  */
 @Order(EVENT_DEPENDENCY)
 @Log4j2
-@Component
 public class EventDependencyValidator extends StageRequestValidator {
 
-  private final ApplicationAndDependencyDescriptorProvider descriptorProvider;
+  /**
+   * The type of entitlement request this validator is responsible for.
+   */
+  private final EntitlementRequestType entitlementType;
+  private final ApplicationDescriptorProvider descriptorProvider;
   private final boolean strict;
 
-  public EventDependencyValidator(ApplicationAndDependencyDescriptorProvider descriptorProvider,
-    @Value("${application.validation.event-dependency.strict-event-validation:false}") boolean strict) {
+  public EventDependencyValidator(EntitlementRequestType entitlementType,
+    ApplicationDescriptorProvider descriptorProvider, boolean strict) {
+    this.entitlementType = entitlementType;
     this.descriptorProvider = descriptorProvider;
     this.strict = strict;
   }
@@ -62,7 +64,7 @@ public class EventDependencyValidator extends StageRequestValidator {
 
   @Override
   public boolean shouldValidate(EntitlementRequest request) {
-    return request.getType() == EntitlementRequestType.ENTITLE;
+    return request.getType() == entitlementType;
   }
 
   private void validateDescriptors(List<ApplicationDescriptor> descriptors) {

@@ -13,10 +13,12 @@ import org.folio.common.domain.model.ProducesEvent;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
-import org.folio.entitlement.service.validator.adp.ApplicationAndDependencyDescriptorProvider;
+import org.folio.entitlement.service.validator.adp.ApplicationDescriptorProvider;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -24,7 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class EventDependencyValidatorTest {
 
-  @Mock private ApplicationAndDependencyDescriptorProvider provider;
+  @Mock private ApplicationDescriptorProvider provider;
 
   @Test
   void validate_positive_matchedEvent() {
@@ -99,16 +101,25 @@ class EventDependencyValidatorTest {
     assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
   }
 
-  @Test
-  void shouldValidate_onlyForEntitle() {
-    var request = EntitlementRequest.builder().type(EntitlementRequestType.ENTITLE).build();
-    assertThat(validator(false).shouldValidate(request)).isTrue();
-    var revoke = EntitlementRequest.builder().type(EntitlementRequestType.REVOKE).build();
-    assertThat(validator(false).shouldValidate(revoke)).isFalse();
+  @ParameterizedTest
+  @CsvSource({
+    "ENTITLE, ENTITLE, true",
+    "UPGRADE, UPGRADE, true",
+    "STATE, STATE, true",
+    "ENTITLE, UPGRADE, false",
+    "UPGRADE, REVOKE, false",
+    "STATE, ENTITLE, false"
+  })
+  void shouldValidate_onlyForConfiguredType(EntitlementRequestType validatorType, EntitlementRequestType requestType,
+    boolean expected) {
+    var validator = new EventDependencyValidator(validatorType, provider, false);
+    var request = EntitlementRequest.builder().type(requestType).build();
+
+    assertThat(validator.shouldValidate(request)).isEqualTo(expected);
   }
 
   private EventDependencyValidator validator(boolean strict) {
-    return new EventDependencyValidator(provider, strict);
+    return new EventDependencyValidator(EntitlementRequestType.ENTITLE, provider, strict);
   }
 
   private static ApplicationDescriptor app(String id, ModuleDescriptor module) {
