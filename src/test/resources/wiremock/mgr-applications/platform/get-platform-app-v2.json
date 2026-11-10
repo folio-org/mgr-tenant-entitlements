@@ -1,0 +1,24 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications/platform-app-2.0.0",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "platform-app-2.0.0",
+      "name": "platform-app",
+      "version": "2.0.0",
+      "scope": "platform",
+      "dependencies": [{"name": "platform-base", "version": "~1.0.0"}]
+    }
+  }
+}

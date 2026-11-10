@@ -33,8 +33,8 @@ class PlatformLockServiceIT extends BaseIntegrationTest {
 
   @Test
   void acquire_positive_lockIsVisibleToTenantProbeAndExclusive() {
-    var flowId = UUID.randomUUID();
-    platformLockService.acquire(flowId);
+    var holder = UUID.randomUUID();
+    platformLockService.acquire(holder);
     try {
       assertThat(platformLockService.isHeld()).isTrue();
       assertThatThrownBy(platformLockService::assertNotHeld)
@@ -42,7 +42,7 @@ class PlatformLockServiceIT extends BaseIntegrationTest {
       assertThatThrownBy(() -> platformLockService.acquire(UUID.randomUUID()))
         .isInstanceOf(PlatformOperationInProgressException.class);
     } finally {
-      platformLockService.release(flowId);
+      platformLockService.release(holder);
     }
 
     assertThat(platformLockService.isHeld()).isFalse();
@@ -54,22 +54,22 @@ class PlatformLockServiceIT extends BaseIntegrationTest {
     assertThatCode(platformLockService::assertNotHeld).doesNotThrowAnyException();
 
     // the probe must not have taken the lock, so a platform operation can still acquire it
-    var flowId = UUID.randomUUID();
-    assertThatCode(() -> platformLockService.acquire(flowId)).doesNotThrowAnyException();
-    platformLockService.release(flowId);
+    var holder = UUID.randomUUID();
+    assertThatCode(() -> platformLockService.acquire(holder)).doesNotThrowAnyException();
+    platformLockService.release(holder);
   }
 
   @Test
   void release_positive_isIdempotentAndReleasesForNextOperation() {
-    var flowId = UUID.randomUUID();
-    platformLockService.acquire(flowId);
-    platformLockService.release(flowId);
-    platformLockService.release(flowId);
+    var holder = UUID.randomUUID();
+    platformLockService.acquire(holder);
+    platformLockService.release(holder);
+    platformLockService.release(holder);
 
     assertThat(platformLockService.isHeld()).isFalse();
 
-    var nextFlowId = UUID.randomUUID();
-    assertThatCode(() -> platformLockService.acquire(nextFlowId)).doesNotThrowAnyException();
-    platformLockService.release(nextFlowId);
+    var nextHolder = UUID.randomUUID();
+    assertThatCode(() -> platformLockService.acquire(nextHolder)).doesNotThrowAnyException();
+    platformLockService.release(nextHolder);
   }
 }

@@ -22,7 +22,6 @@ import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.service.flow.FlowProvider;
 import org.folio.entitlement.service.flow.FlowService;
-import org.folio.entitlement.service.flow.PlatformFlowProvider;
 import org.folio.entitlement.service.lock.PlatformLockService;
 import org.folio.flow.api.Flow;
 import org.folio.flow.api.FlowEngine;
@@ -43,7 +42,6 @@ public class EntitlementService {
   private final EntitlementCrudService entitlementCrudService;
   private final FlowEngineConfigurationProperties flowEngineProperties;
   private final PlatformLockService platformLockService;
-  private final PlatformFlowProvider platformFlowProvider;
 
   /**
    * Retrieves all applications installed for the specified tenant.
@@ -108,16 +106,18 @@ public class EntitlementService {
     log.info("Performing platform entitlement request: type = {}, applications = {}",
       request.getType(), request.getApplicationIds());
 
-    var flowId = UUID.randomUUID();
-    platformLockService.acquire(flowId);
+    var entitlementRequest = request.toEntitlementRequest();
+    var flow = flowProvider.createFlow(entitlementRequest);
+    var holder = UUID.randomUUID();
+    platformLockService.acquire(holder);
     try {
-      executeSyncFlow(request.toEntitlementRequest(), platformFlowProvider.createFlow(flowId, request));
+      executeSyncFlow(entitlementRequest, flow);
     } finally {
-      platformLockService.release(flowId);
+      platformLockService.release(holder);
     }
 
     var entitlements = mapItems(request.getApplicationIds(), appId -> buildEntitlement(null, appId));
-    return buildEntitlements(entitlements, flowId);
+    return buildEntitlements(entitlements, UUID.fromString(flow.getId()));
   }
 
   private void executeFlow(EntitlementRequest request, Flow flow) {

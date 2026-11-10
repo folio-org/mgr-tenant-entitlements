@@ -30,9 +30,15 @@ import org.springframework.stereotype.Service;
 public class PlatformLockService {
 
   /**
-   * Two-int advisory lock key shared by every instance of the module, so the lock is deployment-wide.
+   * Namespace, the first int of the advisory lock key: {@code 0x4D475445} is ASCII "MGTE" (manager tenant
+   * entitlements). A module-specific value keeps the lock from colliding with advisory locks taken by other code in
+   * the same database, and is easy to spot in {@code pg_locks}.
    */
   static final int LOCK_NAMESPACE = 0x4D475445;
+  /**
+   * Lock name inside the namespace, the second int of the key: {@code 0x504C4154} is ASCII "PLAT" (platform). Both
+   * values are constant, so all module instances share one deployment-wide lock.
+   */
   static final int LOCK_KEY = 0x504C4154;
 
   private static final String TRY_LOCK_SQL = "SELECT pg_try_advisory_lock(?, ?)";
@@ -81,10 +87,10 @@ public class PlatformLockService {
   /**
    * Acquires the platform lock for a platform operation. Never waits.
    *
-   * @param flowId - identifier of the platform flow that owns the lock
+   * @param holder - identifier of the holder that owns the lock
    * @throws PlatformOperationInProgressException if another platform operation holds the lock
    */
-  public void acquire(UUID flowId) {
+  public void acquire(UUID holder) {
     var connection = openLockConnection();
     boolean locked;
     try {
@@ -100,17 +106,17 @@ public class PlatformLockService {
       throw platformOperationInProgress();
     }
 
-    holders.put(flowId, connection);
-    log.info("Platform lock acquired [flowId: {}]", flowId);
+    holders.put(holder, connection);
+    log.info("Platform lock acquired [holder: {}]", holder);
   }
 
   /**
-   * Releases the platform lock held by a flow. Idempotent: a flow that holds no lock is a no-op.
+   * Releases the platform lock held by the holder. Idempotent: a holder that holds no lock is a no-op.
    *
-   * @param flowId - identifier of the platform flow that owns the lock
+   * @param holder - identifier of the holder that owns the lock
    */
-  public void release(UUID flowId) {
-    var connection = holders.remove(flowId);
+  public void release(UUID holder) {
+    var connection = holders.remove(holder);
     if (connection == null) {
       return;
     }
@@ -118,12 +124,12 @@ public class PlatformLockService {
     try {
       var unlocked = unlock(connection);
       if (!unlocked) {
-        log.warn("Platform lock was not held by its connection on release [flowId: {}]", flowId);
+        log.warn("Platform lock was not held by its connection on release [holder: {}]", holder);
       }
       connection.close();
-      log.info("Platform lock released [flowId: {}]", flowId);
+      log.info("Platform lock released [holder: {}]", holder);
     } catch (SQLException exception) {
-      log.error("Failed to unlock platform lock cleanly, evicting its connection [flowId: {}]", flowId, exception);
+      log.error("Failed to unlock platform lock cleanly, evicting its connection [holder: {}]", holder, exception);
       lockDataSource.evictConnection(connection);
     }
   }

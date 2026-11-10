@@ -4,7 +4,7 @@ import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUES
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
+import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.validator.PlatformApplicationsValidator;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @RequiredArgsConstructor
-public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
+public class PlatformUpgradeFlowFactory implements FlowFactory {
 
   private final FlowInitializer flowInitializer;
   private final PlatformApplicationsValidator applicationsValidator;
@@ -33,9 +33,9 @@ public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
   private final FlowFinalizerCallbacks finalizerCallbacks;
 
   @Override
-  public Flow createFlow(UUID flowId, PlatformEntitlementRequest request) {
+  public Flow createFlow(EntitlementRequest request) {
     var builder = Flow.builder()
-      .id(flowId)
+      .id(UUID.randomUUID())
       .stage(flowInitializer)
       .stage(entitlementExistToUpgradeValidator)
       .stage(tenantDependentsValidator)
@@ -45,7 +45,7 @@ public class PlatformUpgradeFlowFactory implements PlatformFlowFactory {
       .stage(finishedFlowFinalizer);
 
     return finalizerCallbacks.apply(builder)
-      .flowParameter(PARAM_REQUEST, request.toEntitlementRequest())
+      .flowParameter(PARAM_REQUEST, request)
       .executionStrategy(FlowExecutionStrategy.CANCEL_ON_ERROR)
       .build();
   }

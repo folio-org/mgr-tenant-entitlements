@@ -172,7 +172,7 @@ paths:
 
         At most one version of an application is entitled at a time, so an entitle request is rejected while a different version is entitled. Use PUT to replace the entitled version.
 
-        The operation holds the deployment-wide platform lock while it runs. It fails with 409 Conflict and a Retry-After header if another platform operation holds the lock, or if a tenant-scoped entitlement operation is in progress. The module does not retry internally.
+        The operation holds the deployment-wide platform lock while it runs. It fails with 409 Conflict and a Retry-After header if another platform operation holds the lock. The module does not retry internally.
       operationId: createPlatformEntitlement
       tags:
         - platform-entitlement
@@ -454,7 +454,7 @@ paths:
           $ref: '#/components/responses/badRequestResponse'
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
-          
+
   /reinstall/modules:
     post:
       operationId: moduleReinstall

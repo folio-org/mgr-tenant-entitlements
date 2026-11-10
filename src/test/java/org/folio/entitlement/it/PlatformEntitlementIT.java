@@ -75,6 +75,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   private static final String STUB_VALIDATE_DESCRIPTOR = "/wiremock/mgr-applications/validate-any-descriptor.json";
   private static final String STUB_ENTITLED_PLATFORM_APP_V1 =
     "/wiremock/mgr-applications/platform/get-platform-app-v1.json";
+  private static final String STUB_ENTITLED_PLATFORM_APP_V2 =
+    "/wiremock/mgr-applications/platform/get-platform-app-v2.json";
   private static final String STUB_PLATFORM_APP =
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json";
   private static final String STUB_PLATFORM_APP_V2 =
@@ -224,6 +226,25 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
       .containsOnly(ExecutionStatus.FINISHED);
     assertThat(flow.getApplicationFlows()).extracting(ApplicationFlow::getType)
       .containsOnly(EntitlementType.PLATFORM_UPGRADE);
+    assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_BASE_V1, PLATFORM_APP_V2);
+    assertThat(platformDependencies()).containsExactly(tuple(PLATFORM_APP_V2, "platform-base", "~1.0.0"));
+  }
+
+  @Test
+  @Sql("classpath:/sql/platform/platform-app-v1-entitled-with-platform-base-dependency.sql")
+  @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_ENTITLED_PLATFORM_APP_V2, STUB_PLATFORM_APP_V2,
+    STUB_VALIDATE_DESCRIPTOR})
+  void upgrade_positive_retryToTheSameVersionIsIdempotent() throws Exception {
+    upgradePlatform(PLATFORM_APP_V2).andExpect(status().isOk());
+    assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_BASE_V1, PLATFORM_APP_V2);
+
+    var result = upgradePlatform(PLATFORM_APP_V2).andExpect(status().isOk())
+      .andExpect(jsonPath("$.totalRecords", is(1)))
+      .andExpect(jsonPath("$.platformEntitlements[*].applicationId", contains(PLATFORM_APP_V2)))
+      .andReturn();
+
+    assertPlatformFlow(getFlow(flowIdFromBody(result)),
+      ExecutionStatus.FINISHED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).containsExactlyInAnyOrder(PLATFORM_BASE_V1, PLATFORM_APP_V2);
     assertThat(platformDependencies()).containsExactly(tuple(PLATFORM_APP_V2, "platform-base", "~1.0.0"));
   }
