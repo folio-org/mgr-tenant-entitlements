@@ -124,7 +124,8 @@ class EntitledApplicationDescriptorLoaderTest {
     when(applicationManagerService.getApplicationDescriptors(List.of(APP_A.getId()), OKAPI_TOKEN))
       .thenThrow(failure);
 
-    assertThatThrownBy(() -> loader.load(List.of(APP_A.getId()), OKAPI_TOKEN)).isSameAs(failure);
+    var appIds = List.of(APP_A.getId());
+    assertThatThrownBy(() -> loader.load(appIds, OKAPI_TOKEN)).isSameAs(failure);
 
     assertThat(cache.get(APP_A.getId())).isNull();
   }
@@ -134,7 +135,8 @@ class EntitledApplicationDescriptorLoaderTest {
     when(cachePolicy.isEnabled()).thenReturn(true);
     when(cacheManager.getCache(APPLICATION_DESCRIPTOR)).thenReturn(null);
 
-    assertThatThrownBy(() -> loader.load(List.of(APP_A.getId()), OKAPI_TOKEN))
+    var appIds = List.of(APP_A.getId());
+    assertThatThrownBy(() -> loader.load(appIds, OKAPI_TOKEN))
       .isInstanceOf(IllegalStateException.class)
       .hasMessage("Cache not found: " + APPLICATION_DESCRIPTOR);
 
