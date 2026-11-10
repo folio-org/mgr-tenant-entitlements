@@ -3,7 +3,9 @@ package org.folio.entitlement.it;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
+import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
+import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
@@ -13,6 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.Map;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.service.validator.EventDependencyValidator;
@@ -37,6 +40,8 @@ class EntitlementValidationEventDependencyIT {
   private static final String MATCHED_APP_ID = "evt-matched-1.0.0";
   private static final String REQUIRED_MISSING_APP_ID = "evt-required-1.0.0";
   private static final String OPTIONAL_MISSING_APP_ID = "evt-optional-1.0.0";
+  private static final String ENTITLED_PRODUCER_APP_ID = "folio-app1-1.0.0";
+  private static final String CONSUMER_OF_ENTITLED_EVENT_APP_ID = "evt-consumer-1.0.0";
 
   @Nested
   @IntegrationTest
@@ -47,13 +52,7 @@ class EntitlementValidationEventDependencyIT {
     "application.apigw.enabled=false",
     "application.validation.event-dependency.strict-event-validation=false"
   })
-  class StrictValidationDisabled extends BaseIntegrationTest {
-
-    @Test
-    @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-matched.json")
-    void validate_positive_matchedEvent() throws Exception {
-      validate(MATCHED_APP_ID).andExpect(status().isNoContent());
-    }
+  class StrictValidationDisabled extends ValidationIT {
 
     @Test
     @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-required-missing.json")
@@ -66,14 +65,6 @@ class EntitlementValidationEventDependencyIT {
     void validate_positive_optionalEventWithoutProducerOnlyWarns() throws Exception {
       validate(OPTIONAL_MISSING_APP_ID).andExpect(status().isNoContent());
     }
-
-    private ResultActions validate(String appId) throws Exception {
-      return validate(appId, ENTITLE);
-    }
-
-    private ResultActions validate(String appId, EntitlementRequestType type) throws Exception {
-      return attemptPost(VALIDATE_URL, entitlementRequest(TENANT_ID, appId), type.getValue(), VALIDATOR);
-    }
   }
 
   @Nested
@@ -85,7 +76,7 @@ class EntitlementValidationEventDependencyIT {
     "application.apigw.enabled=false",
     "application.validation.event-dependency.strict-event-validation=true"
   })
-  class StrictValidationEnabled extends BaseIntegrationTest {
+  class StrictValidationEnabled extends ValidationIT {
 
     @Test
     @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-matched.json")
@@ -134,6 +125,23 @@ class EntitlementValidationEventDependencyIT {
     @Test
     @WireMockStub(scripts = {
       "/wiremock/mgr-tenants/test/get.json",
+      "/wiremock/mgr-applications/event-dependency/get-by-ids-entitled-producer.json",
+      "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+      "/wiremock/mgr-applications/validate-any-descriptor.json",
+      "/wiremock/folio-module1/install.json",
+      "/wiremock/mgr-applications/event-dependency/get-by-ids-consumer-and-entitled-producer.json"
+    })
+    void validate_positive_eventProducedByEntitledApplicationOutsideDependencyChain() throws Exception {
+      var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+      entitleApplications(entitlementRequest(ENTITLED_PRODUCER_APP_ID), queryParams,
+        extendedEntitlements(entitlement(ENTITLED_PRODUCER_APP_ID)));
+
+      validate(CONSUMER_OF_ENTITLED_EVENT_APP_ID).andExpect(status().isNoContent());
+    }
+
+    @Test
+    @WireMockStub(scripts = {
+      "/wiremock/mgr-tenants/test/get.json",
       "/wiremock/mgr-applications/event-dependency/get-by-ids-required-missing.json"
     })
     void entitle_negative_requiredEventWithoutProducerFailsEntitlement() throws Exception {
@@ -147,12 +155,15 @@ class EntitlementValidationEventDependencyIT {
         .andExpect(jsonPath("$.errors[0].parameters[0].value",
           containsString("Consumed events without producers found: evt.missing")));
     }
+  }
 
-    private ResultActions validate(String appId) throws Exception {
+  private abstract static class ValidationIT extends BaseIntegrationTest {
+
+    ResultActions validate(String appId) throws Exception {
       return validate(appId, ENTITLE);
     }
 
-    private ResultActions validate(String appId, EntitlementRequestType type) throws Exception {
+    ResultActions validate(String appId, EntitlementRequestType type) throws Exception {
       return attemptPost(VALIDATE_URL, entitlementRequest(TENANT_ID, appId), type.getValue(), VALIDATOR);
     }
   }

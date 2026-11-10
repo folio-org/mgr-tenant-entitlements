@@ -284,7 +284,7 @@
       {
         "name": "STRICT_EVENT_VALIDATION",
         "value": "false",
-        "description": "Controls what happens when a consumed event has no producer in the application dependency tree. When true, entitlement fails for a non-optional consumed event; when false, only a warning is logged. An optional consumed event always only logs a warning",
+        "description": "When true, entitlement fails if a non-optional event consumed by the requested applications has no producer among the requested or entitled applications; when false, only a warning is logged. Optional consumed events only ever warn",
         "type": "FUNCTIONAL",
         "essential": false
       },

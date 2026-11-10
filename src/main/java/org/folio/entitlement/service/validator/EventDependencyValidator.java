@@ -2,14 +2,15 @@ package org.folio.entitlement.service.validator;
 
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
-import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.folio.entitlement.service.validator.EntitlementRequestValidator.Order.EVENT_DEPENDENCY;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Supplier;
 import lombok.extern.log4j.Log4j2;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.ProducesEvent;
@@ -22,14 +23,20 @@ import org.folio.entitlement.service.validator.adp.ApplicationDescriptorProvider
 import org.springframework.core.annotation.Order;
 
 /**
- * Checks that every consumed event has a producer in the application dependency tree
- * (including platform applications). Events are matched by exact string comparison.
+ * Checks that every event consumed by the requested applications is produced by some application. Events are matched
+ * by exact string comparison.
+ *
+ * <p>Consumed events are the events declared as consumed by modules of the applications in the request. Events
+ * consumed by other, already entitled applications are not checked, so they never make a request fail.
+ *
+ * <p>Produced events are the events declared as produced by any application returned by the descriptor provider:
+ * the requested applications and, for ENTITLE and UPGRADE requests, the applications already entitled to the tenant.
  *
  * <p>When a consumed event has no producer:
  * <ul>
- *   <li>optional consumer: a warning is logged and entitlement proceeds;</li>
- *   <li>non-optional consumer, strict mode off (default): a warning is logged and entitlement proceeds;</li>
- *   <li>non-optional consumer, strict mode on: entitlement fails with an error naming the missing events.</li>
+ *   <li>optional consumer: a warning is logged and the request proceeds;</li>
+ *   <li>non-optional consumer, strict mode off (default): a warning is logged and the request proceeds;</li>
+ *   <li>non-optional consumer, strict mode on: the request fails with an error naming the missing events.</li>
  * </ul>
  * Strict mode is set by {@code application.validation.event-dependency.strict-event-validation}.
  * A produced event that nobody consumes is ignored.
@@ -54,12 +61,18 @@ public class EventDependencyValidator extends StageRequestValidator {
 
   @Override
   public void execute(CommonStageContext context) {
-    validateDescriptors(descriptorProvider.getDescriptors(context));
+    // the requested applications are already loaded in the context, so the provider is called only if needed
+    var requestedApps = emptyIfNull(context.getApplicationDescriptors());
+    validateDescriptors(requestedApps, () -> descriptorProvider.getDescriptors(context));
   }
 
   @Override
   public void validate(EntitlementRequest request) {
-    validateDescriptors(descriptorProvider.getDescriptors(request));
+    var descriptors = emptyIfNull(descriptorProvider.getDescriptors(request));
+    var requestedAppIds = Set.copyOf(emptyIfNull(request.getApplications()));
+    var requestedApps = descriptors.stream().filter(app -> requestedAppIds.contains(app.getId())).toList();
+
+    validateDescriptors(requestedApps, () -> List.copyOf(descriptors));
   }
 
   @Override
@@ -67,27 +80,31 @@ public class EventDependencyValidator extends StageRequestValidator {
     return request.getType() == entitlementType;
   }
 
-  private void validateDescriptors(List<ApplicationDescriptor> descriptors) {
-    if (isEmpty(descriptors)) {
+  private void validateDescriptors(Collection<ApplicationDescriptor> requestedApps,
+    Supplier<List<ApplicationDescriptor>> allDescriptors) {
+    var appIdsByRequiredEvent = findConsumedEvents(requestedApps, false);
+    var appIdsByOptionalEvent = findConsumedEvents(requestedApps, true);
+    if (appIdsByRequiredEvent.isEmpty() && appIdsByOptionalEvent.isEmpty()) {
       return;
     }
 
-    var produced = findProducedEvents(descriptors);
-    var appIdsByRequiredEvent = findConsumedEvents(descriptors, false);
-    var appIdsByOptionalEvent = findConsumedEvents(descriptors, true);
-
-    appIdsByOptionalEvent.keySet().removeIf(produced::contains);
+    var produced = findProducedEvents(emptyIfNull(allDescriptors.get()));
     appIdsByRequiredEvent.keySet().removeIf(produced::contains);
+    appIdsByOptionalEvent.keySet().removeIf(produced::contains);
 
     warn("Optional consumed event", appIdsByOptionalEvent);
     warn("Consumed event", appIdsByRequiredEvent);
 
     if (strict && !appIdsByRequiredEvent.isEmpty()) {
-      var params = new Params();
-      appIdsByRequiredEvent.forEach((event, appIds) -> params.add(event, String.join(", ", appIds)));
-      var message = "Consumed events without producers found: " + String.join(", ", appIdsByRequiredEvent.keySet());
-      throw new RequestValidationException(message, params);
+      throw missingProducers(appIdsByRequiredEvent);
     }
+  }
+
+  private static RequestValidationException missingProducers(Map<String, Set<String>> appIdsByEvent) {
+    var params = new Params();
+    appIdsByEvent.forEach((event, appIds) -> params.add(event, String.join(", ", appIds)));
+    var message = "Consumed events without producers found: " + String.join(", ", appIdsByEvent.keySet());
+    return new RequestValidationException(message, params);
   }
 
   private static void warn(String description, Map<String, Set<String>> appIdsByEvent) {
@@ -95,7 +112,7 @@ public class EventDependencyValidator extends StageRequestValidator {
       "{} has no producer: event = {}, applications = [{}]", description, event, String.join(", ", appIds)));
   }
 
-  private static Set<String> findProducedEvents(List<ApplicationDescriptor> descriptors) {
+  private static Set<String> findProducedEvents(Collection<ApplicationDescriptor> descriptors) {
     return descriptors.stream()
       .flatMap(app -> emptyIfNull(app.getModuleDescriptors()).stream())
       .flatMap(module -> emptyIfNull(module.getProducesEvents()).stream())
@@ -111,7 +128,7 @@ public class EventDependencyValidator extends StageRequestValidator {
    * @return map where the key is the consumed event name and the value is the ids of the applications consuming it
    */
   private static Map<String, Set<String>> findConsumedEvents(
-    List<ApplicationDescriptor> descriptors, boolean optional) {
+    Collection<ApplicationDescriptor> descriptors, boolean optional) {
     var appIdsByEvent = new LinkedHashMap<String, Set<String>>();
     for (var app : descriptors) {
       for (var module : emptyIfNull(app.getModuleDescriptors())) {

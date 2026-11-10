@@ -28,9 +28,10 @@
   publisher/topic exists) ([MGRENTITLE-211](https://folio-org.atlassian.net/browse/MGRENTITLE-211))
 * Allow entitlement of modules that provide no interfaces without discovery information ([MGRENTITLE-210](https://folio-org.atlassian.net/browse/MGRENTITLE-210))
 * Adjust /entitlements/{tenant}/applications by caches ([MGRENTITLE-87](https://folio-org.atlassian.net/browse/MGRENTITLE-87))
-* Add event dependency validation to the entitle, upgrade and desired-state flows: warn when a consumed event has no
-  producer in the application dependency tree; fail the request for non-optional consumed events when `STRICT_EVENT_VALIDATION` is `true` (default `false`).
-  Optional consumed events only warn ([MGRENTITLE-215](https://folio-org.atlassian.net/browse/MGRENTITLE-215))
+* Add event dependency validation to the entitle, upgrade and desired-state flows: warn when an event consumed by the
+  requested applications has no producer among the requested or entitled applications (desired state: requested only).
+  Optional consumed events only warn. A non-optional one fails the request when `STRICT_EVENT_VALIDATION` is `true`
+  (default `false`) ([MGRENTITLE-215](https://folio-org.atlassian.net/browse/MGRENTITLE-215))
 ---
 
 ## Version `4.0.0` (16.04.2026)
