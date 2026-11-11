@@ -45,7 +45,8 @@ class EventDependencyValidatorTest {
     when(provider.getDescriptors(request)).thenReturn(List.of(
       app("producer-1.0.0", produces("e.a")), app(CONSUMER_ID, consumes("e.a", false))));
 
-    assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
+    var validator = validator(true);
+    assertThatCode(() -> validator.validate(request)).doesNotThrowAnyException();
   }
 
   @Test
@@ -53,7 +54,8 @@ class EventDependencyValidatorTest {
     var request = request(CONSUMER_ID);
     when(provider.getDescriptors(request)).thenReturn(List.of(app(CONSUMER_ID, consumes("e.a", true))));
 
-    assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
+    var validator = validator(true);
+    assertThatCode(() -> validator.validate(request)).doesNotThrowAnyException();
   }
 
   @Test
@@ -61,7 +63,8 @@ class EventDependencyValidatorTest {
     var request = request(CONSUMER_ID);
     when(provider.getDescriptors(request)).thenReturn(List.of(app(CONSUMER_ID, consumes("e.a", false))));
 
-    assertThatCode(() -> validator(false).validate(request)).doesNotThrowAnyException();
+    var validator = validator(false);
+    assertThatCode(() -> validator.validate(request)).doesNotThrowAnyException();
   }
 
   @Test
@@ -69,7 +72,8 @@ class EventDependencyValidatorTest {
     var request = request(CONSUMER_ID);
     when(provider.getDescriptors(request)).thenReturn(List.of(app(CONSUMER_ID, consumes("e.a", false))));
 
-    assertThatThrownBy(() -> validator(true).validate(request))
+    var validator = validator(true);
+    assertThatThrownBy(() -> validator.validate(request))
       .hasMessageContaining("Consumed events without producers found: e.a")
       .isInstanceOfSatisfying(RequestValidationException.class, e ->
         assertThat(e.getErrorParameters()).anySatisfy(p -> {
@@ -84,7 +88,8 @@ class EventDependencyValidatorTest {
     var context = stageContext(consumer);
     when(provider.getDescriptors(context)).thenReturn(List.of(app("producer-1.0.0", produces("e.a")), consumer));
 
-    assertThatCode(() -> validator(true).execute(context)).doesNotThrowAnyException();
+    var validator = validator(true);
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
 
   @Test
@@ -93,7 +98,8 @@ class EventDependencyValidatorTest {
     var context = stageContext(consumer);
     when(provider.getDescriptors(context)).thenReturn(List.of(consumer));
 
-    assertThatThrownBy(() -> validator(true).execute(context))
+    var validator = validator(true);
+    assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
       .hasMessageContaining("Consumed events without producers found: e.a");
   }
@@ -104,14 +110,16 @@ class EventDependencyValidatorTest {
     var context = stageContext(consumer);
     when(provider.getDescriptors(context)).thenReturn(List.of(consumer));
 
-    assertThatCode(() -> validator(false).execute(context)).doesNotThrowAnyException();
+    var validator = validator(false);
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
   }
 
   @Test
   void execute_positive_providerNotCalledWhenRequestedAppsConsumeNothing() {
     var context = stageContext(app(CONSUMER_ID, produces("e.a")), app("plain-1.0.0", new ModuleDescriptor()));
 
-    assertThatCode(() -> validator(true).execute(context)).doesNotThrowAnyException();
+    var validator = validator(true);
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
     verifyNoInteractions(provider);
   }
 
@@ -119,7 +127,8 @@ class EventDependencyValidatorTest {
   void execute_positive_noRequestedDescriptorsInContext() {
     var context = commonStageContext(FLOW_ID, Map.of(PARAM_REQUEST, request(CONSUMER_ID)), Map.of());
 
-    assertThatCode(() -> validator(true).execute(context)).doesNotThrowAnyException();
+    var validator = validator(true);
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
     verifyNoInteractions(provider);
   }
 
@@ -131,7 +140,8 @@ class EventDependencyValidatorTest {
       app("producer-1.0.0", produces("e.a")),
       app("entitled-1.0.0", consumes("e.unproduced", false))));
 
-    assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
+    var validator = validator(true);
+    assertThatCode(() -> validator.validate(request)).doesNotThrowAnyException();
   }
 
   @Test
@@ -140,7 +150,8 @@ class EventDependencyValidatorTest {
     when(provider.getDescriptors(request)).thenReturn(List.of(
       app("producer-1.0.0", produces("e.a")), app(CONSUMER_ID, consumes("e.b", true))));
 
-    assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
+    var validator = validator(true);
+    assertThatCode(() -> validator.validate(request)).doesNotThrowAnyException();
   }
 
   @Test
@@ -149,7 +160,8 @@ class EventDependencyValidatorTest {
     when(provider.getDescriptors(request)).thenReturn(List.of(
       app("plain-1.0.0", new ModuleDescriptor()), app(CONSUMER_ID, new ModuleDescriptor())));
 
-    assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
+    var validator = validator(true);
+    assertThatCode(() -> validator.validate(request)).doesNotThrowAnyException();
   }
 
   @ParameterizedTest
@@ -158,7 +170,8 @@ class EventDependencyValidatorTest {
     var request = request(CONSUMER_ID);
     when(provider.getDescriptors(request)).thenReturn(descriptors);
 
-    assertThatCode(() -> validator(true).validate(request)).doesNotThrowAnyException();
+    var validator = validator(true);
+    assertThatCode(() -> validator.validate(request)).doesNotThrowAnyException();
   }
 
   @ParameterizedTest

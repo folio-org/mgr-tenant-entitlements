@@ -2,16 +2,13 @@ package org.folio.entitlement.it;
 
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
-import static org.folio.entitlement.support.TestUtils.asJsonString;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -57,13 +54,21 @@ class EntitlementValidationEventDependencyIT {
     @Test
     @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-required-missing.json")
     void validate_positive_requiredEventWithoutProducerOnlyWarns() throws Exception {
-      validate(REQUIRED_MISSING_APP_ID).andExpect(status().isNoContent());
+      validate(REQUIRED_MISSING_APP_ID, ENTITLE).andExpect(status().isNoContent());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EntitlementRequestType.class, names = {"UPGRADE", "STATE"})
+    @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-required-missing.json")
+    void validate_positive_requiredEventWithoutProducerOnlyWarnsForUpgradeAndState(EntitlementRequestType type)
+      throws Exception {
+      validate(REQUIRED_MISSING_APP_ID, type).andExpect(status().isNoContent());
     }
 
     @Test
     @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-optional-missing.json")
     void validate_positive_optionalEventWithoutProducerOnlyWarns() throws Exception {
-      validate(OPTIONAL_MISSING_APP_ID).andExpect(status().isNoContent());
+      validate(OPTIONAL_MISSING_APP_ID, ENTITLE).andExpect(status().isNoContent());
     }
   }
 
@@ -81,13 +86,13 @@ class EntitlementValidationEventDependencyIT {
     @Test
     @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-matched.json")
     void validate_positive_matchedEvent() throws Exception {
-      validate(MATCHED_APP_ID).andExpect(status().isNoContent());
+      validate(MATCHED_APP_ID, ENTITLE).andExpect(status().isNoContent());
     }
 
     @Test
     @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-required-missing.json")
     void validate_negative_requiredEventWithoutProducerFails() throws Exception {
-      validate(REQUIRED_MISSING_APP_ID)
+      validate(REQUIRED_MISSING_APP_ID, ENTITLE)
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.errors[0].message",
           containsString("Consumed events without producers found: evt.missing")))
@@ -100,7 +105,7 @@ class EntitlementValidationEventDependencyIT {
     @Test
     @WireMockStub(scripts = "/wiremock/mgr-applications/event-dependency/get-by-ids-optional-missing.json")
     void validate_positive_optionalEventWithoutProducerNeverFails() throws Exception {
-      validate(OPTIONAL_MISSING_APP_ID).andExpect(status().isNoContent());
+      validate(OPTIONAL_MISSING_APP_ID, ENTITLE).andExpect(status().isNoContent());
     }
 
     @ParameterizedTest
@@ -136,32 +141,11 @@ class EntitlementValidationEventDependencyIT {
       entitleApplications(entitlementRequest(ENTITLED_PRODUCER_APP_ID), queryParams,
         extendedEntitlements(entitlement(ENTITLED_PRODUCER_APP_ID)));
 
-      validate(CONSUMER_OF_ENTITLED_EVENT_APP_ID).andExpect(status().isNoContent());
-    }
-
-    @Test
-    @WireMockStub(scripts = {
-      "/wiremock/mgr-tenants/test/get.json",
-      "/wiremock/mgr-applications/event-dependency/get-by-ids-required-missing.json"
-    })
-    void entitle_negative_requiredEventWithoutProducerFailsEntitlement() throws Exception {
-      mockMvc.perform(post(updatePathWithPrefix("/entitlements"))
-          .contentType(APPLICATION_JSON)
-          .header(TOKEN, getSystemAccessToken())
-          .content(asJsonString(entitlementRequest(REQUIRED_MISSING_APP_ID))))
-        .andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
-        .andExpect(jsonPath("$.errors[0].parameters[0].key", is(VALIDATOR)))
-        .andExpect(jsonPath("$.errors[0].parameters[0].value",
-          containsString("Consumed events without producers found: evt.missing")));
+      validate(CONSUMER_OF_ENTITLED_EVENT_APP_ID, ENTITLE).andExpect(status().isNoContent());
     }
   }
 
   private abstract static class ValidationIT extends BaseIntegrationTest {
-
-    ResultActions validate(String appId) throws Exception {
-      return validate(appId, ENTITLE);
-    }
 
     ResultActions validate(String appId, EntitlementRequestType type) throws Exception {
       return attemptPost(VALIDATE_URL, entitlementRequest(TENANT_ID, appId), type.getValue(), VALIDATOR);

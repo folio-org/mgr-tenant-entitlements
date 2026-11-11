@@ -26,11 +26,14 @@ import org.springframework.core.annotation.Order;
  * Checks that every event consumed by the requested applications is produced by some application. Events are matched
  * by exact string comparison.
  *
- * <p>Consumed events are the events declared as consumed by modules of the applications in the request. Events
- * consumed by other, already entitled applications are not checked, so they never make a request fail.
+ * <p>Consumed events are the events declared as consumed by modules of the applications in the request.
+ * Events consumed by already entitled applications are not checked.
  *
- * <p>Produced events are the events declared as produced by any application returned by the descriptor provider:
- * the requested applications and, for ENTITLE and UPGRADE requests, the applications already entitled to the tenant.
+ * <p>Produced events are looked up in:
+ * <ul>
+ *   <li>ENTITLE and UPGRADE: the applications in the request and the tenant's already entitled applications;</li>
+ *   <li>STATE: the applications in the request only.</li>
+ * </ul>
  *
  * <p>When a consumed event has no producer:
  * <ul>
