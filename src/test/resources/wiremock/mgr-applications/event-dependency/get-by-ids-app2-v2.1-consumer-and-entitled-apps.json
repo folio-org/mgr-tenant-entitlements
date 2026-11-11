@@ -9,7 +9,7 @@
     },
     "queryParameters": {
       "query": {
-        "contains": "id==(\"evt-consumer-1.0.0\" or \"folio-app1-1.0.0\")"
+        "contains": "id==(\"folio-app2-2.1.0\" or \"folio-app1-1.0.0\" or \"folio-app2-2.0.0\")"
       }
     }
   },
@@ -21,20 +21,20 @@
     "jsonBody": {
       "applicationDescriptors": [
         {
-          "id": "evt-consumer-1.0.0",
-          "name": "evt-consumer",
-          "version": "1.0.0",
+          "id": "folio-app2-2.1.0",
+          "name": "folio-app2",
+          "version": "2.1.0",
           "modules": [
             {
-              "id": "evt-consumer-module-1.0.0",
-              "name": "evt-consumer-module",
-              "version": "1.0.0"
+              "id": "folio-module2-2.0.0",
+              "name": "folio-module2",
+              "version": "2.0.0"
             }
           ],
           "moduleDescriptors": [
             {
-              "id": "evt-consumer-module-1.0.0",
-              "name": "Event consumer module",
+              "id": "folio-module2-2.0.0",
+              "name": "Test Folio Module #2",
               "consumesEvents": [
                 {
                   "event": "evt.entitled",
@@ -156,9 +156,33 @@
               ]
             }
           ]
+        },
+        {
+          "id": "folio-app2-2.0.0",
+          "name": "folio-app2",
+          "version": "2.0.0",
+          "modules": [
+            {
+              "id": "folio-module2-2.0.0",
+              "name": "folio-module2",
+              "version": "2.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module2-2.0.0",
+              "name": "Test Folio Module #2",
+              "consumesEvents": [
+                {
+                  "event": "evt.entitled",
+                  "optional": false
+                }
+              ]
+            }
+          ]
         }
       ],
-      "totalRecords": 2
+      "totalRecords": 3
     }
   }
 }

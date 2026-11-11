@@ -39,6 +39,8 @@ class EventDependencyFlowIT {
   private static final String VALIDATOR = EventDependencyValidator.class.getSimpleName();
   private static final String APP_ID = "folio-app1-1.0.0";
   private static final String APP_V1_1_ID = "folio-app1-1.1.0";
+  private static final String CONSUMER_APP_ID = "folio-app2-2.0.0";
+  private static final String CONSUMER_APP_V2_1_ID = "folio-app2-2.1.0";
   private static final Map<String, String> QUERY_PARAMS =
     Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
 
@@ -155,6 +157,33 @@ class EventDependencyFlowIT {
         .contentType(APPLICATION_JSON)
         .header(TOKEN, getSystemAccessToken())
         .content(asJsonString(desiredStateRequest(TENANT_ID, APP_ID)))), "FlowCancelledException");
+    }
+
+    @Test
+    @WireMockStub(scripts = {
+      "/wiremock/mgr-tenants/test/get.json",
+      "/wiremock/mgr-applications/event-dependency/get-by-ids-entitled-producer.json",
+      "/wiremock/mgr-applications/folio-app1/get-discovery.json",
+      "/wiremock/mgr-applications/event-dependency/get-by-ids-app2-consumer.json",
+      "/wiremock/mgr-applications/event-dependency/get-by-ids-app2-consumer-and-entitled-producer.json",
+      "/wiremock/mgr-applications/folio-app2/get-discovery.json",
+      "/wiremock/mgr-applications/event-dependency/get-by-ids-app2-v2.1-consumer.json",
+      "/wiremock/mgr-applications/event-dependency/get-by-ids-app2-v2.1-consumer-and-entitled-apps.json",
+      "/wiremock/mgr-applications/event-dependency/get-discovery-app2-v2.1.json",
+      "/wiremock/mgr-applications/validate-any-descriptor.json",
+      "/wiremock/folio-module1/install.json",
+      "/wiremock/folio-module2/install.json",
+      "/wiremock/folio-module2/uninstall.json"
+    })
+    void upgrade_positive_eventProducedByEntitledApplication() throws Exception {
+      entitleApplications(entitlementRequest(APP_ID), QUERY_PARAMS, extendedEntitlements(entitlement(APP_ID)));
+      entitleApplications(entitlementRequest(CONSUMER_APP_ID), QUERY_PARAMS,
+        extendedEntitlements(entitlement(CONSUMER_APP_ID)));
+
+      var result = upgradeApplications(entitlementRequest(CONSUMER_APP_V2_1_ID), QUERY_PARAMS,
+        extendedEntitlements(entitlement(CONSUMER_APP_V2_1_ID)));
+
+      assertThat(result.getResponse().getStatus()).isEqualTo(HttpStatus.OK.value());
     }
 
     private static void assertEventValidationFailure(ResultActions result, String flowExceptionType)

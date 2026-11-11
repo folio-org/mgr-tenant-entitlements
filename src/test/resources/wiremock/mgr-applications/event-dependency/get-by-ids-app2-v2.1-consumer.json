@@ -2,9 +2,14 @@
   "request": {
     "method": "GET",
     "urlPath": "/applications",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
     "queryParameters": {
       "query": {
-        "contains": "id==(\"evt-required-1.0.0\")"
+        "contains": "id==(\"folio-app2-2.1.0\")"
       }
     }
   },
@@ -16,23 +21,23 @@
     "jsonBody": {
       "applicationDescriptors": [
         {
-          "id": "evt-required-1.0.0",
-          "name": "evt-required",
-          "version": "1.0.0",
+          "id": "folio-app2-2.1.0",
+          "name": "folio-app2",
+          "version": "2.1.0",
           "modules": [
             {
-              "id": "evt-required-consumer-1.0.0",
-              "name": "evt-required-consumer",
-              "version": "1.0.0"
+              "id": "folio-module2-2.0.0",
+              "name": "folio-module2",
+              "version": "2.0.0"
             }
           ],
           "moduleDescriptors": [
             {
-              "id": "evt-required-consumer-1.0.0",
-              "name": "evt-required consumer",
+              "id": "folio-module2-2.0.0",
+              "name": "Test Folio Module #2",
               "consumesEvents": [
                 {
-                  "event": "evt.missing",
+                  "event": "evt.entitled",
                   "optional": false
                 }
               ]
