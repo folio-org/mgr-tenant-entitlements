@@ -64,7 +64,6 @@ public class EventDependencyValidator extends StageRequestValidator {
 
   @Override
   public void execute(CommonStageContext context) {
-    // the requested applications are already loaded in the context, so the provider is called only if needed
     var requestedApps = emptyIfNull(context.getApplicationDescriptors());
     validateDescriptors(requestedApps, () -> descriptorProvider.getDescriptors(context));
   }

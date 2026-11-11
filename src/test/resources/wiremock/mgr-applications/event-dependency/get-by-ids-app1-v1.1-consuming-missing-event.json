@@ -35,32 +35,6 @@
             {
               "id": "folio-module1-1.0.0",
               "name": "Test Folio Module #1",
-              "provides": [
-                {
-                  "id": "folio-module1-api",
-                  "version": "1.0.0",
-                  "handlers": [
-                    {
-                      "methods": [
-                        "POST"
-                      ],
-                      "pathPattern": "/folio-module1/events"
-                    },
-                    {
-                      "methods": [
-                        "GET"
-                      ],
-                      "pathPattern": "/folio-module1/events"
-                    },
-                    {
-                      "methods": [
-                        "GET"
-                      ],
-                      "pathPattern": "/folio-module1/events/{id}"
-                    }
-                  ]
-                }
-              ],
               "consumesEvents": [
                 {
                   "event": "evt.missing",
