@@ -18,10 +18,10 @@ import org.springframework.stereotype.Component;
  * Checks that every upgraded platform application version still satisfies the dependency range of every dependent
  * platform application. Any violation rejects the whole upgrade before anything is written.
  *
- * <p>Optional dependencies are skipped. The {@code optional} flag belongs to the dependent application and says it works
- * without the parent, so a parent version outside the declared range does not make the dependent inconsistent. Only
- * required dependencies block an upgrade. This matches {@code PlatformDependencyValidator}, which does not require
- * optional dependencies to be entitled either.</p>
+ * <p>Optional dependencies are skipped. The {@code optional} flag belongs to the dependent application and says it
+ * works without the parent, so a parent version outside the declared range does not make the dependent inconsistent.
+ * Only required dependencies block an upgrade. This matches {@code PlatformDependencyValidator}, which does not
+ * require optional dependencies to be entitled either.</p>
  *
  * <p>A dependent that is upgraded by the same request is skipped: its stored dependencies describe the version that is
  * being replaced, and the new version is checked by the per-application dependency validation.</p>
