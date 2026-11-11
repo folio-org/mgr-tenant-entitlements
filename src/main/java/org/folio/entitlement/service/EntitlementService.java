@@ -107,17 +107,19 @@ public class EntitlementService {
       request.getType(), request.getApplicationIds());
 
     var entitlementRequest = request.toEntitlementRequest();
-    var flow = flowProvider.createFlow(entitlementRequest);
     var holder = UUID.randomUUID();
     platformLockService.acquire(holder);
+    String flowId;
     try {
+      var flow = flowProvider.createFlow(entitlementRequest);
+      flowId = flow.getId();
       executeSyncFlow(entitlementRequest, flow);
     } finally {
       platformLockService.release(holder);
     }
 
     var entitlements = mapItems(request.getApplicationIds(), appId -> buildEntitlement(null, appId));
-    return buildEntitlements(entitlements, UUID.fromString(flow.getId()));
+    return buildEntitlements(entitlements, UUID.fromString(flowId));
   }
 
   private void executeFlow(EntitlementRequest request, Flow flow) {
