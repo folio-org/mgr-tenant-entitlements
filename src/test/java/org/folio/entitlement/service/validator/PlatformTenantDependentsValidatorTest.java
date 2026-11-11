@@ -83,6 +83,16 @@ class PlatformTenantDependentsValidatorTest {
         .satisfies(parameter -> assertThat(parameter.getKey()).isEqualTo(OTHER_TENANT_ID + ":folio-app4-4.0.0")));
   }
 
+  @Test
+  void execute_positive_optionalDependentIsNotChecked() {
+    var optional = dependent(TENANT_ID, "folio-app3-3.0.0", "^1.0.0");
+    optional.setOptional(true);
+    when(dependencyRepository.findByParentNameIn(List.of("platform-app"))).thenReturn(List.of(optional));
+    var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, "platform-app-2.0.0"));
+
+    assertThatCode(() -> validator.execute(context)).doesNotThrowAnyException();
+  }
+
   private static ApplicationDependencyEntity dependent(UUID tenantId, String applicationId, String parentRange) {
     return dependent(tenantId, applicationId, parentRange, "platform-app");
   }

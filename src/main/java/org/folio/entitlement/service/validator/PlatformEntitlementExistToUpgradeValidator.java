@@ -13,7 +13,6 @@ import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.repository.PlatformEntitlementRepository;
-import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.semver4j.Semver;
 import org.springframework.stereotype.Component;
@@ -21,15 +20,13 @@ import org.springframework.stereotype.Component;
 /**
  * Requires some version of every requested application to be entitled and the requested version to be higher than
  * it. The same version is accepted: it is a retry, and the application flow writes nothing new for it. Every
- * violation is reported, and one violation rejects the whole request. The descriptors of the entitled versions are
- * put to the stage context, the application flows need them to replace the dependencies of the old version.
+ * violation is reported, and one violation rejects the whole request.
  */
 @Component
 @RequiredArgsConstructor
 public class PlatformEntitlementExistToUpgradeValidator extends DatabaseLoggingStage<CommonStageContext> {
 
   private final PlatformEntitlementRepository repository;
-  private final ApplicationManagerService applicationManagerService;
 
   @Override
   public void execute(CommonStageContext context) {
@@ -47,12 +44,6 @@ public class PlatformEntitlementExistToUpgradeValidator extends DatabaseLoggingS
     if (!violations.isEmpty()) {
       throw new RequestValidationException("Invalid applications provided for platform upgrade", violations);
     }
-
-    var entitledDescriptors = toStream(entitled.values())
-      .map(entity -> applicationManagerService.getApplicationDescriptor(entity.getApplicationId(),
-        request.getOkapiToken()))
-      .toList();
-    context.withEntitledApplicationDescriptors(entitledDescriptors);
   }
 
   private static Optional<Parameter> validate(String applicationId, Map<String, PlatformEntitlementEntity> entitled) {

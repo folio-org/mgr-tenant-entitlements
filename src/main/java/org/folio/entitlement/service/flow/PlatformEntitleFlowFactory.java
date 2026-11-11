@@ -8,6 +8,7 @@ import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.validator.PlatformApplicationsValidator;
+import org.folio.entitlement.service.validator.PlatformDistinctApplicationsValidator;
 import org.folio.entitlement.service.validator.PlatformEntitlementNotExistValidator;
 import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Component;
 public class PlatformEntitleFlowFactory implements FlowFactory {
 
   private final FlowInitializer flowInitializer;
+  private final PlatformDistinctApplicationsValidator distinctApplicationsValidator;
   private final PlatformApplicationsValidator applicationsValidator;
   private final PlatformEntitlementNotExistValidator entitlementNotExistValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
@@ -35,6 +37,7 @@ public class PlatformEntitleFlowFactory implements FlowFactory {
     var builder = Flow.builder()
       .id(UUID.randomUUID())
       .stage(flowInitializer)
+      .stage(distinctApplicationsValidator)
       .stage(entitlementNotExistValidator)
       .stage(applicationsValidator)
       .stage(applicationFlowQueuingStage)

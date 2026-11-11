@@ -207,7 +207,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_BASE_V1);
     assertThat(platformDependencies()).isEmpty();
   }
-  
+
   @Test
   @Sql("classpath:/sql/platform/platform-app-v1-entitled-with-platform-base-dependency.sql")
   @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_PLATFORM_APP_V2, STUB_VALIDATE_DESCRIPTOR})
@@ -252,7 +252,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @Test
   @Sql("classpath:/sql/platform/platform-entitlement-with-dependent.sql")
   @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_PLATFORM_APP_V2})
-  void upgrade_negative_incompatibleDependentRejectsUpgradeAndAppliesNoChange() throws Exception {
+  void upgrade_negative_incompatibleTenantDependentRejectsUpgradeAndAppliesNoChange() throws Exception {
     var result = upgradePlatform(PLATFORM_APP_V2);
 
     expectStageFailure(result, "PlatformTenantDependentsValidator",
@@ -262,6 +262,24 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
       ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_UPGRADE);
     assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
+  }
+
+  @Test
+  @Sql("classpath:/sql/platform/platform-apps-v1-entitled-with-dependencies.sql")
+  @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_PLATFORM_APP_V2})
+  void upgrade_negative_incompatiblePlatformDependentRejectsUpgradeAndAppliesNoChange() throws Exception {
+    var result = upgradePlatform(PLATFORM_APP_V2);
+
+    expectStageFailure(result, "PlatformDependentsValidator",
+      "Platform application upgrade is incompatible with dependent applications");
+    expectStageFailure(result, "PlatformDependentsValidator",
+      "platform-app2-1.0.0, value: Requires platform-app ^1.0.0, which the upgrade to 2.0.0 does not satisfy");
+    assertPlatformFlow(getFlow(flowIdFromHeader(result)),
+      ExecutionStatus.CANCELLED, EntitlementRequestType.PLATFORM_UPGRADE);
+    assertThat(platformApplicationIds())
+      .containsExactlyInAnyOrder(PLATFORM_BASE_V1, PLATFORM_APP_V1, PLATFORM_APP2_V1);
+    assertThat(platformDependencies()).containsExactlyInAnyOrder(
+      tuple(PLATFORM_APP_V1, "platform-base", "^1.0.0"), tuple(PLATFORM_APP2_V1, "platform-app", "^1.0.0"));
   }
 
   @Test

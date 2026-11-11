@@ -93,19 +93,6 @@ class PlatformApplicationsValidatorTest {
         .satisfies(parameter -> assertThat(parameter.getKey()).isEqualTo(REGULAR_APPLICATION_ID)));
   }
 
-  @Test
-  void execute_negative_sameApplicationTwiceIsRejected() {
-    var request = platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, "platform-app-1.0.0", "platform-app-2.0.0");
-    var context = platformContext(request);
-
-    assertThatThrownBy(() -> validator.execute(context))
-      .isInstanceOf(RequestValidationException.class)
-      .hasMessage("Request contains the same application more than once")
-      .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
-        .extracting(parameter -> parameter.getKey())
-        .containsExactlyInAnyOrder("platform-app-1.0.0", "platform-app-2.0.0"));
-  }
-
   private void stubDescriptors(ApplicationDescriptor... descriptors) {
     var applicationIds = Arrays.stream(descriptors).map(ApplicationDescriptor::getId).toList();
     when(applicationManagerService.getApplicationDescriptors(applicationIds, OKAPI_TOKEN))

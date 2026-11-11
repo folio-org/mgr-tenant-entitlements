@@ -7,7 +7,10 @@ import lombok.RequiredArgsConstructor;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
+import org.folio.entitlement.service.stage.PlatformEntitledDescriptorLoader;
 import org.folio.entitlement.service.validator.PlatformApplicationsValidator;
+import org.folio.entitlement.service.validator.PlatformDependentsValidator;
+import org.folio.entitlement.service.validator.PlatformDistinctApplicationsValidator;
 import org.folio.entitlement.service.validator.PlatformEntitlementExistToUpgradeValidator;
 import org.folio.entitlement.service.validator.PlatformTenantDependentsValidator;
 import org.folio.flow.api.DynamicStage;
@@ -23,9 +26,12 @@ import org.springframework.stereotype.Component;
 public class PlatformUpgradeFlowFactory implements FlowFactory {
 
   private final FlowInitializer flowInitializer;
+  private final PlatformDistinctApplicationsValidator distinctApplicationsValidator;
   private final PlatformApplicationsValidator applicationsValidator;
   private final PlatformEntitlementExistToUpgradeValidator entitlementExistToUpgradeValidator;
+  private final PlatformDependentsValidator platformDependentsValidator;
   private final PlatformTenantDependentsValidator tenantDependentsValidator;
+  private final PlatformEntitledDescriptorLoader entitledDescriptorLoader;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final BaseApplicationsFlowProvider applicationsFlowProvider;
 
@@ -37,9 +43,12 @@ public class PlatformUpgradeFlowFactory implements FlowFactory {
     var builder = Flow.builder()
       .id(UUID.randomUUID())
       .stage(flowInitializer)
+      .stage(distinctApplicationsValidator)
       .stage(entitlementExistToUpgradeValidator)
+      .stage(platformDependentsValidator)
       .stage(tenantDependentsValidator)
       .stage(applicationsValidator)
+      .stage(entitledDescriptorLoader)
       .stage(applicationFlowQueuingStage)
       .stage(DynamicStage.of(applicationsFlowProvider.getName(), applicationsFlowProvider::createFlow))
       .stage(finishedFlowFinalizer);
