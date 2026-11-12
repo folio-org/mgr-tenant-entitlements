@@ -35,7 +35,8 @@ class PlatformEntitledDescriptorLoaderTest {
   @Test
   void execute_positive_entitledDescriptorIsLoaded() {
     when(repository.findAllById(List.of("app-platform"))).thenReturn(List.of(PlatformEntitlementEntity.of(APP_V1)));
-    when(applicationManagerService.getApplicationDescriptor(APP_V1, OKAPI_TOKEN)).thenReturn(appDescriptor(APP_V1));
+    when(applicationManagerService.getApplicationDescriptors(List.of(APP_V1), OKAPI_TOKEN))
+      .thenReturn(List.of(appDescriptor(APP_V1)));
     var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_V2));
 
     loader.execute(context);
@@ -46,7 +47,8 @@ class PlatformEntitledDescriptorLoaderTest {
   @Test
   void execute_positive_sameVersionRetryLoadsTheEntitledDescriptor() {
     when(repository.findAllById(List.of("app-platform"))).thenReturn(List.of(PlatformEntitlementEntity.of(APP_V2)));
-    when(applicationManagerService.getApplicationDescriptor(APP_V2, OKAPI_TOKEN)).thenReturn(appDescriptor(APP_V2));
+    when(applicationManagerService.getApplicationDescriptors(List.of(APP_V2), OKAPI_TOKEN))
+      .thenReturn(List.of(appDescriptor(APP_V2)));
     var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_V2));
 
     loader.execute(context);
@@ -58,9 +60,8 @@ class PlatformEntitledDescriptorLoaderTest {
   void execute_positive_everyRequestedApplicationHasItsEntitledDescriptorLoaded() {
     when(repository.findAllById(List.of("app-platform", "other-platform")))
       .thenReturn(List.of(PlatformEntitlementEntity.of(APP_V1), PlatformEntitlementEntity.of(OTHER_V1)));
-    when(applicationManagerService.getApplicationDescriptor(APP_V1, OKAPI_TOKEN)).thenReturn(appDescriptor(APP_V1));
-    when(applicationManagerService.getApplicationDescriptor(OTHER_V1, OKAPI_TOKEN))
-      .thenReturn(appDescriptor(OTHER_V1));
+    when(applicationManagerService.getApplicationDescriptors(List.of(APP_V1, OTHER_V1), OKAPI_TOKEN))
+      .thenReturn(List.of(appDescriptor(APP_V1), appDescriptor(OTHER_V1)));
     var context = platformContext(platformRequest(PLATFORM_UPGRADE, OKAPI_TOKEN, APP_V2, OTHER_V2));
 
     loader.execute(context);

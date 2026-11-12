@@ -74,9 +74,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   private static final String STUB_VALIDATE_DESCRIPTOR = "/wiremock/mgr-applications/validate-any-descriptor.json";
   private static final String STUB_ENTITLED_PLATFORM_APP_V1 =
-    "/wiremock/mgr-applications/platform/get-platform-app-v1.json";
-  private static final String STUB_ENTITLED_PLATFORM_APP_V2 =
-    "/wiremock/mgr-applications/platform/get-platform-app-v2.json";
+    "/wiremock/mgr-applications/platform/get-by-ids-query-entitled-platform-app-v1.json";
   private static final String STUB_PLATFORM_APP =
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json";
   private static final String STUB_PLATFORM_APP_V2 =
@@ -85,8 +83,8 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app2-dependency-entitled.json";
   private static final String STUB_PLATFORM_APPS_DEPENDENCY_ORDER =
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-dependency-order.json";
-  private static final String STUB_ENTITLED_PLATFORM_APP2_V1 =
-    "/wiremock/mgr-applications/platform/get-platform-app2-v1.json";
+  private static final String STUB_ENTITLED_PLATFORM_APPS_V1 =
+    "/wiremock/mgr-applications/platform/get-by-ids-query-entitled-platform-apps-v1.json";
   private static final String STUB_PLATFORM_APPS_ENTITLE_UNSATISFIED_DEPENDENCY =
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-entitle-unsatisfied-dependency.json";
   private static final String STUB_PLATFORM_APPS_V2_UNSATISFIED_DEPENDENCY =
@@ -232,7 +230,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   @Test
   @Sql("classpath:/sql/platform/platform-app-v1-entitled-with-platform-base-dependency.sql")
-  @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_ENTITLED_PLATFORM_APP_V2, STUB_PLATFORM_APP_V2,
+  @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_PLATFORM_APP_V2,
     STUB_VALIDATE_DESCRIPTOR})
   void upgrade_positive_retryToTheSameVersionIsIdempotent() throws Exception {
     upgradePlatform(PLATFORM_APP_V2).andExpect(status().isOk());
@@ -296,7 +294,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   @Test
   @Sql("classpath:/sql/platform/platform-apps-v1-entitled-with-dependencies.sql")
-  @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APP_V1, STUB_ENTITLED_PLATFORM_APP2_V1,
+  @WireMockStub(scripts = {STUB_ENTITLED_PLATFORM_APPS_V1,
     STUB_PLATFORM_APPS_V2_UNSATISFIED_DEPENDENCY, STUB_VALIDATE_DESCRIPTOR})
   void upgrade_negative_secondLayerFails_firstLayerRowsAreRolledBack() throws Exception {
     var result = upgradePlatform(PLATFORM_APP_V2, PLATFORM_APP2_V2);
