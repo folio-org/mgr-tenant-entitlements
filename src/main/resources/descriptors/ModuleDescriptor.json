@@ -57,7 +57,8 @@
           "pathPattern": "/entitlements/platform",
           "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.platform.item.post" ],
           "modulePermissions": [
-            "mgr-applications.applications.item.get"
+            "mgr-applications.applications.collection.get",
+            "mgr-applications.applications.item.validate"
           ]
         },
         {
@@ -66,7 +67,9 @@
           "pathPattern": "/entitlements/platform",
           "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.platform.item.put" ],
           "modulePermissions": [
-            "mgr-applications.applications.item.get"
+            "mgr-applications.applications.collection.get",
+            "mgr-applications.applications.item.get",
+            "mgr-applications.applications.item.validate"
           ]
         },
         {
