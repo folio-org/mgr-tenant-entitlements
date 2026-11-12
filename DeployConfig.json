@@ -583,16 +583,37 @@
         "essential": false
       },
       {
-        "name": "KC_AUTHORIZATION_CACHE_MAX_SIZE",
-        "value": "50",
-        "description": "Maximum number of Keycloak access tokens held in the token cache",
+        "name": "KC_AUTHORIZATION_CACHE_TTL_OFFSET",
+        "value": "5000",
+        "description": "Offset in milliseconds subtracted from the token lifetime when computing the cache TTL of a cached access token, so a token is dropped before it expires",
         "type": "CACHE",
         "essential": false
       },
       {
-        "name": "KC_AUTHORIZATION_CACHE_TTL_OFFSET",
-        "value": "5000",
-        "description": "Offset in milliseconds subtracted from the token lifetime when computing the cache TTL of a cached access token, so a token is dropped before it expires",
+        "name": "TENANT_ID_CACHE_TTL",
+        "value": "15m",
+        "description": "Time to live of the cached tenant looked up by name for GET /entitlements/{tenantName}/applications (Spring Duration syntax, e.g. 15m, 30s). 0 disables the cache. The cache is bypassed when the caller's token is forwarded to mgr-tenants (KC_INTEGRATION_ENABLED=false)",
+        "type": "CACHE",
+        "essential": false
+      },
+      {
+        "name": "TENANT_ID_CACHE_MAX_SIZE",
+        "value": "100",
+        "description": "Maximum number of tenants held in the tenant lookup cache",
+        "type": "CACHE",
+        "essential": false
+      },
+      {
+        "name": "APP_DESCRIPTOR_CACHE_TTL",
+        "value": "20m",
+        "description": "Time to live of the cached application descriptors (by application id) loaded from mgr-applications for GET /entitlements/{tenantName}/applications (Spring Duration syntax, e.g. 20m, 30s). 0 disables the cache. The cache is bypassed when the caller's token is forwarded to mgr-applications (KC_INTEGRATION_ENABLED=false)",
+        "type": "CACHE",
+        "essential": false
+      },
+      {
+        "name": "APP_DESCRIPTOR_CACHE_MAX_SIZE",
+        "value": "300",
+        "description": "Maximum number of application descriptors held in the descriptor cache",
         "type": "CACHE",
         "essential": false
       }

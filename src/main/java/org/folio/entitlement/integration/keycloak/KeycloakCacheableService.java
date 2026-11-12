@@ -16,9 +16,18 @@ import org.springframework.stereotype.Service;
 @ConditionalOnProperty("application.keycloak.enabled")
 public class KeycloakCacheableService {
 
+  public static final String ADMIN_TOKEN_KEY = "admin";
+
   private final Keycloak keycloak;
 
-  @Cacheable(cacheNames = ACCESS_TOKEN, key = "#userToken")
+  /**
+   * Obtains the token of the admin client. It does not depend on the calling user, so a single entry is shared by all
+   * callers and concurrent misses are collapsed into one request to Keycloak.
+   *
+   * @param userToken the caller's token, not used to build the admin client token
+   * @return admin client access token response
+   */
+  @Cacheable(cacheNames = ACCESS_TOKEN, key = "'" + ADMIN_TOKEN_KEY + "'", sync = true)
   public AccessTokenResponse getAccessToken(String userToken) {
     return keycloak.tokenManager()
       .grantToken();

@@ -23,4 +23,9 @@ class RequestAdminTokenProviderTest {
 
     assertThat(result).isEqualTo(OKAPI_TOKEN);
   }
+
+  @Test
+  void isSharedIdentity_positive_callerTokenIsForwarded() {
+    assertThat(requestAdminTokenProvider.isSharedIdentity()).isFalse();
+  }
 }

@@ -27,6 +27,7 @@
   for `app-mgr-services` bundling. capabilitySet is not declared separately (no backing
   publisher/topic exists) ([MGRENTITLE-211](https://folio-org.atlassian.net/browse/MGRENTITLE-211))
 * Allow entitlement of modules that provide no interfaces without discovery information ([MGRENTITLE-210](https://folio-org.atlassian.net/browse/MGRENTITLE-210))
+* Adjust /entitlements/{tenant}/applications by caches ([MGRENTITLE-87](https://folio-org.atlassian.net/browse/MGRENTITLE-87))
 * Entitle and upgrade platform applications through a deployment-scoped endpoint ([MGRENTITLE-213](https://folio-org.atlassian.net/browse/MGRENTITLE-213))
 ---
 

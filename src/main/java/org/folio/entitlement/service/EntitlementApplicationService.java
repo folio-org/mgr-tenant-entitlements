@@ -5,32 +5,56 @@ import static org.folio.common.utils.PaginationUtils.subListAtOffset;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.folio.common.domain.model.ApplicationDescriptor;
+import org.folio.entitlement.configuration.cache.EntitlementCachePolicy;
 import org.folio.entitlement.domain.dto.ApplicationDescriptors;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
-import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.integration.token.AdminTokenProvider;
 import org.folio.entitlement.repository.EntitlementRepository;
 import org.springframework.stereotype.Service;
 
+/**
+ * Provides application descriptors of the applications entitled to a tenant.
+ */
+@Log4j2
 @Service
 @RequiredArgsConstructor
 public class EntitlementApplicationService {
 
-  private final ApplicationManagerService applicationManagerService;
-  private final TenantManagerService tenantManagerService;
+  private final TenantIdResolver tenantIdResolver;
+  private final EntitledApplicationDescriptorLoader descriptorLoader;
+  private final EntitlementCachePolicy cachePolicy;
   private final EntitlementRepository entitlementRepository;
   private final AdminTokenProvider adminTokenProvider;
 
+  /**
+   * Returns a page of application descriptors of the applications entitled to the tenant.
+   *
+   * <p>Entitlements are always read from the database, while the tenant and the application descriptors may come from
+   * caches.</p>
+   *
+   * @param tenant - tenant name
+   * @param userToken - token of the caller
+   * @param offset - number of descriptors to skip
+   * @param limit - maximum number of descriptors in the page
+   * @return {@link ApplicationDescriptors} with the page and the total number of entitled applications
+   */
   public ApplicationDescriptors getApplicationDescriptorsByTenantName(String tenant, String userToken,
-                                                                      Integer offset, Integer limit) {
+    Integer offset, Integer limit) {
+    log.debug("Getting application descriptors for tenant: tenant = {}, offset = {}, limit = {}",
+      tenant, offset, limit);
+
     var token = adminTokenProvider.getToken(userToken);
 
     var applicationIds = getApplicationIds(tenant, token);
-    var allDescriptors = applicationManagerService.getApplicationDescriptors(applicationIds, token);
+    var allDescriptors = descriptorLoader.load(applicationIds, token);
 
     // offset & limit must be applied after loading all applications by ids
     // otherwise we don't know the exact number of 'total records'.
     var offsetDescriptors = subListAtOffset(offset, limit, allDescriptors);
+    log.debug("Returning application descriptors for tenant: tenant = {}, descriptorIds = {}", () -> tenant,
+      () -> mapItems(offsetDescriptors, ApplicationDescriptor::getId));
 
     return new ApplicationDescriptors()
       .applicationDescriptors(offsetDescriptors)
@@ -38,9 +62,27 @@ public class EntitlementApplicationService {
   }
 
   private List<String> getApplicationIds(String tenantName, String authToken) {
-    var tenant = tenantManagerService.findTenantByName(tenantName, authToken);
-    var entitlements = entitlementRepository.findByTenantId(tenant.getId());
-    return mapToApplicationIds(entitlements);
+    return mapToApplicationIds(findEntitlements(tenantName, authToken));
+  }
+
+  /**
+   * Entitlements are always read from the database. If none are found for a tenant id that may have come from the
+   * cache, the id is re-resolved once, because the tenant could have been re-created under the same name.
+   */
+  private List<EntitlementEntity> findEntitlements(String tenantName, String authToken) {
+    var tenantId = tenantIdResolver.resolve(tenantName, authToken).getId();
+    log.debug("Tenant resolved by name: tenantName = {}, tenantId = {}", tenantName, tenantId);
+
+    var entitlements = entitlementRepository.findByTenantId(tenantId);
+    if (!entitlements.isEmpty() || !cachePolicy.isEnabled()) {
+      return entitlements;
+    }
+
+    tenantIdResolver.evict(tenantName);
+    var actualTenantId = tenantIdResolver.resolve(tenantName, authToken).getId();
+    log.debug("Actual tenant id resolved: tenantName = {}, actualTenantId = {}", tenantName, actualTenantId);
+
+    return actualTenantId.equals(tenantId) ? entitlements : entitlementRepository.findByTenantId(actualTenantId);
   }
 
   private static List<String> mapToApplicationIds(List<EntitlementEntity> entitlements) {
