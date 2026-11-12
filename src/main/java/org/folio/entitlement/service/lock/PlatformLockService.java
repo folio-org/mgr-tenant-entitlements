@@ -58,7 +58,11 @@ public class PlatformLockService {
 
   private final JdbcTemplate jdbcTemplate;
   private final PlatformLockConfigurationProperties properties;
+  // java:S3749 - created by this class, not injected: the pool is deliberately not a bean (see the constructor)
+  @SuppressWarnings("java:S3749")
   private final HikariDataSource lockDataSource;
+  // java:S3749 - internal state: the connections held by running platform operations
+  @SuppressWarnings("java:S3749")
   private final Map<UUID, Connection> holders = new ConcurrentHashMap<>();
 
   public PlatformLockService(JdbcTemplate jdbcTemplate, PlatformLockConfigurationProperties properties,

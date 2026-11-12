@@ -34,12 +34,13 @@ class PlatformLockServiceIT extends BaseIntegrationTest {
   @Test
   void acquire_positive_lockIsVisibleToTenantProbeAndExclusive() {
     var holder = UUID.randomUUID();
+    var secondHolder = UUID.randomUUID();
     platformLockService.acquire(holder);
     try {
       assertThat(platformLockService.isHeld()).isTrue();
       assertThatThrownBy(platformLockService::assertNotHeld)
         .isInstanceOf(PlatformOperationInProgressException.class);
-      assertThatThrownBy(() -> platformLockService.acquire(UUID.randomUUID()))
+      assertThatThrownBy(() -> platformLockService.acquire(secondHolder))
         .isInstanceOf(PlatformOperationInProgressException.class);
     } finally {
       platformLockService.release(holder);

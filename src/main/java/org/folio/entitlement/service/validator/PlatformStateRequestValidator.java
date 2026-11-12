@@ -1,6 +1,5 @@
 package org.folio.entitlement.service.validator;
 
-import static java.util.stream.Collectors.toList;
 import static org.folio.common.utils.CollectionUtils.toStream;
 
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,7 @@ public class PlatformStateRequestValidator extends DatabaseLoggingStage<CommonSt
       .map(descriptor -> new Parameter()
         .key(descriptor.getId())
         .value("Platform-scoped application cannot be set in a tenant desired state"))
-      .collect(toList());
+      .toList();
 
     if (!platformApplications.isEmpty()) {
       throw new RequestValidationException("Desired state request contains platform-scoped applications",

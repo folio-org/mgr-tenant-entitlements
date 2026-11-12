@@ -394,7 +394,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
       .toList();
   }
 
-  private static UUID flowIdFromBody(MvcResult result) throws Exception {
+  private static UUID flowIdFromBody(MvcResult result) {
     return parseResponse(result, ExtendedPlatformEntitlements.class).getFlowId();
   }
 
