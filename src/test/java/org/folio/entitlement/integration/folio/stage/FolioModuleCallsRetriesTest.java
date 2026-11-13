@@ -1,7 +1,9 @@
 package org.folio.entitlement.integration.folio.stage;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUEST;
+import static org.folio.entitlement.domain.model.ModuleStageContext.ATTR_RETRY_INFO;
 import static org.folio.entitlement.domain.model.ModuleStageContext.PARAM_MODULE_DESCRIPTOR;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -10,6 +12,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import jakarta.ws.rs.WebApplicationException;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
@@ -19,12 +22,15 @@ import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryBac
 import org.folio.entitlement.configuration.RetryConfigurationProperties.RetryConfigProps;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.ModuleStageContext;
+import org.folio.entitlement.domain.model.RetryInformation;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.repository.FlowStageRepository;
+import org.folio.entitlement.retry.RetryAttemptListener;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.service.stage.ThreadLocalModuleStageContext;
 import org.folio.flow.impl.StageContextImpl;
+import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,11 +40,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
-import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.test.context.ContextConfiguration;
 
+@UnitTest
 @SpringBootTest
-@EnableRetry
 @Import(RetryConfiguration.class)
 @ContextConfiguration(classes = FolioModuleCallsRetriesTest.TestConfig.class)
 class FolioModuleCallsRetriesTest {
@@ -87,6 +92,58 @@ class FolioModuleCallsRetriesTest {
     assertThatThrownBy(() -> folioModuleUninstaller.execute(moduleStageContext)).isInstanceOf(
       IntegrationException.class);
     verify(folioModuleService, times(3)).disable(any());
+  }
+
+  @Test
+  void execute_negative_nonRetryableErrorIsNotRetried() {
+    var error = new IntegrationException("Test", List.of());
+    doThrow(error).when(folioModuleService).enable(any());
+    var moduleStageContext = createModuleStageContext();
+
+    assertThatThrownBy(() -> folioModuleInstaller.execute(moduleStageContext)).isSameAs(error);
+
+    verify(folioModuleService, times(1)).enable(any());
+  }
+
+  @Test
+  void execute_negative_failedAttemptsAreRecordedInStageContext() {
+    var error = new IntegrationException("Test", List.of(), 400);
+    doThrow(error).when(folioModuleService).enable(any());
+    var moduleStageContext = createModuleStageContext();
+
+    assertThatThrownBy(() -> folioModuleInstaller.execute(moduleStageContext)).isSameAs(error);
+
+    var retryInformation = (RetryInformation) moduleStageContext.get(ATTR_RETRY_INFO);
+    assertThat(retryInformation.getRetriesCount()).isEqualTo(3);
+    assertThat(retryInformation.getErrors()).hasSize(3);
+  }
+
+  @Test
+  void execute_negative_keycloakErrorIsNotRetriedByFolioModuleAdvisor() {
+    var error = new WebApplicationException("Test", 500);
+    doThrow(error).when(folioModuleService).enable(any());
+    var moduleStageContext = createModuleStageContext();
+
+    assertThatThrownBy(() -> folioModuleInstaller.execute(moduleStageContext)).isSameAs(error);
+
+    verify(folioModuleService, times(1)).enable(any());
+  }
+
+  @Test
+  void execute_negative_interruptionDuringBackoffStopsRetries() {
+    var error = new IntegrationException("Test", List.of(), 400);
+    doThrow(error).when(folioModuleService).enable(any());
+    var moduleStageContext = createModuleStageContext();
+
+    Thread.currentThread().interrupt();
+    try {
+      assertThatThrownBy(() -> folioModuleInstaller.execute(moduleStageContext)).isSameAs(error);
+      assertThat(Thread.currentThread().isInterrupted()).isTrue();
+    } finally {
+      Thread.interrupted();
+    }
+
+    verify(folioModuleService, times(1)).enable(any());
   }
 
   private static ModuleStageContext createModuleStageContext() {
@@ -140,6 +197,11 @@ class FolioModuleCallsRetriesTest {
     public FolioModuleUpdater folioModuleUpdater(FolioModuleService folioModuleService,
       EntitlementModuleService moduleService) {
       return new FolioModuleUpdater(folioModuleService, moduleService);
+    }
+
+    @Bean
+    public RetryAttemptListener retryAttemptListener(ThreadLocalModuleStageContext threadLocalModuleStageContext) {
+      return new RetryAttemptListener(threadLocalModuleStageContext);
     }
 
     @Bean

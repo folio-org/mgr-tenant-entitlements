@@ -319,7 +319,7 @@
       {
         "name": "RETRIES_MODULE_MAX",
         "value": "3",
-        "description": "Maximum number of retries for failed calls to FOLIO modules",
+        "description": "Maximum number of attempts (initial call included) for failed calls to FOLIO modules",
         "type": "CONFIG",
         "essential": false
       },
@@ -347,7 +347,7 @@
       {
         "name": "RETRIES_KEYCLOAK_MAX",
         "value": "3",
-        "description": "Maximum number of retries for failed calls to Keycloak",
+        "description": "Maximum number of attempts (initial call included) for failed calls to Keycloak",
         "type": "CONFIG",
         "essential": false
       },

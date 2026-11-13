@@ -32,6 +32,9 @@
   requested applications has no producer among the requested or entitled applications (desired state: requested only).
   Optional consumed events only warn. A non-optional one fails the request when `STRICT_EVENT_VALIDATION` is `true`
   (default `false`) ([MGRENTITLE-215](https://folio-org.atlassian.net/browse/MGRENTITLE-215))
+* Replace the archived spring-retry with Spring Framework 7 retry for FOLIO module and Keycloak call retries; no
+  behavior or configuration change. `RETRIES_*_MAX` is now documented, and validated, as the number of attempts
+  (initial call included)
 ---
 
 ## Version `4.0.0` (16.04.2026)

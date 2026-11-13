@@ -355,8 +355,8 @@ mgr-applications, which authorize every request individually, so the caches are 
 
 | Name                                | Default value |  Required   | Description                                       |
 |:------------------------------------|:--------------|:-----------:|:--------------------------------------------------|
-| RETRIES_MODULE_MAX                  | 3             |    false    | Maximum number of retries for FOLIO module calls  |
-| RETRIES_KEYCLOAK_MAX                | 3             |    false    | Maximum number of retries for Keycloak calls      |
+| RETRIES_MODULE_MAX                  | 3             |    false    | Maximum number of attempts for FOLIO module calls |
+| RETRIES_KEYCLOAK_MAX                | 3             |    false    | Maximum number of attempts for Keycloak calls     |
 | RETRIES_MODULE_BACKOFF_DELAY        | 1000          |    false    | FOLIO module calls retries initial delay millisec |
 | RETRIES_MODULE_BACKOFF_MAXDELAY     | 30000         |    false    | FOLIO module calls retries maximum delay millisec |
 | RETRIES_MODULE_BACKOFF_MULTIPLIER   | 5             |    false    | FOLIO module calls retries delay multiplier       |
