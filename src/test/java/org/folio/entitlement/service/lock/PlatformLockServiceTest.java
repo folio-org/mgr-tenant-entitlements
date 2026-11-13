@@ -36,6 +36,8 @@ class PlatformLockServiceTest {
   @Mock private PreparedStatement statement;
   @Mock private ResultSet resultSet;
 
+  private final PlatformLockConfigurationProperties properties = new PlatformLockConfigurationProperties();
+
   @Test
   void runExclusively_positive_returnsResultAndEndsTransaction() throws SQLException {
     stubLockAttempt(true);
@@ -127,8 +129,6 @@ class PlatformLockServiceTest {
 
     assertThat(service().isHeld()).isFalse();
   }
-
-  private final PlatformLockConfigurationProperties properties = new PlatformLockConfigurationProperties();
 
   private PlatformLockService service() {
     return new PlatformLockService(dataSource, jdbcTemplate, properties);
