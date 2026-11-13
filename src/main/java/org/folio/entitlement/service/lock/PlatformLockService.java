@@ -1,16 +1,13 @@
 package org.folio.entitlement.service.lock;
 
-import com.zaxxer.hikari.HikariDataSource;
-import jakarta.annotation.PreDestroy;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
+import javax.sql.DataSource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.configuration.PlatformLockConfigurationProperties;
 import org.folio.entitlement.exception.PlatformOperationInProgressException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -18,21 +15,26 @@ import org.springframework.stereotype.Service;
 /**
  * Deployment-wide lock that excludes tenant-scoped entitlement operations while a platform-scoped operation runs.
  *
- * <p>The platform operation holds a session-level Postgres advisory lock on a dedicated connection for its whole
- * duration. Tenant operations never acquire the lock: they only check whether it is held, so tenant operations never
- * contend with each other. Every method is non-blocking - a contended request fails immediately instead of waiting.</p>
+ * <p>The platform operation holds a transaction-level Postgres advisory lock for the duration of a callback, on one
+ * connection of the main pool. Postgres releases the lock on commit, rollback or connection loss, so it can never stay
+ * on a pooled connection. Tenant operations never hold the lock: they only probe it with a shared lock that lives for
+ * one statement, so tenant operations never contend with each other. Every method is non-blocking - a contended request
+ * fails immediately instead of waiting.</p>
  *
- * <p>A session advisory lock lives on the physical backend connection, so the holding connection must be unlocked
- * explicitly before it is returned to the pool, or evicted if that fails.</p>
+ * <p>{@link #runExclusively(Supplier)} uses its own connection. {@link #assertNotHeld()} uses the current Spring
+ * transaction's connection, and its shared lock lasts until that transaction ends. Callers of
+ * {@code assertNotHeld()}, such as {@code EntitlementService.performRequest}, must therefore not be
+ * {@code @Transactional}.</p>
  */
 @Log4j2
 @Service
+@RequiredArgsConstructor
 public class PlatformLockService {
 
   /**
    * Namespace, the first int of the advisory lock key: {@code 0x4D475445} is ASCII "MGTE" (manager tenant
    * entitlements). A module-specific value keeps the lock from colliding with advisory locks taken by other code in
-   * the same database, and is easy to spot in {@code pg_locks}.
+   * the same database.
    */
   static final int LOCK_NAMESPACE = 0x4D475445;
   /**
@@ -41,110 +43,49 @@ public class PlatformLockService {
    */
   static final int LOCK_KEY = 0x504C4154;
 
-  private static final String TRY_LOCK_SQL = "SELECT pg_try_advisory_lock(?, ?)";
-  private static final String UNLOCK_SQL = "SELECT pg_advisory_unlock(?, ?)";
-  /**
-   * Reads the lock table without acquiring anything. In {@code pg_locks}, {@code objsubid = 2} marks a key made of
-   * two integers (the first in {@code classid}, the second in {@code objid}); {@code objsubid = 1} is a single bigint.
-   */
-  private static final String IS_HELD_SQL = """
-    SELECT EXISTS (
-      SELECT 1 FROM pg_locks
-      WHERE locktype = 'advisory'
-        AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
-        AND classid = ? AND objid = ? AND objsubid = 2
-        AND granted)
-    """;
+  private static final String TRY_EXCLUSIVE_LOCK_SQL = "SELECT pg_try_advisory_xact_lock(?, ?)";
+  private static final String TRY_SHARED_LOCK_SQL = "SELECT pg_try_advisory_xact_lock_shared(?, ?)";
 
+  private final DataSource dataSource;
   private final JdbcTemplate jdbcTemplate;
   private final PlatformLockConfigurationProperties properties;
-  // java:S3749 - created by this class, not injected: the pool is deliberately not a bean (see the constructor)
-  @SuppressWarnings("java:S3749")
-  private final HikariDataSource lockDataSource;
-  // java:S3749 - internal state: the connections held by running platform operations
-  @SuppressWarnings("java:S3749")
-  private final Map<UUID, Connection> holders = new ConcurrentHashMap<>();
-
-  public PlatformLockService(JdbcTemplate jdbcTemplate, PlatformLockConfigurationProperties properties,
-    @Value("${spring.datasource.url}") String url,
-    @Value("${spring.datasource.username}") String username,
-    @Value("${spring.datasource.password}") String password) {
-    this.jdbcTemplate = jdbcTemplate;
-    this.properties = properties;
-    // A dedicated pool, deliberately not a Spring DataSource bean: a second DataSource bean would make Boot's
-    // DataSourceAutoConfiguration back off and move JPA onto this pool.
-    this.lockDataSource = new HikariDataSource();
-    lockDataSource.setJdbcUrl(url);
-    lockDataSource.setUsername(username);
-    lockDataSource.setPassword(password);
-    lockDataSource.setPoolName("platform-lock");
-    lockDataSource.setMinimumIdle(0);
-    lockDataSource.setMaximumPoolSize(2);
-  }
-
-  @PreDestroy
-  void shutdown() {
-    holders.keySet().forEach(this::release);
-    lockDataSource.close();
-  }
 
   /**
-   * Acquires the platform lock for a platform operation. Never waits.
+   * Runs the operation while holding the exclusive platform lock. Never waits.
    *
-   * @param holder - identifier of the holder that owns the lock
+   * @param operation - the platform operation to run
+   * @param <T> - result type
+   * @return the operation result
    * @throws PlatformOperationInProgressException if another platform operation holds the lock
    */
-  public void acquire(UUID holder) {
-    var connection = openLockConnection();
-    boolean locked;
-    try {
-      locked = tryLock(connection);
+  public <T> T runExclusively(Supplier<T> operation) {
+    try (var connection = dataSource.getConnection()) {
+      // false = autocommit off, so the connection starts a transaction that stays open until we end it. The lock is
+      // transaction-level: with autocommit on (true), the lock statement would commit as soon as it finishes and
+      // Postgres would release the lock before the operation even starts.
+      connection.setAutoCommit(false);
+      try {
+        if (!tryLock(connection)) {
+          throw platformOperationInProgress();
+        }
+        log.debug("Platform lock acquired");
+        return operation.get();
+      } finally {
+        endTransaction(connection);
+      }
     } catch (SQLException exception) {
-      // the lock may have been taken server-side before the failure, so evict rather than return the connection
-      lockDataSource.evictConnection(connection);
       throw new DataAccessResourceFailureException("Failed to acquire platform lock", exception);
     }
-
-    if (!locked) {
-      returnToPool(connection);
-      throw platformOperationInProgress();
-    }
-
-    holders.put(holder, connection);
-    log.info("Platform lock acquired [holder: {}]", holder);
   }
 
   /**
-   * Releases the platform lock held by the holder. Idempotent: a holder that holds no lock is a no-op.
-   *
-   * @param holder - identifier of the holder that owns the lock
-   */
-  public void release(UUID holder) {
-    var connection = holders.remove(holder);
-    if (connection == null) {
-      return;
-    }
-
-    try {
-      var unlocked = unlock(connection);
-      if (!unlocked) {
-        log.warn("Platform lock was not held by its connection on release [holder: {}]", holder);
-      }
-      connection.close();
-      log.info("Platform lock released [holder: {}]", holder);
-    } catch (SQLException exception) {
-      log.error("Failed to unlock platform lock cleanly, evicting its connection [holder: {}]", holder, exception);
-      lockDataSource.evictConnection(connection);
-    }
-  }
-
-  /**
-   * Checks whether a platform operation currently holds the lock. Reads {@code pg_locks} and acquires nothing.
+   * Checks whether a platform operation currently holds the lock. Takes a shared lock that is released at once.
    *
    * @return {@code true} if the platform lock is held
    */
   public boolean isHeld() {
-    return Boolean.TRUE.equals(jdbcTemplate.queryForObject(IS_HELD_SQL, Boolean.class, LOCK_NAMESPACE, LOCK_KEY));
+    var free = jdbcTemplate.queryForObject(TRY_SHARED_LOCK_SQL, Boolean.class, LOCK_NAMESPACE, LOCK_KEY);
+    return !Boolean.TRUE.equals(free);
   }
 
   /**
@@ -164,16 +105,8 @@ public class PlatformLockService {
       "A platform operation is in progress, retry later", properties.getRetryAfterSeconds());
   }
 
-  private Connection openLockConnection() {
-    try {
-      return lockDataSource.getConnection();
-    } catch (SQLException exception) {
-      throw new DataAccessResourceFailureException("Failed to open platform lock connection", exception);
-    }
-  }
-
   private static boolean tryLock(Connection connection) throws SQLException {
-    try (var statement = connection.prepareStatement(TRY_LOCK_SQL)) {
+    try (var statement = connection.prepareStatement(TRY_EXCLUSIVE_LOCK_SQL)) {
       statement.setInt(1, LOCK_NAMESPACE);
       statement.setInt(2, LOCK_KEY);
       try (var resultSet = statement.executeQuery()) {
@@ -182,22 +115,17 @@ public class PlatformLockService {
     }
   }
 
-  private static boolean unlock(Connection connection) throws SQLException {
-    try (var statement = connection.prepareStatement(UNLOCK_SQL)) {
-      statement.setInt(1, LOCK_NAMESPACE);
-      statement.setInt(2, LOCK_KEY);
-      try (var resultSet = statement.executeQuery()) {
-        return resultSet.next() && resultSet.getBoolean(1);
-      }
-    }
-  }
-
-  private void returnToPool(Connection connection) {
+  /**
+   * Ends the lock transaction, which releases the lock, and restores autocommit for the pool. A failure is logged and
+   * not thrown, so it cannot hide the exception of the operation; a closed connection loses the lock anyway.
+   */
+  private void endTransaction(Connection connection) {
     try {
-      connection.close();
+      connection.rollback();
+      connection.setAutoCommit(true);
+      log.debug("Platform lock released");
     } catch (SQLException exception) {
-      log.warn("Failed to return platform lock connection to the pool, evicting it", exception);
-      lockDataSource.evictConnection(connection);
+      log.error("Failed to end platform lock transaction cleanly", exception);
     }
   }
 }

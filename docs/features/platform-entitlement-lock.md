@@ -1,7 +1,7 @@
 ---
 feature_id: platform-entitlement-lock
 title: Platform Operation Lock
-updated: 2026-11-12
+updated: 2026-11-13
 ---
 
 # Platform Operation Lock
@@ -44,5 +44,9 @@ changes made at the same time could invalidate that check, so the two kinds of o
 | application.platform-lock.retry-after-seconds / PLATFORM_LOCK_RETRY_AFTER_SECONDS | Value of the `Retry-After` header in seconds. Default `5` |
 
 ## Dependencies and interactions
-Uses the module's PostgreSQL database for the lock, through a separate small connection pool, so it is shared across
-instances.
+Uses a transaction-level PostgreSQL advisory lock on a connection from the module's main connection pool, so it is
+shared across instances. PostgreSQL releases the lock when the transaction ends or the connection is lost, so it cannot
+stay behind. One pool connection is held, idle in a transaction, while a platform operation runs. Tenant operations
+probe the lock with a shared advisory lock that lives for one statement, so a platform request can briefly get `409`
+while a tenant probe runs. Check that the database's `idle_in_transaction_session_timeout` is longer than the longest
+platform operation, otherwise PostgreSQL ends the lock transaction early.

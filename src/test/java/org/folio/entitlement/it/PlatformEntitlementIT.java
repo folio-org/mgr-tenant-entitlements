@@ -312,9 +312,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   @Test
   void tenantOperations_negative_rejectedWhilePlatformOperationHoldsLock() throws Exception {
-    var holder = UUID.randomUUID();
-    platformLockService.acquire(holder);
-    try {
+    whileHoldingPlatformLock(() -> {
       for (var request : tenantWriteRequests()) {
         mockMvc.perform(request)
           .andExpect(status().isConflict())
@@ -323,16 +321,12 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
       }
 
       assertThat(flowCount()).isZero();
-    } finally {
-      platformLockService.release(holder);
-    }
+    });
   }
 
   @Test
   void platformOperations_negative_rejectedWhileAnotherPlatformOperationHoldsLock() throws Exception {
-    var holder = UUID.randomUUID();
-    platformLockService.acquire(holder);
-    try {
+    whileHoldingPlatformLock(() -> {
       entitlePlatform(PLATFORM_APP_V1)
         .andExpect(status().isConflict())
         .andExpect(header().string(RETRY_AFTER, DEFAULT_RETRY_AFTER_SECONDS));
@@ -342,9 +336,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
       assertThat(flowCount()).isZero();
       assertThat(platformApplicationIds()).isEmpty();
-    } finally {
-      platformLockService.release(holder);
-    }
+    });
   }
 
   @Test
@@ -448,5 +440,22 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   private static String path(String path) {
     return updatePathWithPrefix(path);
+  }
+
+  private void whileHoldingPlatformLock(ThrowingAction action) {
+    platformLockService.runExclusively(() -> {
+      try {
+        action.run();
+      } catch (Exception exception) {
+        throw new IllegalStateException(exception);
+      }
+      return null;
+    });
+  }
+
+  @FunctionalInterface
+  private interface ThrowingAction {
+
+    void run() throws Exception;
   }
 }

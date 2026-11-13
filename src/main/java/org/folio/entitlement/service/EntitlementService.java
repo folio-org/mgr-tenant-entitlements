@@ -95,9 +95,9 @@ public class EntitlementService {
   /**
    * Entitles or upgrades platform-scoped applications deployment-wide.
    *
-   * <p>Synchronous: the exclusive platform lock is taken before the flow starts and held for the whole call, so a
-   * request rejected because another platform operation is running leaves no flow row - the flow row is created by the
-   * flow's first stage. The lock is released on every outcome.</p>
+   * <p>Runs synchronously. The exclusive platform lock is taken before the flow starts and released when the call ends,
+   * whether it succeeds or fails. If another platform operation holds the lock, the request is rejected and no flow
+   * is created.</p>
    *
    * @param request - platform entitlement request
    * @return {@link ExtendedEntitlements} with an entitlement without tenant per application and the flow id
@@ -107,16 +107,11 @@ public class EntitlementService {
       request.getType(), request.getApplicationIds());
 
     var entitlementRequest = request.toEntitlementRequest();
-    var holder = UUID.randomUUID();
-    platformLockService.acquire(holder);
-    String flowId;
-    try {
+    var flowId = platformLockService.runExclusively(() -> {
       var flow = flowProvider.createFlow(entitlementRequest);
-      flowId = flow.getId();
       executeSyncFlow(entitlementRequest, flow);
-    } finally {
-      platformLockService.release(holder);
-    }
+      return flow.getId();
+    });
 
     var entitlements = mapItems(request.getApplicationIds(), appId -> buildEntitlement(null, appId));
     return buildEntitlements(entitlements, UUID.fromString(flowId));
