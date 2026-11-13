@@ -30,4 +30,19 @@ public class JsonConverter {
       throw new SerializationException(String.format(SERIALIZATION_ERROR_MSG_TEMPLATE, e.getMessage()));
     }
   }
+
+  /**
+   * Converts passed json string to an object of the given type.
+   *
+   * @param json json string
+   * @param type target type
+   * @return deserialized value
+   */
+  public <T> T fromJson(String json, Class<T> type) {
+    try {
+      return objectMapper.readValue(json, type);
+    } catch (JacksonException e) {
+      throw new SerializationException(String.format("Failed to deserialize value [message: %s]", e.getMessage()));
+    }
+  }
 }

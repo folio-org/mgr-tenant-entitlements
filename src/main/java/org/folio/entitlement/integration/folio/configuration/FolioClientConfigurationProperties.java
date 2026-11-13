@@ -22,6 +22,16 @@ public class FolioClientConfigurationProperties {
   private Duration readTimeout = Duration.ofSeconds(60);
 
   /**
+   * Max time to wait for an async tenant install job (RMB Tenant API) to complete.
+   */
+  private Duration tenantApiJobTimeout = Duration.ofMinutes(30);
+
+  /**
+   * Delay between tenant job status checks.
+   */
+  private Duration tenantApiJobPollInterval = Duration.ofSeconds(2);
+
+  /**
    * TLS properties for folio-client.
    */
   private TlsProperties tls;
