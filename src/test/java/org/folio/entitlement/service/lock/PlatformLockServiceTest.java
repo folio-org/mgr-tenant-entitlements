@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.folio.entitlement.configuration.PlatformLockConfigurationProperties;
 import org.folio.entitlement.exception.PlatformOperationInProgressException;
@@ -67,11 +68,13 @@ class PlatformLockServiceTest {
   void runExclusively_negative_lockNotAcquiredSkipsOperation() throws SQLException {
     stubLockAttempt(false);
     var called = new boolean[1];
-
-    assertThatThrownBy(() -> service().runExclusively(() -> {
+    var service = service();
+    Supplier<String> operation = () -> {
       called[0] = true;
       return "result";
-    }))
+    };
+
+    assertThatThrownBy(() -> service.runExclusively(operation))
       .isInstanceOf(PlatformOperationInProgressException.class)
       .hasMessage("A platform operation is in progress, retry later");
 
@@ -84,8 +87,9 @@ class PlatformLockServiceTest {
   void runExclusively_negative_connectionFailureIsReported() throws SQLException {
     var cause = new SQLException("no connection");
     when(dataSource.getConnection()).thenThrow(cause);
+    var service = service();
 
-    assertThatThrownBy(() -> service().runExclusively(() -> "result"))
+    assertThatThrownBy(() -> service.runExclusively(() -> "result"))
       .isInstanceOf(DataAccessResourceFailureException.class)
       .hasCause(cause);
   }
@@ -95,8 +99,9 @@ class PlatformLockServiceTest {
     var cause = new SQLException("statement failed");
     when(dataSource.getConnection()).thenReturn(connection);
     when(connection.prepareStatement(LOCK_SQL)).thenThrow(cause);
+    var service = service();
 
-    assertThatThrownBy(() -> service().runExclusively(() -> "result"))
+    assertThatThrownBy(() -> service.runExclusively(() -> "result"))
       .isInstanceOf(DataAccessResourceFailureException.class)
       .hasCause(cause);
 
@@ -109,10 +114,12 @@ class PlatformLockServiceTest {
     stubLockAttempt(true);
     doThrow(new SQLException("rollback failed")).when(connection).rollback();
     var failure = new IllegalStateException("operation failed");
-
-    assertThatThrownBy(() -> service().runExclusively(() -> {
+    var service = service();
+    Supplier<String> operation = () -> {
       throw failure;
-    })).isSameAs(failure);
+    };
+
+    assertThatThrownBy(() -> service.runExclusively(operation)).isSameAs(failure);
 
     verify(connection, never()).setAutoCommit(true);
     verify(connection).close();

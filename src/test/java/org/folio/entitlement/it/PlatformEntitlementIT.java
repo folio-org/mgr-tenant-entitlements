@@ -311,7 +311,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  void tenantOperations_negative_rejectedWhilePlatformOperationHoldsLock() throws Exception {
+  void tenantOperations_negative_rejectedWhilePlatformOperationHoldsLock() {
     whileHoldingPlatformLock(() -> {
       for (var request : tenantWriteRequests()) {
         mockMvc.perform(request)
@@ -325,7 +325,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  void platformOperations_negative_rejectedWhileAnotherPlatformOperationHoldsLock() throws Exception {
+  void platformOperations_negative_rejectedWhileAnotherPlatformOperationHoldsLock() {
     whileHoldingPlatformLock(() -> {
       entitlePlatform(PLATFORM_APP_V1)
         .andExpect(status().isConflict())
