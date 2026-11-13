@@ -44,7 +44,6 @@ public class PlatformUpgradeApplicationFlowFinalizer
   }
 
   @Override
-  @Transactional
   public void cancel(ApplicationStageContext context) {
     var entitledApplicationId = context.getEntitledApplicationId();
     if (!entitledApplicationId.equals(context.getApplicationId())) {

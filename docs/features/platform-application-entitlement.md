@@ -64,4 +64,5 @@ The request body is `{ "applications": [ "<name>-<version>", ... ] }` with 1 to 
 
 ## Dependencies and interactions
 Depends on mgr-applications to read application descriptors. The module descriptor requires
-`mgr-applications.applications.item.get` for both calls.
+`mgr-applications.applications.collection.get` and `mgr-applications.applications.item.validate` for both calls.
+No tenant, discovery or module permissions are needed, since no tenant is involved and no modules are installed.

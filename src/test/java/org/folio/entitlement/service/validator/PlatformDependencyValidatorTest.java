@@ -1,4 +1,4 @@
-package org.folio.entitlement.service.stage;
+package org.folio.entitlement.service.validator;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,7 +47,7 @@ class PlatformDependencyValidatorTest {
   @Test
   void execute_positive_dependencyIsEntitledWithSatisfyingVersion() {
     var entitled = List.of(PlatformEntitlementEntity.of("dep-1.2.0"));
-    when(repository.findByApplicationNameIn(List.of("dep"))).thenReturn(entitled);
+    when(repository.findAllById(List.of("dep"))).thenReturn(entitled);
 
     var context = stageContext(Dependency.of("dep", "^1.0.0", false));
 
@@ -56,7 +56,7 @@ class PlatformDependencyValidatorTest {
 
   @Test
   void execute_negative_onlyMissingDependenciesAreReported() {
-    when(repository.findByApplicationNameIn(List.of("dep1", "dep2")))
+    when(repository.findAllById(List.of("dep1", "dep2")))
       .thenReturn(List.of(PlatformEntitlementEntity.of("dep1-1.0.0")));
     var missing = dependency("dep2-1.0.0");
     var context = stageContext(dependency("dep1-1.0.0"), missing);
@@ -79,7 +79,7 @@ class PlatformDependencyValidatorTest {
 
   @Test
   void execute_negative_dependencyIsNotEntitled() {
-    when(repository.findByApplicationNameIn(List.of("dep"))).thenReturn(List.of());
+    when(repository.findAllById(List.of("dep"))).thenReturn(List.of());
     var missing = dependency("dep-1.0.0");
     var context = stageContext(missing);
 
@@ -92,7 +92,7 @@ class PlatformDependencyValidatorTest {
   @Test
   void execute_negative_entitledVersionDoesNotSatisfyDependency() {
     var entitled = List.of(PlatformEntitlementEntity.of("dep-2.0.0"));
-    when(repository.findByApplicationNameIn(List.of("dep"))).thenReturn(entitled);
+    when(repository.findAllById(List.of("dep"))).thenReturn(entitled);
     var required = Dependency.of("dep", "^1.0.0", false);
     var context = stageContext(required);
 

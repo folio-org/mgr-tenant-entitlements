@@ -1,4 +1,4 @@
-package org.folio.entitlement.service.stage;
+package org.folio.entitlement.service.validator;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -11,6 +11,7 @@ import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.repository.PlatformEntitlementRepository;
+import org.folio.entitlement.service.stage.DatabaseLoggingStage;
 import org.springframework.stereotype.Component;
 
 /**
@@ -34,7 +35,7 @@ public class PlatformDependencyValidator extends DatabaseLoggingStage<Applicatio
     }
 
     var requiredNames = required.stream().map(Dependency::getName).distinct().toList();
-    var entitledVersions = repository.findByApplicationNameIn(requiredNames).stream()
+    var entitledVersions = repository.findAllById(requiredNames).stream()
       .collect(toMap(PlatformEntitlementEntity::getApplicationName, PlatformEntitlementEntity::getApplicationVersion));
 
     var notEntitled = required.stream()

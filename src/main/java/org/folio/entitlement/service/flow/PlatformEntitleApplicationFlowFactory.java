@@ -6,8 +6,8 @@ import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.service.stage.ApplicationDescriptorValidator;
 import org.folio.entitlement.service.stage.ApplicationFlowInitializer;
 import org.folio.entitlement.service.stage.PlatformApplicationDependencySaver;
-import org.folio.entitlement.service.stage.PlatformDependencyValidator;
 import org.folio.entitlement.service.stage.PlatformEntitleApplicationFlowFinalizer;
+import org.folio.entitlement.service.validator.PlatformDependencyValidator;
 import org.folio.flow.api.Flow;
 import org.folio.flow.model.FlowExecutionStrategy;
 import org.springframework.stereotype.Component;
@@ -33,8 +33,8 @@ public class PlatformEntitleApplicationFlowFactory implements ApplicationFlowFac
       .id(flowId)
       .stage(flowInitializer)
       .stage(applicationDescriptorValidator)
-      .stage(dependencySaver)
       .stage(dependencyValidator)
+      .stage(dependencySaver)
       .stage(finishedFlowFinalizer);
 
     return finalizerCallbacks.apply(builder)

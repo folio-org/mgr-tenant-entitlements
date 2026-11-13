@@ -51,7 +51,6 @@ public class PlatformEntitleApplicationFlowFinalizer
   }
 
   @Override
-  @Transactional
   public void cancel(ApplicationStageContext context) {
     if (context.isPlatformNewlyEntitled()) {
       entitlementRepository.deleteById(SemverUtils.getName(context.getApplicationId()));
