@@ -1,0 +1,51 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"folio-app2-2.1.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "folio-app2-2.1.0",
+          "name": "folio-app2",
+          "version": "2.1.0",
+          "modules": [
+            {
+              "id": "folio-module2-2.0.0",
+              "name": "folio-module2",
+              "version": "2.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module2-2.0.0",
+              "name": "Test Folio Module #2",
+              "consumesEvents": [
+                {
+                  "event": "evt.entitled",
+                  "optional": false
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

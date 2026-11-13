@@ -1,0 +1,74 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "matches": "id==\\((\"folio-app2-2.0.0\" or \"folio-app1-1.0.0\"|\"folio-app1-1.0.0\" or \"folio-app2-2.0.0\")\\)"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "folio-app2-2.0.0",
+          "name": "folio-app2",
+          "version": "2.0.0",
+          "modules": [
+            {
+              "id": "folio-module2-2.0.0",
+              "name": "folio-module2",
+              "version": "2.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module2-2.0.0",
+              "name": "Test Folio Module #2",
+              "consumesEvents": [
+                {
+                  "event": "evt.entitled",
+                  "optional": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "folio-app1-1.0.0",
+          "name": "folio-app1",
+          "version": "1.0.0",
+          "modules": [
+            {
+              "id": "folio-module1-1.0.0",
+              "name": "folio-module1",
+              "version": "1.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module1-1.0.0",
+              "name": "Test Folio Module #1",
+              "producesEvents": [
+                {
+                  "event": "evt.entitled"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "totalRecords": 2
+    }
+  }
+}
