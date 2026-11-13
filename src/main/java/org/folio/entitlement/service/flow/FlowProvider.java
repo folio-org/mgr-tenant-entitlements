@@ -1,6 +1,8 @@
 package org.folio.entitlement.service.flow;
 
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_UPGRADE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
@@ -23,14 +25,19 @@ public class FlowProvider {
    * @param upgradeFlowFactory - {@link UpgradeFlowFactory} bean from spring context.
    * @param revokeFlowFactory  - {@link RevokeFlowFactory} bean from spring context.
    * @param stateFlowFactory - {@link DesiredStateFlowFactory} bean from spring context.
+   * @param platformEntitleFlowFactory - {@link PlatformEntitleFlowFactory} bean from spring context.
+   * @param platformUpgradeFlowFactory - {@link PlatformUpgradeFlowFactory} bean from spring context.
    */
   public FlowProvider(EntitleFlowFactory entitleFlowFactory, UpgradeFlowFactory upgradeFlowFactory,
-    RevokeFlowFactory revokeFlowFactory, DesiredStateFlowFactory stateFlowFactory) {
+    RevokeFlowFactory revokeFlowFactory, DesiredStateFlowFactory stateFlowFactory,
+    PlatformEntitleFlowFactory platformEntitleFlowFactory, PlatformUpgradeFlowFactory platformUpgradeFlowFactory) {
     this.flowFactories = Map.of(
       ENTITLE, entitleFlowFactory,
       REVOKE, revokeFlowFactory,
       UPGRADE, upgradeFlowFactory,
-      STATE, stateFlowFactory);
+      STATE, stateFlowFactory,
+      PLATFORM_ENTITLE, platformEntitleFlowFactory,
+      PLATFORM_UPGRADE, platformUpgradeFlowFactory);
   }
 
   /**

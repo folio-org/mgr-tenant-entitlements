@@ -16,6 +16,8 @@ public class ApplicationStageContext extends IdentifiableStageContext {
   public static final String PARAM_APPLICATION_ID = "applicationId";
   public static final String PARAM_APPLICATION_DESCRIPTOR = "applicationDescriptor";
   public static final String PARAM_MODULE_DISCOVERY_DATA = "moduleDiscoveryData";
+  public static final String PARAM_PLATFORM_NEWLY_ENTITLED = "platformNewlyEntitled";
+  public static final String PARAM_PLATFORM_DEPENDENCIES_PREEXISTING = "platformDependenciesPreexisting";
 
   public static final String PARAM_ENTITLED_APPLICATION_ID = "entitledApplicationId";
   public static final String PARAM_ENTITLED_APPLICATION_DESCRIPTOR = "entitledApplicationDescriptor";
@@ -153,5 +155,31 @@ public class ApplicationStageContext extends IdentifiableStageContext {
    */
   public void withModuleDiscoveryData(Map<String, String> moduleLocationsMap) {
     context.put(PARAM_MODULE_DISCOVERY_DATA, moduleLocationsMap);
+  }
+
+  /**
+   * Remembers whether this flow created the platform entitlement of the application, so a cancellation removes
+   * only what the flow created.
+   */
+  public void withPlatformNewlyEntitled(boolean newlyEntitled) {
+    context.put(PARAM_PLATFORM_NEWLY_ENTITLED, newlyEntitled);
+  }
+
+  public boolean isPlatformNewlyEntitled() {
+    return Boolean.TRUE.equals(context.get(PARAM_PLATFORM_NEWLY_ENTITLED));
+  }
+
+  /**
+   * Remembers that the platform application was entitled before the flow started, so its dependencies are kept on
+   * cancel.
+   *
+   * @param preexisting - true if the dependencies of the application were already saved
+   */
+  public void withPlatformDependenciesPreexisting(boolean preexisting) {
+    context.put(PARAM_PLATFORM_DEPENDENCIES_PREEXISTING, preexisting);
+  }
+
+  public boolean isPlatformDependenciesPreexisting() {
+    return Boolean.TRUE.equals(context.get(PARAM_PLATFORM_DEPENDENCIES_PREEXISTING));
   }
 }

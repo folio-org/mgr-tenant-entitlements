@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.common.utils.CollectionUtils.reverseList;
+import static org.folio.entitlement.domain.dto.EntitlementType.PLATFORM_UPGRADE;
 import static org.folio.entitlement.domain.dto.EntitlementType.UPGRADE;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_DESCRIPTOR;
 import static org.folio.entitlement.domain.model.ApplicationStageContext.PARAM_APPLICATION_ENTITLEMENT_TYPE;
@@ -135,7 +136,7 @@ public class LayerFlowProvider {
       var descriptor = applicationEntitlement.descriptor();
       var applicationName = descriptor.getName();
 
-      if (applicationEntitlement.type() == UPGRADE) {
+      if (isUpgrade(applicationEntitlement.type())) {
         var entitledApplicationDescriptor = requireNonNull(entitledApplicationDescriptors.get(applicationName));
         return Map.of(
           PARAM_APPLICATION_ENTITLEMENT_TYPE, applicationEntitlement.type(),
@@ -151,6 +152,10 @@ public class LayerFlowProvider {
         PARAM_APPLICATION_ID, descriptor.getId(),
         PARAM_APPLICATION_DESCRIPTOR, descriptor,
         PARAM_APPLICATION_FLOW_ID, applicationFlowId);
+    }
+
+    private static boolean isUpgrade(EntitlementType type) {
+      return type == UPGRADE || type == PLATFORM_UPGRADE;
     }
 
     @SuppressWarnings("java:S1452")

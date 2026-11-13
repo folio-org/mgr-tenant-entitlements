@@ -4,7 +4,7 @@
   "provides": [
     {
       "id": "entitlements",
-      "version": "1.1",
+      "version": "1.2",
       "handlers": [
         {
           "type": "internal",
@@ -48,6 +48,26 @@
             "mgr-tenants.tenants.collection.get",
             "mgr-applications.applications.collection.get",
             "mgr-applications.app-discoveries.collection.get",
+            "mgr-applications.applications.item.validate"
+          ]
+        },
+        {
+          "type": "internal",
+          "methods": [ "POST" ],
+          "pathPattern": "/entitlements/platform",
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.platform.item.post" ],
+          "modulePermissions": [
+            "mgr-applications.applications.collection.get",
+            "mgr-applications.applications.item.validate"
+          ]
+        },
+        {
+          "type": "internal",
+          "methods": [ "PUT" ],
+          "pathPattern": "/entitlements/platform",
+          "permissionsRequired": [ "mgr-tenant-entitlements.entitlements.platform.item.put" ],
+          "modulePermissions": [
+            "mgr-applications.applications.collection.get",
             "mgr-applications.applications.item.validate"
           ]
         },
@@ -190,6 +210,16 @@
       "permissionName": "mgr-tenant-entitlements.entitlements.item.delete"
     },
     {
+      "description": "Entitles platform-scoped applications deployment-wide",
+      "displayName": "Manager Tenant Entitlements - entitle platform applications",
+      "permissionName": "mgr-tenant-entitlements.entitlements.platform.item.post"
+    },
+    {
+      "description": "Upgrades entitled versions of platform-scoped applications deployment-wide",
+      "displayName": "Manager Tenant Entitlements - upgrade platform applications",
+      "permissionName": "mgr-tenant-entitlements.entitlements.platform.item.put"
+    },
+    {
       "description": "Set the desired state of applications for tenant",
       "displayName": "Manager Tenant Entitlements - desired state of application",
       "permissionName": "mgr-tenant-entitlements.entitlements.state.item.put"
@@ -244,6 +274,8 @@
         "mgr-tenant-entitlements.entitlements.item.put",
         "mgr-tenant-entitlements.entitlements.item.delete",
         "mgr-tenant-entitlements.entitlements.state.item.put",
+        "mgr-tenant-entitlements.entitlements.platform.item.post",
+        "mgr-tenant-entitlements.entitlements.platform.item.put",
         "mgr-tenant-entitlements.entitlements.collection.get"
       ]
     },

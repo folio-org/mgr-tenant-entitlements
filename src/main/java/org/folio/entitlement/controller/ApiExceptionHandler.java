@@ -44,6 +44,7 @@ import org.folio.common.domain.model.error.Parameter;
 import org.folio.cql2pgjson.exception.CQLFeatureUnsupportedException;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.exception.FlowExecutionTimeoutException;
+import org.folio.entitlement.exception.PlatformOperationInProgressException;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.service.FlowStageService;
@@ -56,6 +57,7 @@ import org.folio.flow.model.StageResult;
 import org.folio.security.exception.ForbiddenException;
 import org.folio.spring.cql.CqlQueryValidationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -309,6 +311,24 @@ public class ApiExceptionHandler {
     return badRequest()
       .header(FLOW_ID_HEADER, flowId.toString())
       .body(buildErrorResponse(exception, errorParameters, SERVICE_ERROR));
+  }
+
+  /**
+   * Catches and handles all exceptions for type {@link PlatformOperationInProgressException}.
+   *
+   * <p>The request was rejected before any change was made. The module does not retry internally, so the caller
+   * retries after the {@code Retry-After} interval.</p>
+   *
+   * @param exception {@link PlatformOperationInProgressException} to process
+   * @return {@link ResponseEntity} with {@link ErrorResponse} body
+   */
+  @ExceptionHandler(PlatformOperationInProgressException.class)
+  public ResponseEntity<ErrorResponse> handlePlatformOperationInProgressException(
+    PlatformOperationInProgressException exception) {
+    logException(DEBUG, exception);
+    return ResponseEntity.status(CONFLICT)
+      .header(HttpHeaders.RETRY_AFTER, String.valueOf(exception.getRetryAfterSeconds()))
+      .body(buildErrorResponse(exception, emptyList(), SERVICE_ERROR));
   }
 
   /**

@@ -164,6 +164,70 @@ paths:
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
 
+  /entitlements/platform:
+    post:
+      summary: "Entitle platform-scoped applications for the whole deployment"
+      description: |
+        Entitles platform-scoped applications deployment-wide. All applications must be platform-scoped; if any application is invalid, the whole request is rejected and nothing is entitled.
+
+        At most one version of an application is entitled at a time, so an entitle request is rejected while a different version is entitled. Use PUT to replace the entitled version.
+
+        The operation holds the deployment-wide platform lock while it runs. It fails with 409 Conflict and a Retry-After header if another platform operation holds the lock. The module does not retry internally.
+      operationId: createPlatformEntitlement
+      tags:
+        - platform-entitlement
+      parameters:
+        - $ref: '#/components/parameters/x-okapi-token'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/platformEntitlementRequestBody'
+      responses:
+        '201':
+          description: 'The platform application is entitled'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/extendedPlatformEntitlements'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '409':
+          $ref: '#/components/responses/conflictResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+    put:
+      summary: "Upgrade the entitled versions of platform-scoped applications"
+      description: |
+        Replaces the entitled versions of platform-scoped applications with higher versions, atomically: if any application is invalid, nothing is changed. The new versions are validated against every dependent application across all tenants before any change is applied.
+
+        Fails with 409 Conflict and a Retry-After header under the same conditions as POST.
+      operationId: upgradePlatformEntitlement
+      tags:
+        - platform-entitlement
+      parameters:
+        - $ref: '#/components/parameters/x-okapi-token'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/platformEntitlementRequestBody'
+      responses:
+        '200':
+          description: 'The entitled platform application version is upgraded'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/extendedPlatformEntitlements'
+        '400':
+          $ref: '#/components/responses/badRequestResponse'
+        '409':
+          $ref: '#/components/responses/conflictResponse'
+        '500':
+          $ref: '#/components/responses/internalServerErrorResponse'
+
   /entitlements/{tenantName}/applications:
     get:
       operationId: findEntitledApplicationsByTenantName
@@ -390,7 +454,7 @@ paths:
           $ref: '#/components/responses/badRequestResponse'
         '500':
           $ref: '#/components/responses/internalServerErrorResponse'
-          
+
   /reinstall/modules:
     post:
       operationId: moduleReinstall
@@ -457,6 +521,10 @@ components:
       $ref: schemas/moduleReinstallRequestBody.json
     reinstallResult:
       $ref: schemas/reinstallResult.json
+    platformEntitlementRequestBody:
+      $ref: schemas/platformEntitlementRequestBody.json
+    extendedPlatformEntitlements:
+      $ref: schemas/extendedPlatformEntitlements.json
 
   responses:
     badRequestResponse:
@@ -467,6 +535,21 @@ components:
             $ref: '#/components/schemas/errorResponse'
     internalServerErrorResponse:
       description: Error response for unhandled or critical server exceptions, e.g. NullPointerException.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/errorResponse'
+    conflictResponse:
+      description: >
+        A platform lock conflict. Another platform-scoped operation holds the deployment-wide lock, or a
+        tenant-scoped operation was requested while a platform-scoped operation holds it. The request was rejected
+        before any change was made. Retry after the Retry-After interval.
+      headers:
+        Retry-After:
+          description: Number of seconds to wait before retrying the request
+          schema:
+            type: integer
+            minimum: 1
       content:
         application/json:
           schema:

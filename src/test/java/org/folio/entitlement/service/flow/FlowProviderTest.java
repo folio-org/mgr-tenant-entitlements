@@ -2,6 +2,8 @@ package org.folio.entitlement.service.flow;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_UPGRADE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.REVOKE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.STATE;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.UPGRADE;
@@ -27,6 +29,8 @@ class FlowProviderTest {
   @Mock private RevokeFlowFactory revokeFlowFactory;
   @Mock private UpgradeFlowFactory upgradeFlowFactory;
   @Mock private DesiredStateFlowFactory stateFlowFactory;
+  @Mock private PlatformEntitleFlowFactory platformEntitleFlowFactory;
+  @Mock private PlatformUpgradeFlowFactory platformUpgradeFlowFactory;
 
   @AfterEach
   void tearDown() {
@@ -71,6 +75,28 @@ class FlowProviderTest {
     var request = EntitlementRequest.builder().type(STATE).build();
     var flow = Flow.builder().id("test-flow").build();
     when(stateFlowFactory.createFlow(request)).thenReturn(flow);
+
+    var result = flowProvider.createFlow(request);
+
+    assertThat(result).isEqualTo(flow);
+  }
+
+  @Test
+  void createFlow_positive_platformEntitleFlow() {
+    var request = EntitlementRequest.builder().type(PLATFORM_ENTITLE).build();
+    var flow = Flow.builder().id("test-flow").build();
+    when(platformEntitleFlowFactory.createFlow(request)).thenReturn(flow);
+
+    var result = flowProvider.createFlow(request);
+
+    assertThat(result).isEqualTo(flow);
+  }
+
+  @Test
+  void createFlow_positive_platformUpgradeFlow() {
+    var request = EntitlementRequest.builder().type(PLATFORM_UPGRADE).build();
+    var flow = Flow.builder().id("test-flow").build();
+    when(platformUpgradeFlowFactory.createFlow(request)).thenReturn(flow);
 
     var result = flowProvider.createFlow(request);
 

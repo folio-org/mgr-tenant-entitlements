@@ -33,6 +33,7 @@ import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.service.flow.FlowProvider;
 import org.folio.entitlement.service.flow.FlowService;
+import org.folio.entitlement.service.lock.PlatformLockService;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.entitlement.support.TestValues;
 import org.folio.flow.api.Flow;
@@ -62,6 +63,7 @@ class EntitlementServiceTest {
   @Mock private TenantManagerService tenantManagerService;
   @Mock private EntitlementCrudService crudService;
   @Mock private FlowEngineConfigurationProperties flowEngineProperties;
+  @Mock private PlatformLockService platformLockService;
 
   @AfterEach
   void tearDown() {
@@ -109,6 +111,12 @@ class EntitlementServiceTest {
   @Nested
   @DisplayName("performRequest")
   class PerformRequest {
+
+    @AfterEach
+    void verifyPlatformLockIsChecked() {
+      // every tenant-scoped request checks the platform lock before creating a flow
+      verify(platformLockService).assertNotHeld();
+    }
 
     @Test
     void positive_validatorIsCalled() {

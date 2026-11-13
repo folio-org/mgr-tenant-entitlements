@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "platformEntitlement.json",
+  "title": "Platform Entitlement Schema",
+  "description": "Deployment-wide entitlement of a platform-scoped application",
+  "type": "object",
+  "properties": {
+    "applicationId": {
+      "description": "A Name-Version id of the entitled application version",
+      "type": "string"
+    }
+  },
+  "required": [ "applicationId" ]
+}
