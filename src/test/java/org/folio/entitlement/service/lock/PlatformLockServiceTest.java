@@ -36,20 +36,6 @@ class PlatformLockServiceTest {
   @Mock private PreparedStatement statement;
   @Mock private ResultSet resultSet;
 
-  private final PlatformLockConfigurationProperties properties = new PlatformLockConfigurationProperties();
-
-  private PlatformLockService service() {
-    return new PlatformLockService(dataSource, jdbcTemplate, properties);
-  }
-
-  private void stubLockAttempt(boolean acquired) throws SQLException {
-    when(dataSource.getConnection()).thenReturn(connection);
-    when(connection.prepareStatement(LOCK_SQL)).thenReturn(statement);
-    when(statement.executeQuery()).thenReturn(resultSet);
-    when(resultSet.next()).thenReturn(true);
-    when(resultSet.getBoolean(1)).thenReturn(acquired);
-  }
-
   @Test
   void runExclusively_positive_returnsResultAndEndsTransaction() throws SQLException {
     stubLockAttempt(true);
@@ -140,5 +126,19 @@ class PlatformLockServiceTest {
       PlatformLockService.LOCK_NAMESPACE, PlatformLockService.LOCK_KEY)).thenReturn(true);
 
     assertThat(service().isHeld()).isFalse();
+  }
+
+  private final PlatformLockConfigurationProperties properties = new PlatformLockConfigurationProperties();
+
+  private PlatformLockService service() {
+    return new PlatformLockService(dataSource, jdbcTemplate, properties);
+  }
+
+  private void stubLockAttempt(boolean acquired) throws SQLException {
+    when(dataSource.getConnection()).thenReturn(connection);
+    when(connection.prepareStatement(LOCK_SQL)).thenReturn(statement);
+    when(statement.executeQuery()).thenReturn(resultSet);
+    when(resultSet.next()).thenReturn(true);
+    when(resultSet.getBoolean(1)).thenReturn(acquired);
   }
 }
