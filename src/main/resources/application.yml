@@ -185,6 +185,8 @@ application:
   entitlement-lock:
     retry-after-seconds: ${ENTITLEMENT_LOCK_RETRY_AFTER_SECONDS:15}
   validation:
+    event-dependency:
+      strict-event-validation: ${STRICT_EVENT_VALIDATION:false}
     interface-integrity:
       entitlement:
         enabled: ${VALIDATION_INTERFACE_INTEGRITY_ENTITLEMENT_ENABLED:true}

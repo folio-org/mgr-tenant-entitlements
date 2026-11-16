@@ -31,6 +31,8 @@ public class DesiredStateFlowFactory implements FlowFactory {
   private final PlatformStateRequestValidator platformStateRequestValidator;
   @Qualifier("stateInterfaceIntegrityValidator")
   private final StageRequestValidator interfaceIntegrityValidator;
+  @Qualifier("stateEventDependencyValidator")
+  private final StageRequestValidator eventDependencyValidator;
   private final DesiredStateApplicationFlowValidator desiredStateApplicationFlowValidator;
   private final DesiredStateWithUpgradeValidator desiredStateWithUpgradeValidator;
   private final DesiredStateWithRevokeValidator desiredStateWithRevokeValidator;
@@ -53,6 +55,7 @@ public class DesiredStateFlowFactory implements FlowFactory {
       // validation stages
       .stage(platformStateRequestValidator)
       .stage(interfaceIntegrityValidator)
+      .stage(eventDependencyValidator)
       .stage(desiredStateApplicationFlowValidator)
       .stage(desiredStateWithUpgradeValidator)
       .stage(desiredStateWithRevokeValidator)

@@ -26,6 +26,8 @@ public class EntitleFlowFactory implements FlowFactory {
   private final ApplicationFlowValidator applicationFlowValidator;
   @Qualifier("entitlementInterfaceIntegrityValidator")
   private final StageRequestValidator interfaceIntegrityValidator;
+  @Qualifier("entitlementEventDependencyValidator")
+  private final StageRequestValidator eventDependencyValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorTreeLoader applicationDescriptorTreeLoader;
   private final KafkaTenantTopicCreator kafkaTenantTopicCreator;
@@ -43,6 +45,7 @@ public class EntitleFlowFactory implements FlowFactory {
       .stage(tenantLoader)
       .stage(applicationDescriptorTreeLoader)
       .stage(interfaceIntegrityValidator)
+      .stage(eventDependencyValidator)
       .stage(applicationFlowQueuingStage)
       .stage(kafkaTenantTopicCreator)
       .stage(DynamicStage.of(applicationsFlowFactory.getName(), applicationsFlowFactory::createFlow))

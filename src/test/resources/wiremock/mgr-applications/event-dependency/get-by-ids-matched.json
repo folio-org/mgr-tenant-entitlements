@@ -1,0 +1,60 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"evt-matched-1.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "evt-matched-1.0.0",
+          "name": "evt-matched",
+          "version": "1.0.0",
+          "modules": [
+            {
+              "id": "evt-matched-producer-1.0.0",
+              "name": "evt-matched-producer",
+              "version": "1.0.0"
+            },
+            {
+              "id": "evt-matched-consumer-1.0.0",
+              "name": "evt-matched-consumer",
+              "version": "1.0.0"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "evt-matched-producer-1.0.0",
+              "name": "evt-matched producer",
+              "producesEvents": [
+                {
+                  "event": "evt.test"
+                }
+              ]
+            },
+            {
+              "id": "evt-matched-consumer-1.0.0",
+              "name": "evt-matched consumer",
+              "consumesEvents": [
+                {
+                  "event": "evt.test",
+                  "optional": false
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

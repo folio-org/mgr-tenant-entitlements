@@ -39,5 +39,6 @@ public interface EntitlementRequestValidator {
     public static final int EXISTING_ENTITLEMENT = 2;
     public static final int UPGRADE_REQUEST = 3;
     public static final int INTERFACE_INTEGRITY = 4;
+    public static final int EVENT_DEPENDENCY = 5;
   }
 }

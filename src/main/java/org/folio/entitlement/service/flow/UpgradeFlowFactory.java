@@ -27,6 +27,8 @@ public class UpgradeFlowFactory implements FlowFactory {
   private final ApplicationFlowValidator applicationFlowValidator;
   @Qualifier("upgradeInterfaceIntegrityValidator")
   private final StageRequestValidator interfaceIntegrityValidator;
+  @Qualifier("upgradeEventDependencyValidator")
+  private final StageRequestValidator eventDependencyValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorLoader applicationDescriptorLoader;
 
@@ -44,6 +46,7 @@ public class UpgradeFlowFactory implements FlowFactory {
       .stage(tenantLoader)
       .stage(applicationDescriptorLoader)
       .stage(interfaceIntegrityValidator)
+      .stage(eventDependencyValidator)
       .stage(applicationFlowQueuingStage)
       .stage(DynamicStage.of(applicationsFlowFactory.getName(), applicationsFlowFactory::createFlow))
       .stage(finishedFlowFinalizer);
