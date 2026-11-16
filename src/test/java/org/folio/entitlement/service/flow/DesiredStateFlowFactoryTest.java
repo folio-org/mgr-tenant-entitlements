@@ -68,21 +68,18 @@ class DesiredStateFlowFactoryTest {
       new FlowFinalizerCallbacks(failedFlowFinalizer, cancelledFlowFinalizer, cancellationFailedFlowFinalizer);
     flowFactory = new DesiredStateFlowFactory(tenantLoader, applicationStateTransitionPlanner,
       applicationDescriptorLoader, platformStateRequestValidator, interfaceIntegrityValidator,
-      desiredStateApplicationFlowValidator, desiredStateWithUpgradeValidator, desiredStateWithRevokeValidator,
-      applicationFlowQueuingStage, kafkaTenantTopicCreator, applicationsFlowProvider, finishedFlowFinalizer,
-      flowInitializer, finalizerCallbacks);
-      applicationDescriptorLoader, interfaceIntegrityValidator, eventDependencyValidator,
-      desiredStateApplicationFlowValidator,
-      desiredStateWithUpgradeValidator, desiredStateWithRevokeValidator, applicationFlowQueuingStage,
-      kafkaTenantTopicCreator, applicationsFlowProvider, finishedFlowFinalizer, flowInitializer, finalizerCallbacks);
+      eventDependencyValidator, desiredStateApplicationFlowValidator, desiredStateWithUpgradeValidator,
+      desiredStateWithRevokeValidator, applicationFlowQueuingStage, kafkaTenantTopicCreator,
+      applicationsFlowProvider, finishedFlowFinalizer, flowInitializer, finalizerCallbacks);
   }
 
   @Test
   void createFlow_positive() {
     mockStageNames(
       flowInitializer, tenantLoader, applicationStateTransitionPlanner, applicationDescriptorLoader,
-      platformStateRequestValidator, interfaceIntegrityValidator, eventDependencyValidator, desiredStateApplicationFlowValidator,
-      desiredStateWithUpgradeValidator, desiredStateWithRevokeValidator, applicationFlowQueuingStage,
+      platformStateRequestValidator, interfaceIntegrityValidator, eventDependencyValidator,
+      desiredStateApplicationFlowValidator, desiredStateWithUpgradeValidator,
+      desiredStateWithRevokeValidator, applicationFlowQueuingStage,
       kafkaTenantTopicCreator, finishedFlowFinalizer, failedFlowFinalizer, cancelledFlowFinalizer,
       cancellationFailedFlowFinalizer);
 
@@ -99,8 +96,9 @@ class DesiredStateFlowFactoryTest {
 
     var inOrder = Mockito.inOrder(
       flowInitializer, tenantLoader, applicationStateTransitionPlanner, applicationDescriptorLoader,
-      platformStateRequestValidator, interfaceIntegrityValidator, eventDependencyValidator, desiredStateApplicationFlowValidator,
-      desiredStateWithUpgradeValidator, desiredStateWithRevokeValidator, applicationFlowQueuingStage,
+      platformStateRequestValidator, interfaceIntegrityValidator, eventDependencyValidator,
+      desiredStateApplicationFlowValidator, desiredStateWithUpgradeValidator,
+      desiredStateWithRevokeValidator, applicationFlowQueuingStage,
       kafkaTenantTopicCreator, applicationsFlowProvider, finishedFlowFinalizer);
 
     inOrder.verify(applicationsFlowProvider).getName();
