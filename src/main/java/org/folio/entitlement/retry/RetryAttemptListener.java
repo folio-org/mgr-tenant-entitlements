@@ -14,6 +14,14 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.resilience.retry.MethodRetryEvent;
 import org.springframework.stereotype.Component;
 
+/**
+ * Records every failed attempt that is going to be retried.
+ *
+ * <p>Listens to {@link MethodRetryEvent}s published by the Spring retry interceptors, logs the failure and stores its
+ * stack trace in the current module stage context, so the retry history is visible in the flow stage details.
+ * Targets that are not annotated with {@link FolioModuleCallsRetryable} or {@link KeycloakCallsRetryable} are
+ * ignored.</p>
+ */
 @Log4j2
 @Component
 @RequiredArgsConstructor
@@ -21,6 +29,13 @@ public class RetryAttemptListener {
 
   private final ThreadLocalModuleStageContext threadLocalModuleStageContext;
 
+  /**
+   * Logs the failed attempt and adds it to the retry information of the current stage context.
+   *
+   * <p>Aborted events (the failure is not retried: non-retryable exception or exhausted attempts) are ignored.</p>
+   *
+   * @param event retry event published after a failed attempt
+   */
   @EventListener
   public void onRetryEvent(MethodRetryEvent event) {
     if (event.isRetryAborted()) {
@@ -37,6 +52,12 @@ public class RetryAttemptListener {
     addErrorInformation(getStackTrace(failure), threadLocalModuleStageContext);
   }
 
+  /**
+   * Resolves a human-readable name of the retried operation from the annotation on the target class.
+   *
+   * @param event retry event
+   * @return {@code "Folio Module call"}, {@code "Keycloak access"}, or {@code null} if the target is not annotated
+   */
   private static String describeOperation(MethodRetryEvent event) {
     var target = event.getSource().getThis();
     var targetClass = target != null ? AopUtils.getTargetClass(target) : event.getMethod().getDeclaringClass();
