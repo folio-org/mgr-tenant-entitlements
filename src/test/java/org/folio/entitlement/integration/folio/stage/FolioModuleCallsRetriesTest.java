@@ -13,6 +13,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import jakarta.ws.rs.WebApplicationException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.folio.common.domain.model.ModuleDescriptor;
@@ -25,6 +26,10 @@ import org.folio.entitlement.domain.model.ModuleStageContext;
 import org.folio.entitlement.domain.model.RetryInformation;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.folio.FolioModuleService;
+import org.folio.entitlement.integration.folio.exception.TenantJobFailedException;
+import org.folio.entitlement.integration.folio.exception.TenantJobTimeoutException;
+import org.folio.entitlement.integration.folio.model.ModuleRequest;
+import org.folio.entitlement.integration.folio.model.TenantJob;
 import org.folio.entitlement.repository.FlowStageRepository;
 import org.folio.entitlement.retry.RetryAttemptListener;
 import org.folio.entitlement.service.EntitlementModuleService;
@@ -92,6 +97,32 @@ class FolioModuleCallsRetriesTest {
     assertThatThrownBy(() -> folioModuleUninstaller.execute(moduleStageContext)).isInstanceOf(
       IntegrationException.class);
     verify(folioModuleService, times(3)).disable(any());
+  }
+
+  @Test
+  void execute_negative_tenantJobTimeoutIsNotRetried() {
+    var moduleRequest = ModuleRequest.builder().moduleId("mod-foo-1.0.0").tenantName("test").build();
+    var timeout = new TenantJobTimeoutException(moduleRequest, "job-1", Duration.ofMinutes(30));
+    doThrow(timeout).when(folioModuleService).enable(any());
+    var moduleStageContext = createModuleStageContext();
+
+    assertThatThrownBy(() -> folioModuleInstaller.execute(moduleStageContext)).isSameAs(timeout);
+
+    verify(folioModuleService, times(1)).enable(any());
+  }
+
+  @Test
+  void execute_negative_failedTenantJobIsNotRetried() {
+    var moduleRequest = ModuleRequest.builder().moduleId("mod-foo-1.0.0").tenantName("test").build();
+    var job = new TenantJob();
+    job.setError("relation does not exist");
+    var failure = new TenantJobFailedException(moduleRequest, "job-1", job);
+    doThrow(failure).when(folioModuleService).enable(any());
+    var moduleStageContext = createModuleStageContext();
+
+    assertThatThrownBy(() -> folioModuleInstaller.execute(moduleStageContext)).isSameAs(failure);
+
+    verify(folioModuleService, times(1)).enable(any());
   }
 
   @Test
