@@ -37,8 +37,7 @@ changes made at the same time could invalidate that check, in either order: a te
 - After it holds the lock, a platform operation checks the `flow` table. If any flow with a tenant is not in a terminal
   status, it is rejected before its own flow is created.
 - Terminal statuses are `FINISHED`, `FAILED`, `CANCELLED` and `CANCELLATION_FAILED`. `QUEUED` and `IN_PROGRESS` are not
-  terminal. This includes a tenant flow that has finished its own stages but still waits for Kafka confirmations: it
-  blocks platform operations until the last confirmation arrives or the async confirmation timeout fails the flow.
+  terminal.
 - A tenant flow checks the lock again in `FlowInitializer`, right after its flow row is committed as `IN_PROGRESS`.
   A platform operation that took the lock earlier is detected there, and one that takes it later sees the row. The
   tenant flow then fails instead of running next to the platform operation.
