@@ -37,6 +37,12 @@ import org.folio.entitlement.integration.folio.model.TenantOperation;
 import org.folio.entitlement.utils.JsonConverter;
 import org.springframework.http.HttpMethod;
 
+/**
+ * Calls the tenant API of FOLIO modules: installs and uninstalls a module for a tenant and reads tenant jobs.
+ *
+ * <p>Whether a module finished a call itself or accepted it as a background job is decided from the response: a
+ * {@code 201} with a tenant job is an accepted operation, any other success is a completed one.</p>
+ */
 @Log4j2
 @RequiredArgsConstructor
 public class FolioTenantApiClient {
@@ -129,6 +135,16 @@ public class FolioTenantApiClient {
     return sendHttpRequest(request, requestBody, POST, TENANT_ENDPOINT);
   }
 
+  /**
+   * Sends a tenant API request and checks its status.
+   *
+   * @param request - module request body with essential parameters
+   * @param requestBody - tenant attributes to send
+   * @param httpMethod - HTTP method of the call
+   * @param endpoint - tenant API endpoint, relative to the module location
+   * @return the response of a successful call
+   * @throws IntegrationException if the module answers with an error status or the call fails
+   */
   private HttpResponse<String> sendHttpRequest(ModuleRequest request, TenantAttributes requestBody,
     String httpMethod, String endpoint) {
     var jsonBody = jsonConverter.toJson(requestBody);
@@ -154,6 +170,13 @@ public class FolioTenantApiClient {
     return httpResponse;
   }
 
+  /**
+   * Decides from the response whether the module finished the call or accepted it as a background job.
+   *
+   * @param request - module request the call was made for
+   * @param response - successful response of the call
+   * @return accepted operation for a {@code 201} with a usable job id, completed operation otherwise
+   */
   private TenantOperation toTenantOperation(ModuleRequest request, HttpResponse<String> response) {
     if (response.statusCode() != CREATED.value()) {
       return TenantOperation.completed();
@@ -172,6 +195,15 @@ public class FolioTenantApiClient {
     return TenantOperation.accepted(jobId);
   }
 
+  /**
+   * Reads the tenant job id from the {@code Location} header, or from the body when there is no header.
+   *
+   * <p>The id is placed into a URL path later, so only a {@code Location} path ending with {@code /_/tenant/{id}} and
+   * an id of letters, digits and dashes are accepted.</p>
+   *
+   * @param response - response with status {@code 201}
+   * @return job id, or {@code null} if the response carries no usable one
+   */
   private String extractJobId(HttpResponse<String> response) {
     var location = response.headers().firstValue(LOCATION);
     if (location.isPresent()) {
@@ -183,6 +215,12 @@ public class FolioTenantApiClient {
     return bodyId != null && JOB_ID_PATTERN.matcher(bodyId).matches() ? bodyId : null;
   }
 
+  /**
+   * Reads the job id from a response body that holds a tenant job.
+   *
+   * @param body - response body, may be blank
+   * @return job id, or {@code null} if the body is blank, is not a tenant job or has no id
+   */
   private String jobIdFromBody(String body) {
     if (StringUtils.isBlank(body)) {
       return null;

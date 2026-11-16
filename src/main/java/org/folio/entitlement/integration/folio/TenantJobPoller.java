@@ -73,6 +73,13 @@ public class TenantJobPoller {
     }
   }
 
+  /**
+   * Creates the retry template that repeats a poll while the job is in progress or a read failed transiently, until
+   * the overall timeout.
+   *
+   * @param timedOut - flag set when the retry policy gives up because the timeout elapsed
+   * @return configured retry template
+   */
   private RetryTemplate createRetryTemplate(AtomicBoolean timedOut) {
     var policy = RetryPolicy.builder()
       .maxRetries(Long.MAX_VALUE)
@@ -93,6 +100,16 @@ public class TenantJobPoller {
     return template;
   }
 
+  /**
+   * Reads the job once and interprets its state.
+   *
+   * @param request - module request the job belongs to
+   * @param jobId - tenant job identifier
+   * @param startedAt - moment polling started, used to cap the long-poll time
+   * @return the completed job
+   * @throws TenantJobInProgressException if the job is not complete yet
+   * @throws TenantJobFailedException if the job completed with an error
+   */
   private TenantJob poll(ModuleRequest request, String jobId, Instant startedAt) {
     var job = fetch(request, jobId, waitTime(startedAt));
     if (!TRUE.equals(job.getComplete())) {
@@ -106,6 +123,16 @@ public class TenantJobPoller {
     return job;
   }
 
+  /**
+   * Reads the job from the module and classifies a failed read.
+   *
+   * @param request - module request the job belongs to
+   * @param jobId - tenant job identifier
+   * @param wait - long-poll time to ask the module for
+   * @return current state of the job
+   * @throws TenantJobTransientException if the read failed in a way worth repeating (I/O error or server error)
+   * @throws TenantJobPollingException if the module rejected the read (client error), which is not repeated
+   */
   private TenantJob fetch(ModuleRequest request, String jobId, Duration wait) {
     try {
       return client.getTenantJob(request, jobId, wait);
@@ -118,6 +145,13 @@ public class TenantJobPoller {
     }
   }
 
+  /**
+   * Calculates the long-poll time for the next read: the configured one, but never longer than the time left before
+   * the timeout.
+   *
+   * @param startedAt - moment polling started
+   * @return long-poll time, zero when the timeout has already elapsed
+   */
   private Duration waitTime(Instant startedAt) {
     var remaining = properties.getTimeout().minus(Duration.between(startedAt, Instant.now()));
     if (remaining.isNegative()) {
@@ -126,6 +160,15 @@ public class TenantJobPoller {
     return properties.getWait().compareTo(remaining) <= 0 ? properties.getWait() : remaining;
   }
 
+  /**
+   * Converts the exhausted retry into the exception reported to the stage.
+   *
+   * @param request - module request the job belongs to
+   * @param jobId - tenant job identifier
+   * @param timedOut - flag telling that the overall timeout elapsed
+   * @param exception - exception thrown by the retry template, its cause is the last failure
+   * @return timeout exception, polling exception for an interrupted wait, or the last failure itself
+   */
   private IntegrationException toFailure(ModuleRequest request, String jobId, AtomicBoolean timedOut,
     RetryException exception) {
     var cause = exception.getCause();

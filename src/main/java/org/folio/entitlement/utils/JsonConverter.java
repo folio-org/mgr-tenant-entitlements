@@ -6,6 +6,9 @@ import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * Converts objects to and from JSON strings, reporting failures as {@link SerializationException}.
+ */
 @Component
 @RequiredArgsConstructor
 public class JsonConverter {

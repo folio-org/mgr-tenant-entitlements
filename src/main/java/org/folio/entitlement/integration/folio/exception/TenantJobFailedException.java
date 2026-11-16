@@ -14,11 +14,24 @@ public class TenantJobFailedException extends TenantJobException {
 
   @Serial private static final long serialVersionUID = 1L;
 
+  /**
+   * Creates an exception for a job that completed with an error.
+   *
+   * @param request - module request the job belongs to
+   * @param jobId - tenant job identifier
+   * @param job - completed job with its error and messages
+   */
   public TenantJobFailedException(ModuleRequest request, String jobId, TenantJob job) {
     super(format("Tenant job %s of module %s failed: %s", jobId, request.getModuleId(), job.getError()),
       request, jobId, errorParameters(job));
   }
 
+  /**
+   * Builds the {@code cause} and {@code messages} parameters from the job.
+   *
+   * @param job - completed job
+   * @return error parameters with the job's error and its messages joined by {@code "; "}
+   */
   private static Parameter[] errorParameters(TenantJob job) {
     var messages = job.getMessages() == null ? "" : String.join("; ", job.getMessages());
     return new Parameter[] {

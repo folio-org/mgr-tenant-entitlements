@@ -31,6 +31,9 @@ public class FolioClientConfigurationProperties {
    */
   private TenantJobProperties tenantJob = new TenantJobProperties();
 
+  /**
+   * Settings for waiting until a module completes its asynchronous tenant job.
+   */
   @Data
   public static class TenantJobProperties {
 
