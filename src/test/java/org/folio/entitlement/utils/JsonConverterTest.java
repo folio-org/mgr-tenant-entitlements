@@ -49,6 +49,28 @@ class JsonConverterTest {
       .hasMessageContaining("Failed to serialize value");
   }
 
+  @Test
+  void fromJson_positive() {
+    var actual = jsonConverter.fromJson(JSON_BODY, TestClass.class);
+
+    assertThat(actual).isEqualTo(TestClass.of(FIELD_VALUE));
+    verify(objectMapper).readValue(JSON_BODY, TestClass.class);
+  }
+
+  @Test
+  void fromJson_positive_nullValue() {
+    var actual = jsonConverter.fromJson(null, TestClass.class);
+
+    assertThat(actual).isNull();
+  }
+
+  @Test
+  void fromJson_negative_malformedJson() {
+    assertThatThrownBy(() -> jsonConverter.fromJson("{not-json", TestClass.class))
+      .isInstanceOf(SerializationException.class)
+      .hasMessageContaining("Failed to deserialize value");
+  }
+
   @Data
   @NoArgsConstructor
   @AllArgsConstructor(staticName = "of")

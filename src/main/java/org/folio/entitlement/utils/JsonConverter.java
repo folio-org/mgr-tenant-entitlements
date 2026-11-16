@@ -11,6 +11,7 @@ import tools.jackson.databind.ObjectMapper;
 public class JsonConverter {
 
   private static final String SERIALIZATION_ERROR_MSG_TEMPLATE = "Failed to serialize value [message: %s]";
+  private static final String DESERIALIZATION_ERROR_MSG_TEMPLATE = "Failed to deserialize value [message: %s]";
   private final ObjectMapper objectMapper;
 
   /**
@@ -28,6 +29,26 @@ public class JsonConverter {
       return objectMapper.writeValueAsString(value);
     } catch (JacksonException e) {
       throw new SerializationException(String.format(SERIALIZATION_ERROR_MSG_TEMPLATE, e.getMessage()));
+    }
+  }
+
+  /**
+   * Converts passed json string to an object of the given type.
+   *
+   * @param json json value to convert
+   * @param type target type
+   * @param <T> target type
+   * @return converted object, or null when the json value is null
+   */
+  public <T> T fromJson(String json, Class<T> type) {
+    if (json == null) {
+      return null;
+    }
+
+    try {
+      return objectMapper.readValue(json, type);
+    } catch (JacksonException e) {
+      throw new SerializationException(String.format(DESERIALIZATION_ERROR_MSG_TEMPLATE, e.getMessage()));
     }
   }
 }
