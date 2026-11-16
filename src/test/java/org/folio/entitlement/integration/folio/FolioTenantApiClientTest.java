@@ -395,8 +395,9 @@ class FolioTenantApiClientTest {
     when(folioClientConfigurationProperties.getReadTimeout()).thenReturn(Duration.ofSeconds(1));
     when(httpClient.send(any(HttpRequest.class), eq(ofString()))).thenThrow(ioException);
     var moduleRequest = moduleRequest(false);
+    var wait = Duration.ofSeconds(1);
 
-    assertThatThrownBy(() -> folioTenantApiClient.getTenantJob(moduleRequest, JOB_ID, Duration.ofSeconds(1)))
+    assertThatThrownBy(() -> folioTenantApiClient.getTenantJob(moduleRequest, JOB_ID, wait))
       .isInstanceOf(IntegrationException.class)
       .hasMessage("[IOException] Failed to perform request [method: GET, uri: " + jobUri(1000) + "]")
       .hasCause(ioException);

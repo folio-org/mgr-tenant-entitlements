@@ -129,8 +129,9 @@ class TenantJobPollerTest {
     var poller = createPoller(Duration.ofSeconds(5));
     var clientError = new IntegrationException("not found", List.of(), 404);
     stubPoll(request).thenThrow(clientError);
+    var operation = TenantOperation.accepted(JOB_ID);
 
-    assertThatThrownBy(() -> poller.await(request, TenantOperation.accepted(JOB_ID)))
+    assertThatThrownBy(() -> poller.await(request, operation))
       .isInstanceOf(TenantJobPollingException.class)
       .hasMessageContaining(MODULE_ID)
       .hasCause(clientError);
@@ -144,8 +145,9 @@ class TenantJobPollerTest {
     var poller = createPoller(Duration.ofSeconds(5));
     var readError = new SerializationException("Failed to deserialize value");
     stubPoll(request).thenThrow(readError);
+    var operation = TenantOperation.accepted(JOB_ID);
 
-    assertThatThrownBy(() -> poller.await(request, TenantOperation.accepted(JOB_ID)))
+    assertThatThrownBy(() -> poller.await(request, operation))
       .isInstanceOf(TenantJobPollingException.class)
       .hasMessageContaining(JOB_ID)
       .hasCause(readError);
@@ -173,10 +175,11 @@ class TenantJobPollerTest {
     var request = request();
     var poller = createPoller(Duration.ofSeconds(5));
     stubPoll(request).thenReturn(job(false, null));
+    var operation = TenantOperation.accepted(JOB_ID);
 
     Thread.currentThread().interrupt();
     try {
-      assertThatThrownBy(() -> poller.await(request, TenantOperation.accepted(JOB_ID)))
+      assertThatThrownBy(() -> poller.await(request, operation))
         .isInstanceOf(TenantJobPollingException.class)
         .hasMessageContaining("interrupted")
         .hasCauseInstanceOf(TenantJobInProgressException.class);

@@ -52,6 +52,7 @@ public class FolioTenantApiClient {
 
   private static final String JOB_ID_REGEX = "[A-Za-z0-9-]{1,64}";
   private static final Pattern JOB_ID_PATTERN = Pattern.compile(JOB_ID_REGEX);
+  private static final Pattern QUERY_OR_FRAGMENT_PATTERN = Pattern.compile("[?#]");
   private static final Pattern LOCATION_PATTERN = Pattern.compile(".*/_/tenant/(" + JOB_ID_REGEX + ")/?");
 
   private final HttpClient httpClient;
@@ -207,7 +208,7 @@ public class FolioTenantApiClient {
   private String extractJobId(HttpResponse<String> response) {
     var location = response.headers().firstValue(LOCATION);
     if (location.isPresent()) {
-      var matcher = LOCATION_PATTERN.matcher(location.get().split("[?#]", 2)[0]);
+      var matcher = LOCATION_PATTERN.matcher(QUERY_OR_FRAGMENT_PATTERN.split(location.get(), 2)[0]);
       return matcher.matches() ? matcher.group(1) : null;
     }
 
