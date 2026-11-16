@@ -541,12 +541,15 @@ components:
             $ref: '#/components/schemas/errorResponse'
     conflictResponse:
       description: >
-        A platform lock conflict. Another platform-scoped operation holds the deployment-wide lock, or a
-        tenant-scoped operation was requested while a platform-scoped operation holds it. The request was rejected
-        before any change was made. Retry after the Retry-After interval.
+        A platform lock conflict. Another platform-scoped operation holds the deployment-wide lock, a
+        tenant-scoped operation was requested while a platform-scoped operation holds it, or a platform-scoped
+        operation was requested while a tenant-scoped flow is not finished. The request was rejected before any
+        change was made. The module does not retry internally: retry after the Retry-After interval.
       headers:
         Retry-After:
-          description: Number of seconds to wait before retrying the request
+          description: >
+            Number of seconds to wait before retrying the request. The default is 15 and is configured with
+            ENTITLEMENT_LOCK_RETRY_AFTER_SECONDS.
           schema:
             type: integer
             minimum: 1

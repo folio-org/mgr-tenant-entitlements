@@ -7,7 +7,7 @@ import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TES
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
 
 import javax.sql.DataSource;
-import org.folio.entitlement.exception.PlatformOperationInProgressException;
+import org.folio.entitlement.exception.EntitlementFlowInProgressException;
 import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.Test;
@@ -33,9 +33,9 @@ class PlatformLockServiceIT extends BaseIntegrationTest {
     var result = platformLockService.runExclusively(() -> {
       assertThat(platformLockService.isHeld()).isTrue();
       assertThatThrownBy(platformLockService::assertNotHeld)
-        .isInstanceOf(PlatformOperationInProgressException.class);
+        .isInstanceOf(EntitlementFlowInProgressException.class);
       assertThatThrownBy(() -> platformLockService.runExclusively(() -> "second"))
-        .isInstanceOf(PlatformOperationInProgressException.class);
+        .isInstanceOf(EntitlementFlowInProgressException.class);
       return "done";
     });
 

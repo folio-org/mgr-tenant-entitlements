@@ -15,8 +15,8 @@ import org.folio.entitlement.domain.dto.ExtendedEntitlements;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
 import org.folio.entitlement.domain.model.ResultList;
+import org.folio.entitlement.exception.EntitlementFlowInProgressException;
 import org.folio.entitlement.exception.FlowExecutionTimeoutException;
-import org.folio.entitlement.exception.PlatformOperationInProgressException;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.integration.tm.TenantManagerService;
@@ -75,7 +75,7 @@ public class EntitlementService {
   /**
    * Performs enable, disable, or upgrade operation for applications in entitlement request for tenant.
    *
-   * <p>Fails fast with {@link PlatformOperationInProgressException} while a platform-scoped operation holds the
+   * <p>Fails fast with {@link EntitlementFlowInProgressException} while a platform-scoped operation holds the
    * platform lock. The check runs before the flow is created, so a rejected request leaves no flow row behind.</p>
    *
    * @param request - an entitlement request with required parameter to entitle tenant with applications.
@@ -108,6 +108,7 @@ public class EntitlementService {
 
     var entitlementRequest = request.toEntitlementRequest();
     var flowId = platformLockService.runExclusively(() -> {
+      assertNoActiveTenantFlow();
       var flow = flowProvider.createFlow(entitlementRequest);
       executeSyncFlow(entitlementRequest, flow);
       return flow.getId();
@@ -115,6 +116,17 @@ public class EntitlementService {
 
     var entitlements = mapItems(request.getApplicationIds(), appId -> buildEntitlement(null, appId));
     return buildEntitlements(entitlements, UUID.fromString(flowId));
+  }
+
+  /**
+   * Fails fast while a tenant-scoped flow is not terminal yet, including one that waits for asynchronous stage
+   * confirmations: such a flow may still write the rows the platform validators read. Runs under the platform lock,
+   * so a tenant flow that starts later is rejected by its own check, and no flow is created for this request.
+   */
+  private void assertNoActiveTenantFlow() {
+    if (flowService.hasActiveTenantFlow()) {
+      throw platformLockService.entitlementFlowInProgress();
+    }
   }
 
   private void executeFlow(EntitlementRequest request, Flow flow) {

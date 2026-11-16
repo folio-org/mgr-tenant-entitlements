@@ -43,8 +43,8 @@ import org.folio.common.domain.model.error.ErrorResponse;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.cql2pgjson.exception.CQLFeatureUnsupportedException;
 import org.folio.entitlement.domain.dto.FlowStage;
+import org.folio.entitlement.exception.EntitlementFlowInProgressException;
 import org.folio.entitlement.exception.FlowExecutionTimeoutException;
-import org.folio.entitlement.exception.PlatformOperationInProgressException;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.service.FlowStageService;
@@ -314,17 +314,17 @@ public class ApiExceptionHandler {
   }
 
   /**
-   * Catches and handles all exceptions for type {@link PlatformOperationInProgressException}.
+   * Catches and handles all exceptions for type {@link EntitlementFlowInProgressException}.
    *
-   * <p>The request was rejected before any change was made. The module does not retry internally, so the caller
-   * retries after the {@code Retry-After} interval.</p>
+   * <p>The request was rejected because a conflicting platform or tenant-scoped operation is in progress. The module
+   * does not retry internally, so the caller retries after the {@code Retry-After} interval.</p>
    *
-   * @param exception {@link PlatformOperationInProgressException} to process
+   * @param exception {@link EntitlementFlowInProgressException} to process
    * @return {@link ResponseEntity} with {@link ErrorResponse} body
    */
-  @ExceptionHandler(PlatformOperationInProgressException.class)
-  public ResponseEntity<ErrorResponse> handlePlatformOperationInProgressException(
-    PlatformOperationInProgressException exception) {
+  @ExceptionHandler(EntitlementFlowInProgressException.class)
+  public ResponseEntity<ErrorResponse> handleEntitlementFlowInProgressException(
+    EntitlementFlowInProgressException exception) {
     logException(DEBUG, exception);
     return ResponseEntity.status(CONFLICT)
       .header(HttpHeaders.RETRY_AFTER, String.valueOf(exception.getRetryAfterSeconds()))

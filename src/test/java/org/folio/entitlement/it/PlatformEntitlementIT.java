@@ -45,7 +45,10 @@ import org.folio.entitlement.support.base.BaseIntegrationTest;
 import org.folio.test.extensions.WireMockStub;
 import org.folio.test.types.IntegrationTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
@@ -70,7 +73,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   private static final String PLATFORM_APP2_V2 = "platform-app2-2.0.0";
   private static final String REGULAR_APP = "folio-app1-1.0.0";
   private static final String RETRY_AFTER = "Retry-After";
-  private static final String DEFAULT_RETRY_AFTER_SECONDS = "5";
+  private static final String DEFAULT_RETRY_AFTER_SECONDS = "15";
 
   private static final String STUB_VALIDATE_DESCRIPTOR = "/wiremock/mgr-applications/validate-any-descriptor.json";
   private static final String STUB_ENTITLED_PLATFORM_APP_V1 =
@@ -93,6 +96,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   private static final String STUB_REGULAR_AND_PLATFORM_APP =
     "/wiremock/mgr-applications/platform/get-by-ids-query-regular-and-platform-app.json";
 
+  @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private PlatformLockService platformLockService;
   @Autowired private PlatformEntitlementRepository platformEntitlementRepository;
   @Autowired private PlatformApplicationDependencyRepository platformApplicationDependencyRepository;
@@ -317,11 +321,50 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
         mockMvc.perform(request)
           .andExpect(status().isConflict())
           .andExpect(header().string(RETRY_AFTER, DEFAULT_RETRY_AFTER_SECONDS))
-          .andExpect(jsonPath("$.errors[0].type", is("PlatformOperationInProgressException")));
+          .andExpect(jsonPath("$.errors[0].type", is("EntitlementFlowInProgressException")));
       }
 
       assertThat(flowCount()).isZero();
     });
+  }
+
+  /**
+   * One tenant flow per case, so each case has to block the platform operation on its own. The last case is a flow
+   * whose synchronous work is done but which still waits for Kafka confirmations: it is not terminal yet.
+   */
+  @ParameterizedTest(name = "[{index}] status={0}, awaitingAsync={1}")
+  @CsvSource({
+    "QUEUED, false",
+    "IN_PROGRESS, false",
+    "IN_PROGRESS, true"
+  })
+  void platformOperations_negative_rejectedWhileTenantFlowIsNotTerminal(String status, boolean awaitingAsync)
+    throws Exception {
+    insertTenantFlow(status, awaitingAsync);
+
+    entitlePlatform(PLATFORM_APP_V1)
+      .andExpect(status().isConflict())
+      .andExpect(header().string(RETRY_AFTER, DEFAULT_RETRY_AFTER_SECONDS))
+      .andExpect(jsonPath("$.errors[0].type", is("EntitlementFlowInProgressException")));
+    upgradePlatform(PLATFORM_APP_V2)
+      .andExpect(status().isConflict())
+      .andExpect(header().string(RETRY_AFTER, DEFAULT_RETRY_AFTER_SECONDS));
+
+    // only the prepared tenant flow exists: the rejected requests created no flow
+    assertThat(flowCount()).isEqualTo(1);
+    assertThat(platformApplicationIds()).isEmpty();
+  }
+
+  @Test
+  @WireMockStub(scripts = {STUB_PLATFORM_APP, STUB_VALIDATE_DESCRIPTOR})
+  void platformOperations_positive_allowedWhenTenantFlowsAreTerminal() throws Exception {
+    for (var status : List.of("FINISHED", "FAILED", "CANCELLED", "CANCELLATION_FAILED")) {
+      insertTenantFlow(status, false);
+    }
+
+    entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated());
+
+    assertThat(platformApplicationIds()).containsExactly(PLATFORM_APP_V1);
   }
 
   @Test
@@ -408,6 +451,15 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     var request = get(path("/entitlement-flows/" + flowId)).header(TOKEN, getSystemAccessToken());
     var result = mockMvc.perform(request).andExpect(status().isOk()).andReturn();
     return parseResponse(result, Flow.class);
+  }
+
+  /**
+   * Inserts a tenant-scoped flow row with the given status; {@code status} is always a test constant.
+   */
+  private void insertTenantFlow(String status, boolean awaitingAsync) {
+    jdbcTemplate.update("INSERT INTO flow(flow_id, tenant_id, type, status, started_at, awaiting_async_since) "
+      + "VALUES (?, ?, 'ENTITLE', '" + status + "', now(), " + (awaitingAsync ? "now()" : "NULL") + ")",
+      UUID.randomUUID(), UUID.randomUUID());
   }
 
   private int flowCount() throws Exception {

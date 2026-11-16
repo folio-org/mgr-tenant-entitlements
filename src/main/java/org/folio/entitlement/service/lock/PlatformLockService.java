@@ -7,7 +7,7 @@ import javax.sql.DataSource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.folio.entitlement.configuration.PlatformLockConfigurationProperties;
-import org.folio.entitlement.exception.PlatformOperationInProgressException;
+import org.folio.entitlement.exception.EntitlementFlowInProgressException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -56,7 +56,7 @@ public class PlatformLockService {
    * @param operation - the platform operation to run
    * @param <T> - result type
    * @return the operation result
-   * @throws PlatformOperationInProgressException if another platform operation holds the lock
+   * @throws EntitlementFlowInProgressException if another platform operation holds the lock
    */
   public <T> T runExclusively(Supplier<T> operation) {
     try (var connection = dataSource.getConnection()) {
@@ -92,7 +92,7 @@ public class PlatformLockService {
    * Fails fast if a platform operation holds the lock. Called by every tenant-scoped entitlement operation before it
    * starts, so the rejected request creates no flow and changes no tenant state.
    *
-   * @throws PlatformOperationInProgressException if the platform lock is held
+   * @throws EntitlementFlowInProgressException if the platform lock is held
    */
   public void assertNotHeld() {
     if (isHeld()) {
@@ -100,8 +100,18 @@ public class PlatformLockService {
     }
   }
 
-  private PlatformOperationInProgressException platformOperationInProgress() {
-    return new PlatformOperationInProgressException(
+  /**
+   * Creates the rejection for a platform operation that finds an entitlement flow that is not finished yet.
+   *
+   * @return exception mapped to {@code 409 Conflict} with a {@code Retry-After} header
+   */
+  public EntitlementFlowInProgressException entitlementFlowInProgress() {
+    return new EntitlementFlowInProgressException(
+      "An entitlement flow is in progress, retry later", properties.getRetryAfterSeconds());
+  }
+
+  private EntitlementFlowInProgressException platformOperationInProgress() {
+    return new EntitlementFlowInProgressException(
       "A platform operation is in progress, retry later", properties.getRetryAfterSeconds());
   }
 

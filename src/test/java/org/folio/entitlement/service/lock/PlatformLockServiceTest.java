@@ -15,7 +15,7 @@ import java.sql.SQLException;
 import java.util.function.Supplier;
 import javax.sql.DataSource;
 import org.folio.entitlement.configuration.PlatformLockConfigurationProperties;
-import org.folio.entitlement.exception.PlatformOperationInProgressException;
+import org.folio.entitlement.exception.EntitlementFlowInProgressException;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -63,7 +63,7 @@ class PlatformLockServiceTest {
     };
 
     assertThatThrownBy(() -> service.runExclusively(operation))
-      .isInstanceOf(PlatformOperationInProgressException.class)
+      .isInstanceOf(EntitlementFlowInProgressException.class)
       .hasMessage("A platform operation is in progress, retry later");
 
     assertThat(called[0]).isFalse();
@@ -119,7 +119,7 @@ class PlatformLockServiceTest {
       PlatformLockService.LOCK_NAMESPACE, PlatformLockService.LOCK_KEY)).thenReturn(false);
 
     assertThatThrownBy(service()::assertNotHeld)
-      .isInstanceOf(PlatformOperationInProgressException.class);
+      .isInstanceOf(EntitlementFlowInProgressException.class);
   }
 
   @Test

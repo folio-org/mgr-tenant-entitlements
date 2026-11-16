@@ -9,12 +9,13 @@ import org.springframework.validation.annotation.Validated;
 @Data
 @Validated
 @Component
-@ConfigurationProperties(prefix = "application.platform-lock")
+@ConfigurationProperties(prefix = "application.entitlement-lock")
 public class PlatformLockConfigurationProperties {
 
   /**
-   * Value of the {@code Retry-After} header, in seconds, returned with a 409 response when the platform lock is held.
+   * Value of the {@code Retry-After} header, in seconds, returned with a 409 response when a platform and a
+   * tenant-scoped operation conflict. Default is 15 seconds.
    */
   @Positive
-  private int retryAfterSeconds = 5;
+  private int retryAfterSeconds = 15;
 }

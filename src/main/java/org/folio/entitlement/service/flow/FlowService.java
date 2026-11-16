@@ -175,6 +175,17 @@ public class FlowService {
     return flowRepository.findStatusById(flowId).map(status -> ExecutionStatus.valueOf(status.name()));
   }
 
+  /**
+   * Checks whether a tenant-scoped flow has not reached a terminal status yet, including a flow that is still
+   * waiting for asynchronous stage confirmations.
+   *
+   * @return {@code true} if any flow with a tenant is queued or in progress
+   */
+  @Transactional(readOnly = true)
+  public boolean hasActiveTenantFlow() {
+    return flowRepository.existsByTenantIdIsNotNullAndStatusIn(NON_TERMINAL_STATUSES);
+  }
+
   @Transactional(readOnly = true)
   public Flow getTopLevelFlow(UUID flowId) {
     var topLevelFlow = applicationFlowService.findById(flowId)
