@@ -35,6 +35,12 @@
 * Replace the archived spring-retry with Spring Framework 7 retry for FOLIO module and Keycloak call retries; no
   behavior or configuration change. `RETRIES_*_MAX` is now documented, and validated, as the number of attempts
   (initial call included)
+* Wait for asynchronous tenant API jobs of FOLIO modules during entitlement: a module answering `201` with a tenant
+  job is polled until the job completes; a failed or timed-out job (`FOLIO_CLIENT_TENANT_JOB_TIMEOUT`, default 30
+  minutes) now fails the module stage. RMB modules whose asynchronous tenant initialization failed silently before
+  will start failing entitlements, so verify in lower environments first. A module whose job failed or timed out is
+  not purged on rollback, a module that times out does not stop the other modules from waiting for their jobs, and
+  `POST /reinstall` now waits for tenant jobs ([MGRENTITLE-224](https://folio-org.atlassian.net/browse/MGRENTITLE-224))
 ---
 
 ## Version `4.0.0` (16.04.2026)

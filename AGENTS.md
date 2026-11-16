@@ -55,6 +55,7 @@ Built around the **Flow Engine** (`folio-flow-engine`), orchestrating multi-stag
 - Don't edit generated DTOs/API interfaces in `target/generated-sources/`.
 - Stages must be idempotent where possible (may be retried).
 - Watch ThreadLocal usage in `ThreadLocalModuleStageContext`.
+- `FolioModuleService.enable` and `disable` are intentionally not `@Transactional`: they may block on a module's asynchronous tenant job (`TenantJobPoller`); the module entitlement is saved only after the job completes and deleted only after the module call succeeds.
 - Kafka topic names are prefixed with `ENV`.
 - Token refresh is automatic, but keep long operations cancellable.
 - `KONG_*` env vars and `application.kong.*` properties are deprecated aliases that still bind via fallback expressions in `application.yml` and log a startup `WARN`; existing configs keep working until the Vetch release, but new code should use `APIGW_*` / `application.apigw.*` names.
