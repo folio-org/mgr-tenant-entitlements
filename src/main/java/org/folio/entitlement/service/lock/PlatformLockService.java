@@ -66,7 +66,7 @@ public class PlatformLockService {
       connection.setAutoCommit(false);
       try {
         if (!tryLock(connection)) {
-          throw platformOperationInProgress();
+          throw platformEntitlementInProgress();
         }
         log.debug("Platform lock acquired");
         return operation.get();
@@ -96,7 +96,7 @@ public class PlatformLockService {
    */
   public void assertNotHeld() {
     if (isHeld()) {
-      throw platformOperationInProgress();
+      throw platformEntitlementInProgress();
     }
   }
 
@@ -105,14 +105,14 @@ public class PlatformLockService {
    *
    * @return exception mapped to {@code 409 Conflict} with a {@code Retry-After} header
    */
-  public EntitlementFlowInProgressException entitlementFlowInProgress() {
+  public EntitlementFlowInProgressException tenantEntitlementInProgress() {
     return new EntitlementFlowInProgressException(
-      "An entitlement flow is in progress, retry later", properties.getRetryAfterSeconds());
+      "A tenant entitlement operation is in progress, retry later", properties.getRetryAfterSeconds());
   }
 
-  private EntitlementFlowInProgressException platformOperationInProgress() {
+  private EntitlementFlowInProgressException platformEntitlementInProgress() {
     return new EntitlementFlowInProgressException(
-      "A platform operation is in progress, retry later", properties.getRetryAfterSeconds());
+      "A platform entitlement operation is in progress, retry later", properties.getRetryAfterSeconds());
   }
 
   private static boolean tryLock(Connection connection) throws SQLException {

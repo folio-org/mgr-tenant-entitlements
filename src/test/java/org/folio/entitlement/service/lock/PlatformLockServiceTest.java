@@ -64,7 +64,7 @@ class PlatformLockServiceTest {
 
     assertThatThrownBy(() -> service.runExclusively(operation))
       .isInstanceOf(EntitlementFlowInProgressException.class)
-      .hasMessage("A platform operation is in progress, retry later");
+      .hasMessage("A platform entitlement operation is in progress, retry later");
 
     assertThat(called[0]).isFalse();
     verify(connection).rollback();

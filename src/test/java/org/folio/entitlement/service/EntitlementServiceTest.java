@@ -136,7 +136,7 @@ class EntitlementServiceTest {
       var rejection = new EntitlementFlowInProgressException("flow busy", 5);
       runExclusivelyExecutesOperation();
       when(flowService.hasActiveTenantFlow()).thenReturn(true);
-      when(platformLockService.entitlementFlowInProgress()).thenReturn(rejection);
+      when(platformLockService.tenantEntitlementInProgress()).thenReturn(rejection);
 
       assertThatThrownBy(() -> entitlementService.performRequest(platformRequest())).isSameAs(rejection);
 

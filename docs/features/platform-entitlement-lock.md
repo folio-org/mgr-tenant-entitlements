@@ -48,9 +48,9 @@ changes made at the same time could invalidate that check, in either order: a te
 - The lock is deployment-wide: it is shared by all instances of the module that use the same database.
 
 ## Error behavior
-- `409` with the `Retry-After` header in seconds. The message is `A platform operation is in progress, retry later` for
+- `409` with the `Retry-After` header in seconds. The message is `A platform entitlement operation is in progress, retry later` for
   a tenant call, or a platform call that finds another platform operation, and
-  `An entitlement flow is in progress, retry later` for a platform call that finds an unfinished tenant flow. In both
+  `A tenant entitlement operation is in progress, retry later` for a platform call that finds an unfinished tenant flow. In both
   cases the error type is `EntitlementFlowInProgressException`.
 - Retrying after the `Retry-After` interval is the caller's responsibility.
 

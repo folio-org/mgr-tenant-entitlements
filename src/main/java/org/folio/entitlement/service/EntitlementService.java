@@ -125,7 +125,7 @@ public class EntitlementService {
    */
   private void assertNoActiveTenantFlow() {
     if (flowService.hasActiveTenantFlow()) {
-      throw platformLockService.entitlementFlowInProgress();
+      throw platformLockService.tenantEntitlementInProgress();
     }
   }
 
