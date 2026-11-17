@@ -10,6 +10,7 @@ import org.folio.entitlement.integration.folio.model.TenantJob;
 /**
  * The module completed the tenant job with an error.
  */
+@SuppressWarnings("java:S110")
 public class TenantJobFailedException extends TenantJobException {
 
   @Serial private static final long serialVersionUID = 1L;

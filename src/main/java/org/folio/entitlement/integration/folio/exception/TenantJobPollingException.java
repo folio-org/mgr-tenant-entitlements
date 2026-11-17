@@ -8,6 +8,7 @@ import org.folio.entitlement.integration.folio.model.ModuleRequest;
 /**
  * The tenant job cannot be read, or polling was interrupted.
  */
+@SuppressWarnings("java:S110")
 public class TenantJobPollingException extends TenantJobException {
 
   @Serial private static final long serialVersionUID = 1L;

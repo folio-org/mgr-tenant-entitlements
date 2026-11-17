@@ -10,6 +10,7 @@ import org.folio.entitlement.integration.folio.model.ModuleRequest;
 /**
  * The tenant job did not complete within the configured timeout.
  */
+@SuppressWarnings("java:S110")
 public class TenantJobTimeoutException extends TenantJobException {
 
   @Serial private static final long serialVersionUID = 1L;
