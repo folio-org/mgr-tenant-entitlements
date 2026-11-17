@@ -305,35 +305,35 @@
       {
         "name": "FOLIO_CLIENT_TENANT_JOB_TIMEOUT",
         "value": "30m",
-        "description": "Maximum time to wait for an asynchronous tenant job of a FOLIO module to complete before the module stage fails; keep it at or below FLOW_ENGINE_EXECUTION_TIMEOUT",
+        "description": "Maximum time to wait for an asynchronous tenant job of a FOLIO module to complete before the module stage fails; keep it at or below FLOW_ENGINE_EXECUTION_TIMEOUT; must be greater than zero",
         "type": "CONFIG",
         "essential": false
       },
       {
         "name": "FOLIO_CLIENT_TENANT_JOB_WAIT",
         "value": "20s",
-        "description": "Long-poll time passed as wait to GET /_/tenant/{id}: how long a module may hold one poll while its tenant job is not complete",
+        "description": "Long-poll time passed as wait to GET /_/tenant/{id}: how long a module may hold one poll while its tenant job is not complete; must not be negative",
         "type": "CONFIG",
         "essential": false
       },
       {
         "name": "FOLIO_CLIENT_TENANT_JOB_DELAY",
         "value": "1s",
-        "description": "Initial pause between tenant job polls, used when the module answers immediately",
+        "description": "Initial pause between tenant job polls, used when the module answers immediately; must not be negative",
         "type": "CONFIG",
         "essential": false
       },
       {
         "name": "FOLIO_CLIENT_TENANT_JOB_MAX_DELAY",
         "value": "10s",
-        "description": "Maximum pause between tenant job polls",
+        "description": "Maximum pause between tenant job polls; must be greater than zero",
         "type": "CONFIG",
         "essential": false
       },
       {
         "name": "FOLIO_CLIENT_TENANT_JOB_MULTIPLIER",
         "value": "2.0",
-        "description": "Factor applied to the pause between tenant job polls after every poll",
+        "description": "Factor applied to the pause between tenant job polls after every poll; must be at least 1",
         "type": "CONFIG",
         "essential": false
       },

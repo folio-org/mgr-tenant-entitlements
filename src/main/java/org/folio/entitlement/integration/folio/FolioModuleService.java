@@ -118,6 +118,8 @@ public class FolioModuleService {
       return;
     }
 
+    log.info("Installing module: moduleId = {}, applicationId = {}, tenant = {}", moduleRequest.getModuleId(),
+      moduleRequest.getApplicationId(), moduleRequest.getTenantName());
     var operation = folioTenantApiClient.install(moduleRequest);
     tenantJobPoller.await(moduleRequest, operation);
     moduleService.save(moduleRequest);
@@ -150,7 +152,7 @@ public class FolioModuleService {
       return;
     }
 
-    log.info("Unstalling module: moduleId = {}, applicationId = {}, tenant = {}", moduleRequest.getModuleId(),
+    log.info("Uninstalling module: moduleId = {}, applicationId = {}, tenant = {}", moduleRequest.getModuleId(),
       moduleRequest.getApplicationId(), moduleRequest.getTenantName());
     var operation = folioTenantApiClient.uninstall(moduleRequest);
     tenantJobPoller.await(moduleRequest, operation);

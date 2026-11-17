@@ -1,7 +1,7 @@
 ---
 feature_id: async-tenant-job-completion
 title: Async Tenant Job Completion
-updated: 2026-11-16
+updated: 2026-11-17
 ---
 
 # Async Tenant Job Completion
@@ -51,6 +51,7 @@ The legacy `DELETE /_/tenant` purge call is not polled.
 - After the entitlement execution timeout of a synchronous request has fired, polling already in progress is not interrupted; it ends when the job completes or when its own timeout expires.
 - The tenant job is not deleted from the module after its final state is read.
 - Reinstall requests are synchronous and wait for jobs, up to the timeout per module.
+- The polling settings are validated when the application starts: the timeout and the maximum pause must be greater than zero, the long-poll time and the initial pause must not be negative, and the multiplier must be at least 1. An invalid value fails the module startup with an error naming the property.
 
 ## Error behavior
 
@@ -69,11 +70,11 @@ The legacy `DELETE /_/tenant` purge call is not polled.
 
 | Variable | Purpose |
 |----------|---------|
-| `FOLIO_CLIENT_TENANT_JOB_TIMEOUT` (`application.clients.folio.tenant-job.timeout`, default `30m`) | Maximum time to wait for one module's tenant job to complete |
-| `FOLIO_CLIENT_TENANT_JOB_WAIT` (`application.clients.folio.tenant-job.wait`, default `20s`) | Long-poll time sent as the `wait` parameter of each job read |
-| `FOLIO_CLIENT_TENANT_JOB_DELAY` (`application.clients.folio.tenant-job.delay`, default `1s`) | Initial pause between job reads, used when the module answers immediately |
-| `FOLIO_CLIENT_TENANT_JOB_MAX_DELAY` (`application.clients.folio.tenant-job.max-delay`, default `10s`) | Upper bound of the pause between job reads |
-| `FOLIO_CLIENT_TENANT_JOB_MULTIPLIER` (`application.clients.folio.tenant-job.multiplier`, default `2.0`) | Factor applied to the pause after every job read |
+| `FOLIO_CLIENT_TENANT_JOB_TIMEOUT` (`application.clients.folio.tenant-job.timeout`, default `30m`) | Maximum time to wait for one module's tenant job to complete; must be greater than zero |
+| `FOLIO_CLIENT_TENANT_JOB_WAIT` (`application.clients.folio.tenant-job.wait`, default `20s`) | Long-poll time sent as the `wait` parameter of each job read; must not be negative |
+| `FOLIO_CLIENT_TENANT_JOB_DELAY` (`application.clients.folio.tenant-job.delay`, default `1s`) | Initial pause between job reads, used when the module answers immediately; must not be negative |
+| `FOLIO_CLIENT_TENANT_JOB_MAX_DELAY` (`application.clients.folio.tenant-job.max-delay`, default `10s`) | Upper bound of the pause between job reads; must be greater than zero |
+| `FOLIO_CLIENT_TENANT_JOB_MULTIPLIER` (`application.clients.folio.tenant-job.multiplier`, default `2.0`) | Factor applied to the pause after every job read; must be at least 1 |
 | `FOLIO_CLIENT_READ_TIMEOUT` (`application.clients.folio.read-timeout`) | Read timeout of a module call; each job read allows this time plus the long-poll time |
 | `FLOW_ENGINE_EXECUTION_TIMEOUT` (`application.flow-engine.execution-timeout`, default `30m`) | Timeout of a synchronous entitlement request; a warning is logged on startup when the job timeout is not shorter than this value |
 | `FLOW_ENGINE_MODULE_INSTALLER_THREADS` (`application.flow-engine.module-installer-threads`, default `4`) | Number of modules installed in parallel; each waiting module holds one thread |

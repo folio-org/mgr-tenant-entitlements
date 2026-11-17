@@ -185,13 +185,13 @@ public class FolioTenantApiClient {
 
     var jobId = extractJobId(response);
     if (jobId == null) {
-      log.warn("Module responded with '[201] Created' without a tenant job, treating the operation as completed "
-        + "[moduleId='{}', url={}, tenant='{}']", request.getModuleId(), request.getLocation(),
+      log.warn("Module responded with '[201] Created' without a tenant job, treating the operation as completed: "
+        + "moduleId = {}, url = {}, tenant = {}", request.getModuleId(), request.getLocation(),
         request.getTenantName());
       return TenantOperation.completed();
     }
 
-    log.debug("Module accepted the tenant operation as a job [moduleId='{}', jobId={}, tenant='{}']",
+    log.debug("Module accepted the tenant operation as a job: moduleId = {}, jobId = {}, tenant = {}",
       request.getModuleId(), jobId, request.getTenantName());
     return TenantOperation.accepted(jobId);
   }

@@ -131,11 +131,11 @@ docker run \
 | MT_CLIENT_TLS_TRUSTSTORE_TYPE          | -                                   |  false   | Truststore file type for TLS connection to mgr-tenants module.                                                                                                                                             |
 | FOLIO_CLIENT_CONNECT_TIMEOUT           | 10s                                 |  false   | Defines the connection timeout for the Java Http client, used to perform request to Folio Modules.                                                                                                         |
 | FOLIO_CLIENT_READ_TIMEOUT              | 30s                                 |  false   | Defines the read timeout for the Java Http client, used to perform request to Folio Modules.                                                                                                               |
-| FOLIO_CLIENT_TENANT_JOB_TIMEOUT        | 30m                                 |  false   | Maximum time to wait for an asynchronous tenant job (`POST /_/tenant` answered with `201` and a job) of a Folio Module to complete; exceeding it fails the module stage. Keep it at or below FLOW_ENGINE_EXECUTION_TIMEOUT. See [Asynchronous tenant API](#asynchronous-tenant-api). |
-| FOLIO_CLIENT_TENANT_JOB_WAIT           | 20s                                 |  false   | Long-poll time passed as `wait` to `GET /_/tenant/{id}`: how long the module may hold one poll while the job is not complete. |
-| FOLIO_CLIENT_TENANT_JOB_DELAY          | 1s                                  |  false   | Initial pause between tenant job polls, used when the module answers immediately. |
-| FOLIO_CLIENT_TENANT_JOB_MAX_DELAY      | 10s                                 |  false   | Maximum pause between tenant job polls. |
-| FOLIO_CLIENT_TENANT_JOB_MULTIPLIER     | 2.0                                 |  false   | Factor applied to the pause between tenant job polls after every poll. |
+| FOLIO_CLIENT_TENANT_JOB_TIMEOUT        | 30m                                 |  false   | Maximum time to wait for an asynchronous tenant job (`POST /_/tenant` answered with `201` and a job) of a Folio Module to complete; exceeding it fails the module stage. Keep it at or below FLOW_ENGINE_EXECUTION_TIMEOUT. Must be greater than zero. See [Asynchronous tenant API](#asynchronous-tenant-api). |
+| FOLIO_CLIENT_TENANT_JOB_WAIT           | 20s                                 |  false   | Long-poll time passed as `wait` to `GET /_/tenant/{id}`: how long the module may hold one poll while the job is not complete. Must not be negative. |
+| FOLIO_CLIENT_TENANT_JOB_DELAY          | 1s                                  |  false   | Initial pause between tenant job polls, used when the module answers immediately. Must not be negative. |
+| FOLIO_CLIENT_TENANT_JOB_MAX_DELAY      | 10s                                 |  false   | Maximum pause between tenant job polls. Must be greater than zero. |
+| FOLIO_CLIENT_TENANT_JOB_MULTIPLIER     | 2.0                                 |  false   | Factor applied to the pause between tenant job polls after every poll. Must be at least 1. |
 | FOLIO_CLIENT_TLS_ENABLED               | false                               |  false   | Allows to enable/disable TLS connection to Folio Modules.                                                                                                                                                  |
 | FOLIO_CLIENT_TLS_TRUSTSTORE_PATH       | -                                   |  false   | Truststore file path for TLS connection to Folio Modules.                                                                                                                                                  |
 | FOLIO_CLIENT_TLS_TRUSTSTORE_PASSWORD   | -                                   |  false   | Truststore password for TLS connection to Folio Modules.                                                                                                                                                   |
@@ -385,7 +385,8 @@ the declared `_tenant` interface version:
 A job that completes with an `error`, a job that does not complete within `FOLIO_CLIENT_TENANT_JOB_TIMEOUT`, or a job
 that cannot be read (`4xx`, including `404`) fails the module stage with an error naming the module, the job and the
 module's own error text. Transient failures while polling (I/O errors, `5xx`) are repeated until the timeout. These
-failures are not repeated by `RETRIES_MODULE_*`, so the tenant call is not sent again automatically.
+failures are not repeated by `RETRIES_MODULE_*`, so the tenant call is not sent again automatically. A
+`FOLIO_CLIENT_TENANT_JOB_*` value outside its allowed range (see the table above) fails the module startup.
 
 The module entitlement is stored only after the job completed (and deleted only after the module call succeeded), so a
 failed or timed-out module is not recorded as installed and the next run sends the tenant call again. Things to know:

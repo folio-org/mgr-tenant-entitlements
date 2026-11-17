@@ -16,7 +16,6 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Stream;
 import org.apache.commons.lang3.SerializationException;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
@@ -31,8 +30,6 @@ import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -187,26 +184,6 @@ class TenantJobPollerTest {
     } finally {
       Thread.interrupted();
     }
-  }
-
-  @ParameterizedTest
-  @MethodSource("invalidPropertiesProvider")
-  void constructor_negative_invalidProperties(TenantJobProperties properties) {
-    assertThatThrownBy(() -> new TenantJobPoller(client, properties))
-      .isInstanceOf(IllegalArgumentException.class)
-      .hasMessageStartingWith("Tenant job");
-  }
-
-  private static Stream<TenantJobProperties> invalidPropertiesProvider() {
-    var zeroMaxDelay = properties(Duration.ofSeconds(5));
-    zeroMaxDelay.setMaxDelay(Duration.ZERO);
-    var negativeDelay = properties(Duration.ofSeconds(5));
-    negativeDelay.setDelay(Duration.ofMillis(-1));
-    var negativeWait = properties(Duration.ofSeconds(5));
-    negativeWait.setWait(Duration.ofMillis(-1));
-    var multiplierBelowOne = properties(Duration.ofSeconds(5));
-    multiplierBelowOne.setMultiplier(0.5);
-    return Stream.of(properties(Duration.ZERO), zeroMaxDelay, negativeDelay, negativeWait, multiplierBelowOne);
   }
 
   private OngoingStubbing<TenantJob> stubPoll(ModuleRequest request) {

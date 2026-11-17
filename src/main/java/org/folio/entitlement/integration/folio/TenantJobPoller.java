@@ -20,7 +20,6 @@ import org.springframework.core.retry.RetryListener;
 import org.springframework.core.retry.RetryPolicy;
 import org.springframework.core.retry.RetryTemplate;
 import org.springframework.core.retry.Retryable;
-import org.springframework.util.Assert;
 
 /**
  * Blocks until an asynchronous tenant job of a module completes, fails, or the configured timeout elapses.
@@ -32,17 +31,12 @@ public class TenantJobPoller {
   private final TenantJobProperties properties;
 
   /**
-   * Creates a poller, failing fast on settings that the retry policy would misinterpret.
+   * Creates a poller.
    *
    * @param client - client used to read tenant jobs
-   * @param properties - polling settings
+   * @param properties - polling settings, validated when they are bound
    */
   public TenantJobPoller(FolioTenantApiClient client, TenantJobProperties properties) {
-    Assert.isTrue(isPositive(properties.getTimeout()), "Tenant job timeout must be greater than zero");
-    Assert.isTrue(isPositive(properties.getMaxDelay()), "Tenant job max delay must be greater than zero");
-    Assert.isTrue(!properties.getDelay().isNegative(), "Tenant job delay must not be negative");
-    Assert.isTrue(!properties.getWait().isNegative(), "Tenant job wait must not be negative");
-    Assert.isTrue(properties.getMultiplier() >= 1, "Tenant job multiplier must be at least 1");
     this.client = client;
     this.properties = properties;
   }
@@ -66,7 +60,7 @@ public class TenantJobPoller {
     var timedOut = new AtomicBoolean();
     try {
       createRetryTemplate(timedOut).execute(() -> poll(request, jobId, startedAt));
-      log.info("Tenant job completed [moduleId='{}', jobId={}, tenant='{}', elapsed={}]",
+      log.info("Tenant job completed: moduleId = {}, jobId = {}, tenant = {}, elapsed = {}",
         request.getModuleId(), jobId, request.getTenantName(), Duration.between(startedAt, Instant.now()));
     } catch (RetryException e) {
       throw toFailure(request, jobId, timedOut, e);
@@ -185,9 +179,5 @@ public class TenantJobPoller {
     return cause instanceof IntegrationException integrationException
       ? integrationException
       : new TenantJobPollingException(request, jobId, cause);
-  }
-
-  private static boolean isPositive(Duration duration) {
-    return !duration.isNegative() && !duration.isZero();
   }
 }
