@@ -46,6 +46,7 @@ import org.folio.integration.kafka.model.ResourceEvent;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -69,6 +70,16 @@ public class TestUtils {
       .build();
 
   private static final ClassLoader CLASS_LOADER = TestUtils.class.getClassLoader();
+
+  /**
+   * Returns the module id from the (build-time filtered) module descriptor on the classpath.
+   */
+  @SneakyThrows
+  public static String moduleDescriptorId() {
+    try (var in = new ClassPathResource("descriptors/ModuleDescriptor.json").getInputStream()) {
+      return OBJECT_MAPPER.readTree(in).get("id").asText();
+    }
+  }
 
   @SneakyThrows
   public static String asJsonString(Object value) {
