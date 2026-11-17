@@ -105,6 +105,8 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   private static final String FOLIO_APP8_ID = "folio-app8-8.0.0";
   private static final String FOLIO_APP9_ID = "folio-app9-9.0.0";
   private static final String PLATFORM_APP_ID = "platform-app-1.0.0";
+  private static final String REGULAR_TO_PLATFORM_APP_V1_ID = "regular-to-platform-app-1.0.0";
+  private static final String REGULAR_TO_PLATFORM_APP_V2_ID = "regular-to-platform-app-2.0.0";
 
   @Autowired private KeycloakTestClient kcClient;
 
@@ -863,6 +865,33 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
         hasItem(containsString("Tenant request contains platform-scoped applications"))));
 
     getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_ID), emptyEntitlements());
+  }
+
+  @Test
+  @Sql("classpath:/sql/folio-entitlement-app-converted-to-platform.sql")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-regular-to-platform-app-v1.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-regular-to-platform-app-v2.json"
+  })
+  void upgrade_negative_platformApplicationIsRejected() throws Exception {
+    // the application was entitled as regular and later converted to platform-scoped, so the upgrade passes the
+    // entitled-application check
+    mockMvc.perform(put(updatePathWithPrefix("/entitlements"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest(REGULAR_TO_PLATFORM_APP_V2_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      // PUT /entitlements always runs with ignoreErrors=true, so the failed flow is not cancelled
+      .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'PlatformApplicationNotExistInRequestValidator')].value",
+        hasItem(containsString("Tenant request contains platform-scoped applications"))));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(REGULAR_TO_PLATFORM_APP_V1_ID),
+      entitlements(entitlement(REGULAR_TO_PLATFORM_APP_V1_ID)));
+    getEntitlementsByQuery(queryByTenantAndAppId(REGULAR_TO_PLATFORM_APP_V2_ID), emptyEntitlements());
   }
 
   @SneakyThrows

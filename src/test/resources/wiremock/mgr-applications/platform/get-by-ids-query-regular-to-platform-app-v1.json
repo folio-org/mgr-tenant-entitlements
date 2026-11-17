@@ -1,0 +1,32 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"regular-to-platform-app-1.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "regular-to-platform-app-1.0.0",
+          "name": "regular-to-platform-app",
+          "version": "1.0.0"
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}
