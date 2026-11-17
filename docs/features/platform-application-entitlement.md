@@ -48,9 +48,16 @@ The request body is `{ "applications": [ "<name>-<version>", ... ] }` with 1 to 
 - Dependencies declared by an application are stored whether or not the parent is entitled. This includes optional
   ones.
 - Platform-scoped applications cannot be entitled per tenant. The regular tenant endpoints reject a request that
-  names a platform-scoped application directly: entitle (`POST /entitlements`) and desired state
-  (`PUT /entitlements/state`). The check runs on the requested applications before any dependency is resolved, so
-  nothing is stored for the tenant.
+  names a platform-scoped application directly:
+  - entitle (`POST /entitlements`) and desired state (`PUT /entitlements/state`): the check runs on the requested
+    applications before any dependency is resolved, so nothing is stored for the tenant.
+  - upgrade (`PUT /entitlements`): the check runs after the tenant's entitled version of the application is found,
+    so it applies to an application that was entitled while it was regular and whose new version is platform-scoped.
+    A platform-scoped application the tenant has no entitlement for fails earlier with
+    `Invalid applications provided for upgrade`. The tenant keeps its entitled version.
+
+  Revoke (`DELETE /entitlements`) has no such check. A platform-scoped application that is only a dependency of a
+  requested regular application is not rejected.
 
 ## Error behavior
 - `400` with the validation message, and the flow identifier in the `x-mgr-tenant-entitlement-flow-id` response
@@ -62,7 +69,9 @@ The request body is `{ "applications": [ "<name>-<version>", ... ] }` with 1 to 
   - `Platform application upgrade is incompatible with dependent applications` (dependent platform applications or
     tenant applications)
   - `The following platform application dependencies must be entitled first`
-  - `Tenant request contains platform-scoped applications`
+  - `Tenant request contains platform-scoped applications` (tenant entitle, upgrade or desired-state write). The
+    response names each rejected application id. Entitle and desired state end the flow in `cancelled`; upgrade always
+    runs with `ignoreErrors=true`, so its flow ends in `failed`.
 - `409` with `Retry-After` when the platform lock is held; see [Platform Operation Lock](platform-entitlement-lock.md).
 
 ## Dependencies and interactions

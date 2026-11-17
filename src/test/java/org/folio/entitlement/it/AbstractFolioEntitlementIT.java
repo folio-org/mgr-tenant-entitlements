@@ -883,7 +883,6 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest(REGULAR_TO_PLATFORM_APP_V2_ID))))
       .andExpect(status().isBadRequest())
       .andExpect(content().contentType(APPLICATION_JSON))
-      // PUT /entitlements always runs with ignoreErrors=true, so the failed flow is not cancelled
       .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
       .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'PlatformApplicationNotExistInRequestValidator')].value",
