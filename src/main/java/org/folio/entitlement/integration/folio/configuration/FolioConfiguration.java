@@ -127,7 +127,6 @@ public class FolioConfiguration {
     return new FolioModulesFlowProvider(factories, moduleSequenceProvider, moduleInstallerExecutor);
   }
 
-
   /**
    * Creates a {@link FolioModuleEntitleFlowFactory} bean for module flow.
    *
