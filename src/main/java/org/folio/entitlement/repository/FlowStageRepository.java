@@ -26,6 +26,12 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
     ORDER BY entity.startedAt asc""")
   List<FlowStageEntity> findByFlowId(@Param("flowId") UUID flowId);
 
+  @Query("""
+    SELECT entity from FlowStageEntity entity
+    WHERE entity.flowId = :flowId AND entity.status IN :statuses""")
+  List<FlowStageEntity> findByFlowIdAndStatusIn(@Param("flowId") UUID flowId,
+    @Param("statuses") Collection<EntityExecutionStatus> statuses);
+
   @Query(value = """
     SELECT entity from FlowStageEntity entity
     WHERE entity.flowId in :flowIds
