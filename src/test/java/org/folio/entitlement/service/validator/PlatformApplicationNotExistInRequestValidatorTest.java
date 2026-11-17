@@ -21,9 +21,10 @@ import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
 
 @UnitTest
-class PlatformStateRequestValidatorTest {
+class PlatformApplicationNotExistInRequestValidatorTest {
 
-  private final PlatformStateRequestValidator validator = new PlatformStateRequestValidator();
+  private final PlatformApplicationNotExistInRequestValidator
+    validator = new PlatformApplicationNotExistInRequestValidator();
 
   @Test
   void execute_positive_onlyRegularApplicationsRequested() {
@@ -56,14 +57,32 @@ class PlatformStateRequestValidatorTest {
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
-      .hasMessage("Desired state request contains platform-scoped applications")
+      .hasMessage("Tenant request contains platform-scoped applications")
       .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
         .singleElement()
         .satisfies(parameter -> {
           assertThat(parameter.getKey()).isEqualTo("platform-app-1.0.0");
           assertThat(parameter.getValue())
-            .isEqualTo("Platform-scoped application cannot be set in a tenant desired state");
+            .isEqualTo("Platform-scoped application cannot be requested in a tenant operation");
         }));
+  }
+
+  @Test
+  void validate_negative_directlyRequestedPlatformApplicationIsRejected() {
+    var platform = appDescriptor("platform-app-1.0.0").scope(ApplicationScope.PLATFORM);
+    var descriptors = List.of(platform);
+
+    assertThatThrownBy(() -> validator.validate(descriptors))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessage("Tenant request contains platform-scoped applications");
+  }
+
+  @Test
+  void validate_positive_regularApplication() {
+    var regular = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
+    var descriptors = List.of(regular);
+
+    assertThatCode(() -> validator.validate(descriptors)).doesNotThrowAnyException();
   }
 
   private static CommonStageContext context(ApplicationDescriptor... descriptors) {

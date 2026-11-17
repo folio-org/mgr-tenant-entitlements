@@ -29,6 +29,7 @@ import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.repository.EntitlementRepository;
 import org.folio.entitlement.service.ApplicationManagerService;
+import org.folio.entitlement.service.validator.PlatformApplicationNotExistInRequestValidator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,12 +41,18 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
 
   private final ApplicationManagerService applicationManagerService;
   private final EntitlementRepository entitlementRepository;
+  private final PlatformApplicationNotExistInRequestValidator platformApplicationNotExistInRequestValidator;
 
   @Override
   public void execute(CommonStageContext context) {
-    var allApplicationDescriptors = load(context.getEntitlementRequest());
-
     var request = context.getEntitlementRequest();
+
+    var requestedDescriptors = loadRequested(request);
+
+    // validate the directly requested descriptors before building the dependency tree
+    platformApplicationNotExistInRequestValidator.validate(requestedDescriptors);
+
+    var allApplicationDescriptors = load(request, requestedDescriptors);
 
     context.withApplicationDescriptors(filter(allApplicationDescriptors, applicationFromRequest(request)))
       .withApplicationAndDependencyDescriptors(allApplicationDescriptors);
@@ -58,9 +65,13 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
    * @return {@link List} with loaded {@link ApplicationDescriptor} object
    */
   public List<ApplicationDescriptor> load(EntitlementRequest entitlementRequest) {
+    return load(entitlementRequest, loadRequested(entitlementRequest));
+  }
+
+  private List<ApplicationDescriptor> load(EntitlementRequest entitlementRequest,
+    List<ApplicationDescriptor> descriptors) {
     var tenantId = entitlementRequest.getTenantId();
     var token = entitlementRequest.getOkapiToken();
-    var descriptors = applicationManagerService.getApplicationDescriptors(entitlementRequest.getApplications(), token);
     var allApplications = descriptors.stream().collect(toMap(ApplicationDescriptor::getName, identity()));
 
     for (var descriptor : descriptors) {
@@ -68,6 +79,11 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
     }
 
     return List.copyOf(allApplications.values());
+  }
+
+  private List<ApplicationDescriptor> loadRequested(EntitlementRequest entitlementRequest) {
+    return applicationManagerService.getApplicationDescriptors(entitlementRequest.getApplications(),
+      entitlementRequest.getOkapiToken());
   }
 
   private void loadInstalledAppDependencies(ApplicationDescriptor descriptor,

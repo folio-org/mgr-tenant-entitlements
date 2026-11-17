@@ -1,7 +1,7 @@
 ---
 feature_id: platform-application-entitlement
 title: Platform Application Entitlement
-updated: 2026-11-12
+updated: 2026-11-17
 ---
 
 # Platform Application Entitlement
@@ -47,7 +47,10 @@ The request body is `{ "applications": [ "<name>-<version>", ... ] }` with 1 to 
   not checked against its previously stored dependencies; its new version is checked as part of the request.
 - Dependencies declared by an application are stored whether or not the parent is entitled. This includes optional
   ones.
-- Platform-scoped applications cannot be set in a tenant desired state (`PUT /entitlements/state`).
+- Platform-scoped applications cannot be entitled per tenant. The regular tenant endpoints reject a request that
+  names a platform-scoped application directly: entitle (`POST /entitlements`) and desired state
+  (`PUT /entitlements/state`). The check runs on the requested applications before any dependency is resolved, so
+  nothing is stored for the tenant.
 
 ## Error behavior
 - `400` with the validation message, and the flow identifier in the `x-mgr-tenant-entitlement-flow-id` response
@@ -59,7 +62,7 @@ The request body is `{ "applications": [ "<name>-<version>", ... ] }` with 1 to 
   - `Platform application upgrade is incompatible with dependent applications` (dependent platform applications or
     tenant applications)
   - `The following platform application dependencies must be entitled first`
-  - `Desired state request contains platform-scoped applications` (desired-state write)
+  - `Tenant request contains platform-scoped applications`
 - `409` with `Retry-After` when the platform lock is held; see [Platform Operation Lock](platform-entitlement-lock.md).
 
 ## Dependencies and interactions

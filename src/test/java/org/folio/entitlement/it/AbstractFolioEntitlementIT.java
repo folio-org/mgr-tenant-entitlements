@@ -830,8 +830,8 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(content().contentType(APPLICATION_JSON))
       .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
       .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")))
-      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'PlatformStateRequestValidator')].value",
-        hasItem(containsString("Desired state request contains platform-scoped applications"))))
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'PlatformApplicationNotExistInRequestValidator')].value",
+        hasItem(containsString("Tenant request contains platform-scoped applications"))))
       .andReturn();
 
     var flowId = result.getResponse().getHeader(FLOW_ID_HEADER);
@@ -841,6 +841,26 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
       .andExpect(jsonPath("$.status", is("cancelled")))
       .andExpect(jsonPath("$.type", is("state")))
       .andExpect(jsonPath("$.tenantId", notNullValue()));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_ID), emptyEntitlements());
+  }
+
+  @Test
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json"
+  })
+  void entitle_negative_platformApplicationIsRejected() throws Exception {
+    mockMvc.perform(post(updatePathWithPrefix("/entitlements"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest(PLATFORM_APP_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'ApplicationDescriptorTreeLoader')].value",
+        hasItem(containsString("Tenant request contains platform-scoped applications"))));
 
     getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_ID), emptyEntitlements());
   }
