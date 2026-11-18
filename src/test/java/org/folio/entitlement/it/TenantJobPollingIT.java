@@ -283,7 +283,7 @@ class TenantJobPollingIT extends BaseIntegrationTest {
 
   private long eventCount(EntitlementEvent event) {
     return getEvents(entitlementTopic(), EntitlementEvent.class).stream()
-      .filter(record -> event.equals(record.value()))
+      .filter(consumerRecord -> event.equals(consumerRecord.value()))
       .count();
   }
 
