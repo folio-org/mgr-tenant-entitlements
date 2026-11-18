@@ -29,7 +29,7 @@ class FolioClientConfigurationPropertiesTest {
     var tenantJob = new FolioClientConfigurationProperties().getTenantJob();
 
     assertThat(tenantJob.getTimeout()).isEqualTo(Duration.ofMinutes(30));
-    assertThat(tenantJob.getWait()).isEqualTo(Duration.ofSeconds(20));
+    assertThat(tenantJob.getWait()).isEqualTo(Duration.ofSeconds(10));
     assertThat(tenantJob.getDelay()).isEqualTo(Duration.ofSeconds(1));
     assertThat(tenantJob.getMaxDelay()).isEqualTo(Duration.ofSeconds(10));
     assertThat(tenantJob.getMultiplier()).isEqualTo(2.0);

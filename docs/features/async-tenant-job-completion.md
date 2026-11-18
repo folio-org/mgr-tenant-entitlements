@@ -1,7 +1,7 @@
 ---
 feature_id: async-tenant-job-completion
 title: Async Tenant Job Completion
-updated: 2026-11-17
+updated: 2026-11-18
 ---
 
 # Async Tenant Job Completion
@@ -71,7 +71,7 @@ The legacy `DELETE /_/tenant` purge call is not polled.
 | Variable | Purpose |
 |----------|---------|
 | `FOLIO_CLIENT_TENANT_JOB_TIMEOUT` (`application.clients.folio.tenant-job.timeout`, default `30m`) | Maximum time to wait for one module's tenant job to complete; must be greater than zero |
-| `FOLIO_CLIENT_TENANT_JOB_WAIT` (`application.clients.folio.tenant-job.wait`, default `20s`) | Long-poll time sent as the `wait` parameter of each job read; must not be negative |
+| `FOLIO_CLIENT_TENANT_JOB_WAIT` (`application.clients.folio.tenant-job.wait`, default `10s`) | Long-poll time sent as the `wait` parameter of each job read; must not be negative |
 | `FOLIO_CLIENT_TENANT_JOB_DELAY` (`application.clients.folio.tenant-job.delay`, default `1s`) | Initial pause between job reads, used when the module answers immediately; must not be negative |
 | `FOLIO_CLIENT_TENANT_JOB_MAX_DELAY` (`application.clients.folio.tenant-job.max-delay`, default `10s`) | Upper bound of the pause between job reads; must be greater than zero |
 | `FOLIO_CLIENT_TENANT_JOB_MULTIPLIER` (`application.clients.folio.tenant-job.multiplier`, default `2.0`) | Factor applied to the pause after every job read; must be at least 1 |

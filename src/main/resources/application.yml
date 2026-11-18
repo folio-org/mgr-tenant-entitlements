@@ -143,7 +143,7 @@ application:
       read-timeout: ${FOLIO_CLIENT_READ_TIMEOUT:30s}
       tenant-job:
         timeout: ${FOLIO_CLIENT_TENANT_JOB_TIMEOUT:30m}
-        wait: ${FOLIO_CLIENT_TENANT_JOB_WAIT:20s}
+        wait: ${FOLIO_CLIENT_TENANT_JOB_WAIT:10s}
         delay: ${FOLIO_CLIENT_TENANT_JOB_DELAY:1s}
         max-delay: ${FOLIO_CLIENT_TENANT_JOB_MAX_DELAY:10s}
         multiplier: ${FOLIO_CLIENT_TENANT_JOB_MULTIPLIER:2.0}

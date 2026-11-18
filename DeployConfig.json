@@ -311,7 +311,7 @@
       },
       {
         "name": "FOLIO_CLIENT_TENANT_JOB_WAIT",
-        "value": "20s",
+        "value": "10s",
         "description": "Long-poll time passed as wait to GET /_/tenant/{id}: how long a module may hold one poll while its tenant job is not complete; must not be negative",
         "type": "CONFIG",
         "essential": false

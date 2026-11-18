@@ -57,7 +57,7 @@ public class FolioClientConfigurationProperties {
      */
     @NotNull
     @DurationMin(millis = 0)
-    private Duration wait = Duration.ofSeconds(20);
+    private Duration wait = Duration.ofSeconds(10);
 
     /**
      * Initial pause between polls, used when the module answers immediately.

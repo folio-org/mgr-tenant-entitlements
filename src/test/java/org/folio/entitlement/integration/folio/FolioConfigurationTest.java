@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import org.folio.entitlement.configuration.FlowEngineConfigurationProperties;
 import org.folio.entitlement.integration.folio.configuration.FolioClientConfigurationProperties;
 import org.folio.entitlement.integration.folio.configuration.FolioConfiguration;
 import org.folio.entitlement.utils.JsonConverter;
@@ -36,5 +37,28 @@ class FolioConfigurationTest {
     var folioTenantApiClient = folioConfiguration.folioTenantApiClient(httpClient, jsonConverter, clientConfiguration);
 
     assertThat(folioTenantApiClient).isNotNull();
+  }
+
+  @Test
+  void tenantJobPoller_positive() {
+    var apiClient = mock(FolioTenantApiClient.class);
+    var clientConfiguration = new FolioClientConfigurationProperties();
+    var flowEngineConfiguration = new FlowEngineConfigurationProperties();
+
+    var poller = folioConfiguration.tenantJobPoller(apiClient, clientConfiguration, flowEngineConfiguration);
+
+    assertThat(poller).isNotNull();
+  }
+
+  @Test
+  void tenantJobPoller_positive_timeoutNotShorterThanFlowTimeout() {
+    var apiClient = mock(FolioTenantApiClient.class);
+    var clientConfiguration = new FolioClientConfigurationProperties();
+    clientConfiguration.getTenantJob().setTimeout(Duration.ofHours(1));
+    var flowEngineConfiguration = new FlowEngineConfigurationProperties();
+
+    var poller = folioConfiguration.tenantJobPoller(apiClient, clientConfiguration, flowEngineConfiguration);
+
+    assertThat(poller).isNotNull();
   }
 }

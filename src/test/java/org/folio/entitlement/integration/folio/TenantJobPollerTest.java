@@ -7,6 +7,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -71,6 +72,30 @@ class TenantJobPollerTest {
   }
 
   @Test
+  void await_positive_jobWithoutCompleteFlagIsInProgress() {
+    var request = request();
+    var poller = createPoller(Duration.ofSeconds(5));
+    var jobWithoutFlag = new TenantJob();
+    jobWithoutFlag.setId(JOB_ID);
+    stubPoll(request).thenReturn(jobWithoutFlag, job(true, null));
+
+    poller.await(request, TenantOperation.accepted(JOB_ID));
+
+    verifyPolls(request, 2);
+  }
+
+  @Test
+  void await_positive_waitIsTheConfiguredLongPollTime() {
+    var request = request();
+    var poller = createPoller(Duration.ofSeconds(5));
+    stubPoll(request).thenReturn(job(true, null));
+
+    poller.await(request, TenantOperation.accepted(JOB_ID));
+
+    verify(client).getTenantJob(request, JOB_ID, Duration.ofMillis(50));
+  }
+
+  @Test
   void await_negative_failedJobFailsWithJobError() {
     var request = request();
     var poller = createPoller(Duration.ofSeconds(5));
@@ -83,6 +108,20 @@ class TenantJobPollerTest {
         assertThat(error.getErrors()).extracting(Parameter::getKey, Parameter::getValue)
           .contains(tuple("moduleId", MODULE_ID), tuple("jobId", JOB_ID), tuple("cause", JOB_ERROR));
       });
+  }
+
+  @Test
+  void await_negative_jobFailsAfterPendingPolls() {
+    var request = request();
+    var poller = createPoller(Duration.ofSeconds(5));
+    stubPoll(request).thenReturn(job(false, null), job(false, null), job(true, JOB_ERROR));
+    var operation = TenantOperation.accepted(JOB_ID);
+
+    assertThatThrownBy(() -> poller.await(request, operation))
+      .isInstanceOf(TenantJobFailedException.class)
+      .hasMessageContaining(JOB_ERROR);
+
+    verifyPolls(request, 3);
   }
 
   @Test
@@ -107,6 +146,20 @@ class TenantJobPollerTest {
     poller.await(request, TenantOperation.accepted(JOB_ID));
 
     verifyPolls(request, 2);
+  }
+
+  @Test
+  void await_negative_persistentServerErrorTimesOut() {
+    var request = request();
+    var poller = createPoller(Duration.ofMillis(150));
+    stubPoll(request).thenThrow(new IntegrationException("busy", List.of(), 503));
+    var operation = TenantOperation.accepted(JOB_ID);
+
+    assertThatThrownBy(() -> poller.await(request, operation))
+      .isInstanceOf(TenantJobTimeoutException.class)
+      .hasMessageContaining(MODULE_ID);
+
+    verify(client, atLeast(2)).getTenantJob(eq(request), eq(JOB_ID), any(Duration.class));
   }
 
   @Test
