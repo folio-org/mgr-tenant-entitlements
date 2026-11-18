@@ -12,8 +12,12 @@ import org.folio.entitlement.integration.folio.configuration.FolioConfiguration;
 import org.folio.entitlement.utils.JsonConverter;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 @UnitTest
+@ExtendWith(OutputCaptureExtension.class)
 class FolioConfigurationTest {
 
   private final FolioConfiguration folioConfiguration = new FolioConfiguration();
@@ -40,7 +44,7 @@ class FolioConfigurationTest {
   }
 
   @Test
-  void tenantJobPoller_positive() {
+  void tenantJobPoller_positive(CapturedOutput output) {
     var apiClient = mock(FolioTenantApiClient.class);
     var clientConfiguration = new FolioClientConfigurationProperties();
     var flowEngineConfiguration = new FlowEngineConfigurationProperties();
@@ -48,10 +52,25 @@ class FolioConfigurationTest {
     var poller = folioConfiguration.tenantJobPoller(apiClient, clientConfiguration, flowEngineConfiguration);
 
     assertThat(poller).isNotNull();
+    assertThat(output.getAll()).doesNotContain("flow execution timeout");
   }
 
   @Test
-  void tenantJobPoller_positive_timeoutNotShorterThanFlowTimeout() {
+  void tenantJobPoller_positive_timeoutEqualToFlowTimeoutIsNotWarned(CapturedOutput output) {
+    var apiClient = mock(FolioTenantApiClient.class);
+    var clientConfiguration = new FolioClientConfigurationProperties();
+    clientConfiguration.getTenantJob().setTimeout(Duration.ofMinutes(10));
+    var flowEngineConfiguration = new FlowEngineConfigurationProperties();
+    flowEngineConfiguration.setExecutionTimeout(Duration.ofMinutes(10));
+
+    var poller = folioConfiguration.tenantJobPoller(apiClient, clientConfiguration, flowEngineConfiguration);
+
+    assertThat(poller).isNotNull();
+    assertThat(output.getAll()).doesNotContain("flow execution timeout");
+  }
+
+  @Test
+  void tenantJobPoller_positive_timeoutLongerThanFlowTimeoutIsWarned(CapturedOutput output) {
     var apiClient = mock(FolioTenantApiClient.class);
     var clientConfiguration = new FolioClientConfigurationProperties();
     clientConfiguration.getTenantJob().setTimeout(Duration.ofHours(1));
@@ -60,5 +79,7 @@ class FolioConfigurationTest {
     var poller = folioConfiguration.tenantJobPoller(apiClient, clientConfiguration, flowEngineConfiguration);
 
     assertThat(poller).isNotNull();
+    assertThat(output.getAll())
+      .contains("Tenant job timeout (PT1H) is longer than the flow execution timeout (PT30M)");
   }
 }

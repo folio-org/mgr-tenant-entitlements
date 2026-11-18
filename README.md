@@ -383,8 +383,9 @@ the declared `_tenant` interface version:
   small back-off between polls for modules that answer immediately.
 
 A job that completes with an `error`, a job that does not complete within `FOLIO_CLIENT_TENANT_JOB_TIMEOUT`, or a job
-that cannot be read (`4xx`, including `404`) fails the module stage with an error naming the module, the job and the
-module's own error text. Transient failures while polling (I/O errors, `5xx`) are repeated until the timeout. These
+that cannot be read (`4xx` other than `408`, `425`, `429`, including `404`) fails the module stage with an error naming
+the module, the job and the module's own error text. Transient failures while polling (I/O errors, `5xx`, `408`, `425`,
+`429`) are repeated until the timeout. These
 failures are not repeated by `RETRIES_MODULE_*`, so the tenant call is not sent again automatically. A
 `FOLIO_CLIENT_TENANT_JOB_*` value outside its allowed range (see the table above) fails the module startup.
 

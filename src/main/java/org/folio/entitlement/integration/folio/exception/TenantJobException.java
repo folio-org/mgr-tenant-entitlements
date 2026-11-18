@@ -35,9 +35,11 @@ public abstract class TenantJobException extends IntegrationException {
    * @param cause - error cause
    * @param request - module request the job belongs to
    * @param jobId - tenant job identifier
+   * @param extra - additional error parameters
    */
-  protected TenantJobException(String message, Throwable cause, ModuleRequest request, String jobId) {
-    super(message, parameters(request, jobId), cause);
+  protected TenantJobException(String message, Throwable cause, ModuleRequest request, String jobId,
+    Parameter... extra) {
+    super(message, parameters(request, jobId, extra), cause);
   }
 
   /**

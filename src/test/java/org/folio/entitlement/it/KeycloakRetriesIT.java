@@ -8,8 +8,6 @@ import static org.folio.entitlement.support.TestValues.entitlementRequest;
 import static org.folio.entitlement.utils.IntegrationTestUtil.extractFlowIdFromFailedEntitlementResponse;
 import static org.folio.entitlement.utils.IntegrationTestUtil.getDefaultSecureStoreKeyProvider;
 import static org.folio.entitlement.utils.IntegrationTestUtil.getFlowStage;
-import static org.folio.entitlement.utils.LogTestUtil.captureLog4J2Logs;
-import static org.folio.entitlement.utils.LogTestUtil.stopCaptureLog4J2Logs;
 import static org.folio.entitlement.utils.WireMockUtil.stubAnyHttpMethod;
 import static org.folio.entitlement.utils.WireMockUtil.stubGet;
 import static org.folio.entitlement.utils.WireMockUtil.stubPost;
@@ -41,13 +39,15 @@ import org.folio.test.types.IntegrationTest;
 import org.folio.tools.kong.client.KongAdminClient.KongResultList;
 import org.folio.tools.kong.model.Route;
 import org.folio.tools.kong.model.Service;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
@@ -56,6 +56,7 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.jdbc.SqlMergeMode;
 
 @IntegrationTest
+@ExtendWith(OutputCaptureExtension.class)
 @SqlMergeMode(MERGE)
 @Sql(executionPhase = AFTER_TEST_METHOD, scripts = "classpath:/sql/truncate-tables.sql")
 @TestPropertySource(properties = {"application.keycloak.enabled=true",
@@ -76,17 +77,12 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     stubPost(getWireMockClient(), 1, urlEqualTo("/realms/master/protocol/openid-connect/token"), tokenResponse, 200);
   }
 
-  @AfterEach
-  public void resetLogCapture() {
-    stopCaptureLog4J2Logs();
-  }
-
   @Test
   @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app1/get-discovery.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json", "/wiremock/folio-module1/install.json"})
-  void verifyModuleRegistrationRetry() throws Exception {
+  void verifyModuleRegistrationRetry(CapturedOutput output) throws Exception {
     var moduleId = "folio-module1-1.0.0";
     var wireMockClient = mockBaseDependencies(moduleId, "route123");
 
@@ -101,7 +97,6 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
     stubAnyHttpMethod(wireMockClient, 1,
       urlMatching("/admin/realms/test/clients/test/authz/resource-server/resource.*"), null, 500);
 
-    var logs = captureLog4J2Logs();
     var response = mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
       jsonPath("$.errors[0].parameters[0].value").value(
         containsString("Failed to update authorization resources in Keycloak"))).andReturn();
@@ -115,14 +110,14 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
       e -> e.getRequest().getUrl().equals("/admin/realms/test/clients/test/authz/resource-server/resource")
         && e.getRequest().getBodyAsString().contains("POST#folio-module1.events.item.post")).count()).isEqualTo(3);
 
-    Awaitility.await().untilAsserted(() -> {  // ignore ConcurrentModificationException
+    Awaitility.await().untilAsserted(() -> {
       assertThat(
-          logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying")))
+          output.getAll().lines().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying")))
         .hasSize(7);
-      assertThat(logs.stream().filter(
+      assertThat(output.getAll().lines().filter(
           logLine -> logLine.contains("jakarta.ws.rs.WebApplicationException: HTTP 500 Internal Server Error")))
         .hasSize(6);
-      assertThat(logs.stream().filter(logLine -> logLine.contains(
+      assertThat(output.getAll().lines().filter(logLine -> logLine.contains(
           "folio-module1-1.0.0-keycloakModuleResourceCreator execution error")))
         .hasSize(1);
     });
@@ -138,7 +133,7 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {"/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/folio-app2/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app2/get-discovery.json", "/wiremock/folio-module2/uninstall.json"})
-  void verifyModuleDeregistrationRetry() throws Exception {
+  void verifyModuleDeregistrationRetry(CapturedOutput output) throws Exception {
     var moduleId = "folio-module2-2.0.0";
     var routeId = "mockroute1";
 
@@ -153,7 +148,6 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
         .content(asJsonString(entitlementRequest));
     queryParams.forEach(request::queryParam);
 
-    var logs = captureLog4J2Logs();
     var response = mockMvc.perform(request).andExpect(status().isBadRequest()).andExpect(
       jsonPath("$.errors[0].parameters[0].value").value(
         containsString("Failed to remove authorization resources in Keycloak"))).andReturn();
@@ -168,12 +162,12 @@ class KeycloakRetriesIT extends BaseIntegrationTest {
         "/admin/realms/test/clients/test/authz/resource-server/resource?name=%2Ffolio-module2%2Fevents%2F%7Bid%7D"))
       .count()).isEqualTo(3);
 
-    Awaitility.await().untilAsserted(() -> {  // ignore ConcurrentModificationException
-      assertThat(
-        logs.stream().filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(7);
-      assertThat(logs.stream().filter(logLine -> logLine.contains(
+    Awaitility.await().untilAsserted(() -> {
+      assertThat(output.getAll().lines()
+        .filter(logLine -> logLine.contains("Error occurred for Keycloak access - retrying"))).hasSize(7);
+      assertThat(output.getAll().lines().filter(logLine -> logLine.contains(
         "jakarta.ws.rs.InternalServerErrorException: HTTP 500 Internal Server Error"))).hasSize(6);
-      assertThat(logs.stream().filter(logLine -> logLine.contains(
+      assertThat(output.getAll().lines().filter(logLine -> logLine.contains(
         "folio-module2-2.0.0-keycloakModuleResourceCleaner execution error")))
         .hasSize(1);
     });

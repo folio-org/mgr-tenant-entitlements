@@ -41,7 +41,7 @@ The legacy `DELETE /_/tenant` purge call is not polled.
 
 - A tenant call is treated as asynchronous only when the module answers `201` and a job id can be found: from the `Location` header (its path must end with `/_/tenant/{id}`, id of up to 64 letters, digits or `-`), or, when there is no `Location`, from the `id` in the response body. A `201` without a usable job id is logged as a warning and treated as completed. Any other success status is treated as completed.
 - The job is read until it reports `complete: true`. A completed job with an `error` fails the stage; without an `error` the stage succeeds. A job response without a `complete` flag counts as still in progress.
-- Reading the job is repeated, with a growing pause between reads, until the timeout when the failure is transient (I/O error or `5xx`). Any `4xx` while reading the job, including `404`, fails the stage immediately.
+- Reading the job is repeated, with a growing pause between reads, until the timeout when the failure is transient (I/O error, `5xx`, or `408`, `425`, `429`). Any other `4xx` while reading the job, including `404`, fails the stage immediately. While the job is read, a warning is logged periodically when reads keep failing, and an INFO line periodically while the job is still in progress.
 - The timeout is counted per module, from the moment the module accepted the job. Each read asks the module to wait for at most the configured long-poll time, never longer than the time left.
 - Job failures and timeouts are not repeated by the module call retry (`RETRIES_MODULE_*`), so the tenant call is not sent again automatically. A failure of the initial `POST` itself (HTTP status `400` and above) is retried as before.
 - The module entitlement is saved only after the module call and its job completed; on revoke it is deleted only after the module call (and its job) succeeded. These operations are not transactional, so no database transaction is held while waiting.
@@ -61,7 +61,7 @@ The legacy `DELETE /_/tenant` purge call is not polled.
 | Error type | Parameters |
 |------------|------------|
 | `TenantJobFailedException` | `moduleId`, `tenant`, `jobId`, `cause` (the job's `error`), `messages` (the job's messages joined by `; `) |
-| `TenantJobTimeoutException` | `moduleId`, `tenant`, `jobId`, `timeout` |
+| `TenantJobTimeoutException` | `moduleId`, `tenant`, `jobId`, `timeout`, and `lastError` (the failure of the last job read) when that read failed, which tells an unavailable module from a slow job |
 | `TenantJobPollingException` | `moduleId`, `tenant`, `jobId` |
 
 - Retrying the request after a failure is safe: no entitlement was stored for the module, so the tenant call is sent again.
@@ -76,7 +76,7 @@ The legacy `DELETE /_/tenant` purge call is not polled.
 | `FOLIO_CLIENT_TENANT_JOB_MAX_DELAY` (`application.clients.folio.tenant-job.max-delay`, default `10s`) | Upper bound of the pause between job reads; must be greater than zero |
 | `FOLIO_CLIENT_TENANT_JOB_MULTIPLIER` (`application.clients.folio.tenant-job.multiplier`, default `2.0`) | Factor applied to the pause after every job read; must be at least 1 |
 | `FOLIO_CLIENT_READ_TIMEOUT` (`application.clients.folio.read-timeout`) | Read timeout of a module call; each job read allows this time plus the long-poll time |
-| `FLOW_ENGINE_EXECUTION_TIMEOUT` (`application.flow-engine.execution-timeout`, default `30m`) | Timeout of a synchronous entitlement request; a warning is logged on startup when the job timeout is not shorter than this value |
+| `FLOW_ENGINE_EXECUTION_TIMEOUT` (`application.flow-engine.execution-timeout`, default `30m`) | Timeout of a synchronous entitlement request; a warning is logged on startup when the job timeout is longer than this value |
 | `FLOW_ENGINE_MODULE_INSTALLER_THREADS` (`application.flow-engine.module-installer-threads`, default `4`) | Number of modules installed in parallel; each waiting module holds one thread |
 
 ## Dependencies and interactions

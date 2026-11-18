@@ -17,6 +17,8 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import org.apache.commons.lang3.SerializationException;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.integration.IntegrationException;
@@ -31,13 +33,17 @@ import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.stubbing.OngoingStubbing;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 @UnitTest
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class TenantJobPollerTest {
 
   private static final String MODULE_ID = "mod-foo-1.0.0";
@@ -134,6 +140,8 @@ class TenantJobPollerTest {
       .isInstanceOfSatisfying(TenantJobTimeoutException.class, error -> {
         assertThat(error).hasMessageContaining(MODULE_ID).hasMessageContaining(JOB_ID);
         assertThat(error.getCauseHttpStatus()).isNull();
+        assertThat(error).hasNoCause();
+        assertThat(error.getErrors()).extracting(Parameter::getKey).doesNotContain("lastError");
       });
   }
 
@@ -149,17 +157,83 @@ class TenantJobPollerTest {
   }
 
   @Test
-  void await_negative_persistentServerErrorTimesOut() {
+  void await_negative_persistentServerErrorTimesOutWithLastError() {
     var request = request();
     var poller = createPoller(Duration.ofMillis(150));
-    stubPoll(request).thenThrow(new IntegrationException("busy", List.of(), 503));
+    var serverError = new IntegrationException("busy", List.of(), 503);
+    stubPoll(request).thenThrow(serverError);
     var operation = TenantOperation.accepted(JOB_ID);
 
     assertThatThrownBy(() -> poller.await(request, operation))
-      .isInstanceOf(TenantJobTimeoutException.class)
-      .hasMessageContaining(MODULE_ID);
+      .isInstanceOfSatisfying(TenantJobTimeoutException.class, error -> {
+        assertThat(error).hasMessageContaining(MODULE_ID).hasCause(serverError);
+        assertThat(error.getErrors()).extracting(Parameter::getKey, Parameter::getValue)
+          .contains(tuple("lastError", "busy"));
+      });
 
     verify(client, atLeast(2)).getTenantJob(eq(request), eq(JOB_ID), any(Duration.class));
+  }
+
+  @ParameterizedTest
+  @MethodSource("transientClientErrorProvider")
+  void await_positive_transientClientErrorIsRetried(int status) {
+    var request = request();
+    var poller = createPoller(Duration.ofSeconds(5));
+    stubPoll(request).thenThrow(new IntegrationException("try later", List.of(), status)).thenReturn(job(true, null));
+
+    poller.await(request, TenantOperation.accepted(JOB_ID));
+
+    verifyPolls(request, 2);
+  }
+
+  @ParameterizedTest
+  @MethodSource("permanentClientErrorProvider")
+  void await_negative_permanentClientErrorIsNotRetried(int status) {
+    var request = request();
+    var poller = createPoller(Duration.ofSeconds(5));
+    var clientError = new IntegrationException("rejected", List.of(), status);
+    stubPoll(request).thenThrow(clientError);
+    var operation = TenantOperation.accepted(JOB_ID);
+
+    assertThatThrownBy(() -> poller.await(request, operation))
+      .isInstanceOf(TenantJobPollingException.class)
+      .hasCause(clientError);
+
+    verifyPolls(request, 1);
+  }
+
+  @Test
+  void await_positive_progressOfPendingJobIsLoggedEverySixthRead(CapturedOutput output) {
+    var request = request();
+    var poller = createPoller(Duration.ofSeconds(5));
+    var reads = new AtomicInteger();
+    stubPoll(request).thenAnswer(invocation -> job(reads.incrementAndGet() > 13, null));
+
+    poller.await(request, TenantOperation.accepted(JOB_ID));
+
+    assertThat(output.getAll().lines().filter(line -> line.contains("Tenant job is still in progress"))).hasSize(2);
+    verifyPolls(request, 14);
+  }
+
+  @Test
+  void await_positive_transientFailuresAreLoggedFirstAndEveryTenth(CapturedOutput output) {
+    var request = request();
+    var poller = createPoller(Duration.ofSeconds(5));
+    var reads = new AtomicInteger();
+    stubPoll(request).thenAnswer(invocation -> {
+      if (reads.incrementAndGet() <= 11) {
+        throw new IntegrationException("busy", List.of(), 503);
+      }
+      return job(true, null);
+    });
+
+    poller.await(request, TenantOperation.accepted(JOB_ID));
+
+    assertThat(output.getAll().lines().filter(line -> line.contains("Failed to read tenant job")))
+      .satisfiesExactly(
+        first -> assertThat(first).contains("failures = 1,").contains("error = busy"),
+        tenth -> assertThat(tenth).contains("failures = 10,"));
+    verifyPolls(request, 12);
   }
 
   @Test
@@ -237,6 +311,14 @@ class TenantJobPollerTest {
     } finally {
       Thread.interrupted();
     }
+  }
+
+  private static Stream<Integer> transientClientErrorProvider() {
+    return Stream.of(408, 425, 429);
+  }
+
+  private static Stream<Integer> permanentClientErrorProvider() {
+    return Stream.of(400, 401, 403, 404);
   }
 
   private OngoingStubbing<TenantJob> stubPoll(ModuleRequest request) {

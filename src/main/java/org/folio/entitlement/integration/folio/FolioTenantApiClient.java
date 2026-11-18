@@ -191,7 +191,7 @@ public class FolioTenantApiClient {
       return TenantOperation.completed();
     }
 
-    log.debug("Module accepted the tenant operation as a job: moduleId = {}, jobId = {}, tenant = {}",
+    log.info("Module accepted the tenant operation as a job: moduleId = {}, jobId = {}, tenant = {}",
       request.getModuleId(), jobId, request.getTenantName());
     return TenantOperation.accepted(jobId);
   }

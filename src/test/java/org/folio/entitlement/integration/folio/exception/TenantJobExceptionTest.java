@@ -65,6 +65,22 @@ class TenantJobExceptionTest {
   }
 
   @Test
+  void timeout_positive_carriesLastReadFailure() {
+    var lastFailure = new IOException("connection refused");
+
+    var exception = new TenantJobTimeoutException(request(), JOB_ID, Duration.ofMinutes(30), lastFailure);
+
+    assertThat(exception).hasCause(lastFailure);
+    assertThat(exception.getCauseHttpStatus()).isNull();
+    assertThat(exception.getErrors()).extracting(Parameter::getKey, Parameter::getValue).containsExactly(
+      tuple("moduleId", MODULE_ID),
+      tuple("tenant", TENANT_NAME),
+      tuple("jobId", JOB_ID),
+      tuple("timeout", "PT30M"),
+      tuple("lastError", "connection refused"));
+  }
+
+  @Test
   void polling_positive_carriesCause() {
     var cause = new IOException("reset");
 

@@ -78,8 +78,8 @@ public class FolioConfiguration {
   public TenantJobPoller tenantJobPoller(FolioTenantApiClient apiClient,
     FolioClientConfigurationProperties clientConfiguration, FlowEngineConfigurationProperties flowEngineConfiguration) {
     var tenantJob = clientConfiguration.getTenantJob();
-    if (tenantJob.getTimeout().compareTo(flowEngineConfiguration.getExecutionTimeout()) >= 0) {
-      log.warn("Tenant job timeout ({}) is not shorter than the flow execution timeout ({}): a slow module can "
+    if (tenantJob.getTimeout().compareTo(flowEngineConfiguration.getExecutionTimeout()) > 0) {
+      log.warn("Tenant job timeout ({}) is longer than the flow execution timeout ({}): a slow module can "
         + "make the whole flow time out first", tenantJob.getTimeout(), flowEngineConfiguration.getExecutionTimeout());
     }
     return new TenantJobPoller(apiClient, tenantJob);
