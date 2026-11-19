@@ -119,6 +119,19 @@ class FlowStageServiceTest {
   }
 
   @Test
+  void findByFlowIdAndStatuses_positive() {
+    var entity = new FlowStageEntity();
+    var stage = new FlowStage();
+    var statuses = Set.of(EntityExecutionStatus.IN_PROGRESS, EntityExecutionStatus.FAILED);
+    when(flowStageRepository.findByFlowIdAndStatusIn(APPLICATION_FLOW_ID, statuses)).thenReturn(List.of(entity));
+    when(flowStageMapper.map(entity)).thenReturn(stage);
+
+    var result = flowStageService.findByFlowIdAndStatuses(APPLICATION_FLOW_ID, statuses);
+
+    assertThat(result).containsExactly(stage);
+  }
+
+  @Test
   void findById_positive() {
     var entity = flowStageEntity();
     var flowStage = flowStage();

@@ -9,6 +9,7 @@ import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FIN
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.SearchResult;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.entity.key.FlowStageKey;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.mapper.FlowStageMapper;
 import org.folio.entitlement.repository.FlowStageRepository;
 import org.springframework.stereotype.Service;
@@ -45,6 +47,18 @@ public class FlowStageService {
   public SearchResult<FlowStage> findByFlowId(UUID flowId) {
     var foundEntities = repository.findByFlowId(flowId);
     return SearchResult.of(foundEntities.size(), mapItems(foundEntities, mapper::map));
+  }
+
+  /**
+   * Provides stages of the flow that are currently in one of the given statuses.
+   *
+   * @param flowId - application flow identifier as {@link UUID}
+   * @param statuses - statuses to select
+   * @return list of {@link FlowStage} values
+   */
+  @Transactional(readOnly = true)
+  public List<FlowStage> findByFlowIdAndStatuses(UUID flowId, Collection<EntityExecutionStatus> statuses) {
+    return mapItems(repository.findByFlowIdAndStatusIn(flowId, statuses), mapper::map);
   }
 
   /**
