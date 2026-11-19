@@ -29,7 +29,7 @@ class PlatformApplicationsValidatorTest {
 
   private static final String APPLICATION_ID = "platform-app-1.0.0";
   private static final String OTHER_APPLICATION_ID = "other-platform-1.0.0";
-  private static final String REGULAR_APPLICATION_ID = "regular-app-1.0.0";
+  private static final String TENANT_APPLICATION_ID = "tenant-app-1.0.0";
 
   @InjectMocks private PlatformApplicationsValidator validator;
   @Mock private ApplicationManagerService applicationManagerService;
@@ -51,9 +51,9 @@ class PlatformApplicationsValidatorTest {
   }
 
   @Test
-  void execute_negative_regularApplicationIsRejected() {
-    stubDescriptors(regularApp(REGULAR_APPLICATION_ID));
-    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, REGULAR_APPLICATION_ID));
+  void execute_negative_tenantApplicationIsRejected() {
+    stubDescriptors(tenantApp(TENANT_APPLICATION_ID));
+    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, TENANT_APPLICATION_ID));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -61,28 +61,28 @@ class PlatformApplicationsValidatorTest {
       .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
         .singleElement()
         .satisfies(parameter -> {
-          assertThat(parameter.getKey()).isEqualTo(REGULAR_APPLICATION_ID);
+          assertThat(parameter.getKey()).isEqualTo(TENANT_APPLICATION_ID);
           assertThat(parameter.getValue()).isEqualTo("Application is not platform-scoped");
         }));
   }
 
   @Test
-  void execute_negative_applicationWithoutScopeIsTreatedAsRegularAndRejected() {
-    stubDescriptors(appDescriptor(REGULAR_APPLICATION_ID).scope(null));
-    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, REGULAR_APPLICATION_ID));
+  void execute_negative_applicationWithoutScopeIsTreatedAsTenantAndRejected() {
+    stubDescriptors(appDescriptor(TENANT_APPLICATION_ID).scope(null));
+    var context = platformContext(platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, TENANT_APPLICATION_ID));
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
       .hasMessage("Application is not platform-scoped")
       .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
         .singleElement()
-        .satisfies(parameter -> assertThat(parameter.getKey()).isEqualTo(REGULAR_APPLICATION_ID)));
+        .satisfies(parameter -> assertThat(parameter.getKey()).isEqualTo(TENANT_APPLICATION_ID)));
   }
 
   @Test
-  void execute_negative_oneRegularApplicationRejectsWholeRequest() {
-    stubDescriptors(platformApp(APPLICATION_ID), regularApp(REGULAR_APPLICATION_ID));
-    var request = platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID, REGULAR_APPLICATION_ID);
+  void execute_negative_oneTenantApplicationRejectsWholeRequest() {
+    stubDescriptors(platformApp(APPLICATION_ID), tenantApp(TENANT_APPLICATION_ID));
+    var request = platformRequest(PLATFORM_ENTITLE, OKAPI_TOKEN, APPLICATION_ID, TENANT_APPLICATION_ID);
     var context = platformContext(request);
 
     assertThatThrownBy(() -> validator.execute(context))
@@ -90,7 +90,7 @@ class PlatformApplicationsValidatorTest {
       .hasMessage("Application is not platform-scoped")
       .satisfies(exception -> assertThat(((RequestValidationException) exception).getErrorParameters())
         .singleElement()
-        .satisfies(parameter -> assertThat(parameter.getKey()).isEqualTo(REGULAR_APPLICATION_ID)));
+        .satisfies(parameter -> assertThat(parameter.getKey()).isEqualTo(TENANT_APPLICATION_ID)));
   }
 
   private void stubDescriptors(ApplicationDescriptor... descriptors) {
@@ -103,7 +103,7 @@ class PlatformApplicationsValidatorTest {
     return appDescriptor(applicationId).scope(ApplicationScope.PLATFORM);
   }
 
-  private static ApplicationDescriptor regularApp(String applicationId) {
+  private static ApplicationDescriptor tenantApp(String applicationId) {
     return appDescriptor(applicationId).scope(ApplicationScope.REGULAR);
   }
 }

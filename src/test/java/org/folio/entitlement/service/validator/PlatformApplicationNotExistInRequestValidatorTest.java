@@ -27,14 +27,14 @@ class PlatformApplicationNotExistInRequestValidatorTest {
     validator = new PlatformApplicationNotExistInRequestValidator();
 
   @Test
-  void execute_positive_onlyRegularApplicationsRequested() {
-    var regular = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
+  void execute_positive_onlyTenantApplicationsRequested() {
+    var tenantApp = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
 
-    assertThatCode(() -> validator.execute(context(regular))).doesNotThrowAnyException();
+    assertThatCode(() -> validator.execute(context(tenantApp))).doesNotThrowAnyException();
   }
 
   @Test
-  void execute_positive_applicationWithoutScopeIsTreatedAsRegular() {
+  void execute_positive_applicationWithoutScopeIsTreatedAsTenant() {
     var withoutScope = appDescriptor("folio-app1-1.0.0").scope(null);
 
     assertThatCode(() -> validator.execute(context(withoutScope))).doesNotThrowAnyException();
@@ -51,9 +51,9 @@ class PlatformApplicationNotExistInRequestValidatorTest {
 
   @Test
   void execute_negative_directlyRequestedPlatformApplicationIsRejected() {
-    var regular = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
+    var tenantApp = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
     var platform = appDescriptor("platform-app-1.0.0").scope(ApplicationScope.PLATFORM);
-    var context = context(regular, platform);
+    var context = context(tenantApp, platform);
 
     assertThatThrownBy(() -> validator.execute(context))
       .isInstanceOf(RequestValidationException.class)
@@ -78,9 +78,9 @@ class PlatformApplicationNotExistInRequestValidatorTest {
   }
 
   @Test
-  void validate_positive_regularApplication() {
-    var regular = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
-    var descriptors = List.of(regular);
+  void validate_positive_tenantApplication() {
+    var tenantApp = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
+    var descriptors = List.of(tenantApp);
 
     assertThatCode(() -> validator.validate(descriptors)).doesNotThrowAnyException();
   }

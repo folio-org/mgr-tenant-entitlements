@@ -9,7 +9,7 @@
     },
     "queryParameters": {
       "query": {
-        "contains": "id==(\"regular-to-platform-app-1.0.0\")"
+        "contains": "id==(\"tenant-to-platform-app-2.0.0\")"
       }
     }
   },
@@ -21,9 +21,10 @@
     "jsonBody": {
       "applicationDescriptors": [
         {
-          "id": "regular-to-platform-app-1.0.0",
-          "name": "regular-to-platform-app",
-          "version": "1.0.0"
+          "id": "tenant-to-platform-app-2.0.0",
+          "name": "tenant-to-platform-app",
+          "version": "2.0.0",
+          "scope": "platform"
         }
       ],
       "totalRecords": 1

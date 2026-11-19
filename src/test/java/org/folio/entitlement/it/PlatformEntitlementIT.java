@@ -71,7 +71,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   private static final String PLATFORM_BASE_V1 = "platform-base-1.0.0";
   private static final String PLATFORM_APP2_V1 = "platform-app2-1.0.0";
   private static final String PLATFORM_APP2_V2 = "platform-app2-2.0.0";
-  private static final String REGULAR_APP = "folio-app1-1.0.0";
+  private static final String TENANT_APP = "folio-app1-1.0.0";
   private static final String RETRY_AFTER = "Retry-After";
   private static final String DEFAULT_RETRY_AFTER_SECONDS = "15";
 
@@ -92,9 +92,9 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-entitle-unsatisfied-dependency.json";
   private static final String STUB_PLATFORM_APPS_V2_UNSATISFIED_DEPENDENCY =
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-apps-v2-unsatisfied-dependency.json";
-  private static final String STUB_REGULAR = "/wiremock/mgr-applications/platform/get-by-ids-query-regular-app.json";
-  private static final String STUB_REGULAR_AND_PLATFORM_APP =
-    "/wiremock/mgr-applications/platform/get-by-ids-query-regular-and-platform-app.json";
+  private static final String STUB_TENANT = "/wiremock/mgr-applications/platform/get-by-ids-query-tenant-app.json";
+  private static final String STUB_TENANT_AND_PLATFORM_APP =
+    "/wiremock/mgr-applications/platform/get-by-ids-query-tenant-and-platform-app.json";
 
   @Autowired private JdbcTemplate jdbcTemplate;
   @Autowired private PlatformLockService platformLockService;
@@ -162,9 +162,9 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @WireMockStub(scripts = STUB_REGULAR_AND_PLATFORM_APP)
-  void entitle_negative_oneRegularApplicationFailsTheWholeRequest() throws Exception {
-    var result = entitlePlatform(PLATFORM_APP_V1, REGULAR_APP);
+  @WireMockStub(scripts = STUB_TENANT_AND_PLATFORM_APP)
+  void entitle_negative_oneTenantApplicationFailsTheWholeRequest() throws Exception {
+    var result = entitlePlatform(PLATFORM_APP_V1, TENANT_APP);
 
     expectStageFailure(result, "PlatformApplicationsValidator", "Application is not platform-scoped");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
@@ -173,9 +173,9 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
-  @WireMockStub(scripts = STUB_REGULAR)
-  void entitle_negative_regularApplicationIsRejected() throws Exception {
-    var result = entitlePlatform(REGULAR_APP);
+  @WireMockStub(scripts = STUB_TENANT)
+  void entitle_negative_tenantApplicationIsRejected() throws Exception {
+    var result = entitlePlatform(TENANT_APP);
 
     expectStageFailure(result, "PlatformApplicationsValidator", "Application is not platform-scoped");
     assertPlatformFlow(getFlow(flowIdFromHeader(result)),
@@ -385,7 +385,7 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
   @Test
   @WireMockStub(scripts = {
     STUB_PLATFORM_APP,
-    STUB_REGULAR,
+    STUB_TENANT,
     STUB_VALIDATE_DESCRIPTOR,
     "/wiremock/mgr-tenants/test/get-404.json",
     "/wiremock/mgr-applications/folio-app1/get-by-ids-query-full.json"
@@ -394,16 +394,16 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
     // no platform operation in progress: a tenant request is not rejected by the lock, it fails later on its own
     // because the tenant is not found
     assertThat(platformLockService.isHeld()).isFalse();
-    mockMvc.perform(withBody(post(path("/entitlements")), entitlementRequest(REGULAR_APP)))
+    mockMvc.perform(withBody(post(path("/entitlements")), entitlementRequest(TENANT_APP)))
       .andExpect(status().isBadRequest());
 
     entitlePlatform(PLATFORM_APP_V1).andExpect(status().isCreated());
     assertThat(platformLockService.isHeld()).isFalse();
 
-    entitlePlatform(REGULAR_APP).andExpect(status().isBadRequest());
+    entitlePlatform(TENANT_APP).andExpect(status().isBadRequest());
     assertThat(platformLockService.isHeld()).isFalse();
 
-    mockMvc.perform(withBody(post(path("/entitlements")), entitlementRequest(REGULAR_APP)))
+    mockMvc.perform(withBody(post(path("/entitlements")), entitlementRequest(TENANT_APP)))
       .andExpect(status().isBadRequest());
   }
 
@@ -470,10 +470,10 @@ class PlatformEntitlementIT extends BaseIntegrationTest {
 
   private static List<MockHttpServletRequestBuilder> tenantWriteRequests() {
     return List.of(
-      withBody(post(path("/entitlements")), entitlementRequest(REGULAR_APP)),
-      withBody(put(path("/entitlements")), entitlementRequest(REGULAR_APP)),
-      withBody(delete(path("/entitlements")), entitlementRequest(REGULAR_APP)),
-      withBody(put(path("/entitlements/state")), desiredStateRequest(REGULAR_APP)));
+      withBody(post(path("/entitlements")), entitlementRequest(TENANT_APP)),
+      withBody(put(path("/entitlements")), entitlementRequest(TENANT_APP)),
+      withBody(delete(path("/entitlements")), entitlementRequest(TENANT_APP)),
+      withBody(put(path("/entitlements/state")), desiredStateRequest(TENANT_APP)));
   }
 
   private static void expectStageFailure(ResultActions result, String stage, String message) throws Exception {
