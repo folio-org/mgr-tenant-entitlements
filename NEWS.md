@@ -32,7 +32,8 @@
   requested applications has no producer among the requested or entitled applications (desired state: requested only).
   Optional consumed events only warn. A non-optional one fails the request when `STRICT_EVENT_VALIDATION` is `true`
   (default `false`) ([MGRENTITLE-215](https://folio-org.atlassian.net/browse/MGRENTITLE-215))
-* Publish module descriptor to Module Descriptor Registry [MGRENTITLE-221](https://folio-org.atlassian.net/browse/MGRENTITLE-221)
+* Publish module descriptor to Module Descriptor Registry [MGRENTITLE-221](https://folio-org.atlassian.net/browse/MGRENTITLE-221)  
+* Support asynchronous tenant APIs in MTE ([MGRENTITLE-224](https://folio-org.atlassian.net/browse/MGRENTITLE-224))
 ---
 
 ## Version `4.0.0` (16.04.2026)

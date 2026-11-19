@@ -7,14 +7,17 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-import org.springframework.retry.annotation.Retryable;
 
+/**
+ * Marks a class or a method whose calls to Keycloak are retried on failure.
+ *
+ * <p>A marker only: the retry itself is applied by the advisor declared in
+ * {@link org.folio.entitlement.configuration.RetryConfiguration}, using the {@code retries.keycloak.*} settings.
+ * The method must be invoked through the Spring proxy (not via {@code this}) for the retry to apply.</p>
+ */
 @Documented
 @Retention(RUNTIME)
 @Target({METHOD, TYPE})
-@Retryable(
-  interceptor = "keycloakCallsRetryInterceptor"
-)
 public @interface KeycloakCallsRetryable {
 
 }

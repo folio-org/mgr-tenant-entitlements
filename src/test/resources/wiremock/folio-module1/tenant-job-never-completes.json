@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/folio-module1/_/tenant/6a3b3c1e-1111-4222-8333-444455556666",
+    "headers": {
+      "x-okapi-tenant": {
+        "equalTo": "test"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": { "id": "6a3b3c1e-1111-4222-8333-444455556666", "tenant": "test", "complete": false }
+  }
+}

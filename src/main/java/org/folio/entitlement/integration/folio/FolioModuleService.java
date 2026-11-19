@@ -12,21 +12,31 @@ import org.folio.entitlement.domain.dto.Entitlement;
 import org.folio.entitlement.domain.entity.key.EntitlementModuleKey;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
 import org.folio.entitlement.service.EntitlementModuleService;
-import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Installs and uninstalls FOLIO modules for a tenant through their tenant API and keeps the module entitlements in
+ * sync.
+ *
+ * <p>When a module accepts a tenant call as a background job, the operation waits for the job through
+ * {@link TenantJobPoller}. The module entitlement is saved only after that wait succeeded and deleted only after the
+ * module call succeeded, so a failed module is never recorded as installed.</p>
+ */
 @Log4j2
 @RequiredArgsConstructor
 public class FolioModuleService {
 
   private final FolioTenantApiClient folioTenantApiClient;
   private final EntitlementModuleService moduleService;
+  private final TenantJobPoller tenantJobPoller;
 
   /**
    * Enables tenant for module using {@link ModuleRequest} object.
    *
+   * <p>Deliberately not transactional: installation may wait for an asynchronous tenant job for a long time. The
+   * module entitlement is saved only after the module call (and its job, if any) has succeeded.</p>
+   *
    * @param moduleRequest - module request information holder
    */
-  @Transactional
   public void enable(ModuleRequest moduleRequest) {
     var key = EntitlementModuleKey.from(moduleRequest);
     applyIfInstalledOrElse(key, handleInstall(moduleRequest));
@@ -35,14 +45,25 @@ public class FolioModuleService {
   /**
    * Disables tenant for module using {@link ModuleRequest} object.
    *
+   * <p>Deliberately not transactional: uninstallation may wait for an asynchronous tenant job. The entitlement is
+   * deleted only after the module call has succeeded.</p>
+   *
    * @param moduleRequest - module request information holder
    */
-  @Transactional
   public void disable(ModuleRequest moduleRequest) {
     var moduleKey = EntitlementModuleKey.from(moduleRequest);
     applyIfInstalledOrElse(moduleKey, handleRevoke(moduleRequest));
   }
 
+  /**
+   * Creates the action that enables a module depending on where it is already installed.
+   *
+   * <p>A module that is not installed at all is installed; a module installed for another application only gets its
+   * entitlement saved; a module already installed for the current application is left as is.</p>
+   *
+   * @param moduleRequest - module request information holder
+   * @return action receiving "installed for current application" and "installed for other applications" flags
+   */
   private BiConsumer<Boolean, Boolean> handleInstall(ModuleRequest moduleRequest) {
     return (isInstalledForCurrentApp, isInstalledForOtherApps) -> {
       if (isNotInstalled(isInstalledForCurrentApp, isInstalledForOtherApps)) {
@@ -57,6 +78,16 @@ public class FolioModuleService {
     };
   }
 
+  /**
+   * Creates the action that disables a module depending on where it is installed.
+   *
+   * <p>A module without an entitlement is skipped, so nothing is purged for a module whose installation failed. The
+   * module is uninstalled only when no other application uses it, and the entitlement is deleted only after the
+   * uninstallation (and its tenant job, if any) succeeded.</p>
+   *
+   * @param moduleRequest - module request information holder
+   * @return action receiving "installed for current application" and "installed for other applications" flags
+   */
   private BiConsumer<Boolean, Boolean> handleRevoke(ModuleRequest moduleRequest) {
     return (isInstalledForCurrentApp, isInstalledForOtherApps) -> {
       if (isNotInstalled(isInstalledForCurrentApp, isInstalledForOtherApps)) {
@@ -65,25 +96,43 @@ public class FolioModuleService {
         return;
       }
       if (isInstalledForCurrentApp) {
-        moduleService.deleteModuleEntitlement(moduleRequest);
         if (!isInstalledForOtherApps) {
           uninstallModule(moduleRequest);
         }
+        moduleService.deleteModuleEntitlement(moduleRequest);
       }
     };
   }
 
+  /**
+   * Installs a module for a tenant: calls the module's tenant API, waits for its tenant job if the module accepted
+   * the call as a background job, and only then saves the module entitlement.
+   *
+   * @param moduleRequest - module request information holder
+   */
   public void installModule(ModuleRequest moduleRequest) {
-    moduleService.save(moduleRequest);
     if (moduleRequest.getTenantInterface() == null) {
       log.debug("Skipping module installation, tenant interface is not found: moduleId = {}, tenantId = {}",
         moduleRequest.getModuleId(), moduleRequest.getTenantId());
+      moduleService.save(moduleRequest);
       return;
     }
 
-    folioTenantApiClient.install(moduleRequest);
+    log.info("Installing module: moduleId = {}, applicationId = {}, tenant = {}", moduleRequest.getModuleId(),
+      moduleRequest.getApplicationId(), moduleRequest.getTenantName());
+    var operation = folioTenantApiClient.install(moduleRequest);
+    tenantJobPoller.await(moduleRequest, operation);
+    moduleService.save(moduleRequest);
   }
 
+  /**
+   * Calls the module's tenant API to uninstall the module and waits for the resulting tenant job, if any.
+   *
+   * <p>Nothing is called for a module without a tenant interface, or for tenant API 2.0 when the request does not
+   * purge.</p>
+   *
+   * @param moduleRequest - module request information holder
+   */
   private void uninstallModule(ModuleRequest moduleRequest) {
     if (moduleRequest.getTenantInterface() == null) {
       log.debug("Skipping module uninstallation, tenant interface is not found: moduleId = {}, tenantId = {}",
@@ -103,11 +152,18 @@ public class FolioModuleService {
       return;
     }
 
-    log.info("Unstalling module: moduleId = {}, applicationId = {}, tenant = {}", moduleRequest.getModuleId(),
+    log.info("Uninstalling module: moduleId = {}, applicationId = {}, tenant = {}", moduleRequest.getModuleId(),
       moduleRequest.getApplicationId(), moduleRequest.getTenantName());
-    folioTenantApiClient.uninstall(moduleRequest);
+    var operation = folioTenantApiClient.uninstall(moduleRequest);
+    tenantJobPoller.await(moduleRequest, operation);
   }
 
+  /**
+   * Uninstalls a module that uses the legacy tenant API: purges it with {@code DELETE /_/tenant}, or disables it with
+   * {@code POST /_/tenant/disable} and waits for the resulting tenant job, if any.
+   *
+   * @param moduleRequest - module request information holder
+   */
   private void uninstallLegacyModule(ModuleRequest moduleRequest) {
     if (TRUE.equals(moduleRequest.isPurge())) {
       folioTenantApiClient.uninstallLegacy(moduleRequest);
@@ -115,7 +171,8 @@ public class FolioModuleService {
     }
 
     if (supportsDisable(moduleRequest.getTenantInterface())) {
-      folioTenantApiClient.disableLegacy(moduleRequest);
+      var operation = folioTenantApiClient.disableLegacy(moduleRequest);
+      tenantJobPoller.await(moduleRequest, operation);
       return;
     }
 

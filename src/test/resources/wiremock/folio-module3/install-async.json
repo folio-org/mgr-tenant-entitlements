@@ -1,0 +1,39 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/folio-module3/_/tenant",
+    "headers": {
+      "content-type": {
+        "equalTo": "application/json"
+      },
+      "x-okapi-tenant": {
+        "equalTo": "test"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "equalToJson": {
+          "module_to": "folio-module3-3.0.0",
+          "parameters": [
+            {
+              "key": "loadReference",
+              "value": "true"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Content-Type": "application/json",
+      "Location": "/_/tenant/6a3b3c1e-1111-4222-8333-444455556666"
+    },
+    "jsonBody": {
+      "id": "6a3b3c1e-1111-4222-8333-444455556666",
+      "tenant": "test",
+      "complete": false
+    }
+  }
+}

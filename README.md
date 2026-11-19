@@ -24,6 +24,7 @@ Version 2.0. See the file "[LICENSE](LICENSE)" for more information.
     * [Keycloak Security](#keycloak-security)
     * [Keycloak specific environment variables](#keycloak-specific-environment-variables)
   * [Retry configuration](#retry-configuration)
+  * [Asynchronous tenant API](#asynchronous-tenant-api)
   * [Flow Engine configuration](#flow-engine-configuration)
   * [API Gateway Service Registration](#api-gateway-service-registration)
   * [API Gateway Route Registration](#api-gateway-route-registration)
@@ -130,6 +131,11 @@ docker run \
 | MT_CLIENT_TLS_TRUSTSTORE_TYPE          | -                                   |  false   | Truststore file type for TLS connection to mgr-tenants module.                                                                                                                                             |
 | FOLIO_CLIENT_CONNECT_TIMEOUT           | 10s                                 |  false   | Defines the connection timeout for the Java Http client, used to perform request to Folio Modules.                                                                                                         |
 | FOLIO_CLIENT_READ_TIMEOUT              | 30s                                 |  false   | Defines the read timeout for the Java Http client, used to perform request to Folio Modules.                                                                                                               |
+| FOLIO_CLIENT_TENANT_JOB_TIMEOUT        | 30m                                 |  false   | Maximum time to wait for an asynchronous tenant job (`POST /_/tenant` answered with `201` and a job) of a Folio Module to complete; exceeding it fails the module stage. Keep it at or below FLOW_ENGINE_EXECUTION_TIMEOUT. Must be greater than zero. See [Asynchronous tenant API](#asynchronous-tenant-api). |
+| FOLIO_CLIENT_TENANT_JOB_WAIT           | 10s                                 |  false   | Long-poll time passed as `wait` to `GET /_/tenant/{id}`: how long the module may hold one poll while the job is not complete. Must not be negative. |
+| FOLIO_CLIENT_TENANT_JOB_DELAY          | 1s                                  |  false   | Initial pause between tenant job polls, used when the module answers immediately. Must not be negative. |
+| FOLIO_CLIENT_TENANT_JOB_MAX_DELAY      | 10s                                 |  false   | Maximum pause between tenant job polls. Must be greater than zero. |
+| FOLIO_CLIENT_TENANT_JOB_MULTIPLIER     | 2.0                                 |  false   | Factor applied to the pause between tenant job polls after every poll. Must be at least 1. |
 | FOLIO_CLIENT_TLS_ENABLED               | false                               |  false   | Allows to enable/disable TLS connection to Folio Modules.                                                                                                                                                  |
 | FOLIO_CLIENT_TLS_TRUSTSTORE_PATH       | -                                   |  false   | Truststore file path for TLS connection to Folio Modules.                                                                                                                                                  |
 | FOLIO_CLIENT_TLS_TRUSTSTORE_PASSWORD   | -                                   |  false   | Truststore password for TLS connection to Folio Modules.                                                                                                                                                   |
@@ -355,14 +361,48 @@ mgr-applications, which authorize every request individually, so the caches are 
 
 | Name                                | Default value |  Required   | Description                                       |
 |:------------------------------------|:--------------|:-----------:|:--------------------------------------------------|
-| RETRIES_MODULE_MAX                  | 3             |    false    | Maximum number of retries for FOLIO module calls  |
-| RETRIES_KEYCLOAK_MAX                | 3             |    false    | Maximum number of retries for Keycloak calls      |
+| RETRIES_MODULE_MAX                  | 3             |    false    | Maximum number of attempts for FOLIO module calls |
+| RETRIES_KEYCLOAK_MAX                | 3             |    false    | Maximum number of attempts for Keycloak calls     |
 | RETRIES_MODULE_BACKOFF_DELAY        | 1000          |    false    | FOLIO module calls retries initial delay millisec |
 | RETRIES_MODULE_BACKOFF_MAXDELAY     | 30000         |    false    | FOLIO module calls retries maximum delay millisec |
 | RETRIES_MODULE_BACKOFF_MULTIPLIER   | 5             |    false    | FOLIO module calls retries delay multiplier       |
 | RETRIES_KEYCLOAK_BACKOFF_DELAY      | 1000          |    false    | Keycloak calls retries initial delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MAXDELAY   | 30000         |    false    | Keycloak calls retries maximum delay millisec     |
 | RETRIES_KEYCLOAK_BACKOFF_MULTIPLIER | 5             |    false    | Keycloak calls retries delay multiplier           |
+
+### Asynchronous tenant API
+
+A module tenant call (`POST /_/tenant` to install or purge, `POST /_/tenant/disable` for legacy modules) is
+either finished by the call itself or accepted as a background job. The decision is taken from the response, not from
+the declared `_tenant` interface version:
+
+* `204 No Content` (or any other success without a job): the module is done, nothing is polled. Spring based
+  modules and the RMB purge/disable calls answer this way.
+* `201 Created` with a tenant job (job id in the `Location` header, or in the `id` of the body): the module stage
+  waits until `GET /_/tenant/{id}` returns `complete: true`. The poll is a long poll (`wait` query parameter), with a
+  small back-off between polls for modules that answer immediately.
+
+A job that completes with an `error`, a job that does not complete within `FOLIO_CLIENT_TENANT_JOB_TIMEOUT`, or a job
+that cannot be read (`4xx` other than `408`, `425`, `429`, including `404`) fails the module stage with an error naming
+the module, the job and the module's own error text. Transient failures while polling (I/O errors, `5xx`, `408`, `425`,
+`429`) are repeated until the timeout. These
+failures are not repeated by `RETRIES_MODULE_*`, so the tenant call is not sent again automatically. A
+`FOLIO_CLIENT_TENANT_JOB_*` value outside its allowed range (see the table above) fails the module startup.
+
+The module entitlement is stored only after the job completed (and deleted only after the module call succeeded), so a
+failed or timed-out module is not recorded as installed and the next run sends the tenant call again. Things to know:
+
+* **Rollback and failed jobs:** a module whose tenant job failed or timed out has no stored entitlement, so a rollback
+  does not purge it. Its tenant can stay partly initialized, or the job can still be running inside the module, until
+  the next entitlement run.
+* **Timeouts:** when one module's tenant job times out, its stage fails at once, but the other modules of the flow keep
+  waiting for their jobs, so a synchronous request can answer later than that first failure. After the flow execution
+  timeout (`FLOW_ENGINE_EXECUTION_TIMEOUT`) pollers also run until their own timeout, and they hold module installer
+  threads (`FLOW_ENGINE_MODULE_INSTALLER_THREADS`) meanwhile. Keep `FOLIO_CLIENT_TENANT_JOB_TIMEOUT` at or below
+  `FLOW_ENGINE_EXECUTION_TIMEOUT`; a warning is logged on startup otherwise.
+* **Reinstall:** `POST /reinstall` is synchronous and waits for tenant jobs of the reinstalled modules, up to
+  `FOLIO_CLIENT_TENANT_JOB_TIMEOUT` per module. A client or gateway may time out earlier while the work continues
+  on the server.
 
 ### Flow Engine configuration
 

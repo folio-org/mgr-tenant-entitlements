@@ -1,0 +1,26 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/folio-module2/_/tenant/6a3b3c1e-1111-4222-8333-444455556666",
+    "headers": {
+      "x-okapi-tenant": {
+        "equalTo": "test"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "6a3b3c1e-1111-4222-8333-444455556666",
+      "tenant": "test",
+      "complete": true,
+      "error": "schema upgrade failed",
+      "messages": [
+        "module2 init aborted"
+      ]
+    }
+  }
+}
