@@ -26,7 +26,9 @@ import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
+import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
 import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
@@ -43,6 +45,7 @@ class EntitleRequestDependencyValidatorTest {
 
   @InjectMocks private EntitleRequestDependencyValidator dependencyValidator;
   @Mock private ApplicationFlowService applicationFlowService;
+  @Mock private PlatformEntitlementRepository platformEntitlementRepository;
 
   @AfterEach
   void tearDown() {
@@ -92,6 +95,43 @@ class EntitleRequestDependencyValidatorTest {
     dependencyValidator.execute(stageContext);
 
     verifyNoInteractions(applicationFlowService);
+  }
+
+  @Test
+  void execute_positive_platformEntitledDependencies() {
+    var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
+    var flows = List.of(flow("app-foo-1.2.0", EntitlementType.ENTITLE, FINISHED),
+      flow("app-bar-2.3.9", EntitlementType.ENTITLE, FINISHED));
+    when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(flows);
+    when(platformEntitlementRepository.findAllById(List.of("app-baz")))
+      .thenReturn(List.of(PlatformEntitlementEntity.of("app-baz-4.2.1")));
+
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    var stageContext = appStageContext(FLOW_ID, flowParameters(request, applicationDescriptor()),
+      Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    dependencyValidator.execute(stageContext);
+
+    verify(applicationFlowService).findLastFlowsByNames(dependencyNames, TENANT_ID);
+  }
+
+  @Test
+  void execute_negative_platformEntitledVersionNotSatisfying() {
+    var dependencyNames = Set.of("app-foo", "app-bar", "app-baz");
+    var flows = List.of(flow("app-foo-1.2.0", EntitlementType.ENTITLE, FINISHED),
+      flow("app-bar-2.3.9", EntitlementType.ENTITLE, FINISHED));
+    when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(flows);
+    when(platformEntitlementRepository.findAllById(List.of("app-baz")))
+      .thenReturn(List.of(PlatformEntitlementEntity.of("app-baz-3.0.0")));
+
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    var stageContext = appStageContext(FLOW_ID, flowParameters(request, applicationDescriptor()),
+      Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    assertThatThrownBy(() -> dependencyValidator.execute(stageContext))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("The following application dependencies must be installed first or be in progress: "
+        + "app-baz 4.2.1");
   }
 
   @Test

@@ -7,6 +7,7 @@ import static org.folio.entitlement.domain.model.CommonStageContext.PARAM_REQUES
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestValues.appDescriptor;
+import static org.folio.entitlement.support.TestValues.applicationDependency;
 import static org.folio.entitlement.support.TestValues.commonStageContext;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -16,10 +17,13 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.folio.entitlement.domain.dto.EntitlementRequestType;
+import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.repository.EntitlementRepository;
+import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.service.validator.PlatformApplicationNotExistInRequestValidator;
 import org.folio.test.types.UnitTest;
@@ -38,6 +42,7 @@ class ApplicationDescriptorTreeLoaderTest {
   @InjectMocks private ApplicationDescriptorTreeLoader loader;
   @Mock private ApplicationManagerService applicationManagerService;
   @Mock private EntitlementRepository entitlementRepository;
+  @Mock private PlatformEntitlementRepository platformEntitlementRepository;
   @Mock private PlatformApplicationNotExistInRequestValidator platformApplicationNotExistInRequestValidator;
 
   @Test
@@ -73,6 +78,62 @@ class ApplicationDescriptorTreeLoaderTest {
     verify(applicationManagerService).getApplicationDescriptors(request.getApplications(), TOKEN);
     verifyNoMoreInteractions(applicationManagerService);
     verifyNoInteractions(entitlementRepository);
+  }
+
+  @Test
+  void execute_positive_dependencyIsEntitledPlatformApplication() {
+    var tenantApp = appDescriptor("app-tenant-1.0.0", applicationDependency("app-platform", "^1.0.0"));
+    var platform = appDescriptor("app-platform-1.2.0");
+    var request = request("app-tenant-1.0.0");
+    when(applicationManagerService.getApplicationDescriptors(request.getApplications(), TOKEN))
+      .thenReturn(List.of(tenantApp));
+    when(entitlementRepository.findByTenantIdAndApplicationNameIn(TENANT_ID, List.of("app-platform")))
+      .thenReturn(List.of());
+    when(platformEntitlementRepository.findAllById(List.of("app-platform")))
+      .thenReturn(List.of(PlatformEntitlementEntity.of("app-platform-1.2.0")));
+    when(applicationManagerService.getApplicationDescriptors(Set.of("app-platform-1.2.0"), TOKEN))
+      .thenReturn(List.of(platform));
+
+    var context = commonStageContext(FLOW_ID, Map.of(PARAM_REQUEST, request), emptyMap());
+    loader.execute(context);
+
+    assertThat(context.getApplicationDescriptors()).containsExactly(tenantApp);
+    assertThat(context.getApplicationAndDependencyDescriptors()).containsExactlyInAnyOrder(tenantApp, platform);
+  }
+
+  @Test
+  void execute_negative_platformDependencyVersionMismatch() {
+    var tenantApp = appDescriptor("app-tenant-1.0.0", applicationDependency("app-platform", "^2.0.0"));
+    var request = request("app-tenant-1.0.0");
+    when(applicationManagerService.getApplicationDescriptors(request.getApplications(), TOKEN))
+      .thenReturn(List.of(tenantApp));
+    when(entitlementRepository.findByTenantIdAndApplicationNameIn(TENANT_ID, List.of("app-platform")))
+      .thenReturn(List.of());
+    when(platformEntitlementRepository.findAllById(List.of("app-platform")))
+      .thenReturn(List.of(PlatformEntitlementEntity.of("app-platform-1.2.0")));
+
+    var context = commonStageContext(FLOW_ID, Map.of(PARAM_REQUEST, request), emptyMap());
+
+    assertThatThrownBy(() -> loader.execute(context))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessageContaining("Version mismatch between installed application and dependency");
+  }
+
+  @Test
+  void execute_negative_dependencyNotEntitledAnywhere() {
+    var tenantApp = appDescriptor("app-tenant-1.0.0", applicationDependency("app-platform", "^1.0.0"));
+    var request = request("app-tenant-1.0.0");
+    when(applicationManagerService.getApplicationDescriptors(request.getApplications(), TOKEN))
+      .thenReturn(List.of(tenantApp));
+    when(entitlementRepository.findByTenantIdAndApplicationNameIn(TENANT_ID, List.of("app-platform")))
+      .thenReturn(List.of());
+    when(platformEntitlementRepository.findAllById(List.of("app-platform"))).thenReturn(List.of());
+
+    var context = commonStageContext(FLOW_ID, Map.of(PARAM_REQUEST, request), emptyMap());
+
+    assertThatThrownBy(() -> loader.execute(context))
+      .isInstanceOf(RequestValidationException.class)
+      .hasMessageContaining("Entitled application(s) is not found");
   }
 
   private static EntitlementRequest request(String applicationId) {

@@ -4,6 +4,7 @@ import static java.util.Collections.emptySet;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.common.utils.SemverUtils.applicationSatisfies;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
@@ -24,7 +25,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.folio.common.domain.model.Dependency;
 import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
+import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
+import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class EntitleRequestDependencyValidator extends DatabaseLoggingStage<ApplicationStageContext> {
 
   private final ApplicationFlowService applicationFlowService;
+  private final PlatformEntitlementRepository platformEntitlementRepository;
 
   @Override
   @Transactional
@@ -65,7 +69,30 @@ public class EntitleRequestDependencyValidator extends DatabaseLoggingStage<Appl
         .and(EntitleRequestDependencyValidator::isFinishedOrInProgressEntitlement))
       .map(ApplicationFlow::getApplicationId);
 
-    return removeEntitledOrInProgress(dependencyByName, entitledOrInProgressApplicationIds);
+    var notInstalled = removeEntitledOrInProgress(dependencyByName, entitledOrInProgressApplicationIds);
+
+    return removePlatformEntitled(notInstalled);
+  }
+
+  /**
+   * Dependencies on platform applications are satisfied by the deployment-wide platform entitlement.
+   */
+  private Set<Dependency> removePlatformEntitled(Set<Dependency> dependencies) {
+    if (dependencies.isEmpty()) {
+      return dependencies;
+    }
+
+    var names = dependencies.stream().map(Dependency::getName).toList();
+    var entitledVersions = platformEntitlementRepository.findAllById(names).stream()
+      .collect(toMap(PlatformEntitlementEntity::getApplicationName, PlatformEntitlementEntity::getApplicationId));
+
+    return dependencies.stream()
+      .filter(dep -> !isPlatformEntitled(dep, entitledVersions.get(dep.getName())))
+      .collect(toSet());
+  }
+
+  private static boolean isPlatformEntitled(Dependency dependency, String entitledAppId) {
+    return entitledAppId != null && applicationSatisfies(entitledAppId, dependency.getVersion());
   }
 
   private static Predicate<ApplicationFlow> satisfiesDependencyVersion(Map<String, Dependency> dependencyByName) {

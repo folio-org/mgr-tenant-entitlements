@@ -5,11 +5,13 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.utils.EntitlementServiceUtils.filter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,11 +25,13 @@ import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.common.domain.model.Dependency;
 import org.folio.common.utils.SemverUtils;
 import org.folio.entitlement.domain.entity.EntitlementEntity;
+import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.exception.RequestValidationException.Params;
 import org.folio.entitlement.repository.EntitlementRepository;
+import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.service.validator.PlatformApplicationNotExistInRequestValidator;
 import org.springframework.stereotype.Service;
@@ -41,6 +45,7 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
 
   private final ApplicationManagerService applicationManagerService;
   private final EntitlementRepository entitlementRepository;
+  private final PlatformEntitlementRepository platformEntitlementRepository;
   private final PlatformApplicationNotExistInRequestValidator platformApplicationNotExistInRequestValidator;
 
   @Override
@@ -116,32 +121,30 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
   }
 
   private static Set<String> resolveDependenciesToEntitledApps(Map<String, Dependency> dependenciesToBeLoaded,
-    List<EntitlementEntity> entitled, ApplicationDescriptor descriptor) {
+    List<EntitledApp> entitled, ApplicationDescriptor descriptor) {
     var dependencyIds = new HashSet<String>();
 
     for (var entitlement : entitled) {
-      var entitledAppName = entitlement.getApplicationName();
-      var dependency = dependenciesToBeLoaded.get(entitledAppName);
+      var dependency = dependenciesToBeLoaded.get(entitlement.name());
 
       testEntitledAppMatchesWithDependency(entitlement, dependency, descriptor);
 
-      dependencyIds.add(entitlement.getApplicationId());
+      dependencyIds.add(entitlement.id());
     }
 
     return dependencyIds;
   }
 
-  private static void testEntitledAppMatchesWithDependency(EntitlementEntity entitlement, Dependency dependency,
+  private static void testEntitledAppMatchesWithDependency(EntitledApp entitlement, Dependency dependency,
     ApplicationDescriptor descriptor) {
-    var appVersion = entitlement.getApplicationVersion();
     var depVersion = dependency.getVersion();
     log.debug("Testing if entitled application version satisfies the dependency: application = {}, dependency = [{}],"
-      + " entitledApp = {}", descriptor::getId, dependency::nameVersion, entitlement::getApplicationId);
+      + " entitledApp = {}", descriptor::getId, dependency::nameVersion, entitlement::id);
 
-    if (versionNotMatches(appVersion, depVersion)) {
+    if (versionNotMatches(entitlement.version(), depVersion)) {
       throw new RequestValidationException(
         "Version mismatch between installed application and dependency of application with id: " + descriptor.getId(),
-        new Params().add("installedApplication", nameVersion(entitlement))
+        new Params().add("installedApplication", join(" ", entitlement.name(), entitlement.version()))
           .add("dependency", dependency.nameVersion()));
     }
   }
@@ -151,10 +154,6 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
     log.debug("Version matching result: matches = {}, version = {}, range = [{}]", result, version, toBeMatchedWith);
 
     return !result;
-  }
-
-  private static String nameVersion(EntitlementEntity entitlement) {
-    return join(" ", entitlement.getApplicationName(), entitlement.getApplicationVersion());
   }
 
   private static Map<String, Dependency> collectUnresolvedDependencies(ApplicationDescriptor descriptor,
@@ -180,15 +179,29 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
     return result;
   }
 
-  private List<EntitlementEntity> loadEntitlementsByDependencyNames(UUID tenantId, Set<String> names) {
-    var entitled = entitlementRepository.findByTenantIdAndApplicationNameIn(tenantId, List.copyOf(names));
-    checkAllEntitlementsFound(names, entitled);
+  private List<EntitledApp> loadEntitlementsByDependencyNames(UUID tenantId, Set<String> names) {
+    var tenantEntitled = entitlementRepository.findByTenantIdAndApplicationNameIn(tenantId, List.copyOf(names));
+    var tenantNames = tenantEntitled.stream().map(EntitlementEntity::getApplicationName).collect(toSet());
 
-    return entitled;
+    // dependencies that are not entitled for the tenant may be entitled platform applications
+    var platformNames = names.stream().filter(name -> !tenantNames.contains(name)).toList();
+    var platformEntitled = platformNames.isEmpty()
+      ? List.<PlatformEntitlementEntity>of()
+      : platformEntitlementRepository.findAllById(platformNames);
+
+    var result = new ArrayList<EntitledApp>();
+    tenantEntitled.forEach(e -> result.add(
+      new EntitledApp(e.getApplicationName(), e.getApplicationId(), e.getApplicationVersion())));
+    platformEntitled.forEach(e -> result.add(
+      new EntitledApp(e.getApplicationName(), e.getApplicationId(), e.getApplicationVersion())));
+
+    checkAllEntitlementsFound(names, result);
+
+    return result;
   }
 
-  private static void checkAllEntitlementsFound(Set<String> applicationNames, List<EntitlementEntity> entitled) {
-    var appNameCount = entitled.stream().collect(groupingBy(EntitlementEntity::getApplicationName, counting()));
+  private static void checkAllEntitlementsFound(Set<String> applicationNames, List<EntitledApp> entitled) {
+    var appNameCount = entitled.stream().collect(groupingBy(EntitledApp::name, counting()));
 
     var notFoundOrTooMany = new HashSet<>(applicationNames);
 
@@ -208,4 +221,6 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
   private static Predicate<ApplicationDescriptor> applicationFromRequest(EntitlementRequest entitlementRequest) {
     return appDescriptor -> entitlementRequest.getApplications().contains(appDescriptor.getId());
   }
+
+  private record EntitledApp(String name, String id, String version) {}
 }
