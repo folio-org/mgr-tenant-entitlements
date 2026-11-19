@@ -79,3 +79,15 @@ The `id` field on `FlowStage` (returned by `GET /entitlement-flows/{flowId}?incl
 - `FlowCompletionService`: central coordinator for both success and failure completion paths, called by `ResourceResultEventService` and by `AbstractFlowFinalizer.onSuccess`.
 - `AsyncConfirmationSweeper`: calls `FlowService.findStaleAsyncFlowIds` and `FlowService.failIfNotTerminal` to time out stuck flows.
 - `FlowStageService`, `ApplicationFlowService`, and `FlowService`: used to apply cascading status transitions.
+
+## Event confirmation wait stage
+
+`EventConfirmationWaitStage` holds an application flow until every event published by the configured publisher stages is confirmed. It needs no extra tracking: each publisher already records one `flow_stage` row per event, named `<moduleId>-<publisherClassName>`, and the row's `stage_id` is the event id. With `EVENT_PUBLISHER_AWAIT_COMPLETION=true` the rows stay `IN_PROGRESS` until the `resource-result` confirmation is applied, so the stage polls for rows of the watched publishers that are still `IN_PROGRESS` (or `FAILED`).
+
+- No row in progress: the stage completes.
+- A `FAILED` row (a `FAILURE` confirmation): the stage fails at once, with the stored details.
+- Timeout (`EVENT_CONFIRMATION_WAIT_MAX`, default `5m`; poll every `EVENT_CONFIRMATION_WAIT_POLL_INTERVAL`, default `2s`): the unconfirmed rows are failed with error type `EventConfirmationTimeout` and the stage throws, naming each unconfirmed event. A late result is then dropped because the stage is no longer `IN_PROGRESS`. Events a consumer discarded appear here as unconfirmed.
+- `EVENT_PUBLISHER_AWAIT_COMPLETION` false or unset: the stage is a no-op.
+- Entitlement events are not watched: `FolioModuleEventPublisher` is not part of any wait.
+
+Poll interval and max wait must be positive, and startup fails if `EVENT_CONFIRMATION_WAIT_MAX` is not less than `ASYNC_CONFIRMATION_TIMEOUT`. Declare one `EventConfirmationWaitStage` `@Bean` per phase, with a unique phase name and the publisher classes it watches, so Spring injects and proxies it like other stages; the 5-minute wait fires well before the sweeper (`ASYNC_CONFIRMATION_TIMEOUT`, 90m), which stays as a backstop and needs no change. Consumers must run with `EVENT_CONFIRMATION_ENABLED=true` whenever the wait is enabled, otherwise the wait never succeeds.
