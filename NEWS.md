@@ -34,6 +34,7 @@
   (default `false`) ([MGRENTITLE-215](https://folio-org.atlassian.net/browse/MGRENTITLE-215))
 * Publish module descriptor to Module Descriptor Registry [MGRENTITLE-221](https://folio-org.atlassian.net/browse/MGRENTITLE-221)
 * Entitle and upgrade platform applications through a deployment-scoped endpoint ([MGRENTITLE-213](https://folio-org.atlassian.net/browse/MGRENTITLE-213))
+* Support asynchronous tenant APIs in MTE ([MGRENTITLE-224](https://folio-org.atlassian.net/browse/MGRENTITLE-224))
 ---
 
 ## Version `4.0.0` (16.04.2026)

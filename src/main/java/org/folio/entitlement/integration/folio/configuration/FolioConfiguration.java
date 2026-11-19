@@ -5,9 +5,12 @@ import static java.util.Arrays.asList;
 import java.net.http.HttpClient;
 import java.util.concurrent.Executor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.folio.common.utils.tls.Utils;
+import org.folio.entitlement.configuration.FlowEngineConfigurationProperties;
 import org.folio.entitlement.integration.folio.FolioModuleService;
 import org.folio.entitlement.integration.folio.FolioTenantApiClient;
+import org.folio.entitlement.integration.folio.TenantJobPoller;
 import org.folio.entitlement.integration.folio.flow.FolioModuleEntitleFlowFactory;
 import org.folio.entitlement.integration.folio.flow.FolioModuleRevokeFlowFactory;
 import org.folio.entitlement.integration.folio.flow.FolioModuleUpgradeFlowFactory;
@@ -27,6 +30,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Log4j2
 @Configuration
 @RequiredArgsConstructor
 public class FolioConfiguration {
@@ -63,15 +67,36 @@ public class FolioConfiguration {
   }
 
   /**
+   * Creates a {@link TenantJobPoller} component that waits for asynchronous tenant jobs of FOLIO modules.
+   *
+   * @param apiClient - {@link FolioTenantApiClient} bean from spring context
+   * @param clientConfiguration - {@link FolioClientConfigurationProperties} bean from spring context
+   * @param flowEngineConfiguration - {@link FlowEngineConfigurationProperties} bean from spring context
+   * @return created {@link TenantJobPoller} bean
+   */
+  @Bean
+  public TenantJobPoller tenantJobPoller(FolioTenantApiClient apiClient,
+    FolioClientConfigurationProperties clientConfiguration, FlowEngineConfigurationProperties flowEngineConfiguration) {
+    var tenantJob = clientConfiguration.getTenantJob();
+    if (tenantJob.getTimeout().compareTo(flowEngineConfiguration.getExecutionTimeout()) > 0) {
+      log.warn("Tenant job timeout ({}) is longer than the flow execution timeout ({}): a slow module can "
+        + "make the whole flow time out first", tenantJob.getTimeout(), flowEngineConfiguration.getExecutionTimeout());
+    }
+    return new TenantJobPoller(apiClient, tenantJob);
+  }
+
+  /**
    * Creates a {@link FolioModuleService} component to perform module enable/disable operations.
    *
    * @param apiClient - {@link FolioTenantApiClient} bean from spring context
    * @param moduleService - {@link EntitlementModuleService} bean from spring context
+   * @param tenantJobPoller - {@link TenantJobPoller} bean from spring context
    * @return created {@link FolioModuleService} bean
    */
   @Bean
-  public FolioModuleService folioModuleService(FolioTenantApiClient apiClient, EntitlementModuleService moduleService) {
-    return new FolioModuleService(apiClient, moduleService);
+  public FolioModuleService folioModuleService(FolioTenantApiClient apiClient, EntitlementModuleService moduleService,
+    TenantJobPoller tenantJobPoller) {
+    return new FolioModuleService(apiClient, moduleService, tenantJobPoller);
   }
 
   /**

@@ -303,6 +303,41 @@
         "essential": false
       },
       {
+        "name": "FOLIO_CLIENT_TENANT_JOB_TIMEOUT",
+        "value": "30m",
+        "description": "Maximum time to wait for an asynchronous tenant job of a FOLIO module to complete before the module stage fails; keep it at or below FLOW_ENGINE_EXECUTION_TIMEOUT; must be greater than zero",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_TENANT_JOB_WAIT",
+        "value": "10s",
+        "description": "Long-poll time passed as wait to GET /_/tenant/{id}: how long a module may hold one poll while its tenant job is not complete; must not be negative",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_TENANT_JOB_DELAY",
+        "value": "1s",
+        "description": "Initial pause between tenant job polls, used when the module answers immediately; must not be negative",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_TENANT_JOB_MAX_DELAY",
+        "value": "10s",
+        "description": "Maximum pause between tenant job polls; must be greater than zero",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
+        "name": "FOLIO_CLIENT_TENANT_JOB_MULTIPLIER",
+        "value": "2.0",
+        "description": "Factor applied to the pause between tenant job polls after every poll; must be at least 1",
+        "type": "CONFIG",
+        "essential": false
+      },
+      {
         "name": "MT_CLIENT_URL",
         "value": null,
         "description": "Base URL of mgr-tenants, called to read tenant data. The tenant.url property is accepted as an alias",
@@ -319,7 +354,7 @@
       {
         "name": "RETRIES_MODULE_MAX",
         "value": "3",
-        "description": "Maximum number of retries for failed calls to FOLIO modules",
+        "description": "Maximum number of attempts (initial call included) for failed calls to FOLIO modules",
         "type": "CONFIG",
         "essential": false
       },
@@ -347,7 +382,7 @@
       {
         "name": "RETRIES_KEYCLOAK_MAX",
         "value": "3",
-        "description": "Maximum number of retries for failed calls to Keycloak",
+        "description": "Maximum number of attempts (initial call included) for failed calls to Keycloak",
         "type": "CONFIG",
         "essential": false
       },

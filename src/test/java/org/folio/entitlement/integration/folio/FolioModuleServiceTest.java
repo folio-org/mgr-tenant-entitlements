@@ -1,11 +1,14 @@
 package org.folio.entitlement.integration.folio;
 
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -16,7 +19,9 @@ import org.folio.common.domain.model.InterfaceDescriptor;
 import org.folio.common.domain.model.RoutingEntry;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.integration.IntegrationException;
 import org.folio.entitlement.integration.folio.model.ModuleRequest;
+import org.folio.entitlement.integration.folio.model.TenantOperation;
 import org.folio.entitlement.service.EntitlementModuleService;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
@@ -40,6 +45,7 @@ class FolioModuleServiceTest {
   @InjectMocks private FolioModuleService folioModuleService;
   @Mock private FolioTenantApiClient folioTenantApiClient;
   @Mock private EntitlementModuleService moduleService;
+  @Mock private TenantJobPoller tenantJobPoller;
 
   @AfterEach
   void tearDown() {
@@ -88,12 +94,30 @@ class FolioModuleServiceTest {
     void positive() {
       when(moduleService.findAllModuleEntitlements(MODULE_ID, TENANT_ID)).thenReturn(emptyList());
 
+      var operation = TenantOperation.accepted("job-1");
       var tenantParameters = List.of(new Parameter().key("loadSamples").value("true"));
       var moduleRequest = moduleRequest(tenantParameters, tenantInterface(), false);
+      when(folioTenantApiClient.install(moduleRequest)).thenReturn(operation);
+
       folioModuleService.enable(moduleRequest);
 
-      verify(folioTenantApiClient).install(moduleRequest);
-      verify(moduleService).save(moduleRequest);
+      var inOrder = inOrder(tenantJobPoller, moduleService);
+      inOrder.verify(tenantJobPoller).await(moduleRequest, operation);
+      inOrder.verify(moduleService).save(moduleRequest);
+    }
+
+    @Test
+    void negative_failedOperationLeavesModuleNotSaved() {
+      when(moduleService.findAllModuleEntitlements(MODULE_ID, TENANT_ID)).thenReturn(emptyList());
+      var operation = TenantOperation.accepted("job-1");
+      var moduleRequest = moduleRequest(emptyList(), tenantInterface(), false);
+      var jobError = new IntegrationException("Tenant job failed", emptyList());
+      when(folioTenantApiClient.install(moduleRequest)).thenReturn(operation);
+      doThrow(jobError).when(tenantJobPoller).await(moduleRequest, operation);
+
+      assertThatThrownBy(() -> folioModuleService.enable(moduleRequest)).isSameAs(jobError);
+
+      verify(moduleService, never()).save(moduleRequest);
     }
 
     @Test
@@ -140,10 +164,50 @@ class FolioModuleServiceTest {
       when(moduleService.findAllModuleEntitlements(MODULE_ID, TENANT_ID)).thenReturn(MODULE_ENTITLEMENT);
 
       var moduleRequest = moduleRequest(tenantInterface(), true);
+      var operation = TenantOperation.accepted("job-1");
+      when(folioTenantApiClient.uninstall(moduleRequest)).thenReturn(operation);
+
       folioModuleService.disable(moduleRequest);
 
-      verify(folioTenantApiClient).uninstall(moduleRequest);
+      var inOrder = inOrder(tenantJobPoller, moduleService);
+      inOrder.verify(tenantJobPoller).await(moduleRequest, operation);
+      inOrder.verify(moduleService).deleteModuleEntitlement(moduleRequest);
+    }
+
+    @Test
+    void negative_failedOperationLeavesEntitlementInPlace() {
+      when(moduleService.findAllModuleEntitlements(MODULE_ID, TENANT_ID)).thenReturn(MODULE_ENTITLEMENT);
+      var moduleRequest = moduleRequest(tenantInterface(), true);
+      var operation = TenantOperation.accepted("job-1");
+      var jobError = new IntegrationException("Tenant job failed", emptyList());
+      when(folioTenantApiClient.uninstall(moduleRequest)).thenReturn(operation);
+      doThrow(jobError).when(tenantJobPoller).await(moduleRequest, operation);
+
+      assertThatThrownBy(() -> folioModuleService.disable(moduleRequest)).isSameAs(jobError);
+
+      verify(moduleService, never()).deleteModuleEntitlement(moduleRequest);
+    }
+
+    @Test
+    void positive_moduleUsedByAnotherAppOnlyDeletesEntitlement() {
+      var entitlements = List.of(entitlement(), entitlement("another-app"));
+      when(moduleService.findAllModuleEntitlements(MODULE_ID, TENANT_ID)).thenReturn(entitlements);
+      var moduleRequest = moduleRequest(tenantInterface(), true);
+
+      folioModuleService.disable(moduleRequest);
+
       verify(moduleService).deleteModuleEntitlement(moduleRequest);
+      verifyNoInteractions(folioTenantApiClient, tenantJobPoller);
+    }
+
+    @Test
+    void positive_moduleWithoutEntitlementIsNotPurged() {
+      when(moduleService.findAllModuleEntitlements(MODULE_ID, TENANT_ID)).thenReturn(emptyList());
+      var moduleRequest = moduleRequest(tenantInterface(), true);
+
+      folioModuleService.disable(moduleRequest);
+
+      verifyNoInteractions(folioTenantApiClient, tenantJobPoller);
     }
 
     @Test
@@ -162,11 +226,15 @@ class FolioModuleServiceTest {
       when(moduleService.findAllModuleEntitlements(MODULE_ID, TENANT_ID)).thenReturn(MODULE_ENTITLEMENT);
 
       var moduleRequest = moduleRequest(legacyTenantInterface(), false);
+      var operation = TenantOperation.completed();
+      when(folioTenantApiClient.disableLegacy(moduleRequest)).thenReturn(operation);
+
       folioModuleService.disable(moduleRequest);
 
       verify(folioTenantApiClient, never()).uninstall(any());
-      verify(folioTenantApiClient).disableLegacy(moduleRequest);
-      verify(moduleService).deleteModuleEntitlement(moduleRequest);
+      var inOrder = inOrder(tenantJobPoller, moduleService);
+      inOrder.verify(tenantJobPoller).await(moduleRequest, operation);
+      inOrder.verify(moduleService).deleteModuleEntitlement(moduleRequest);
     }
 
     @Test
@@ -174,10 +242,14 @@ class FolioModuleServiceTest {
       when(moduleService.findAllModuleEntitlements(MODULE_ID, TENANT_ID)).thenReturn(MODULE_ENTITLEMENT);
 
       var expectedModuleRequest = moduleRequest(legacyTenantInterface(), false);
+      var operation = TenantOperation.accepted("job-1");
+      when(folioTenantApiClient.disableLegacy(expectedModuleRequest)).thenReturn(operation);
+
       folioModuleService.disable(expectedModuleRequest);
 
-      verify(folioTenantApiClient).disableLegacy(expectedModuleRequest);
-      verify(moduleService).deleteModuleEntitlement(expectedModuleRequest);
+      var inOrder = inOrder(tenantJobPoller, moduleService);
+      inOrder.verify(tenantJobPoller).await(expectedModuleRequest, operation);
+      inOrder.verify(moduleService).deleteModuleEntitlement(expectedModuleRequest);
     }
 
     @Test
