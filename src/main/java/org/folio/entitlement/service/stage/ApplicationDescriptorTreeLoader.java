@@ -144,7 +144,7 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
     if (versionNotMatches(entitlement.version(), depVersion)) {
       throw new RequestValidationException(
         "Version mismatch between installed application and dependency of application with id: " + descriptor.getId(),
-        new Params().add("installedApplication", join(" ", entitlement.name(), entitlement.version()))
+        new Params().add("installedApplication", nameVersion(entitlement))
           .add("dependency", dependency.nameVersion()));
     }
   }
@@ -154,6 +154,10 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
     log.debug("Version matching result: matches = {}, version = {}, range = [{}]", result, version, toBeMatchedWith);
 
     return !result;
+  }
+
+  private static String nameVersion(EntitledApp entitlement) {
+    return join(" ", entitlement.name(), entitlement.version());
   }
 
   private static Map<String, Dependency> collectUnresolvedDependencies(ApplicationDescriptor descriptor,
