@@ -1,0 +1,41 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"platform-app-1.0.0\" or \"platform-app2-1.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "platform-app-1.0.0",
+          "name": "platform-app",
+          "version": "1.0.0",
+          "scope": "platform",
+          "dependencies": [{"name": "platform-base", "version": "^1.0.0"}]
+        },
+        {
+          "id": "platform-app2-1.0.0",
+          "name": "platform-app2",
+          "version": "1.0.0",
+          "scope": "platform",
+          "dependencies": [{"name": "platform-app", "version": "^2.0.0"}]
+        }
+      ],
+      "totalRecords": 2
+    }
+  }
+}

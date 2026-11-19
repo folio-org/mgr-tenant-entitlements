@@ -18,6 +18,8 @@ public interface FlowRepository extends AbstractFlowRepository<FlowEntity> {
   @Query("SELECT e.status FROM FlowEntity e WHERE e.id = :flowId")
   Optional<EntityExecutionStatus> findStatusById(@Param("flowId") UUID flowId);
 
+  boolean existsByTenantIdIsNotNullAndStatusIn(Collection<EntityExecutionStatus> statuses);
+
   /**
    * Finds flows that have been waiting for asynchronous stage confirmations for longer than the given cutoff.
    *

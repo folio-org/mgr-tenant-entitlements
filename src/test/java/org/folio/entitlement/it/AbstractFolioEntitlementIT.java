@@ -1,6 +1,7 @@
 package org.folio.entitlement.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.folio.entitlement.controller.ApiExceptionHandler.FLOW_ID_HEADER;
 import static org.folio.entitlement.domain.dto.EntitlementType.ENTITLE;
 import static org.folio.entitlement.domain.dto.EntitlementType.REVOKE;
 import static org.folio.entitlement.support.DesiredStateTestValues.FOLIO_MODULE8_ID;
@@ -44,8 +45,10 @@ import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsAf
 import static org.folio.entitlement.support.UpgradeTestValues.systemUserEventsBeforeUpgrade;
 import static org.folio.entitlement.support.model.AuthorizationResource.authResource;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
 import static org.springframework.test.context.jdbc.SqlMergeMode.MergeMode.MERGE;
@@ -101,6 +104,9 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   private static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
   private static final String FOLIO_APP8_ID = "folio-app8-8.0.0";
   private static final String FOLIO_APP9_ID = "folio-app9-9.0.0";
+  private static final String PLATFORM_APP_ID = "platform-app-1.0.0";
+  private static final String TENANT_TO_PLATFORM_APP_V1_ID = "tenant-to-platform-app-1.0.0";
+  private static final String TENANT_TO_PLATFORM_APP_V2_ID = "tenant-to-platform-app-2.0.0";
 
   @Autowired private KeycloakTestClient kcClient;
 
@@ -810,6 +816,81 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
     assertCapabilityEvents(capabilityEventsAfterComplexState());
     assertScheduledJobEvents(scheduledTimerEventsAfterUpgrade());
     assertSystemUserEvents(systemUserEventsAfterUpgrade());
+  }
+
+  @Test
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json"
+  })
+  void desiredState_negative_platformApplicationIsRejected() throws Exception {
+    var result = mockMvc.perform(put(updatePathWithPrefix("/entitlements/state"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(desiredStateRequest(PLATFORM_APP_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'PlatformApplicationNotExistInRequestValidator')].value",
+        hasItem(containsString("Tenant request contains platform-scoped applications"))))
+      .andReturn();
+
+    var flowId = result.getResponse().getHeader(FLOW_ID_HEADER);
+    mockMvc.perform(get(updatePathWithPrefix("/entitlement-flows/{flowId}"), flowId)
+        .header(TOKEN, getSystemAccessToken()))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.status", is("cancelled")))
+      .andExpect(jsonPath("$.type", is("state")))
+      .andExpect(jsonPath("$.tenantId", notNullValue()));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_ID), emptyEntitlements());
+  }
+
+  @Test
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json"
+  })
+  void entitle_negative_platformApplicationIsRejected() throws Exception {
+    mockMvc.perform(post(updatePathWithPrefix("/entitlements"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest(PLATFORM_APP_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowCancelledException")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")))
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'ApplicationDescriptorTreeLoader')].value",
+        hasItem(containsString("Tenant request contains platform-scoped applications"))));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_ID), emptyEntitlements());
+  }
+
+  @Test
+  @Sql("classpath:/sql/folio-entitlement-app-converted-to-platform.sql")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-tenant-to-platform-app-v1.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-tenant-to-platform-app-v2.json"
+  })
+  void upgrade_negative_platformApplicationIsRejected() throws Exception {
+    // the application was entitled as tenant-scoped and later converted to platform-scoped, so the upgrade passes the
+    // entitled-application check
+    mockMvc.perform(put(updatePathWithPrefix("/entitlements"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest(TENANT_TO_PLATFORM_APP_V2_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentType(APPLICATION_JSON))
+      .andExpect(jsonPath("$.errors[0].type", is("FlowExecutionException")))
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: FAILED")))
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'PlatformApplicationNotExistInRequestValidator')].value",
+        hasItem(containsString("Tenant request contains platform-scoped applications"))));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(TENANT_TO_PLATFORM_APP_V1_ID),
+      entitlements(entitlement(TENANT_TO_PLATFORM_APP_V1_ID)));
+    getEntitlementsByQuery(queryByTenantAndAppId(TENANT_TO_PLATFORM_APP_V2_ID), emptyEntitlements());
   }
 
   @SneakyThrows

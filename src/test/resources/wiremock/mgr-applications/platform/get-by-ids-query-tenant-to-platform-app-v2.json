@@ -1,0 +1,33 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "headers": {
+      "x-okapi-token": {
+        "matches": ".+"
+      }
+    },
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"tenant-to-platform-app-2.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "tenant-to-platform-app-2.0.0",
+          "name": "tenant-to-platform-app",
+          "version": "2.0.0",
+          "scope": "platform"
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}

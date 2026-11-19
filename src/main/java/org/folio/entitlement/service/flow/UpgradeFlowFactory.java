@@ -10,6 +10,7 @@ import org.folio.entitlement.service.stage.FinishedFlowFinalizer;
 import org.folio.entitlement.service.stage.FlowInitializer;
 import org.folio.entitlement.service.stage.TenantLoader;
 import org.folio.entitlement.service.validator.ApplicationFlowValidator;
+import org.folio.entitlement.service.validator.PlatformApplicationNotExistInRequestValidator;
 import org.folio.entitlement.service.validator.StageRequestValidator;
 import org.folio.entitlement.service.validator.UpgradeRequestValidator;
 import org.folio.flow.api.DynamicStage;
@@ -29,6 +30,7 @@ public class UpgradeFlowFactory implements FlowFactory {
   private final StageRequestValidator interfaceIntegrityValidator;
   @Qualifier("upgradeEventDependencyValidator")
   private final StageRequestValidator eventDependencyValidator;
+  private final PlatformApplicationNotExistInRequestValidator platformApplicationNotExistInRequestValidator;
   private final ApplicationFlowQueuingStage applicationFlowQueuingStage;
   private final ApplicationDescriptorLoader applicationDescriptorLoader;
 
@@ -45,6 +47,7 @@ public class UpgradeFlowFactory implements FlowFactory {
       .stage(applicationFlowValidator)
       .stage(tenantLoader)
       .stage(applicationDescriptorLoader)
+      .stage(platformApplicationNotExistInRequestValidator)
       .stage(interfaceIntegrityValidator)
       .stage(eventDependencyValidator)
       .stage(applicationFlowQueuingStage)

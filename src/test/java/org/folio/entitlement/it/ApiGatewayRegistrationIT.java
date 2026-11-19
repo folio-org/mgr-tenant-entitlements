@@ -36,6 +36,6 @@ class ApiGatewayRegistrationIT extends BaseIntegrationTest {
     });
 
     var routes = kongAdminClient.getRoutesByTag(moduleName, null);
-    assertThat(routes.getData()).hasSize(19);
+    assertThat(routes.getData()).hasSize(21);
   }
 }

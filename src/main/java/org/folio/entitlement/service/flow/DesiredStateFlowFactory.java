@@ -14,6 +14,7 @@ import org.folio.entitlement.service.stage.TenantLoader;
 import org.folio.entitlement.service.validator.DesiredStateApplicationFlowValidator;
 import org.folio.entitlement.service.validator.DesiredStateWithRevokeValidator;
 import org.folio.entitlement.service.validator.DesiredStateWithUpgradeValidator;
+import org.folio.entitlement.service.validator.PlatformApplicationNotExistInRequestValidator;
 import org.folio.entitlement.service.validator.StageRequestValidator;
 import org.folio.flow.api.DynamicStage;
 import org.folio.flow.api.Flow;
@@ -27,6 +28,7 @@ public class DesiredStateFlowFactory implements FlowFactory {
   private final TenantLoader tenantLoader;
   private final ApplicationStateTransitionPlanner applicationStateTransitionPlanner;
   private final DesiredStateApplicationDescriptorLoader applicationDescriptorLoader;
+  private final PlatformApplicationNotExistInRequestValidator platformApplicationNotExistInRequestValidator;
   @Qualifier("stateInterfaceIntegrityValidator")
   private final StageRequestValidator interfaceIntegrityValidator;
   @Qualifier("stateEventDependencyValidator")
@@ -51,6 +53,7 @@ public class DesiredStateFlowFactory implements FlowFactory {
       .stage(applicationStateTransitionPlanner)
       .stage(applicationDescriptorLoader)
       // validation stages
+      .stage(platformApplicationNotExistInRequestValidator)
       .stage(interfaceIntegrityValidator)
       .stage(eventDependencyValidator)
       .stage(desiredStateApplicationFlowValidator)

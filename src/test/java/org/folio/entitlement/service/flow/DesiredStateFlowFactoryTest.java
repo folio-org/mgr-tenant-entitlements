@@ -25,6 +25,7 @@ import org.folio.entitlement.service.validator.DesiredStateWithRevokeValidator;
 import org.folio.entitlement.service.validator.DesiredStateWithUpgradeValidator;
 import org.folio.entitlement.service.validator.EventDependencyValidator;
 import org.folio.entitlement.service.validator.InterfaceIntegrityValidator;
+import org.folio.entitlement.service.validator.PlatformApplicationNotExistInRequestValidator;
 import org.folio.flow.api.FlowEngine;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,7 @@ class DesiredStateFlowFactoryTest {
   @Mock private TenantLoader tenantLoader;
   @Mock private ApplicationStateTransitionPlanner applicationStateTransitionPlanner;
   @Mock private DesiredStateApplicationDescriptorLoader applicationDescriptorLoader;
+  @Mock private PlatformApplicationNotExistInRequestValidator platformApplicationNotExistInRequestValidator;
   @Mock private InterfaceIntegrityValidator interfaceIntegrityValidator;
   @Mock private EventDependencyValidator eventDependencyValidator;
   @Mock private DesiredStateApplicationFlowValidator desiredStateApplicationFlowValidator;
@@ -65,18 +67,19 @@ class DesiredStateFlowFactoryTest {
     var finalizerCallbacks =
       new FlowFinalizerCallbacks(failedFlowFinalizer, cancelledFlowFinalizer, cancellationFailedFlowFinalizer);
     flowFactory = new DesiredStateFlowFactory(tenantLoader, applicationStateTransitionPlanner,
-      applicationDescriptorLoader, interfaceIntegrityValidator, eventDependencyValidator,
-      desiredStateApplicationFlowValidator,
-      desiredStateWithUpgradeValidator, desiredStateWithRevokeValidator, applicationFlowQueuingStage,
-      kafkaTenantTopicCreator, applicationsFlowProvider, finishedFlowFinalizer, flowInitializer, finalizerCallbacks);
+      applicationDescriptorLoader, platformApplicationNotExistInRequestValidator, interfaceIntegrityValidator,
+      eventDependencyValidator, desiredStateApplicationFlowValidator, desiredStateWithUpgradeValidator,
+      desiredStateWithRevokeValidator, applicationFlowQueuingStage, kafkaTenantTopicCreator,
+      applicationsFlowProvider, finishedFlowFinalizer, flowInitializer, finalizerCallbacks);
   }
 
   @Test
   void createFlow_positive() {
     mockStageNames(
       flowInitializer, tenantLoader, applicationStateTransitionPlanner, applicationDescriptorLoader,
-      interfaceIntegrityValidator, eventDependencyValidator, desiredStateApplicationFlowValidator,
-      desiredStateWithUpgradeValidator, desiredStateWithRevokeValidator, applicationFlowQueuingStage,
+      platformApplicationNotExistInRequestValidator, interfaceIntegrityValidator, eventDependencyValidator,
+      desiredStateApplicationFlowValidator, desiredStateWithUpgradeValidator,
+      desiredStateWithRevokeValidator, applicationFlowQueuingStage,
       kafkaTenantTopicCreator, finishedFlowFinalizer, failedFlowFinalizer, cancelledFlowFinalizer,
       cancellationFailedFlowFinalizer);
 
@@ -93,8 +96,9 @@ class DesiredStateFlowFactoryTest {
 
     var inOrder = Mockito.inOrder(
       flowInitializer, tenantLoader, applicationStateTransitionPlanner, applicationDescriptorLoader,
-      interfaceIntegrityValidator, eventDependencyValidator, desiredStateApplicationFlowValidator,
-      desiredStateWithUpgradeValidator, desiredStateWithRevokeValidator, applicationFlowQueuingStage,
+      platformApplicationNotExistInRequestValidator, interfaceIntegrityValidator, eventDependencyValidator,
+      desiredStateApplicationFlowValidator, desiredStateWithUpgradeValidator,
+      desiredStateWithRevokeValidator, applicationFlowQueuingStage,
       kafkaTenantTopicCreator, applicationsFlowProvider, finishedFlowFinalizer);
 
     inOrder.verify(applicationsFlowProvider).getName();
@@ -102,6 +106,7 @@ class DesiredStateFlowFactoryTest {
     verifyStageExecution(inOrder, tenantLoader, context);
     verifyStageExecution(inOrder, applicationStateTransitionPlanner, context);
     verifyStageExecution(inOrder, applicationDescriptorLoader, context);
+    verifyStageExecution(inOrder, platformApplicationNotExistInRequestValidator, context);
     verifyStageExecution(inOrder, interfaceIntegrityValidator, context);
     verifyStageExecution(inOrder, eventDependencyValidator, context);
     verifyStageExecution(inOrder, desiredStateApplicationFlowValidator, context);

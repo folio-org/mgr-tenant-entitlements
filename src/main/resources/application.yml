@@ -188,6 +188,8 @@ application:
     print-flow-result: ${FLOW_ENGINE_PRINT_FLOW_RESULTS:false}
     pool-threads: ${FLOW_ENGINE_THREADS_NUM:4}
     module-installer-threads: ${FLOW_ENGINE_MODULE_INSTALLER_THREADS:4}
+  entitlement-lock:
+    retry-after-seconds: ${ENTITLEMENT_LOCK_RETRY_AFTER_SECONDS:15}
   validation:
     event-dependency:
       strict-event-validation: ${STRICT_EVENT_VALIDATION:false}

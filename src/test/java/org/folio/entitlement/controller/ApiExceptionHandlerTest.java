@@ -44,6 +44,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.folio.common.domain.model.error.Parameter;
 import org.folio.entitlement.domain.dto.FlowStage;
+import org.folio.entitlement.exception.EntitlementFlowInProgressException;
 import org.folio.entitlement.exception.FlowExecutionTimeoutException;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.IntegrationException;
@@ -129,6 +130,18 @@ class ApiExceptionHandlerTest {
       .andExpect(jsonPath("$.errors[0].message", is("error")))
       .andExpect(jsonPath("$.errors[0].type", is("EntityExistsException")))
       .andExpect(jsonPath("$.errors[0].code", is("found_error")));
+  }
+
+  @Test
+  void handleEntitlementFlowInProgressException_positive() throws Exception {
+    when(testService.execute()).thenThrow(new EntitlementFlowInProgressException("flow busy", 7));
+    mockMvc.perform(get("/tests").queryParam("query", "cql.allRecords=1").contentType(APPLICATION_JSON))
+      .andExpect(status().isConflict())
+      .andExpect(header().string("Retry-After", "7"))
+      .andExpect(jsonPath("$.total_records", is(1)))
+      .andExpect(jsonPath("$.errors[0].message", is("flow busy")))
+      .andExpect(jsonPath("$.errors[0].type", is("EntitlementFlowInProgressException")))
+      .andExpect(jsonPath("$.errors[0].code", is("service_error")));
   }
 
   @Test

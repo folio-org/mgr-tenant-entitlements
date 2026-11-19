@@ -180,6 +180,8 @@ public class EntitlementServiceUtils {
       case ENTITLE -> EntitlementType.ENTITLE;
       case UPGRADE -> EntitlementType.UPGRADE;
       case REVOKE -> EntitlementType.REVOKE;
+      case PLATFORM_ENTITLE -> EntitlementType.PLATFORM_ENTITLE;
+      case PLATFORM_UPGRADE -> EntitlementType.PLATFORM_UPGRADE;
       default -> throw new IllegalArgumentException("Entitlement type cannot be mapped from entitlement request type: "
         + type);
     };

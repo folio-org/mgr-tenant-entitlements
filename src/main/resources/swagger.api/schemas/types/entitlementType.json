@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "id": "types/entitlementType.json",
-  "title": "Tenant Entitlement Type Schema",
-  "description": "A tenant entitlement type",
+  "title": "Entitlement Type Schema",
+  "description": "A entitlement type",
   "type": "string",
-  "enum": [ "entitle", "revoke", "upgrade"]
+  "enum": [ "entitle", "revoke", "upgrade", "platform_entitle", "platform_upgrade"]
 }

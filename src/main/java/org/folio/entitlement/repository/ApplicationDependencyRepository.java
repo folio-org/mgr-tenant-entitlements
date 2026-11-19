@@ -15,6 +15,12 @@ public interface ApplicationDependencyRepository
 
   List<ApplicationDependencyEntity> findByTenantIdAndParentNameIn(UUID tenantId, List<String> parentNames);
 
+  /**
+   * Finds dependents of the given parent names across all tenants, used to validate a deployment-wide platform
+   * application upgrade.
+   */
+  List<ApplicationDependencyEntity> findByParentNameIn(List<String> parentNames);
+
   @Query(nativeQuery = true, value = """
     WITH RECURSIVE dependencies AS (
       SELECT base.*

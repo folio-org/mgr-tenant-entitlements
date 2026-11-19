@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "id": "extendedPlatformEntitlements.json",
+  "title": "Extended Platform Entitlements Schema",
+  "description": "Platform entitlements that were requested, together with the identifier of the flow that performed the request",
+  "type": "object",
+  "properties": {
+    "totalRecords": {
+      "type": "integer",
+      "description": "A total number of records"
+    },
+    "flowId": {
+      "description": "Identifier of the flow that performed the request",
+      "type": "string",
+      "format": "uuid"
+    },
+    "platformEntitlements": {
+      "type": "array",
+      "description": "Platform entitlements that were requested",
+      "items": {
+        "$ref": "platformEntitlement.json"
+      }
+    }
+  }
+}

@@ -367,6 +367,27 @@ class FlowServiceTest {
   }
 
   @Nested
+  @DisplayName("hasActiveTenantFlow")
+  class HasActiveTenantFlow {
+
+    @Test
+    void positive_activeTenantFlowExists() {
+      when(flowRepository.existsByTenantIdIsNotNullAndStatusIn(EntityExecutionStatus.NON_TERMINAL_STATUSES))
+        .thenReturn(true);
+
+      assertThat(flowService.hasActiveTenantFlow()).isTrue();
+    }
+
+    @Test
+    void positive_noActiveTenantFlow() {
+      when(flowRepository.existsByTenantIdIsNotNullAndStatusIn(EntityExecutionStatus.NON_TERMINAL_STATUSES))
+        .thenReturn(false);
+
+      assertThat(flowService.hasActiveTenantFlow()).isFalse();
+    }
+  }
+
+  @Nested
   @DisplayName("findStaleAsyncFlowIds")
   class FindStaleAsyncFlowIds {
 

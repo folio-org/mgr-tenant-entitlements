@@ -4,6 +4,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
+import static org.folio.entitlement.domain.dto.EntitlementRequestType.PLATFORM_ENTITLE;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.CANCELLED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.IN_PROGRESS;
@@ -15,6 +16,7 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestValues.entitlement;
 import static org.folio.entitlement.support.TestValues.extendedEntitlements;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -26,13 +28,17 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import org.folio.entitlement.configuration.FlowEngineConfigurationProperties;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.domain.model.PlatformEntitlementRequest;
+import org.folio.entitlement.exception.EntitlementFlowInProgressException;
 import org.folio.entitlement.exception.FlowExecutionTimeoutException;
 import org.folio.entitlement.exception.RequestValidationException;
 import org.folio.entitlement.integration.tm.TenantManagerService;
 import org.folio.entitlement.service.flow.FlowProvider;
 import org.folio.entitlement.service.flow.FlowService;
+import org.folio.entitlement.service.lock.PlatformLockService;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.entitlement.support.TestValues;
 import org.folio.flow.api.Flow;
@@ -62,6 +68,7 @@ class EntitlementServiceTest {
   @Mock private TenantManagerService tenantManagerService;
   @Mock private EntitlementCrudService crudService;
   @Mock private FlowEngineConfigurationProperties flowEngineProperties;
+  @Mock private PlatformLockService platformLockService;
 
   @AfterEach
   void tearDown() {
@@ -107,8 +114,59 @@ class EntitlementServiceTest {
   }
 
   @Nested
+  @DisplayName("performRequest - platform")
+  class PerformPlatformRequest {
+
+    @Test
+    void positive_noActiveTenantFlow() {
+      runExclusivelyExecutesOperation();
+      when(flowService.hasActiveTenantFlow()).thenReturn(false);
+      when(flowProvider.createFlow(any(EntitlementRequest.class))).thenReturn(flow);
+      when(flow.getId()).thenReturn(FLOW_ID.toString());
+
+      var actual = entitlementService.performRequest(platformRequest());
+
+      assertThat(actual.getFlowId()).isEqualTo(FLOW_ID);
+      assertThat(actual.getEntitlements()).hasSize(1);
+      verify(flowEngine).execute(flow);
+    }
+
+    @Test
+    void negative_activeTenantFlowRejectsRequestBeforeFlowIsCreated() {
+      var rejection = new EntitlementFlowInProgressException("flow busy", 5);
+      runExclusivelyExecutesOperation();
+      when(flowService.hasActiveTenantFlow()).thenReturn(true);
+      when(platformLockService.tenantEntitlementInProgress()).thenReturn(rejection);
+
+      assertThatThrownBy(() -> entitlementService.performRequest(platformRequest())).isSameAs(rejection);
+
+      verifyNoInteractions(flowProvider, flowEngine);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void runExclusivelyExecutesOperation() {
+      when(platformLockService.runExclusively(any(Supplier.class)))
+        .thenAnswer(invocation -> ((Supplier<Object>) invocation.getArgument(0)).get());
+    }
+
+    private PlatformEntitlementRequest platformRequest() {
+      return PlatformEntitlementRequest.builder()
+        .type(PLATFORM_ENTITLE)
+        .applicationIds(List.of(APPLICATION_ID))
+        .okapiToken(OKAPI_TOKEN)
+        .build();
+    }
+  }
+
+  @Nested
   @DisplayName("performRequest")
   class PerformRequest {
+
+    @AfterEach
+    void verifyPlatformLockIsChecked() {
+      // every tenant-scoped request checks the platform lock before creating a flow
+      verify(platformLockService).assertNotHeld();
+    }
 
     @Test
     void positive_validatorIsCalled() {
