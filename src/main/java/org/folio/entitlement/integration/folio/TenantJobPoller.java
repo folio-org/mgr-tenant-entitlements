@@ -66,8 +66,8 @@ public class TenantJobPoller {
     var progress = new PollingProgressListener(request, jobId, startedAt);
     try {
       createRetryTemplate(progress).execute(() -> poll(request, jobId, startedAt));
-      log.info("Tenant job completed: moduleId = {}, jobId = {}, tenant = {}, elapsed = {}",
-        request.getModuleId(), jobId, request.getTenantName(), Duration.between(startedAt, Instant.now()));
+      log.info("Tenant job completed: moduleId = {}, jobId = {}, tenant = {}, elapsed = {}ms",
+        request.getModuleId(), jobId, request.getTenantName(), Duration.between(startedAt, Instant.now()).toMillis());
     } catch (RetryException e) {
       throw toFailure(request, jobId, progress.isTimedOut(), e);
     }
@@ -219,8 +219,8 @@ public class TenantJobPoller {
       } else if (throwable instanceof TenantJobInProgressException) {
         inProgressReads++;
         if (inProgressReads % PROGRESS_LOG_INTERVAL == 0) {
-          log.info("Tenant job is still in progress: moduleId = {}, jobId = {}, tenant = {}, elapsed = {}",
-            request.getModuleId(), jobId, request.getTenantName(), elapsed());
+          log.info("Tenant job is still in progress: moduleId = {}, jobId = {}, tenant = {}, elapsed = {}ms",
+            request.getModuleId(), jobId, request.getTenantName(), elapsed().toMillis());
         }
       }
     }
