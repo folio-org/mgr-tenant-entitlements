@@ -3,6 +3,7 @@ package org.folio.entitlement.service.stage;
 import static java.lang.String.join;
 import static java.time.ZonedDateTime.now;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.lang3.StringUtils.defaultIfBlank;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 
@@ -36,6 +37,7 @@ import org.folio.entitlement.service.FlowStageService;
 public class EventConfirmationWaitStage extends DatabaseLoggingStage<ApplicationStageContext> {
 
   public static final String TIMEOUT_ERROR_TYPE = "EventConfirmationTimeout";
+  static final String NO_DETAILS = "no details recorded";
 
   private static final Set<EntityExecutionStatus> WATCHED_STATUSES = Set.of(IN_PROGRESS, FAILED);
 
@@ -110,7 +112,9 @@ public class EventConfirmationWaitStage extends DatabaseLoggingStage<Application
   private void throwIfAnyFailed(List<FlowStage> stages) {
     var failed = stages.stream().filter(s -> s.getStatus() == ExecutionStatus.FAILED).toList();
     if (!failed.isEmpty()) {
-      var details = failed.stream().map(s -> describe(s) + ": " + s.getErrorMessage()).toList();
+      var details = failed.stream()
+        .map(s -> describe(s) + ": " + defaultIfBlank(s.getErrorMessage(), NO_DETAILS))
+        .toList();
       throw new IllegalStateException("Event processing failed [phase: " + phaseName + "]: " + join("; ", details));
     }
   }

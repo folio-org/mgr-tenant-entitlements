@@ -31,6 +31,9 @@ import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -168,6 +171,22 @@ class EventConfirmationWaitStageTest {
       .hasMessageContaining(EVENT_A.toString());
 
     verify(flowStageService, never()).failActiveStage(any(), anyString(), anyString(), any());
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {" "})
+  void execute_negative_failedStageWithoutErrorMessageReportsNoDetails(String errorMessage) {
+    when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
+    var failed = stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.FAILED);
+    failed.setErrorMessage(errorMessage);
+    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(failed));
+
+    assertThatThrownBy(() -> stage.execute(context))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageContaining(EVENT_A.toString())
+      .hasMessageEndingWith(": no details recorded")
+      .hasMessageNotContaining("null");
   }
 
   @Test
