@@ -19,6 +19,8 @@ import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.kafka.AbstractModuleEventPublisher;
 import org.folio.entitlement.service.FlowStageService;
+import org.springframework.core.retry.RetryPolicy;
+import org.springframework.core.retry.RetryTemplate;
 
 /**
  * Holds an application flow until every event published by the given publisher stages is confirmed as processed.
@@ -35,7 +37,7 @@ import org.folio.entitlement.service.FlowStageService;
 public class EventConfirmationWaitStage extends DatabaseLoggingStage<ApplicationStageContext> {
 
   public static final String TIMEOUT_ERROR_TYPE = "EventConfirmationTimeout";
-  static final String NO_DETAILS = "no details recorded";
+  private static final String NO_DETAILS = "no details recorded";
 
   private static final Set<EntityExecutionStatus> WATCHED_STATUSES = Set.of(IN_PROGRESS, FAILED);
 
@@ -78,37 +80,48 @@ public class EventConfirmationWaitStage extends DatabaseLoggingStage<Application
     }
 
     var flowId = context.getCurrentFlowId();
-    var deadline = System.nanoTime() + properties.getMaxWait().toNanos();
-
-    while (true) {
-      if (isEveryEventConfirmed(flowId)) {
-        log.info("All published events are confirmed [phase: {}, flowId: {}]", phaseName, flowId);
-        return;
-      }
-
-      if (System.nanoTime() - deadline < 0) {
-        sleep();
-      } else {
-        var failedStages = failUnconfirmed(flowId);
-        if (!failedStages.isEmpty()) {
-          throw timeoutFailure(failedStages);
-        }
-      }
+    try {
+      createRetryTemplate().invoke(() -> checkEventsConfirmed(flowId));
+    } catch (EventsPendingException e) {
+      onTimeout(flowId, e);
     }
+    log.info("All published events are confirmed [phase: {}, flowId: {}]", phaseName, flowId);
   }
 
-  /**
-   * Counts the watched publisher stages per status, so a poll loads no rows. Fails at once if any stage has failed.
-   */
-  private boolean isEveryEventConfirmed(UUID flowId) {
+  private RetryTemplate createRetryTemplate() {
+    var policy = RetryPolicy.builder()
+      .maxRetries(Long.MAX_VALUE)
+      .delay(properties.getPollInterval())
+      .multiplier(1.0)
+      .timeout(properties.getMaxWait())
+      .includes(EventsPendingException.class)
+      .build();
+    return new RetryTemplate(policy);
+  }
+
+  private void checkEventsConfirmed(UUID flowId) {
     var counts = flowStageService.countByStatusesAndStageNameSuffixes(flowId, WATCHED_STATUSES, stageNameSuffixes);
     if (counts.getOrDefault(FAILED, 0L) > 0) {
-      throw failure(flowId);
+      throw processingFailure(flowId);
     }
-    return counts.getOrDefault(IN_PROGRESS, 0L) == 0;
+    if (counts.getOrDefault(IN_PROGRESS, 0L) > 0) {
+      throw new EventsPendingException();
+    }
   }
 
-  private IllegalStateException failure(UUID flowId) {
+  private void onTimeout(UUID flowId, EventsPendingException pending) {
+    if (Thread.currentThread().isInterrupted()) {
+      throw new IllegalStateException("Interrupted while waiting for event confirmations: " + phaseName, pending);
+    }
+
+    var failedStages = failUnconfirmed(flowId);
+    if (!failedStages.isEmpty()) {
+      throw timeoutFailure(failedStages);
+    }
+    checkEventsConfirmed(flowId);
+  }
+
+  private IllegalStateException processingFailure(UUID flowId) {
     var failed = flowStageService.findByStatusesAndStageNameSuffixes(flowId, Set.of(FAILED), stageNameSuffixes);
     var details = failed.stream()
       .map(s -> describe(s) + ": " + defaultIfBlank(s.getErrorMessage(), NO_DETAILS))
@@ -137,16 +150,17 @@ public class EventConfirmationWaitStage extends DatabaseLoggingStage<Application
       + phaseName + ", unconfirmed events: " + join(", ", names) + "]");
   }
 
-  private void sleep() {
-    try {
-      Thread.sleep(properties.getPollInterval().toMillis());
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IllegalStateException("Interrupted while waiting for event confirmations: " + phaseName, e);
-    }
-  }
-
   private static String describe(FlowStage stage) {
     return stage.getName() + " (eventId=" + stage.getId() + ")";
+  }
+
+  /**
+   * Signals that events are not confirmed yet, so that the retry template polls again.
+   */
+  private static final class EventsPendingException extends RuntimeException {
+
+    private EventsPendingException() {
+      super("Events are not confirmed yet", null, false, false);
+    }
   }
 }

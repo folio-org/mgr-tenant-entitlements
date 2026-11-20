@@ -58,7 +58,7 @@ public class FlowStageService {
    * @param flowId - application flow identifier as {@link UUID}
    * @param statuses - stage statuses to count
    * @param suffixes - stage name suffixes, matched as whole values
-   * @return number of matching stages per status, without an entry for a status that no stage has
+   * @return number of matching stages per status; a status with no matching stage is not in the map
    */
   @Transactional(readOnly = true)
   public Map<EntityExecutionStatus, Long> countByStatusesAndStageNameSuffixes(UUID flowId,
