@@ -83,21 +83,30 @@ public class EventConfirmationWaitStage extends DatabaseLoggingStage<Application
     var deadline = System.nanoTime() + properties.getMaxWait().toNanos();
 
     while (true) {
-      var stages = findPendingOrFailedPublisherStages(flowId);
-      throwIfAnyFailed(stages);
-
-      var unconfirmed = stages.stream().filter(s -> s.getStatus() == ExecutionStatus.IN_PROGRESS).toList();
+      var unconfirmed = findUnconfirmed(flowId);
       if (unconfirmed.isEmpty()) {
         log.info("All published events are confirmed [phase: {}, flowId: {}]", phaseName, flowId);
         return;
       }
 
-      if (System.nanoTime() - deadline >= 0) {
-        throw failUnconfirmed(unconfirmed);
+      if (System.nanoTime() - deadline < 0) {
+        sleep();
+      } else {
+        var failedStages = failUnconfirmed(unconfirmed);
+        if (!failedStages.isEmpty()) {
+          throw timeoutFailure(failedStages);
+        }
       }
-
-      sleep();
     }
+  }
+
+  /**
+   * Finds watched publisher stages that are still waiting for a confirmation, failing at once if any has failed.
+   */
+  private List<FlowStage> findUnconfirmed(UUID flowId) {
+    var stages = findPendingOrFailedPublisherStages(flowId);
+    throwIfAnyFailed(stages);
+    return stages.stream().filter(s -> s.getStatus() == ExecutionStatus.IN_PROGRESS).toList();
   }
 
   /**
@@ -120,16 +129,22 @@ public class EventConfirmationWaitStage extends DatabaseLoggingStage<Application
   }
 
   /**
-   * Fails the unconfirmed stages and returns the exception to throw, so that callers throw it themselves.
+   * Fails the unconfirmed stages and returns those this call failed. A stage that a confirmation resolved after the
+   * poll is left as it is and is not returned.
    */
-  private IllegalStateException failUnconfirmed(List<FlowStage> unconfirmed) {
-    var names = unconfirmed.stream().map(EventConfirmationWaitStage::describe).toList();
-    var message = "Events are not confirmed within " + properties.getMaxWait() + " [phase: " + phaseName
-      + ", unconfirmed events: " + join(", ", names) + "]";
-
+  private List<FlowStage> failUnconfirmed(List<FlowStage> unconfirmed) {
+    var message = "Event not confirmed within " + properties.getMaxWait();
     var finishedAt = now(ZoneId.systemDefault());
-    unconfirmed.forEach(s -> flowStageService.failActiveStage(s.getId(), TIMEOUT_ERROR_TYPE, message, finishedAt));
-    return new IllegalStateException(message);
+
+    return unconfirmed.stream()
+      .filter(s -> flowStageService.failActiveStage(s.getId(), TIMEOUT_ERROR_TYPE, message, finishedAt) > 0)
+      .toList();
+  }
+
+  private IllegalStateException timeoutFailure(List<FlowStage> failedStages) {
+    var names = failedStages.stream().map(EventConfirmationWaitStage::describe).toList();
+    return new IllegalStateException("Events are not confirmed within " + properties.getMaxWait() + " [phase: "
+      + phaseName + ", unconfirmed events: " + join(", ", names) + "]");
   }
 
   private void sleep() {

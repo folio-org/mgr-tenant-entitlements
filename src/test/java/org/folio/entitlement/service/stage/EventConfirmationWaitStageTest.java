@@ -9,7 +9,6 @@ import static org.folio.entitlement.service.stage.EventConfirmationWaitStage.TIM
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -132,14 +131,58 @@ class EventConfirmationWaitStageTest {
     when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(
       stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS),
       stage(EVENT_B, MOD_B + SYSTEM_USER_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
+    when(flowStageService.failActiveStage(any(), anyString(), anyString(), any())).thenReturn(1);
 
     assertThatThrownBy(() -> stage.execute(context))
       .isInstanceOf(IllegalStateException.class)
       .hasMessageContaining(MOD_A + CAPABILITY_STAGE_SUFFIX + " (eventId=" + EVENT_A + ")")
       .hasMessageContaining(MOD_B + SYSTEM_USER_STAGE_SUFFIX + " (eventId=" + EVENT_B + ")");
 
-    verify(flowStageService).failActiveStage(eq(EVENT_A), eq(TIMEOUT_ERROR_TYPE), contains(MOD_A), any());
-    verify(flowStageService).failActiveStage(eq(EVENT_B), eq(TIMEOUT_ERROR_TYPE), contains(MOD_B), any());
+    var rowMessage = "Event not confirmed within " + properties.getMaxWait();
+    verify(flowStageService).failActiveStage(eq(EVENT_A), eq(TIMEOUT_ERROR_TYPE), eq(rowMessage), any());
+    verify(flowStageService).failActiveStage(eq(EVENT_B), eq(TIMEOUT_ERROR_TYPE), eq(rowMessage), any());
+  }
+
+  @Test
+  void execute_negative_timeoutNamesOnlyEventsItFailed() {
+    when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
+    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(
+      stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS),
+      stage(EVENT_B, MOD_B + SYSTEM_USER_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
+    when(flowStageService.failActiveStage(eq(EVENT_A), anyString(), anyString(), any())).thenReturn(0);
+    when(flowStageService.failActiveStage(eq(EVENT_B), anyString(), anyString(), any())).thenReturn(1);
+
+    assertThatThrownBy(() -> stage.execute(context))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageContaining("eventId=" + EVENT_B)
+      .hasMessageNotContaining("eventId=" + EVENT_A);
+  }
+
+  @Test
+  void execute_positive_everyEventConfirmedAfterThePollIsEvaluatedAgain() {
+    when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
+    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any()))
+      .thenReturn(List.of(stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)))
+      .thenReturn(List.of());
+    properties.setMaxWait(Duration.ZERO);
+
+    assertThatCode(() -> stage.execute(context)).doesNotThrowAnyException();
+  }
+
+  @Test
+  void execute_negative_failureConfirmedAfterThePollIsReportedAsFailure() {
+    when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
+    var failed = stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.FAILED);
+    failed.setErrorMessage("capability processing failed");
+    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any()))
+      .thenReturn(List.of(stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)))
+      .thenReturn(List.of(failed));
+    properties.setMaxWait(Duration.ZERO);
+
+    assertThatThrownBy(() -> stage.execute(context))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessageContaining("Event processing failed")
+      .hasMessageContaining("capability processing failed");
   }
 
   @Test
@@ -147,6 +190,7 @@ class EventConfirmationWaitStageTest {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
     when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(
       stage(EVENT_B, MOD_B + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
+    when(flowStageService.failActiveStage(any(), anyString(), anyString(), any())).thenReturn(1);
 
     assertThatThrownBy(() -> stage.execute(context))
       .isInstanceOf(IllegalStateException.class)

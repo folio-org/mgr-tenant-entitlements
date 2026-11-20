@@ -86,7 +86,7 @@ The `id` field on `FlowStage` (returned by `GET /entitlement-flows/{flowId}?incl
 
 - No row in progress: the stage completes.
 - A `FAILED` row (a `FAILURE` confirmation): the stage fails at once, with the stored details.
-- Timeout (`EVENT_CONFIRMATION_WAIT_MAX`, default `5m`; poll every `EVENT_CONFIRMATION_WAIT_POLL_INTERVAL`, default `2s`): the unconfirmed rows are failed with error type `EventConfirmationTimeout` and the stage throws, naming each unconfirmed event. A late result is then dropped because the stage is no longer `IN_PROGRESS`. Events a consumer discarded appear here as unconfirmed.
+- Timeout (`EVENT_CONFIRMATION_WAIT_MAX`, default `5m`; poll every `EVENT_CONFIRMATION_WAIT_POLL_INTERVAL`, default `2s`): the unconfirmed rows are failed with error type `EventConfirmationTimeout` and a short message, and the stage throws, naming each event it failed. An event confirmed just before the timeout is not reported as unconfirmed; if every event is confirmed in that window, the stage evaluates again. A late result is then dropped because the stage is no longer `IN_PROGRESS`. Events a consumer discarded appear here as unconfirmed.
 - `EVENT_PUBLISHER_AWAIT_COMPLETION` false or unset: the stage is a no-op.
 - Entitlement events are not watched: `FolioModuleEventPublisher` is not part of any wait.
 
