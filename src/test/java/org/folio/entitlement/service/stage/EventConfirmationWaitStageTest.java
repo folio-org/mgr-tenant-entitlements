@@ -12,15 +12,19 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.folio.entitlement.configuration.EventConfirmationWaitProperties;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.FlowStage;
+import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
 import org.folio.entitlement.integration.kafka.AbstractModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
@@ -45,6 +49,8 @@ class EventConfirmationWaitStageTest {
   private static final String CAPABILITY_STAGE_SUFFIX = "-capabilitiesModuleEventPublisher";
   private static final String SCHEDULED_JOB_STAGE_SUFFIX = "-scheduledJobModuleEventPublisher";
   private static final String SYSTEM_USER_STAGE_SUFFIX = "-systemUserModuleEventPublisher";
+  private static final Set<EntityExecutionStatus> WATCHED = Set.of(IN_PROGRESS, FAILED);
+  private static final Set<String> SUFFIXES = Set.of(SYSTEM_USER_STAGE_SUFFIX, CAPABILITY_STAGE_SUFFIX);
   private static final UUID EVENT_A = UUID.fromString("00000000-0000-0000-0000-00000000000a");
   private static final UUID EVENT_B = UUID.fromString("00000000-0000-0000-0000-00000000000b");
 
@@ -91,13 +97,13 @@ class EventConfirmationWaitStageTest {
 
     stage.execute(context);
 
-    verify(flowStageService, never()).findByFlowIdAndStatuses(any(), any());
+    verifyNoInteractions(flowStageService);
   }
 
   @Test
   void execute_positive_allEventsConfirmed() {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of());
+    givenCounts(0, 0);
 
     assertThatCode(() -> stage.execute(context)).doesNotThrowAnyException();
   }
@@ -105,32 +111,21 @@ class EventConfirmationWaitStageTest {
   @Test
   void execute_positive_confirmationArrivesWhileWaiting() {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any()))
-      .thenReturn(List.of(stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)))
-      .thenReturn(List.of(stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)))
-      .thenReturn(List.of());
+    givenCountsSequence(2, 0, 1, 0, 0, 0);
 
     assertThatCode(() -> stage.execute(context)).doesNotThrowAnyException();
-  }
 
-  @Test
-  void execute_positive_ignoresStagesOutsideThePhase() {
-    when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(
-      stage(EVENT_A, MOD_A + "-folioModuleEventPublisher", ExecutionStatus.IN_PROGRESS),
-      stage(EVENT_B, MOD_B + SCHEDULED_JOB_STAGE_SUFFIX,
-        ExecutionStatus.IN_PROGRESS)));
-
-    assertThatCode(() -> stage.execute(context)).doesNotThrowAnyException();
-    verify(flowStageService, never()).failActiveStage(any(), anyString(), anyString(), any());
+    verify(flowStageService, never()).findByStatusesAndStageNameSuffixes(any(), any(), any());
   }
 
   @Test
   void execute_negative_timeoutNamesUnconfirmedEventsAndFailsThem() {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(
-      stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS),
-      stage(EVENT_B, MOD_B + SYSTEM_USER_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
+    givenCounts(2, 0);
+    when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(IN_PROGRESS), SUFFIXES))
+      .thenReturn(List.of(
+        stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS),
+        stage(EVENT_B, MOD_B + SYSTEM_USER_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
     when(flowStageService.failActiveStage(any(), anyString(), anyString(), any())).thenReturn(1);
 
     assertThatThrownBy(() -> stage.execute(context))
@@ -146,9 +141,11 @@ class EventConfirmationWaitStageTest {
   @Test
   void execute_negative_timeoutNamesOnlyEventsItFailed() {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(
-      stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS),
-      stage(EVENT_B, MOD_B + SYSTEM_USER_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
+    givenCounts(2, 0);
+    when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(IN_PROGRESS), SUFFIXES))
+      .thenReturn(List.of(
+        stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS),
+        stage(EVENT_B, MOD_B + SYSTEM_USER_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
     when(flowStageService.failActiveStage(eq(EVENT_A), anyString(), anyString(), any())).thenReturn(0);
     when(flowStageService.failActiveStage(eq(EVENT_B), anyString(), anyString(), any())).thenReturn(1);
 
@@ -161,9 +158,10 @@ class EventConfirmationWaitStageTest {
   @Test
   void execute_positive_everyEventConfirmedAfterThePollIsEvaluatedAgain() {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any()))
-      .thenReturn(List.of(stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)))
-      .thenReturn(List.of());
+    givenCountsSequence(1, 0, 0, 0);
+    when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(IN_PROGRESS), SUFFIXES))
+      .thenReturn(List.of(stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
+    when(flowStageService.failActiveStage(any(), anyString(), anyString(), any())).thenReturn(0);
     properties.setMaxWait(Duration.ZERO);
 
     assertThatCode(() -> stage.execute(context)).doesNotThrowAnyException();
@@ -174,9 +172,12 @@ class EventConfirmationWaitStageTest {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
     var failed = stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.FAILED);
     failed.setErrorMessage("capability processing failed");
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any()))
-      .thenReturn(List.of(stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)))
+    givenCountsSequence(1, 0, 0, 1);
+    when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(IN_PROGRESS), SUFFIXES))
+      .thenReturn(List.of(stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
+    when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(FAILED), SUFFIXES))
       .thenReturn(List.of(failed));
+    when(flowStageService.failActiveStage(any(), anyString(), anyString(), any())).thenReturn(0);
     properties.setMaxWait(Duration.ZERO);
 
     assertThatThrownBy(() -> stage.execute(context))
@@ -188,8 +189,9 @@ class EventConfirmationWaitStageTest {
   @Test
   void execute_negative_partiallyConfirmedNamesOnlyTheMissingEvent() {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(
-      stage(EVENT_B, MOD_B + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
+    givenCounts(1, 0);
+    when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(IN_PROGRESS), SUFFIXES))
+      .thenReturn(List.of(stage(EVENT_B, MOD_B + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
     when(flowStageService.failActiveStage(any(), anyString(), anyString(), any())).thenReturn(1);
 
     assertThatThrownBy(() -> stage.execute(context))
@@ -206,8 +208,9 @@ class EventConfirmationWaitStageTest {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
     var failed = stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.FAILED);
     failed.setErrorMessage("capability processing failed");
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(
-      failed, stage(EVENT_B, MOD_B + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
+    givenCounts(1, 1);
+    when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(FAILED), SUFFIXES))
+      .thenReturn(List.of(failed));
 
     assertThatThrownBy(() -> stage.execute(context))
       .isInstanceOf(IllegalStateException.class)
@@ -224,7 +227,9 @@ class EventConfirmationWaitStageTest {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
     var failed = stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.FAILED);
     failed.setErrorMessage(errorMessage);
-    when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(failed));
+    givenCounts(0, 1);
+    when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(FAILED), SUFFIXES))
+      .thenReturn(List.of(failed));
 
     assertThatThrownBy(() -> stage.execute(context))
       .isInstanceOf(IllegalStateException.class)
@@ -233,15 +238,20 @@ class EventConfirmationWaitStageTest {
       .hasMessageNotContaining("null");
   }
 
-  @Test
-  void execute_positive_queriesOnlyInProgressAndFailedStages() {
-    when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
-    when(flowStageService.findByFlowIdAndStatuses(APPLICATION_FLOW_ID, Set.of(IN_PROGRESS, FAILED)))
-      .thenReturn(List.of());
+  private void givenCounts(long inProgress, long failed) {
+    givenCountsSequence(inProgress, failed);
+  }
 
-    stage.execute(context);
-
-    verify(flowStageService).findByFlowIdAndStatuses(APPLICATION_FLOW_ID, Set.of(IN_PROGRESS, FAILED));
+  /**
+   * Stubs the counts of consecutive polls as pairs of in-progress and failed counts.
+   */
+  private void givenCountsSequence(long... inProgressAndFailed) {
+    var polls = new ArrayList<Map<EntityExecutionStatus, Long>>();
+    for (var i = 0; i < inProgressAndFailed.length; i += 2) {
+      polls.add(Map.of(IN_PROGRESS, inProgressAndFailed[i], FAILED, inProgressAndFailed[i + 1]));
+    }
+    when(flowStageService.countByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, WATCHED, SUFFIXES))
+      .thenReturn(polls.get(0), polls.stream().skip(1).toArray(Map[]::new));
   }
 
   private static FlowStage stage(UUID id, String name, ExecutionStatus status) {

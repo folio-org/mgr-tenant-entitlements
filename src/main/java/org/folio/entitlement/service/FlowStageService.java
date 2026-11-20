@@ -2,6 +2,7 @@ package org.folio.entitlement.service;
 
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.collections4.CollectionUtils.isEmpty;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
@@ -22,6 +23,7 @@ import org.folio.entitlement.domain.entity.key.FlowStageKey;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.mapper.FlowStageMapper;
 import org.folio.entitlement.repository.FlowStageRepository;
+import org.folio.entitlement.repository.FlowStageRepository.StatusCount;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,15 +52,34 @@ public class FlowStageService {
   }
 
   /**
-   * Provides stages of the flow that are currently in one of the given statuses.
+   * Counts the flow's stages per status, for stages in one of the given statuses whose name ends with one of the given
+   * suffixes.
    *
    * @param flowId - application flow identifier as {@link UUID}
-   * @param statuses - statuses to select
+   * @param statuses - stage statuses to count
+   * @param suffixes - stage name suffixes, matched as whole values
+   * @return number of matching stages per status, without an entry for a status that no stage has
+   */
+  @Transactional(readOnly = true)
+  public Map<EntityExecutionStatus, Long> countByStatusesAndStageNameSuffixes(UUID flowId,
+    Collection<EntityExecutionStatus> statuses, Collection<String> suffixes) {
+    return repository.countByStatusesAndStageNameSuffixes(flowId, statuses, suffixes).stream()
+      .collect(toMap(StatusCount::getStatus, StatusCount::getTotal));
+  }
+
+  /**
+   * Provides the flow's stages in one of the given statuses whose name ends with one of the given suffixes, ordered by
+   * name.
+   *
+   * @param flowId - application flow identifier as {@link UUID}
+   * @param statuses - stage statuses to select
+   * @param suffixes - stage name suffixes, matched as whole values
    * @return list of {@link FlowStage} values
    */
   @Transactional(readOnly = true)
-  public List<FlowStage> findByFlowIdAndStatuses(UUID flowId, Collection<EntityExecutionStatus> statuses) {
-    return mapItems(repository.findByFlowIdAndStatusIn(flowId, statuses), mapper::map);
+  public List<FlowStage> findByStatusesAndStageNameSuffixes(UUID flowId, Collection<EntityExecutionStatus> statuses,
+    Collection<String> suffixes) {
+    return mapItems(repository.findByStatusesAndStageNameSuffixes(flowId, statuses, suffixes), mapper::map);
   }
 
   /**

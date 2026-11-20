@@ -82,7 +82,7 @@ The `id` field on `FlowStage` (returned by `GET /entitlement-flows/{flowId}?incl
 
 ## Event confirmation wait stage
 
-`EventConfirmationWaitStage` holds an application flow until every event published by the configured publisher stages is confirmed. It needs no extra tracking: each publisher already records one `flow_stage` row per event, named `<moduleId>-<publisherClassName>`, and the row's `stage_id` is the event id. With `EVENT_PUBLISHER_AWAIT_COMPLETION=true` the rows stay `IN_PROGRESS` until the `resource-result` confirmation is applied, so the stage polls for rows of the watched publishers that are still `IN_PROGRESS` (or `FAILED`).
+`EventConfirmationWaitStage` holds an application flow until every event published by the configured publisher stages is confirmed. Each publisher already records one `flow_stage` row per event, named `<moduleId>-<publisherClassName>`, with the event id as `stage_id`. With `EVENT_PUBLISHER_AWAIT_COMPLETION=true` the rows stay `IN_PROGRESS` until the `resource-result` confirmation arrives, so the stage polls the number of rows still `IN_PROGRESS` or `FAILED`.
 
 - No row in progress: the stage completes.
 - A `FAILED` row (a `FAILURE` confirmation): the stage fails at once, with the stored details.

@@ -13,9 +13,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.Strings;
 import org.folio.entitlement.configuration.EventConfirmationWaitProperties;
-import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
@@ -83,8 +81,7 @@ public class EventConfirmationWaitStage extends DatabaseLoggingStage<Application
     var deadline = System.nanoTime() + properties.getMaxWait().toNanos();
 
     while (true) {
-      var unconfirmed = findUnconfirmed(flowId);
-      if (unconfirmed.isEmpty()) {
+      if (isEveryEventConfirmed(flowId)) {
         log.info("All published events are confirmed [phase: {}, flowId: {}]", phaseName, flowId);
         return;
       }
@@ -92,7 +89,7 @@ public class EventConfirmationWaitStage extends DatabaseLoggingStage<Application
       if (System.nanoTime() - deadline < 0) {
         sleep();
       } else {
-        var failedStages = failUnconfirmed(unconfirmed);
+        var failedStages = failUnconfirmed(flowId);
         if (!failedStages.isEmpty()) {
           throw timeoutFailure(failedStages);
         }
@@ -101,38 +98,31 @@ public class EventConfirmationWaitStage extends DatabaseLoggingStage<Application
   }
 
   /**
-   * Finds watched publisher stages that are still waiting for a confirmation, failing at once if any has failed.
+   * Counts the watched publisher stages per status, so a poll loads no rows. Fails at once if any stage has failed.
    */
-  private List<FlowStage> findUnconfirmed(UUID flowId) {
-    var stages = findPendingOrFailedPublisherStages(flowId);
-    throwIfAnyFailed(stages);
-    return stages.stream().filter(s -> s.getStatus() == ExecutionStatus.IN_PROGRESS).toList();
-  }
-
-  /**
-   * Finds stages of the watched publishers that are still waiting for a confirmation or have failed.
-   */
-  private List<FlowStage> findPendingOrFailedPublisherStages(UUID flowId) {
-    return flowStageService.findByFlowIdAndStatuses(flowId, WATCHED_STATUSES).stream()
-      .filter(s -> stageNameSuffixes.stream().anyMatch(suffix -> Strings.CS.endsWith(s.getName(), suffix)))
-      .toList();
-  }
-
-  private void throwIfAnyFailed(List<FlowStage> stages) {
-    var failed = stages.stream().filter(s -> s.getStatus() == ExecutionStatus.FAILED).toList();
-    if (!failed.isEmpty()) {
-      var details = failed.stream()
-        .map(s -> describe(s) + ": " + defaultIfBlank(s.getErrorMessage(), NO_DETAILS))
-        .toList();
-      throw new IllegalStateException("Event processing failed [phase: " + phaseName + "]: " + join("; ", details));
+  private boolean isEveryEventConfirmed(UUID flowId) {
+    var counts = flowStageService.countByStatusesAndStageNameSuffixes(flowId, WATCHED_STATUSES, stageNameSuffixes);
+    if (counts.getOrDefault(FAILED, 0L) > 0) {
+      throw failure(flowId);
     }
+    return counts.getOrDefault(IN_PROGRESS, 0L) == 0;
+  }
+
+  private IllegalStateException failure(UUID flowId) {
+    var failed = flowStageService.findByStatusesAndStageNameSuffixes(flowId, Set.of(FAILED), stageNameSuffixes);
+    var details = failed.stream()
+      .map(s -> describe(s) + ": " + defaultIfBlank(s.getErrorMessage(), NO_DETAILS))
+      .toList();
+    return new IllegalStateException("Event processing failed [phase: " + phaseName + "]: " + join("; ", details));
   }
 
   /**
    * Fails the unconfirmed stages and returns those this call failed. A stage that a confirmation resolved after the
    * poll is left as it is and is not returned.
    */
-  private List<FlowStage> failUnconfirmed(List<FlowStage> unconfirmed) {
+  private List<FlowStage> failUnconfirmed(UUID flowId) {
+    var unconfirmed =
+      flowStageService.findByStatusesAndStageNameSuffixes(flowId, Set.of(IN_PROGRESS), stageNameSuffixes);
     var message = "Event not confirmed within " + properties.getMaxWait();
     var finishedAt = now(ZoneId.systemDefault());
 
