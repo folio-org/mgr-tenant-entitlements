@@ -104,6 +104,8 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   private static final String FOLIO_APP6_V2_ID = "folio-app6-6.1.0";
   private static final String FOLIO_APP8_ID = "folio-app8-8.0.0";
   private static final String FOLIO_APP9_ID = "folio-app9-9.0.0";
+  private static final String FOLIO_APP10_ID = "folio-app10-10.0.0";
+  private static final String FOLIO_APP10_V2_ID = "folio-app10-10.1.0";
   private static final String PLATFORM_APP_ID = "platform-app-1.0.0";
   private static final String TENANT_TO_PLATFORM_APP_V1_ID = "tenant-to-platform-app-1.0.0";
   private static final String TENANT_TO_PLATFORM_APP_V2_ID = "tenant-to-platform-app-2.0.0";
@@ -816,6 +818,77 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
     assertCapabilityEvents(capabilityEventsAfterComplexState());
     assertScheduledJobEvents(scheduledTimerEventsAfterUpgrade());
     assertSystemUserEvents(systemUserEventsAfterUpgrade());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app10/get-discovery.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json"
+  })
+  void install_positive_dependencyOnPlatformApplication() throws Exception {
+    var entitlementRequest = entitlementRequest(FOLIO_APP10_ID);
+    entitleApplications(entitlementRequest, Map.of(), extendedEntitlements(entitlement(FOLIO_APP10_ID)));
+
+    var moduleId = "folio-module10-10.0.0";
+    var expected = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP10_ID, List.of(moduleId)));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP10_ID), expected);
+    assertEntitlementEvents(entitlementEvent(ENTITLE, moduleId));
+
+    // platform application stays platform-scoped: no tenant entitlement is created for it
+    getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_ID), emptyEntitlements());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app10/get-discovery.json",
+    "/wiremock/mgr-applications/folio-app10/v2-get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app10/v2-get-discovery.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json"
+  })
+  void upgrade_positive_dependencyOnPlatformApplication() throws Exception {
+    entitleApplications(entitlementRequest(FOLIO_APP10_ID), Map.of(),
+      extendedEntitlements(entitlement(FOLIO_APP10_ID)));
+
+    // the dependency on the platform application is still satisfied by the new version
+    upgradeApplications(entitlementRequest(FOLIO_APP10_V2_ID), Map.of(),
+      extendedEntitlements(entitlement(FOLIO_APP10_V2_ID)));
+
+    var upgradedModuleId = "folio-module10-10.1.0";
+    var upgraded = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP10_V2_ID, List.of(upgradedModuleId)));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP10_V2_ID), upgraded);
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP10_ID), emptyEntitlements());
+    getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_ID), emptyEntitlements());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json"
+  })
+  void install_negative_platformDependencyIsNotEntitled() throws Exception {
+    mockMvc.perform(post(updatePathWithPrefix("/entitlements"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest(FOLIO_APP10_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.errors[0].message", matchesPattern("Flow '.+' finished with status: CANCELLED")));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP10_ID), emptyEntitlements());
   }
 
   @Test
