@@ -26,13 +26,6 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
     ORDER BY entity.startedAt asc""")
   List<FlowStageEntity> findByFlowId(@Param("flowId") UUID flowId);
 
-  /**
-   * Counts the flow's stages per status, for stages in one of the given statuses whose name ends with one of the
-   * given suffixes. A status that no stage has is left out.
-   *
-   * <p>A stage name is {@code <moduleId>-<class name>}. The module id contains dashes and the class name does not,
-   * so the suffix is the text from the last dash on. The suffixes are compared as whole values, not as patterns.</p>
-   */
   @Query("""
     SELECT e.status AS status, count(e) AS total FROM FlowStageEntity e
     WHERE e.flowId = :flowId AND e.status IN :statuses
@@ -41,10 +34,6 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
   List<StatusCount> countByStatusesAndStageNameSuffixes(@Param("flowId") UUID flowId,
     @Param("statuses") Collection<EntityExecutionStatus> statuses, @Param("suffixes") Collection<String> suffixes);
 
-  /**
-   * Finds the flow's stages in one of the given statuses whose name ends with one of the given suffixes, ordered by
-   * name. See {@link #countByStatusesAndStageNameSuffixes} for how the suffix is read.
-   */
   @Query("""
     SELECT e FROM FlowStageEntity e
     WHERE e.flowId = :flowId AND e.status IN :statuses

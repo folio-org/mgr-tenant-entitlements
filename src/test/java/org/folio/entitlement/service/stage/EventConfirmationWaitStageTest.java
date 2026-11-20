@@ -47,7 +47,6 @@ class EventConfirmationWaitStageTest {
   private static final String MOD_A = "mod-a-1.0.0";
   private static final String MOD_B = "mod-b-1.0.0";
   private static final String CAPABILITY_STAGE_SUFFIX = "-capabilitiesModuleEventPublisher";
-  private static final String SCHEDULED_JOB_STAGE_SUFFIX = "-scheduledJobModuleEventPublisher";
   private static final String SYSTEM_USER_STAGE_SUFFIX = "-systemUserModuleEventPublisher";
   private static final Set<EntityExecutionStatus> WATCHED = Set.of(IN_PROGRESS, FAILED);
   private static final Set<String> SUFFIXES = Set.of(SYSTEM_USER_STAGE_SUFFIX, CAPABILITY_STAGE_SUFFIX);
@@ -162,7 +161,7 @@ class EventConfirmationWaitStageTest {
     when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(IN_PROGRESS), SUFFIXES))
       .thenReturn(List.of(stage(EVENT_A, MOD_A + CAPABILITY_STAGE_SUFFIX, ExecutionStatus.IN_PROGRESS)));
     when(flowStageService.failActiveStage(any(), anyString(), anyString(), any())).thenReturn(0);
-    properties.setMaxWait(Duration.ZERO);
+    timeOutAfterTheFirstPoll();
 
     assertThatCode(() -> stage.execute(context)).doesNotThrowAnyException();
   }
@@ -178,12 +177,29 @@ class EventConfirmationWaitStageTest {
     when(flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, Set.of(FAILED), SUFFIXES))
       .thenReturn(List.of(failed));
     when(flowStageService.failActiveStage(any(), anyString(), anyString(), any())).thenReturn(0);
-    properties.setMaxWait(Duration.ZERO);
+    timeOutAfterTheFirstPoll();
 
     assertThatThrownBy(() -> stage.execute(context))
       .isInstanceOf(IllegalStateException.class)
       .hasMessageContaining("Event processing failed")
       .hasMessageContaining("capability processing failed");
+  }
+
+  @Test
+  void execute_negative_interruptedWaitFailsWithoutFailingTheEvents() {
+    when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
+    givenCounts(1, 0);
+    Thread.currentThread().interrupt();
+
+    try {
+      assertThatThrownBy(() -> stage.execute(context))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("Interrupted while waiting for event confirmations: EventConfirmationWait-phase1");
+    } finally {
+      Thread.interrupted();
+    }
+
+    verify(flowStageService, never()).failActiveStage(any(), anyString(), anyString(), any());
   }
 
   @Test
@@ -240,6 +256,14 @@ class EventConfirmationWaitStageTest {
 
   private void givenCounts(long inProgress, long failed) {
     givenCountsSequence(inProgress, failed);
+  }
+
+  /**
+   * Makes the wait give up after the first poll: the poll interval is longer than the maximum wait.
+   */
+  private void timeOutAfterTheFirstPoll() {
+    properties.setPollInterval(Duration.ofSeconds(10));
+    properties.setMaxWait(Duration.ofMillis(1));
   }
 
   /**
