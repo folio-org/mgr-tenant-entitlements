@@ -26,11 +26,32 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
     ORDER BY entity.startedAt asc""")
   List<FlowStageEntity> findByFlowId(@Param("flowId") UUID flowId);
 
+  /**
+   * Counts the flow's stages per status, for stages in one of the given statuses whose name ends with one of the
+   * given suffixes. A status that no stage has is left out.
+   *
+   * <p>A stage name is {@code <moduleId>-<class name>}. The module id contains dashes and the class name does not,
+   * so the suffix is the text from the last dash on. The suffixes are compared as whole values, not as patterns.</p>
+   */
   @Query("""
-    SELECT entity from FlowStageEntity entity
-    WHERE entity.flowId = :flowId AND entity.status IN :statuses""")
-  List<FlowStageEntity> findByFlowIdAndStatusIn(@Param("flowId") UUID flowId,
-    @Param("statuses") Collection<EntityExecutionStatus> statuses);
+    SELECT e.status AS status, count(e) AS total FROM FlowStageEntity e
+    WHERE e.flowId = :flowId AND e.status IN :statuses
+      AND substring(e.stageName, length(e.stageName) - locate('-', reverse(e.stageName)) + 1) IN :suffixes
+    GROUP BY e.status""")
+  List<StatusCount> countByStatusesAndStageNameSuffixes(@Param("flowId") UUID flowId,
+    @Param("statuses") Collection<EntityExecutionStatus> statuses, @Param("suffixes") Collection<String> suffixes);
+
+  /**
+   * Finds the flow's stages in one of the given statuses whose name ends with one of the given suffixes, ordered by
+   * name. See {@link #countByStatusesAndStageNameSuffixes} for how the suffix is read.
+   */
+  @Query("""
+    SELECT e FROM FlowStageEntity e
+    WHERE e.flowId = :flowId AND e.status IN :statuses
+      AND substring(e.stageName, length(e.stageName) - locate('-', reverse(e.stageName)) + 1) IN :suffixes
+    ORDER BY e.stageName""")
+  List<FlowStageEntity> findByStatusesAndStageNameSuffixes(@Param("flowId") UUID flowId,
+    @Param("statuses") Collection<EntityExecutionStatus> statuses, @Param("suffixes") Collection<String> suffixes);
 
   @Query(value = """
     SELECT entity from FlowStageEntity entity
@@ -56,9 +77,9 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
    */
   @Modifying
   @Query("""
-    UPDATE FlowStageEntity e 
+    UPDATE FlowStageEntity e
     SET e.status = :status, e.finishedAt = :finishedAt
-    WHERE e.status IN :currentStatuses 
+    WHERE e.status IN :currentStatuses
       AND (e.flowId = :flowId
           OR e.flowId IN (SELECT af.id FROM ApplicationFlowEntity af WHERE af.flowId = :flowId))""")
   int updateStatusByFlowIdIfCurrentIn(@Param("flowId") UUID flowId,
@@ -92,4 +113,11 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
     @Param("errDetails") String errDetails,
     @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
     @Param("finishedAt") ZonedDateTime finishedAt);
+
+  interface StatusCount {
+
+    EntityExecutionStatus getStatus();
+
+    long getTotal();
+  }
 }
