@@ -23,8 +23,8 @@ import org.folio.entitlement.configuration.EventConfirmationWaitProperties;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
 import org.folio.entitlement.domain.dto.FlowStage;
 import org.folio.entitlement.domain.model.ApplicationStageContext;
+import org.folio.entitlement.integration.kafka.AbstractModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.CapabilitiesModuleEventPublisher;
-import org.folio.entitlement.integration.kafka.ScheduledJobModuleEventPublisher;
 import org.folio.entitlement.integration.kafka.SystemUserModuleEventPublisher;
 import org.folio.entitlement.service.FlowStageService;
 import org.folio.test.types.UnitTest;
@@ -41,6 +41,7 @@ class EventConfirmationWaitStageTest {
   private static final String MOD_A = "mod-a-1.0.0";
   private static final String MOD_B = "mod-b-1.0.0";
   private static final String CAPABILITY_STAGE_SUFFIX = "-capabilitiesModuleEventPublisher";
+  private static final String SCHEDULED_JOB_STAGE_SUFFIX = "-scheduledJobModuleEventPublisher";
   private static final String SYSTEM_USER_STAGE_SUFFIX = "-systemUserModuleEventPublisher";
   private static final UUID EVENT_A = UUID.fromString("00000000-0000-0000-0000-00000000000a");
   private static final UUID EVENT_B = UUID.fromString("00000000-0000-0000-0000-00000000000b");
@@ -61,6 +62,16 @@ class EventConfirmationWaitStageTest {
     stage = new EventConfirmationWaitStage("EventConfirmationWait-phase1",
       List.of(SystemUserModuleEventPublisher.class, CapabilitiesModuleEventPublisher.class), properties,
       flowStageService);
+  }
+
+  @Test
+  void constructor_negative_emptyPublishersAreRejected() {
+    var publishers = List.<Class<? extends AbstractModuleEventPublisher<?>>>of();
+
+    assertThatThrownBy(() -> new EventConfirmationWaitStage("EventConfirmationWait-phase1", publishers, properties,
+      flowStageService))
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessage("At least one publisher is required: EventConfirmationWait-phase1");
   }
 
   @Test
@@ -105,7 +116,7 @@ class EventConfirmationWaitStageTest {
     when(context.getCurrentFlowId()).thenReturn(APPLICATION_FLOW_ID);
     when(flowStageService.findByFlowIdAndStatuses(eq(APPLICATION_FLOW_ID), any())).thenReturn(List.of(
       stage(EVENT_A, MOD_A + "-folioModuleEventPublisher", ExecutionStatus.IN_PROGRESS),
-      stage(EVENT_B, MOD_B + "-" + uncapitalizedName(ScheduledJobModuleEventPublisher.class),
+      stage(EVENT_B, MOD_B + SCHEDULED_JOB_STAGE_SUFFIX,
         ExecutionStatus.IN_PROGRESS)));
 
     assertThatCode(() -> stage.execute(context)).doesNotThrowAnyException();
@@ -168,11 +179,6 @@ class EventConfirmationWaitStageTest {
     stage.execute(context);
 
     verify(flowStageService).findByFlowIdAndStatuses(APPLICATION_FLOW_ID, Set.of(IN_PROGRESS, FAILED));
-  }
-
-  private static String uncapitalizedName(Class<?> type) {
-    var name = type.getSimpleName();
-    return Character.toLowerCase(name.charAt(0)) + name.substring(1);
   }
 
   private static FlowStage stage(UUID id, String name, ExecutionStatus status) {

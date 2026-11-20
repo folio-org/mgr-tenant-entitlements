@@ -3,7 +3,6 @@ package org.folio.entitlement.service.stage;
 import static java.lang.String.join;
 import static java.time.ZonedDateTime.now;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.commons.lang3.StringUtils.uncapitalize;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.FAILED;
 import static org.folio.entitlement.domain.entity.type.EntityExecutionStatus.IN_PROGRESS;
 
@@ -52,12 +51,16 @@ public class EventConfirmationWaitStage extends DatabaseLoggingStage<Application
    * @param publishers - event publisher stage classes whose events must be confirmed
    * @param properties - wait settings
    * @param flowStageService - flow stage service
+   * @throws IllegalArgumentException if no publishers are given, because the stage would have nothing to wait for
    */
   public EventConfirmationWaitStage(String phaseName,
     Collection<Class<? extends AbstractModuleEventPublisher<?>>> publishers, EventConfirmationWaitProperties properties,
     FlowStageService flowStageService) {
+    if (publishers.isEmpty()) {
+      throw new IllegalArgumentException("At least one publisher is required: " + phaseName);
+    }
     this.phaseName = phaseName;
-    this.stageNameSuffixes = publishers.stream().map(c -> "-" + uncapitalize(c.getSimpleName())).collect(toSet());
+    this.stageNameSuffixes = publishers.stream().map(ModuleDatabaseLoggingStage::stageNameSuffix).collect(toSet());
     this.properties = properties;
     this.flowStageService = flowStageService;
   }
