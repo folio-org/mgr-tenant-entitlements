@@ -8,8 +8,12 @@ import org.folio.entitlement.domain.model.ModuleStageContext;
 @Log4j2
 public abstract class ModuleDatabaseLoggingStage extends DatabaseLoggingStage<ModuleStageContext> {
 
+  static String stageNameSuffix(Class<?> type) {
+    return "-" + uncapitalize(type.getSimpleName());
+  }
+
   @Override
   public String getStageName(ModuleStageContext context) {
-    return context.getModuleId() + "-" + uncapitalize(this.getClass().getSimpleName());
+    return context.getModuleId() + stageNameSuffix(this.getClass());
   }
 }
