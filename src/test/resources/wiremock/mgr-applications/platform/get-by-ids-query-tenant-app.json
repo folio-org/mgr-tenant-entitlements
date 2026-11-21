@@ -19,7 +19,7 @@
       "Content-Type": "application/json"
     },
     "jsonBody": {
-      "applicationDescriptors": [{"id": "folio-app1-1.0.0", "name": "folio-app1", "version": "1.0.0", "scope": "regular"}],
+      "applicationDescriptors": [{"id": "folio-app1-1.0.0", "name": "folio-app1", "version": "1.0.0", "scope": "tenant"}],
       "totalRecords": 1
     }
   }

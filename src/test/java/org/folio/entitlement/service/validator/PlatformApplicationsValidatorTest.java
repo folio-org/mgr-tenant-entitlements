@@ -104,6 +104,6 @@ class PlatformApplicationsValidatorTest {
   }
 
   private static ApplicationDescriptor tenantApp(String applicationId) {
-    return appDescriptor(applicationId).scope(ApplicationScope.REGULAR);
+    return appDescriptor(applicationId).scope(ApplicationScope.TENANT);
   }
 }

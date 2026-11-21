@@ -28,7 +28,7 @@ class PlatformApplicationNotExistInRequestValidatorTest {
 
   @Test
   void execute_positive_onlyTenantApplicationsRequested() {
-    var tenantApp = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
+    var tenantApp = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.TENANT);
 
     assertThatCode(() -> validator.execute(context(tenantApp))).doesNotThrowAnyException();
   }
@@ -44,14 +44,14 @@ class PlatformApplicationNotExistInRequestValidatorTest {
   void execute_positive_platformApplicationReachedOnlyAsDependencyIsNotInRequestedDescriptors() {
     // a platform application that is only a dependency is not among the directly requested descriptors
     var requested = appDescriptor("folio-app3-3.0.0", dependency("platform-app-1.0.0"))
-      .scope(ApplicationScope.REGULAR);
+      .scope(ApplicationScope.TENANT);
 
     assertThatCode(() -> validator.execute(context(requested))).doesNotThrowAnyException();
   }
 
   @Test
   void execute_negative_directlyRequestedPlatformApplicationIsRejected() {
-    var tenantApp = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
+    var tenantApp = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.TENANT);
     var platform = appDescriptor("platform-app-1.0.0").scope(ApplicationScope.PLATFORM);
     var context = context(tenantApp, platform);
 
@@ -79,7 +79,7 @@ class PlatformApplicationNotExistInRequestValidatorTest {
 
   @Test
   void validate_positive_tenantApplication() {
-    var tenantApp = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.REGULAR);
+    var tenantApp = appDescriptor("folio-app1-1.0.0").scope(ApplicationScope.TENANT);
     var descriptors = List.of(tenantApp);
 
     assertThatCode(() -> validator.validate(descriptors)).doesNotThrowAnyException();
