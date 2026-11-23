@@ -185,10 +185,10 @@ public class ApplicationDescriptorTreeLoader extends DatabaseLoggingStage<Common
 
   private List<EntitledApp> loadEntitlementsByDependencyNames(UUID tenantId, Set<String> names) {
     var tenantEntitled = entitlementRepository.findByTenantIdAndApplicationNameIn(tenantId, List.copyOf(names));
-    var tenantNames = tenantEntitled.stream().map(EntitlementEntity::getApplicationName).collect(toSet());
+    var tenantEntitledNames = tenantEntitled.stream().map(EntitlementEntity::getApplicationName).collect(toSet());
 
     // dependencies that are not entitled for the tenant may be entitled platform applications
-    var platformNames = names.stream().filter(name -> !tenantNames.contains(name)).toList();
+    var platformNames = names.stream().filter(name -> !tenantEntitledNames.contains(name)).toList();
     var platformEntitled = platformNames.isEmpty()
       ? List.<PlatformEntitlementEntity>of()
       : platformEntitlementRepository.findAllById(platformNames);
