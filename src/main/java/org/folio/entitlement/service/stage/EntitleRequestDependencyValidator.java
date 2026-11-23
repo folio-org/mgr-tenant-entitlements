@@ -69,9 +69,9 @@ public class EntitleRequestDependencyValidator extends DatabaseLoggingStage<Appl
         .and(EntitleRequestDependencyValidator::isFinishedOrInProgressEntitlement))
       .map(ApplicationFlow::getApplicationId);
 
-    var notInstalled = removeEntitledOrInProgress(dependencyByName, entitledOrInProgressApplicationIds);
+    var notEntitled = removeEntitledOrInProgress(dependencyByName, entitledOrInProgressApplicationIds);
 
-    return removePlatformEntitled(notInstalled);
+    return removePlatformEntitled(notEntitled);
   }
 
   /**
