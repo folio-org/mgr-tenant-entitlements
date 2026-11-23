@@ -86,8 +86,6 @@ The `id` field on `FlowStage` (returned by `GET /entitlement-flows/{flowId}?incl
 
 - No row in progress: the stage completes.
 - A `FAILED` row (a `FAILURE` confirmation): the stage fails at once, with the stored details.
-- Timeout (`EVENT_CONFIRMATION_WAIT_MAX`, default `5m`; poll every `EVENT_CONFIRMATION_WAIT_POLL_INTERVAL`, default `2s`): the unconfirmed rows are failed with error type `EventConfirmationTimeout` and a short message, and the stage throws, naming each event it failed. An event confirmed just before the timeout is not reported as unconfirmed; if every event is confirmed in that window, the stage evaluates again. A late result is then dropped because the stage is no longer `IN_PROGRESS`. Events a consumer discarded appear here as unconfirmed.
+- Timeout (`EVENT_CONFIRMATION_WAIT_MAX`, default `5m`; poll every `EVENT_CONFIRMATION_WAIT_POLL_INTERVAL`, default `2s`): the unconfirmed rows are failed with `error_type` `EventConfirmationTimeout` and the stage throws, naming each unconfirmed event. A late result is then dropped because the stage is no longer `IN_PROGRESS`.
 - `EVENT_PUBLISHER_AWAIT_COMPLETION` false or unset: the stage is a no-op.
 - Entitlement events are not watched: `FolioModuleEventPublisher` is not part of any wait.
-
-Poll interval and max wait must be positive, and startup fails if `EVENT_CONFIRMATION_WAIT_MAX` is not less than `ASYNC_CONFIRMATION_TIMEOUT`. Declare one `EventConfirmationWaitStage` `@Bean` per phase, with a unique phase name and the publisher classes it watches, so Spring injects and proxies it like other stages; the 5-minute wait fires well before the sweeper (`ASYNC_CONFIRMATION_TIMEOUT`, 90m), which stays as a backstop and needs no change. Consumers must run with `EVENT_CONFIRMATION_ENABLED=true` whenever the wait is enabled, otherwise the wait never succeeds.
