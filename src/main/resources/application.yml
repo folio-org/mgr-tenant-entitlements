@@ -211,6 +211,10 @@ application:
       await-completion: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
     scheduled-job:
       await-completion: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
+  event-confirmation-wait:
+    enabled: ${EVENT_PUBLISHER_AWAIT_COMPLETION:false}
+    poll-interval: ${EVENT_CONFIRMATION_WAIT_POLL_INTERVAL:2s}
+    max-wait: ${EVENT_CONFIRMATION_WAIT_MAX:5m}
   async-confirmation:
     timeout: ${ASYNC_CONFIRMATION_TIMEOUT:90m}
     sweep-interval: ${ASYNC_CONFIRMATION_SWEEP_INTERVAL:5m}
