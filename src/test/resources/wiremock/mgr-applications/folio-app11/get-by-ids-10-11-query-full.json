@@ -1,0 +1,89 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"folio-app10-10.0.0\" or \"folio-app11-11.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "folio-app10-10.0.0",
+          "name": "folio-app10",
+          "version": "10.0.0",
+          "modules": [
+            {
+              "id": "folio-module10-10.0.0",
+              "name": "folio-module10",
+              "version": "10.0.0"
+            }
+          ],
+          "dependencies": [
+            {
+              "name": "platform-app",
+              "version": "1.x"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module10-10.0.0",
+              "name": "Test Folio Module #10",
+              "requires": [
+                {
+                  "id": "platform-api",
+                  "version": "1.0"
+                }
+              ],
+              "provides": [
+                {
+                  "id": "folio-module10-api",
+                  "version": "1.0.0"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "folio-app11-11.0.0",
+          "name": "folio-app11",
+          "version": "11.0.0",
+          "modules": [
+            {
+              "id": "folio-module11-11.0.0",
+              "name": "folio-module11",
+              "version": "11.0.0"
+            }
+          ],
+          "dependencies": [],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module11-11.0.0",
+              "name": "Test Folio Module #11",
+              "requires": [
+                {
+                  "id": "platform-api",
+                  "version": "1.0"
+                }
+              ],
+              "provides": [
+                {
+                  "id": "folio-module11-api",
+                  "version": "1.0.0"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "totalRecords": 2
+    }
+  }
+}

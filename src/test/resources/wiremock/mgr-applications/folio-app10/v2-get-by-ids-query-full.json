@@ -36,6 +36,12 @@
             {
               "id": "folio-module10-10.1.0",
               "name": "Test Folio Module #10",
+              "requires": [
+                {
+                  "id": "platform-api",
+                  "version": "1.0"
+                }
+              ],
               "provides": [
                 {
                   "id": "folio-module10-api",

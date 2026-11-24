@@ -32,6 +32,8 @@ class EntitlementValidationInterfaceIntegrityIT {
   private static final String FOLIO_APP_ID_1 = "folio-app1-1.0.0";
   private static final String FOLIO_APP_ID_2 = "folio-app2-2.0.0";
   private static final String FOLIO_APP_ID_3 = "folio-app3-3.0.0";
+  private static final String FOLIO_APP_ID_10 = "folio-app10-10.0.0";
+  private static final String FOLIO_APP_ID_11 = "folio-app11-11.0.0";
 
   @Nested
   @IntegrationTest
@@ -73,6 +75,28 @@ class EntitlementValidationInterfaceIntegrityIT {
         .andExpect(jsonPath("$.errors[0].parameters[0].value", is("folio-module1-api 1.0")))
         .andExpect(jsonPath("$.total_records", is(1)));
     }
+
+    /**
+     * app10 depends on the platform app, app11 requires the same interface without declaring the dependency.
+     * Scoped mode checks each app against its own dependency chain only, so app11 must fail.
+     */
+    @Test
+    @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
+    @WireMockStub(scripts = {
+      "/wiremock/mgr-applications/folio-app11/get-by-ids-10-11-query-full.json",
+      "/wiremock/mgr-applications/folio-app11/get-platform-app-v1-with-interfaces.json"
+    })
+    void validate_negative_platformProviderInListButNotDependency() throws Exception {
+      var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_10, FOLIO_APP_ID_11);
+
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
+        request, ENTITLE.getValue(), VALIDATOR)
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.errors[0].message", containsString("Missing interfaces found for the applications")))
+        .andExpect(jsonPath("$.errors[0].parameters[0].key", is(FOLIO_APP_ID_11)))
+        .andExpect(jsonPath("$.errors[0].parameters[0].value", is("platform-api 1.0")))
+        .andExpect(jsonPath("$.total_records", is(1)));
+    }
   }
 
   @Nested
@@ -104,6 +128,24 @@ class EntitlementValidationInterfaceIntegrityIT {
     })
     void validate_positive_missingDependencyInApp3() throws Exception {
       var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_1, FOLIO_APP_ID_2, FOLIO_APP_ID_3);
+
+      attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
+        request, ENTITLE.getValue(), VALIDATOR)
+        .andExpect(status().isNoContent());
+    }
+
+    /**
+     * app11 does not depend on the platform app, but combined mode merges
+     * everything into one pool, so the platform-provided interface satisfies app11 and validation passes.
+     */
+    @Test
+    @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
+    @WireMockStub(scripts = {
+      "/wiremock/mgr-applications/folio-app11/get-by-ids-10-11-query-full.json",
+      "/wiremock/mgr-applications/folio-app11/get-platform-app-v1-with-interfaces.json"
+    })
+    void validate_positive_platformProviderInListButNotDependency() throws Exception {
+      var request = entitlementRequest(TENANT_ID, FOLIO_APP_ID_10, FOLIO_APP_ID_11);
 
       attemptPost("/entitlements/validate?entitlementRequestType={type}&validator={validator}",
         request, ENTITLE.getValue(), VALIDATOR)
