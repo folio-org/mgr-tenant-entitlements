@@ -26,6 +26,22 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
     ORDER BY entity.startedAt asc""")
   List<FlowStageEntity> findByFlowId(@Param("flowId") UUID flowId);
 
+  @Query("""
+    SELECT e.status AS status, count(e) AS total FROM FlowStageEntity e
+    WHERE e.flowId = :flowId AND e.status IN :statuses
+      AND substring(e.stageName, length(e.stageName) - locate('-', reverse(e.stageName)) + 1) IN :suffixes
+    GROUP BY e.status""")
+  List<StatusCount> countByStatusesAndStageNameSuffixes(@Param("flowId") UUID flowId,
+    @Param("statuses") Collection<EntityExecutionStatus> statuses, @Param("suffixes") Collection<String> suffixes);
+
+  @Query("""
+    SELECT e FROM FlowStageEntity e
+    WHERE e.flowId = :flowId AND e.status IN :statuses
+      AND substring(e.stageName, length(e.stageName) - locate('-', reverse(e.stageName)) + 1) IN :suffixes
+    ORDER BY e.stageName""")
+  List<FlowStageEntity> findByStatusesAndStageNameSuffixes(@Param("flowId") UUID flowId,
+    @Param("statuses") Collection<EntityExecutionStatus> statuses, @Param("suffixes") Collection<String> suffixes);
+
   @Query(value = """
     SELECT entity from FlowStageEntity entity
     WHERE entity.flowId in :flowIds
@@ -50,9 +66,9 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
    */
   @Modifying
   @Query("""
-    UPDATE FlowStageEntity e 
+    UPDATE FlowStageEntity e
     SET e.status = :status, e.finishedAt = :finishedAt
-    WHERE e.status IN :currentStatuses 
+    WHERE e.status IN :currentStatuses
       AND (e.flowId = :flowId
           OR e.flowId IN (SELECT af.id FROM ApplicationFlowEntity af WHERE af.flowId = :flowId))""")
   int updateStatusByFlowIdIfCurrentIn(@Param("flowId") UUID flowId,
@@ -86,4 +102,11 @@ public interface FlowStageRepository extends JpaCqlRepository<FlowStageEntity, F
     @Param("errDetails") String errDetails,
     @Param("currentStatuses") Collection<EntityExecutionStatus> currentStatuses,
     @Param("finishedAt") ZonedDateTime finishedAt);
+
+  interface StatusCount {
+
+    EntityExecutionStatus getStatus();
+
+    long getTotal();
+  }
 }

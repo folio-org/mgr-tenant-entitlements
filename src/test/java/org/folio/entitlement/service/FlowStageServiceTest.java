@@ -2,6 +2,7 @@ package org.folio.entitlement.service;
 
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.folio.entitlement.domain.dto.ExecutionStatus.FINISHED;
 import static org.folio.entitlement.support.TestConstants.APPLICATION_FLOW_ID;
 import static org.folio.entitlement.support.TestConstants.FLOW_ID;
@@ -20,6 +21,7 @@ import org.folio.entitlement.domain.entity.key.FlowStageKey;
 import org.folio.entitlement.domain.entity.type.EntityExecutionStatus;
 import org.folio.entitlement.mapper.FlowStageMapper;
 import org.folio.entitlement.repository.FlowStageRepository;
+import org.folio.entitlement.repository.FlowStageRepository.StatusCount;
 import org.folio.entitlement.support.TestUtils;
 import org.folio.test.types.UnitTest;
 import org.junit.jupiter.api.AfterEach;
@@ -119,6 +121,34 @@ class FlowStageServiceTest {
   }
 
   @Test
+  void countByStatusesAndStageNameSuffixes_positive() {
+    var statuses = Set.of(EntityExecutionStatus.IN_PROGRESS, EntityExecutionStatus.FAILED);
+    var suffixes = List.of("-a", "-b");
+    when(flowStageRepository.countByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, statuses, suffixes))
+      .thenReturn(List.of(
+        statusCount(EntityExecutionStatus.IN_PROGRESS, 2), statusCount(EntityExecutionStatus.FAILED, 1)));
+
+    var result = flowStageService.countByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, statuses, suffixes);
+
+    assertThat(result).containsOnly(
+      entry(EntityExecutionStatus.IN_PROGRESS, 2L), entry(EntityExecutionStatus.FAILED, 1L));
+  }
+
+  @Test
+  void findByStatusesAndStageNameSuffixes_positive() {
+    var entity = new FlowStageEntity();
+    var stage = new FlowStage();
+    var statuses = Set.of(EntityExecutionStatus.FAILED);
+    when(flowStageRepository.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, statuses, List.of("-a")))
+      .thenReturn(List.of(entity));
+    when(flowStageMapper.map(entity)).thenReturn(stage);
+
+    var result = flowStageService.findByStatusesAndStageNameSuffixes(APPLICATION_FLOW_ID, statuses, List.of("-a"));
+
+    assertThat(result).containsExactly(stage);
+  }
+
+  @Test
   void findById_positive() {
     var entity = flowStageEntity();
     var flowStage = flowStage();
@@ -167,6 +197,20 @@ class FlowStageServiceTest {
     var result = flowStageService.failActiveStage(APPLICATION_FLOW_ID, errorType, errDetails, finishedAt);
 
     assertThat(result).isEqualTo(1);
+  }
+
+  private static StatusCount statusCount(EntityExecutionStatus status, long total) {
+    return new StatusCount() {
+      @Override
+      public EntityExecutionStatus getStatus() {
+        return status;
+      }
+
+      @Override
+      public long getTotal() {
+        return total;
+      }
+    };
   }
 
   private static FlowStage flowStage() {
