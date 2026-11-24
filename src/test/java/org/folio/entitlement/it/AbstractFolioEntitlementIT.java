@@ -827,7 +827,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-tenants/test/get-query-by-name.json",
-    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-with-required-interfaces-events.json",
     "/wiremock/mgr-applications/folio-app10/get-discovery.json",
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces-and-events.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json"
@@ -851,7 +851,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-tenants/test/get-query-by-name.json",
-    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-with-required-interfaces-events.json",
     "/wiremock/mgr-applications/folio-app10/get-discovery.json",
     "/wiremock/mgr-applications/folio-app10/v2-get-by-ids-query-with-required-interfaces-events.json",
     "/wiremock/mgr-applications/folio-app10/v2-get-discovery.json",
@@ -879,7 +879,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-tenants/test/get-query-by-name.json",
-    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-with-required-interfaces-events.json",
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json"
   })
@@ -903,7 +903,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-tenants/test/get-query-by-name.json",
-    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-with-required-interfaces-events.json",
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces-no-events.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json"
   })
@@ -986,7 +986,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-tenants/test/get-query-by-name.json",
-    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-with-required-interfaces-events.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json"
   })
   void install_negative_platformDependencyIsNotEntitled() throws Exception {
