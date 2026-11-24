@@ -4,6 +4,8 @@ import static java.lang.String.format;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static org.folio.common.utils.OkapiHeaders.TENANT;
 import static org.folio.entitlement.utils.TenantApiUtils.DISABLE_TENANT_ENDPOINT;
+import static org.folio.entitlement.utils.TenantApiUtils.EGRESS_USE_GATEWAY_HEADER;
+import static org.folio.entitlement.utils.TenantApiUtils.EGRESS_USE_GATEWAY_VALUE;
 import static org.folio.entitlement.utils.TenantApiUtils.TENANT_ENDPOINT;
 import static org.springframework.http.HttpHeaders.ACCEPT;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -42,6 +44,11 @@ import org.springframework.http.HttpMethod;
  *
  * <p>Whether a module finished a call itself or accepted it as a background job is decided from the response: a
  * {@code 201} with a tenant job is an accepted operation, any other success is a completed one.</p>
+ *
+ * <p>Every request of this client (tenant API calls and job polling) carries the
+ * {@code x-okapi-egress-use-gateway: true} header, see
+ * {@link org.folio.entitlement.utils.TenantApiUtils#EGRESS_USE_GATEWAY_HEADER}. No other request to a module sends
+ * it.</p>
  */
 @Log4j2
 @RequiredArgsConstructor
@@ -86,6 +93,7 @@ public class FolioTenantApiClient {
       .GET()
       .header(ACCEPT, APPLICATION_JSON_VALUE)
       .header(TENANT, request.getTenantName())
+      .header(EGRESS_USE_GATEWAY_HEADER, EGRESS_USE_GATEWAY_VALUE)
       .timeout(clientConfiguration.getReadTimeout().plus(wait))
       .version(HTTP_1_1)
       .build();
@@ -242,6 +250,7 @@ public class FolioTenantApiClient {
       .method(httpMethod, BodyPublishers.ofString(jsonBody))
       .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
       .header(TENANT, request.getTenantName())
+      .header(EGRESS_USE_GATEWAY_HEADER, EGRESS_USE_GATEWAY_VALUE)
       .timeout(clientConfiguration.getReadTimeout())
       .version(HTTP_1_1)
       .build();

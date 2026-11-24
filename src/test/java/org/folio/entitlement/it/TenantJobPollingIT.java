@@ -19,6 +19,8 @@ import static org.folio.entitlement.support.TestValues.queryByTenantAndAppId;
 import static org.folio.entitlement.support.UpgradeTestValues.FOLIO_APP6_V1_ID;
 import static org.folio.entitlement.support.UpgradeTestValues.FOLIO_APP6_V2_ID;
 import static org.folio.entitlement.utils.IntegrationTestUtil.getFlowStage;
+import static org.folio.entitlement.utils.TenantApiUtils.EGRESS_USE_GATEWAY_HEADER;
+import static org.folio.entitlement.utils.TenantApiUtils.EGRESS_USE_GATEWAY_VALUE;
 import static org.folio.test.FakeKafkaConsumer.getEvents;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.context.jdbc.Sql.ExecutionPhase.AFTER_TEST_METHOD;
@@ -29,6 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -109,6 +112,7 @@ class TenantJobPollingIT extends BaseIntegrationTest {
     assertModuleEntitlements(FOLIO_MODULE1_ID, entitlements(entitlement(TENANT_ID, FOLIO_APP1_ID)));
     assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID));
     assertThat(requestsTo("GET", JOB_PATH)).isEqualTo(3);
+    assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(4);
   }
 
   @Test
@@ -218,6 +222,7 @@ class TenantJobPollingIT extends BaseIntegrationTest {
     assertEntitlementEvents(entitlementEvent(REVOKE, FOLIO_MODULE2_ID));
     assertThat(requestsTo("POST", MODULE2_TENANT_ENDPOINT)).isEqualTo(1);
     assertThat(requestsTo("GET", MODULE2_JOB_PATH)).isEqualTo(1);
+    assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(2);
   }
 
   @Test
@@ -334,6 +339,7 @@ class TenantJobPollingIT extends BaseIntegrationTest {
     assertEntitlementEvents(entitlementEvent(REVOKE, FOLIO_MODULE2_ID));
     assertThat(requestsTo("POST", MODULE2_TENANT_ENDPOINT + "/disable")).isEqualTo(1);
     assertThat(requestsTo("GET", MODULE2_JOB_PATH)).isEqualTo(1);
+    assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(2);
   }
 
   @Test
@@ -468,6 +474,23 @@ class TenantJobPollingIT extends BaseIntegrationTest {
   private void assertEventCountStays(EntitlementEvent event, long expectedCount) {
     await().during(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(5))
       .untilAsserted(() -> assertThat(eventCount(event)).isEqualTo(expectedCount));
+  }
+
+  /**
+   * Checks the recorded traffic of the stubbed modules and other services: every tenant API call and tenant job poll
+   * carries {@code x-okapi-egress-use-gateway: true}, every other request does not carry the header.
+   */
+  private void assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(int expectedTenantApiRequests) throws Exception {
+    var requests = getWireMockClient().getServeEvents().stream().map(ServeEvent::getRequest).toList();
+    var tenantApiRequests = requests.stream().filter(request -> request.getUrl().contains("/_/tenant")).toList();
+    var otherRequests = requests.stream().filter(request -> !request.getUrl().contains("/_/tenant")).toList();
+
+    assertThat(tenantApiRequests).hasSize(expectedTenantApiRequests)
+      .allSatisfy(request -> assertThat(request.getHeader(EGRESS_USE_GATEWAY_HEADER))
+        .as("%s %s", request.getMethod(), request.getUrl()).isEqualTo(EGRESS_USE_GATEWAY_VALUE));
+    assertThat(otherRequests).isNotEmpty()
+      .allSatisfy(request -> assertThat(request.containsHeader(EGRESS_USE_GATEWAY_HEADER))
+        .as("%s %s", request.getMethod(), request.getUrl()).isFalse());
   }
 
   private long requestsTo(String method, String urlPrefix) throws Exception {

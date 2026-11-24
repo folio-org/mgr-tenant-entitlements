@@ -8,8 +8,11 @@ import static org.folio.entitlement.support.TestConstants.TENANT_ID;
 import static org.folio.entitlement.support.TestConstants.TENANT_NAME;
 import static org.folio.entitlement.support.TestUtils.JACKSON3_OBJECT_MAPPER;
 import static org.folio.entitlement.support.TestUtils.asJsonString;
+import static org.folio.entitlement.utils.TenantApiUtils.EGRESS_USE_GATEWAY_HEADER;
+import static org.folio.entitlement.utils.TenantApiUtils.EGRESS_USE_GATEWAY_VALUE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
@@ -47,6 +50,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
@@ -358,8 +362,71 @@ class FolioTenantApiClientTest {
     assertThat(sentRequest.method()).isEqualTo("GET");
     assertThat(sentRequest.uri()).hasToString(jobUri(5000));
     assertThat(sentRequest.headers().firstValue(TENANT)).contains(TENANT_NAME);
+    assertThat(sentRequest.headers().allValues(EGRESS_USE_GATEWAY_HEADER)).containsExactly("true");
     assertThat(sentRequest.timeout()).contains(Duration.ofSeconds(6));
     verify(jsonConverter).fromJson(body, TenantJob.class);
+  }
+
+  @Test
+  void install_positive_sendsEgressUseGatewayHeader() throws IOException, InterruptedException {
+    setupHttpClientMock(204);
+
+    folioTenantApiClient.install(moduleRequest(false));
+
+    assertEgressUseGatewayHeader(httpRequestCaptor.getValue(), "POST", "/_/tenant");
+    verify(jsonConverter).toJson(any(TenantAttributes.class));
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void uninstall_positive_sendsEgressUseGatewayHeader(boolean purge) throws IOException, InterruptedException {
+    setupHttpClientMock(204);
+
+    folioTenantApiClient.uninstall(moduleRequest(purge));
+
+    assertEgressUseGatewayHeader(httpRequestCaptor.getValue(), "POST", "/_/tenant");
+    verify(jsonConverter).toJson(any(TenantAttributes.class));
+  }
+
+  @Test
+  void uninstallLegacy_positive_sendsEgressUseGatewayHeader() throws IOException, InterruptedException {
+    setupHttpClientMock(204);
+
+    folioTenantApiClient.uninstallLegacy(moduleRequest(true));
+
+    assertEgressUseGatewayHeader(httpRequestCaptor.getValue(), "DELETE", "/_/tenant");
+    verify(jsonConverter).toJson(any(TenantAttributes.class));
+  }
+
+  @Test
+  void disableLegacy_positive_sendsEgressUseGatewayHeader() throws IOException, InterruptedException {
+    setupHttpClientMock(204);
+
+    folioTenantApiClient.disableLegacy(moduleRequest(false));
+
+    assertEgressUseGatewayHeader(httpRequestCaptor.getValue(), "POST", "/_/tenant/disable");
+    verify(jsonConverter).toJson(any(TenantAttributes.class));
+  }
+
+  @Test
+  void getTenantJob_positive_sendsEgressUseGatewayHeaderOnEveryPoll() throws IOException, InterruptedException {
+    var body = "{\"id\":\"" + JOB_ID + "\",\"complete\":false}";
+    setupHttpClientMock(200);
+    when(httpResponse.body()).thenReturn(body);
+    var moduleRequest = moduleRequest(false);
+
+    folioTenantApiClient.getTenantJob(moduleRequest, JOB_ID, Duration.ZERO);
+    folioTenantApiClient.getTenantJob(moduleRequest, JOB_ID, Duration.ZERO);
+
+    assertThat(httpRequestCaptor.getAllValues()).hasSize(2).allSatisfy(sentRequest ->
+      assertThat(sentRequest.headers().allValues(EGRESS_USE_GATEWAY_HEADER)).containsExactly("true"));
+    verify(jsonConverter, times(2)).fromJson(body, TenantJob.class);
+  }
+
+  @Test
+  void egressUseGatewayHeader_positive_keepsOkapiPrefixAndValue() {
+    assertThat(EGRESS_USE_GATEWAY_HEADER).isEqualTo("x-okapi-egress-use-gateway");
+    assertThat(EGRESS_USE_GATEWAY_VALUE).isEqualTo("true");
   }
 
   @Test
@@ -409,6 +476,12 @@ class FolioTenantApiClientTest {
     when(httpResponse.statusCode()).thenReturn(statusCode);
   }
 
+  private static void assertEgressUseGatewayHeader(HttpRequest sentRequest, String method, String path) {
+    assertThat(sentRequest.method()).isEqualTo(method);
+    assertThat(sentRequest.uri()).hasToString(MODULE_LOCATION + path);
+    assertThat(sentRequest.headers().allValues("x-okapi-egress-use-gateway")).containsExactly("true");
+  }
+
   private static String jobUri(long waitMillis) {
     return MODULE_LOCATION + "/_/tenant/" + JOB_ID + "?wait=" + waitMillis;
   }
@@ -443,6 +516,7 @@ class FolioTenantApiClientTest {
       .POST(BodyPublishers.ofString(asJsonString(tenantAttributesForInstall())))
       .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
       .header(TENANT, TENANT_NAME)
+      .header(EGRESS_USE_GATEWAY_HEADER, EGRESS_USE_GATEWAY_VALUE)
       .version(Version.HTTP_1_1)
       .build();
   }
@@ -453,6 +527,7 @@ class FolioTenantApiClientTest {
       .POST(BodyPublishers.ofString(asJsonString(tenantAttributesForUninstall())))
       .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
       .header(TENANT, TENANT_NAME)
+      .header(EGRESS_USE_GATEWAY_HEADER, EGRESS_USE_GATEWAY_VALUE)
       .version(Version.HTTP_1_1)
       .build();
   }
@@ -463,6 +538,7 @@ class FolioTenantApiClientTest {
       .method("DELETE", BodyPublishers.ofString(asJsonString(tenantAttributesForUninstall())))
       .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
       .header(TENANT, TENANT_NAME)
+      .header(EGRESS_USE_GATEWAY_HEADER, EGRESS_USE_GATEWAY_VALUE)
       .version(Version.HTTP_1_1)
       .build();
   }
@@ -473,6 +549,7 @@ class FolioTenantApiClientTest {
       .POST(BodyPublishers.ofString(asJsonString(tenantAttributesForUninstall(false))))
       .header(CONTENT_TYPE, APPLICATION_JSON_VALUE)
       .header(TENANT, TENANT_NAME)
+      .header(EGRESS_USE_GATEWAY_HEADER, EGRESS_USE_GATEWAY_VALUE)
       .version(Version.HTTP_1_1)
       .build();
   }

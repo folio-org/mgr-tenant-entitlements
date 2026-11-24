@@ -405,6 +405,26 @@ failed or timed-out module is not recorded as installed and the next run sends t
   `FOLIO_CLIENT_TENANT_JOB_TIMEOUT` per module. A client or gateway may time out earlier while the work continues
   on the server.
 
+### Routing of module calls made during the tenant API
+
+During an upgrade, a module's tenant API may call other modules while a calling sidecar's entitlement cache still
+points at the old provider version. To let the sidecar route those calls through the API gateway, which has already
+been updated for the module, MTE sends `x-okapi-egress-use-gateway: true` on:
+
+* every tenant API call to a module: `POST /_/tenant`, `DELETE /_/tenant` and `POST /_/tenant/disable`;
+* every poll of an asynchronous tenant job: `GET /_/tenant/{id}`.
+
+The header is always sent; there is no feature flag. It is not sent on any other request to a module. Its name keeps
+the `x-okapi-` prefix, so frameworks that propagate `x-okapi-*` headers (for example Spring modules with
+`folio.exchange.enabled=true`) pass it on to the calls the module makes while handling the tenant API. Its reach is
+limited to the modules in the original entitlement call and the modules they call while handling it.
+
+Rollout order does not matter: a sidecar that does not know the header ignores it and routes calls as before, and a new
+sidecar that does not receive the header behaves as before. An old sidecar does not strip the header, so it can travel
+one hop further than intended; this only routes extra calls through the gateway and is accepted.
+
+Revoke without purge sends no tenant API call to modules with tenant API 2.0, so no header is sent then.
+
 ### Flow Engine configuration
 
 The Flow Engine is responsible for orchestrating the entitlement process stages. It uses thread pools to execute stages in parallel when possible.
