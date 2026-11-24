@@ -13,8 +13,10 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.ListUtils;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.springframework.stereotype.Component;
@@ -26,6 +28,7 @@ public class ApplicationAndEntitledDescriptorProvider implements ApplicationDesc
 
   private final ApplicationManagerService applicationManagerService;
   private final EntitlementCrudService entitlementService;
+  private final PlatformEntitlementRepository platformEntitlementRepository;
 
   @Override
   public List<ApplicationDescriptor> getDescriptors(CommonStageContext context) {
@@ -57,10 +60,16 @@ public class ApplicationAndEntitledDescriptorProvider implements ApplicationDesc
 
     var entitlements = entitlementService.findByTenantId(request.getTenantId());
 
-    return entitlements.stream()
+    var tenantEntitledAppIds = entitlements.stream()
       .map(Entitlement::getApplicationId)
       .filter(notExcluded(excludedAppNames))
       .toList();
+
+    var platformEntitledAppIds = platformEntitlementRepository.findAll().stream()
+      .map(PlatformEntitlementEntity::getApplicationId)
+      .toList();
+
+    return ListUtils.union(tenantEntitledAppIds, platformEntitledAppIds);
   }
 
   private List<ApplicationDescriptor> loadAppDescriptors(List<String> applicationIds, UUID tenantId,
