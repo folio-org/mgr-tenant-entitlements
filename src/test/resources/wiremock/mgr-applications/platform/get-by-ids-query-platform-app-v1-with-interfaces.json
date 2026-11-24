@@ -41,6 +41,11 @@
                   "id": "platform-api",
                   "version": "1.0"
                 }
+              ],
+              "producesEvents": [
+                {
+                  "event": "evt.platform.updated"
+                }
               ]
             }
           ]

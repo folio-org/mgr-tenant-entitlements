@@ -42,6 +42,12 @@
                   "version": "1.0"
                 }
               ],
+              "consumesEvents": [
+                {
+                  "event": "evt.platform.updated",
+                  "optional": false
+                }
+              ],
               "provides": [
                 {
                   "id": "folio-module10-api",
