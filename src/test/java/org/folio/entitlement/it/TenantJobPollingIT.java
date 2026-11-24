@@ -32,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
@@ -112,7 +113,7 @@ class TenantJobPollingIT extends BaseIntegrationTest {
     assertModuleEntitlements(FOLIO_MODULE1_ID, entitlements(entitlement(TENANT_ID, FOLIO_APP1_ID)));
     assertEntitlementEvents(entitlementEvent(ENTITLE, FOLIO_MODULE1_ID));
     assertThat(requestsTo("GET", JOB_PATH)).isEqualTo(3);
-    assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(4);
+    assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(1);
   }
 
   @Test
@@ -222,7 +223,7 @@ class TenantJobPollingIT extends BaseIntegrationTest {
     assertEntitlementEvents(entitlementEvent(REVOKE, FOLIO_MODULE2_ID));
     assertThat(requestsTo("POST", MODULE2_TENANT_ENDPOINT)).isEqualTo(1);
     assertThat(requestsTo("GET", MODULE2_JOB_PATH)).isEqualTo(1);
-    assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(2);
+    assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(1);
   }
 
   @Test
@@ -339,7 +340,7 @@ class TenantJobPollingIT extends BaseIntegrationTest {
     assertEntitlementEvents(entitlementEvent(REVOKE, FOLIO_MODULE2_ID));
     assertThat(requestsTo("POST", MODULE2_TENANT_ENDPOINT + "/disable")).isEqualTo(1);
     assertThat(requestsTo("GET", MODULE2_JOB_PATH)).isEqualTo(1);
-    assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(2);
+    assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(1);
   }
 
   @Test
@@ -477,13 +478,14 @@ class TenantJobPollingIT extends BaseIntegrationTest {
   }
 
   /**
-   * Checks the recorded traffic of the stubbed modules and other services: every tenant API call and tenant job poll
-   * carries {@code x-okapi-egress-use-gateway: true}, every other request does not carry the header.
+   * Checks the recorded traffic of the stubbed modules and other services: every tenant API call ({@code POST} or
+   * {@code DELETE} to {@code /_/tenant...}) carries {@code x-okapi-egress-use-gateway: true}, every other request,
+   * including the tenant job polls, does not carry the header.
    */
   private void assertEgressUseGatewayHeaderOnlyOnTenantApiCalls(int expectedTenantApiRequests) throws Exception {
     var requests = getWireMockClient().getServeEvents().stream().map(ServeEvent::getRequest).toList();
-    var tenantApiRequests = requests.stream().filter(request -> request.getUrl().contains("/_/tenant")).toList();
-    var otherRequests = requests.stream().filter(request -> !request.getUrl().contains("/_/tenant")).toList();
+    var tenantApiRequests = requests.stream().filter(TenantJobPollingIT::isTenantApiCall).toList();
+    var otherRequests = requests.stream().filter(request -> !isTenantApiCall(request)).toList();
 
     assertThat(tenantApiRequests).hasSize(expectedTenantApiRequests)
       .allSatisfy(request -> assertThat(request.getHeader(EGRESS_USE_GATEWAY_HEADER))
@@ -491,6 +493,10 @@ class TenantJobPollingIT extends BaseIntegrationTest {
     assertThat(otherRequests).isNotEmpty()
       .allSatisfy(request -> assertThat(request.containsHeader(EGRESS_USE_GATEWAY_HEADER))
         .as("%s %s", request.getMethod(), request.getUrl()).isFalse());
+  }
+
+  private static boolean isTenantApiCall(LoggedRequest request) {
+    return request.getUrl().contains("/_/tenant") && !"GET".equals(request.getMethod().getName());
   }
 
   private long requestsTo(String method, String urlPrefix) throws Exception {

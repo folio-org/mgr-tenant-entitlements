@@ -45,10 +45,10 @@ import org.springframework.http.HttpMethod;
  * <p>Whether a module finished a call itself or accepted it as a background job is decided from the response: a
  * {@code 201} with a tenant job is an accepted operation, any other success is a completed one.</p>
  *
- * <p>Every request of this client (tenant API calls and job polling) carries the
- * {@code x-okapi-egress-use-gateway: true} header, see
- * {@link org.folio.entitlement.utils.TenantApiUtils#EGRESS_USE_GATEWAY_HEADER}. No other request to a module sends
- * it.</p>
+ * <p>Every tenant API call of this client ({@code POST}/{@code DELETE} {@code /_/tenant} and
+ * {@code POST /_/tenant/disable}) carries the {@code x-okapi-egress-use-gateway: true} header, see
+ * {@link org.folio.entitlement.utils.TenantApiUtils#EGRESS_USE_GATEWAY_HEADER}. Job polling does not: a poll only reads
+ * the job state, and the job's own calls to other modules use the headers of the call that started it.</p>
  */
 @Log4j2
 @RequiredArgsConstructor
@@ -93,7 +93,6 @@ public class FolioTenantApiClient {
       .GET()
       .header(ACCEPT, APPLICATION_JSON_VALUE)
       .header(TENANT, request.getTenantName())
-      .header(EGRESS_USE_GATEWAY_HEADER, EGRESS_USE_GATEWAY_VALUE)
       .timeout(clientConfiguration.getReadTimeout().plus(wait))
       .version(HTTP_1_1)
       .build();

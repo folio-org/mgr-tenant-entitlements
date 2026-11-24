@@ -362,7 +362,7 @@ class FolioTenantApiClientTest {
     assertThat(sentRequest.method()).isEqualTo("GET");
     assertThat(sentRequest.uri()).hasToString(jobUri(5000));
     assertThat(sentRequest.headers().firstValue(TENANT)).contains(TENANT_NAME);
-    assertThat(sentRequest.headers().allValues(EGRESS_USE_GATEWAY_HEADER)).containsExactly("true");
+    assertThat(sentRequest.headers().map()).doesNotContainKey(EGRESS_USE_GATEWAY_HEADER);
     assertThat(sentRequest.timeout()).contains(Duration.ofSeconds(6));
     verify(jsonConverter).fromJson(body, TenantJob.class);
   }
@@ -409,7 +409,7 @@ class FolioTenantApiClientTest {
   }
 
   @Test
-  void getTenantJob_positive_sendsEgressUseGatewayHeaderOnEveryPoll() throws IOException, InterruptedException {
+  void getTenantJob_positive_doesNotSendEgressUseGatewayHeader() throws IOException, InterruptedException {
     var body = "{\"id\":\"" + JOB_ID + "\",\"complete\":false}";
     setupHttpClientMock(200);
     when(httpResponse.body()).thenReturn(body);
@@ -419,7 +419,7 @@ class FolioTenantApiClientTest {
     folioTenantApiClient.getTenantJob(moduleRequest, JOB_ID, Duration.ZERO);
 
     assertThat(httpRequestCaptor.getAllValues()).hasSize(2).allSatisfy(sentRequest ->
-      assertThat(sentRequest.headers().allValues(EGRESS_USE_GATEWAY_HEADER)).containsExactly("true"));
+      assertThat(sentRequest.headers().map()).doesNotContainKey(EGRESS_USE_GATEWAY_HEADER));
     verify(jsonConverter, times(2)).fromJson(body, TenantJob.class);
   }
 

@@ -413,10 +413,12 @@ During an upgrade, a module's tenant API may call other modules while a calling 
 points at the old provider version. To let the sidecar route those calls through the API gateway, which has already
 been updated for the module, MTE sends `x-okapi-egress-use-gateway: true` on:
 
-* every tenant API call to a module: `POST /_/tenant`, `DELETE /_/tenant` and `POST /_/tenant/disable`;
-* every poll of an asynchronous tenant job: `GET /_/tenant/{id}`.
+* every tenant API call to a module: `POST /_/tenant`, `DELETE /_/tenant` and `POST /_/tenant/disable`.
 
-The header is always sent; there is no feature flag. It is not sent on any other request to a module. Its name keeps
+Polls of an asynchronous tenant job (`GET /_/tenant/{id}`) do not carry it: a job's own calls to other modules are made
+with the headers of the call that started it, and the poll handlers of RMB and Spring modules only read the job state.
+
+The header is always sent on tenant API calls; there is no feature flag. It is not sent on any other request to a module. Its name keeps
 the `x-okapi-` prefix, so frameworks that propagate `x-okapi-*` headers (for example Spring modules with
 `folio.exchange.enabled=true`) pass it on to the calls the module makes while handling the tenant API. Its reach is
 limited to the modules in the original entitlement call and the modules they call while handling it.
