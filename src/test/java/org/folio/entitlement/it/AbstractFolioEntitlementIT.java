@@ -89,6 +89,7 @@ import org.springframework.test.context.jdbc.SqlMergeMode;
 @TestPropertySource(properties = {
   "application.apigw.enabled=true",
   "application.keycloak.enabled=true",
+  "application.validation.event-dependency.strict-event-validation=true",
   "application.clients.folio.connect-timeout=250ms",
   "application.clients.folio.read-timeout=250ms"
 })
@@ -828,7 +829,7 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-tenants/test/get-query-by-name.json",
     "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app10/get-discovery.json",
-    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces-and-events.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json"
   })
   void install_positive_dependencyOnPlatformApplication() throws Exception {
@@ -852,9 +853,9 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
     "/wiremock/mgr-tenants/test/get-query-by-name.json",
     "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
     "/wiremock/mgr-applications/folio-app10/get-discovery.json",
-    "/wiremock/mgr-applications/folio-app10/v2-get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/folio-app10/v2-get-by-ids-query-with-required-interfaces-events.json",
     "/wiremock/mgr-applications/folio-app10/v2-get-discovery.json",
-    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces-and-events.json",
     "/wiremock/mgr-applications/validate-any-descriptor.json"
   })
   void upgrade_positive_dependencyOnPlatformApplication() throws Exception {
@@ -894,6 +895,90 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
         hasItem(containsString("platform-api 1.0"))));
 
     getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP10_ID), emptyEntitlements());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-full.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces-no-events.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json"
+  })
+  void install_negative_platformApplicationDoesNotProduceRequiredEvent() throws Exception {
+    mockMvc.perform(post(updatePathWithPrefix("/entitlements"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest(FOLIO_APP10_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'EventDependencyValidator')].value",
+        hasItem(containsString("Consumed events without producers found: evt.platform.updated"))));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP10_ID), emptyEntitlements());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @Sql(scripts = {
+    "classpath:/sql/platform/platform-entitlement-v1.sql",
+    "classpath:/sql/platform/tenant-entitlement-app10-v1.sql"
+  })
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app10/v1-get-by-ids-query-without-required-interfaces-events.json",
+    "/wiremock/mgr-applications/folio-app10/v2-get-by-ids-query-with-required-interfaces-events.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json"
+  })
+  void upgrade_negative_platformApplicationDoesNotProvideRequiredInterface() throws Exception {
+    mockMvc.perform(put(updatePathWithPrefix("/entitlements"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest(FOLIO_APP10_V2_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'InterfaceIntegrityValidator')].value",
+        hasItem(containsString("Missing interfaces found for the applications"))))
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'InterfaceIntegrityValidator')].value",
+        hasItem(containsString("platform-api 1.0"))));
+
+    // the initial entitlement is left unchanged
+    var moduleId = "folio-module10-10.0.0";
+    var expected = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP10_ID, List.of(moduleId)));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP10_ID), expected);
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP10_V2_ID), emptyEntitlements());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @Sql(scripts = {
+    "classpath:/sql/platform/platform-entitlement-v1.sql",
+    "classpath:/sql/platform/tenant-entitlement-app10-v1.sql"
+  })
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app10/v1-get-by-ids-query-without-required-interfaces-events.json",
+    "/wiremock/mgr-applications/folio-app10/v2-get-by-ids-query-with-required-interfaces-events.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces-no-events.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json"
+  })
+  void upgrade_negative_platformApplicationDoesNotProduceRequiredEvent() throws Exception {
+    mockMvc.perform(put(updatePathWithPrefix("/entitlements"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(entitlementRequest(FOLIO_APP10_V2_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'EventDependencyValidator')].value",
+        hasItem(containsString("Consumed events without producers found: evt.platform.updated"))));
+
+    // the initial entitlement is left unchanged
+    var moduleId = "folio-module10-10.0.0";
+    var expected = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP10_ID, List.of(moduleId)));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP10_ID), expected);
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP10_V2_ID), emptyEntitlements());
   }
 
   @Test
