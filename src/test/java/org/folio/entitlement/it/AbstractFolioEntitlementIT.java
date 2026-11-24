@@ -1001,6 +1001,76 @@ abstract class AbstractFolioEntitlementIT extends BaseIntegrationTest {
   }
 
   @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-with-required-interfaces-events.json",
+    "/wiremock/mgr-applications/folio-app10/get-discovery.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces-and-events.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json"
+  })
+  void desiredState_positive_dependencyOnPlatformApplication() throws Exception {
+    var queryParams = Map.of("tenantParameters", "loadReference=true", "ignoreErrors", "true");
+    stateOfApplications(desiredStateRequest(FOLIO_APP10_ID), queryParams,
+      extendedEntitlements(entitlement(FOLIO_APP10_ID)));
+
+    var moduleId = "folio-module10-10.0.0";
+    var expected = entitlements(entitlementWithModules(TENANT_ID, FOLIO_APP10_ID, List.of(moduleId)));
+    assertEntitlementsWithModules(queryByTenantAndAppId(FOLIO_APP10_ID), expected);
+
+    // platform application stays platform-scoped: no tenant entitlement is created for it
+    getEntitlementsByQuery(queryByTenantAndAppId(PLATFORM_APP_ID), emptyEntitlements());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-with-required-interfaces-events.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json"
+  })
+  void desiredState_negative_platformApplicationDoesNotProvideRequiredInterface() throws Exception {
+    mockMvc.perform(put(updatePathWithPrefix("/entitlements/state"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(desiredStateRequest(FOLIO_APP10_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'InterfaceIntegrityValidator')].value",
+        hasItem(containsString("Missing interfaces found for the applications"))))
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'InterfaceIntegrityValidator')].value",
+        hasItem(containsString("platform-api 1.0"))));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP10_ID), emptyEntitlements());
+  }
+
+  @Test
+  @KeycloakRealms("/keycloak/test-realm.json")
+  @Sql("classpath:/sql/platform/platform-entitlement-v1.sql")
+  @WireMockStub(scripts = {
+    "/wiremock/mgr-tenants/test/get.json",
+    "/wiremock/mgr-tenants/test/get-query-by-name.json",
+    "/wiremock/mgr-applications/folio-app10/get-by-ids-query-with-required-interfaces-events.json",
+    "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1-with-interfaces-no-events.json",
+    "/wiremock/mgr-applications/validate-any-descriptor.json"
+  })
+  void desiredState_negative_platformApplicationDoesNotProduceRequiredEvent() throws Exception {
+    mockMvc.perform(put(updatePathWithPrefix("/entitlements/state"))
+        .contentType(APPLICATION_JSON)
+        .header(TOKEN, getSystemAccessToken())
+        .content(asJsonString(desiredStateRequest(FOLIO_APP10_ID))))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.errors[0].parameters[?(@.key == 'EventDependencyValidator')].value",
+        hasItem(containsString("Consumed events without producers found: evt.platform.updated"))));
+
+    getEntitlementsByQuery(queryByTenantAndAppId(FOLIO_APP10_ID), emptyEntitlements());
+  }
+
+  @Test
   @WireMockStub(scripts = {
     "/wiremock/mgr-tenants/test/get.json",
     "/wiremock/mgr-applications/platform/get-by-ids-query-platform-app-v1.json"
