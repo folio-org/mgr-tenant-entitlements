@@ -8,6 +8,9 @@
       },
       "x-okapi-tenant": {
         "equalTo": "test"
+      },
+      "x-okapi-egress-use-gateway": {
+        "equalTo": "true"
       }
     },
     "bodyPatterns": [

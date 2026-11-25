@@ -16,6 +16,8 @@
 * Move Kong mgmt logic from mgr-applications to mgr-tenant-entitlements (MGRENTITLE-174)
 * Async Entitlement processing feedback loop - Kafka Processing (MGRENTITLE-158)
 * Support desired-state entitlement validation for entitle, upgrade, and revoke transitions (MGRENTITLE-186)
+* Add a reusable event confirmation wait stage for the flow engine; configurable with
+  `EVENT_CONFIRMATION_WAIT_POLL_INTERVAL` and `EVENT_CONFIRMATION_WAIT_MAX` (MGRENTITLE-223)
 * Deprecate the Kong-specific gateway configuration in favour of the API Gateway naming (EUREKA-887)
 * [Kong] Module routes are incorrectly assigned to multiple gateway services (MGRENTITLE-197)
 * Filter wildcard permissionsRequired entries from mgr-tenant-entitlements capability warnings (MGRENTITLE-182)
@@ -37,6 +39,7 @@
 * Support asynchronous tenant APIs in MTE ([MGRENTITLE-224](https://folio-org.atlassian.net/browse/MGRENTITLE-224))
 * Remove references to usage regular keyword using tenant keyword for applications scope (EUREKA-938)
 * Include platform applications automatically in tenant dependency validation ([MGRENTITLE-212](https://folio-org.atlassian.net/browse/MGRENTITLE-212))
+* Send `x-okapi-egress-use-gateway: true` on module tenant API calls ([MGRENTITLE-229](https://folio-org.atlassian.net/browse/MGRENTITLE-229))
 ---
 
 ## Version `4.0.0` (16.04.2026)

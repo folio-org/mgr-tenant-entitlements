@@ -79,3 +79,13 @@ The `id` field on `FlowStage` (returned by `GET /entitlement-flows/{flowId}?incl
 - `FlowCompletionService`: central coordinator for both success and failure completion paths, called by `ResourceResultEventService` and by `AbstractFlowFinalizer.onSuccess`.
 - `AsyncConfirmationSweeper`: calls `FlowService.findStaleAsyncFlowIds` and `FlowService.failIfNotTerminal` to time out stuck flows.
 - `FlowStageService`, `ApplicationFlowService`, and `FlowService`: used to apply cascading status transitions.
+
+## Event confirmation wait stage
+
+`EventConfirmationWaitStage` holds an application flow until every event published by the configured publisher stages is confirmed. Each publisher already records one `flow_stage` row per event, named `<moduleId>-<publisherClassName>`, with the event id as `stage_id`. With `EVENT_PUBLISHER_AWAIT_COMPLETION=true` the rows stay `IN_PROGRESS` until the `resource-result` confirmation arrives, so the stage polls the number of rows still `IN_PROGRESS` or `FAILED`.
+
+- No row in progress: the stage completes.
+- A `FAILED` row (a `FAILURE` confirmation): the stage fails at once, with the stored details.
+- Timeout (`EVENT_CONFIRMATION_WAIT_MAX`, default `5m`; poll every `EVENT_CONFIRMATION_WAIT_POLL_INTERVAL`, default `2s`): the unconfirmed rows are failed with `error_type` `EventConfirmationTimeout` and the stage throws, naming each unconfirmed event. A late result is then dropped because the stage is no longer `IN_PROGRESS`.
+- `EVENT_PUBLISHER_AWAIT_COMPLETION` false or unset: the stage is a no-op.
+- Entitlement events are not watched: `FolioModuleEventPublisher` is not part of any wait.

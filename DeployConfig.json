@@ -212,6 +212,20 @@
         "essential": false
       },
       {
+        "name": "EVENT_CONFIRMATION_WAIT_POLL_INTERVAL",
+        "value": "2s",
+        "description": "How often the event confirmation wait stage re-checks which published events are still unconfirmed. Applies only when EVENT_PUBLISHER_AWAIT_COMPLETION is true",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
+        "name": "EVENT_CONFIRMATION_WAIT_MAX",
+        "value": "5m",
+        "description": "Maximum time the event confirmation wait stage holds a flow before the stage and the flow fail. Must be less than ASYNC_CONFIRMATION_TIMEOUT. Applies only when EVENT_PUBLISHER_AWAIT_COMPLETION is true",
+        "type": "FUNCTIONAL",
+        "essential": false
+      },
+      {
         "name": "ASYNC_CONFIRMATION_TIMEOUT",
         "value": "90m",
         "description": "How long a flow may wait for async stage confirmations before the sweeper marks it FAILED. Applies only when EVENT_PUBLISHER_AWAIT_COMPLETION is true",
