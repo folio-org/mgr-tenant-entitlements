@@ -21,12 +21,15 @@ import java.util.Map;
 import java.util.stream.Stream;
 import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.Entitlement;
+import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.CommonStageContext;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.ApplicationManagerService;
 import org.folio.entitlement.service.EntitlementCrudService;
 import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -45,9 +48,11 @@ class ApplicationAndEntitledDescriptorProviderTest {
   private static final String APP_BAR_UPDATE_ID = "app-bar-2.0.0";
   private static final String APP_BAZ_ID = "app-baz-1.0.0";
   private static final String APP_BAZ_UPDATE_ID = "app-baz-1.5.0";
+  private static final String APP_PLATFORM_ID = "app-platform-1.0.0";
 
   @Mock private ApplicationManagerService applicationManagerService;
   @Mock private EntitlementCrudService entitlementService;
+  @Mock private PlatformEntitlementRepository platformEntitlementRepository;
   @InjectMocks
   private ApplicationAndEntitledDescriptorProvider provider;
 
@@ -81,6 +86,21 @@ class ApplicationAndEntitledDescriptorProviderTest {
     var actual = provider.getDescriptors(stageContext(contextDescriptors));
 
     assertThat(actual).containsExactlyInAnyOrderElementsOf(expectedDescriptors);
+  }
+
+  @Test
+  void getDescriptorsForContext_positive_platformEntitledApplicationIsLoaded() {
+    var requestDescriptor = appDescriptor(APP_FOO_UPDATE_ID);
+    var platformDescriptor = appDescriptor(APP_PLATFORM_ID);
+
+    when(entitlementService.findByTenantId(TENANT_ID)).thenReturn(List.of(entitlement(APP_FOO_ID)));
+    when(platformEntitlementRepository.findAll()).thenReturn(List.of(PlatformEntitlementEntity.of(APP_PLATFORM_ID)));
+    when(applicationManagerService.getApplicationDescriptors(List.of(APP_PLATFORM_ID), OKAPI_TOKEN))
+      .thenReturn(List.of(platformDescriptor));
+
+    var actual = provider.getDescriptors(stageContext(List.of(requestDescriptor)));
+
+    assertThat(actual).containsExactlyInAnyOrder(requestDescriptor, platformDescriptor);
   }
 
   private static Stream<Arguments> descriptorsForRequestDataProvider() {

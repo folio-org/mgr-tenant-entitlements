@@ -38,6 +38,7 @@
 * Entitle and upgrade platform applications through a deployment-scoped endpoint ([MGRENTITLE-213](https://folio-org.atlassian.net/browse/MGRENTITLE-213))
 * Support asynchronous tenant APIs in MTE ([MGRENTITLE-224](https://folio-org.atlassian.net/browse/MGRENTITLE-224))
 * Remove references to usage regular keyword using tenant keyword for applications scope (EUREKA-938)
+* Include platform applications automatically in tenant dependency validation ([MGRENTITLE-212](https://folio-org.atlassian.net/browse/MGRENTITLE-212))
 * Send `x-okapi-egress-use-gateway: true` on module tenant API calls ([MGRENTITLE-229](https://folio-org.atlassian.net/browse/MGRENTITLE-229))
 ---
 

@@ -1,5 +1,6 @@
 package org.folio.entitlement.service.stage;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.folio.common.utils.CollectionUtils.mapItems;
 import static org.folio.entitlement.domain.dto.EntitlementRequestType.ENTITLE;
@@ -26,7 +27,9 @@ import org.folio.common.domain.model.ApplicationDescriptor;
 import org.folio.entitlement.domain.dto.ApplicationFlow;
 import org.folio.entitlement.domain.dto.EntitlementType;
 import org.folio.entitlement.domain.dto.ExecutionStatus;
+import org.folio.entitlement.domain.entity.PlatformEntitlementEntity;
 import org.folio.entitlement.domain.model.EntitlementRequest;
+import org.folio.entitlement.repository.PlatformEntitlementRepository;
 import org.folio.entitlement.service.flow.ApplicationFlowService;
 import org.folio.entitlement.support.TestValues;
 import org.folio.test.types.UnitTest;
@@ -43,6 +46,7 @@ class EntitleRequestDependencyValidatorTest {
 
   @InjectMocks private EntitleRequestDependencyValidator dependencyValidator;
   @Mock private ApplicationFlowService applicationFlowService;
+  @Mock private PlatformEntitlementRepository platformEntitlementRepository;
 
   @AfterEach
   void tearDown() {
@@ -92,6 +96,41 @@ class EntitleRequestDependencyValidatorTest {
     dependencyValidator.execute(stageContext);
 
     verifyNoInteractions(applicationFlowService);
+  }
+
+  @Test
+  void execute_positive_platformEntitledDependencies() {
+    var dependencyNames = Set.of("app-foo", "app-bar", "app-platform");
+    var flows = List.of(flow("app-foo-1.2.0", EntitlementType.ENTITLE, FINISHED),
+      flow("app-bar-2.3.9", EntitlementType.ENTITLE, FINISHED));
+    when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(flows);
+    when(platformEntitlementRepository.findAllById(List.of("app-platform")))
+      .thenReturn(List.of(PlatformEntitlementEntity.of("app-platform-4.2.1")));
+
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    var stageContext = appStageContext(FLOW_ID, flowParameters(request, applicationDescriptorWithPlatformDependency()),
+      Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    assertThatCode(() -> dependencyValidator.execute(stageContext)).doesNotThrowAnyException();
+  }
+
+  @Test
+  void execute_negative_platformEntitledVersionNotSatisfying() {
+    var dependencyNames = Set.of("app-foo", "app-bar", "app-platform");
+    var flows = List.of(flow("app-foo-1.2.0", EntitlementType.ENTITLE, FINISHED),
+      flow("app-bar-2.3.9", EntitlementType.ENTITLE, FINISHED));
+    when(applicationFlowService.findLastFlowsByNames(dependencyNames, TENANT_ID)).thenReturn(flows);
+    when(platformEntitlementRepository.findAllById(List.of("app-platform")))
+      .thenReturn(List.of(PlatformEntitlementEntity.of("app-platform-3.0.0")));
+
+    var request = EntitlementRequest.builder().type(ENTITLE).tenantId(TENANT_ID).build();
+    var stageContext = appStageContext(FLOW_ID, flowParameters(request, applicationDescriptorWithPlatformDependency()),
+      Map.of(PARAM_TENANT_NAME, TENANT_NAME));
+
+    assertThatThrownBy(() -> dependencyValidator.execute(stageContext))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("The following application dependencies must be installed first or be in progress: "
+        + "app-platform 4.2.1");
   }
 
   @Test
@@ -173,6 +212,15 @@ class EntitleRequestDependencyValidatorTest {
         applicationDependency("app-foo", "1.2.0"),
         applicationDependency("app-bar", "2.3.9"),
         applicationDependency("app-baz", "4.2.1")));
+  }
+
+  private static ApplicationDescriptor applicationDescriptorWithPlatformDependency() {
+    return new ApplicationDescriptor()
+      .id(APPLICATION_ID)
+      .dependencies(List.of(
+        applicationDependency("app-foo", "1.2.0"),
+        applicationDependency("app-bar", "2.3.9"),
+        applicationDependency("app-platform", "4.2.1")));
   }
 
   private static ApplicationFlow flow(String appId, EntitlementType type, ExecutionStatus status) {

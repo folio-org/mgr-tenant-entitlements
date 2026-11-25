@@ -1,0 +1,31 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications/folio-app10-10.0.0/discovery",
+    "queryParameters": {
+      "limit": {
+        "equalTo": "100"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "discovery": [
+        {
+          "id": "folio-module10-10.0.0",
+          "name": "folio-module10",
+          "version": "10.0.0",
+          "location": "{{request.baseUrl}}/folio-module10"
+        }
+      ],
+      "totalRecords": 1
+    },
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

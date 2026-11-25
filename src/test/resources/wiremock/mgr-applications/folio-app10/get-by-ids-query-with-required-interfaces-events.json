@@ -1,0 +1,82 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/applications",
+    "queryParameters": {
+      "query": {
+        "contains": "id==(\"folio-app10-10.0.0\")"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "applicationDescriptors": [
+        {
+          "id": "folio-app10-10.0.0",
+          "name": "folio-app10",
+          "version": "10.0.0",
+          "modules": [
+            {
+              "id": "folio-module10-10.0.0",
+              "name": "folio-module10",
+              "version": "10.0.0"
+            }
+          ],
+          "dependencies": [
+            {
+              "name": "platform-app",
+              "version": "1.x"
+            }
+          ],
+          "moduleDescriptors": [
+            {
+              "id": "folio-module10-10.0.0",
+              "name": "Test Folio Module #10",
+              "requires": [
+                {
+                  "id": "platform-api",
+                  "version": "1.0"
+                }
+              ],
+              "consumesEvents": [
+                {
+                  "event": "evt.platform.updated",
+                  "optional": false
+                }
+              ],
+              "provides": [
+                {
+                  "id": "folio-module10-api",
+                  "version": "1.0.0",
+                  "handlers": [
+                    {
+                      "methods": [
+                        "GET"
+                      ],
+                      "pathPattern": "/folio-module10/events",
+                      "permissionsRequired": [
+                        "folio-module10.events.collection.get"
+                      ]
+                    }
+                  ]
+                }
+              ],
+              "permissionSets": [
+                {
+                  "permissionName": "folio-module10.events.collection.get",
+                  "displayName": "Folio Module #10 - Get events",
+                  "description": "Get folio-module10 events"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "totalRecords": 1
+    }
+  }
+}
